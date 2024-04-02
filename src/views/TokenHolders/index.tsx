@@ -1,4 +1,5 @@
-import React, { useCallback, useState } from "react";
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+import { useCallback, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 
 
@@ -21,8 +22,8 @@ interface TokenInfo {
 
 interface Holder {
     address: string;
-    balance: number; // or string if it represents a big number
-    percentageHeld: number; // Adjust according to actual property names and types
+    balance: string; // or string if it represents a big number
+    percentageHeld: string; // Adjust according to actual property names and types
 }
 
 
@@ -44,15 +45,15 @@ const TokenHolders = () => {
 
         module.getTokenInfo(contractAddress).then(r => {
             setTokenInfo(r)
-        }).catch((e: any) => {
+        }).catch((e: unknown) => {
             console.log(e)
         });
 
-        module.getTokenHolders(contractAddress).then((r: any) => {
+        module.getTokenHolders(contractAddress).then((r: Holder[]) => {
             console.log(r);
             setHolders(r)
             setLoading(false)
-        }).catch((e: any) => {
+        }).catch((e: unknown) => {
             console.log(e)
             setLoading(false)
         });

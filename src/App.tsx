@@ -1,9 +1,6 @@
-import React from "react";
 import TokenHolders from "./views/TokenHolders";
 
-type Props = {};
-
-const App = (props: Props) => {
+const App = () => {
   return (
     <div
       className={"min-h-screen bg-blue-1000 overflowy-scroll p-2"}

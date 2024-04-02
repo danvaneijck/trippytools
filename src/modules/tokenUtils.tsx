@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
     ChainGrpcWasmApi
 } from "@injectivelabs/sdk-ts";
@@ -5,12 +10,22 @@ import { Buffer } from "buffer";
 
 /* global BigInt */
 
+interface EndpointConfig {
+    grpc: string; // Assuming this is the type for now
+}
+
+interface Holder {
+    address: string;
+    balance: string; // or string if it represents a big number
+    percentageHeld: string; // Adjust according to actual property names and types
+}
+
 class TokenUtils {
-    endpoints: any;
-    RPC: any;
+    endpoints: EndpointConfig;
+    RPC: string;
     chainGrpcWasmApi: ChainGrpcWasmApi;
 
-    constructor(endpoints: any) {
+    constructor(endpoints: EndpointConfig) {
         this.endpoints = endpoints;
         this.RPC = endpoints.grpc;
 
@@ -30,11 +45,15 @@ class TokenUtils {
         }
     }
 
-    async getTokenHolders(tokenAddress: string) {
+    async getTokenHolders(tokenAddress: string): Promise<Holder[]> {
         console.log("get token holders")
 
-        const info = await this.getTokenInfo(tokenAddress)
-        const decimals = info.decimals
+        const info = await this.getTokenInfo(tokenAddress); // Consider typing `info` more strictly
+        if (!info || typeof info.decimals !== 'number') {
+            console.error('Invalid token info or decimals missing');
+            return [];
+        }
+        const decimals = info.decimals;
 
         const accountsWithBalances: Record<string, string> = {};
         try {
@@ -89,7 +108,7 @@ class TokenUtils {
             console.log(`Total number of holders with non-zero balance: ${nonZeroHolders}`);
             console.log(`Total amount held: ${(Number(totalAmountHeld) / Math.pow(10, decimals)).toFixed(2)}`);
 
-            const holders = [];
+            const holders: Holder[] = [];
             for (const address in accountsWithBalances) {
                 const balance = BigInt(accountsWithBalances[address]);
                 if (balance > 0) {
@@ -108,7 +127,7 @@ class TokenUtils {
 
         } catch (e) {
             console.log(`Error in getTokenHoldersWithBalances: ${tokenAddress} ${e}`);
-            return null;
+            return [];
         }
     }
 

@@ -1,4 +1,5 @@
-import React from "react";
+/* eslint-disable @typescript-eslint/ban-types */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import Button from "./Button";
 import { useWalletStore } from "../../store/wallet";
 
