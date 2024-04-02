@@ -61,7 +61,8 @@ const TokenHolders = () => {
     }, [contractAddress]);
 
     return (
-        <div className="flex justify-center items-center w-full pt-10">
+        <div className="flex justify-center items-center w-full pt-10 pb-20 ">
+
             <div>
                 <div className="text-white text-xl">Get cw20 token holders</div>
                 <br />
@@ -76,7 +77,7 @@ const TokenHolders = () => {
                 <button
                     disabled={loading}
                     onClick={getTokenHolders}
-                    className="bg-white rounded p-2 mt-5 w-full text-black"
+                    className="bg-gray-800 rounded p-2 mt-5 w-full text-white border border-white"
                 >
                     Get token holders
                 </button>
@@ -90,7 +91,7 @@ const TokenHolders = () => {
                     </div>
                 }
 
-                {loading && <div>getting token holders...</div>}
+                {loading && <div className="">getting token holders...</div>}
 
                 {holders.length > 0 && <div>
                     <div className="my-2">Token holder results: </div>
