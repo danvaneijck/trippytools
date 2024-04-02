@@ -3,9 +3,8 @@
 import Button from "./Button";
 import { useWalletStore } from "../../store/wallet";
 
-type Props = {};
 
-const WalletConnect = (props: Props) => {
+const WalletConnect = () => {
   const { injectiveAddress, connectWallet } = useWalletStore();
 
   const formattedAddress = `${injectiveAddress.slice(
