@@ -1,5 +1,4 @@
 import React from "react";
-import InjectiveWelcome from "./components/InjectiveWelcome";
 import TokenHolders from "./views/TokenHolders";
 
 type Props = {};

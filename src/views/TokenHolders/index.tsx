@@ -12,12 +12,29 @@ const MAIN_NET = {
     explorerUrl: "https://explorer.injective.network"
 }
 
+interface TokenInfo {
+    name: string;
+    symbol: string;
+    decimals: number;
+    total_supply: number; // Adjust according to actual property names
+}
+
+interface Holder {
+    address: string;
+    balance: number; // or string if it represents a big number
+    percentageHeld: number; // Adjust according to actual property names and types
+}
+
+
 const TokenHolders = () => {
     const [contractAddress, setContractAddress] = useState(
         "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
     );
-    const [tokenInfo, setTokenInfo] = useState(null)
-    const [holders, setHolders] = useState([]);
+
+    const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
+    const [holders, setHolders] = useState<Holder[]>([]);
+
+
     const [loading, setLoading] = useState(false);
 
     const getTokenHolders = useCallback(() => {
@@ -49,7 +66,6 @@ const TokenHolders = () => {
                 <br />
                 <div>token address</div>
                 <input
-                    // style={{ width: 350 }}
                     type="text"
                     className="text-black w-full"
                     onChange={(e) => setContractAddress(e.target.value)}
@@ -64,7 +80,7 @@ const TokenHolders = () => {
                     Get token holders
                 </button>
 
-                {tokenInfo &&
+                {tokenInfo !== null &&
                     <div className="mt-2">
                         <div>name: {tokenInfo.name}</div>
                         <div>symbol: {tokenInfo.symbol}</div>
@@ -82,7 +98,8 @@ const TokenHolders = () => {
                 }
                 {holders.length > 0 && holders.map((holder, index) => {
                     return <div key={index}>
-                        <a className="hover:cursor-pointer" href={`https://explorer.injective.network/account/${holder.address}`}>{holder.address}</a>, {holder.balance} {tokenInfo && tokenInfo.symbol}, {holder.percentageHeld}%
+                        <a className="hover:cursor-pointer" href={`https://explorer.injective.network/account/${holder.address}`}>{holder.address}</a>,
+                        {holder.balance} {tokenInfo && tokenInfo.symbol}, {holder.percentageHeld}%
                     </div>
                 })
 

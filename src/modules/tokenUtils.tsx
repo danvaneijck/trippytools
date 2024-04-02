@@ -1,9 +1,6 @@
 import {
-    ChainGrpcBankApi,
-    ChainGrpcWasmApi,
-    IndexerGrpcAccountPortfolioApi,
+    ChainGrpcWasmApi
 } from "@injectivelabs/sdk-ts";
-import { getNetworkEndpoints, Network } from "@injectivelabs/networks";
 import { Buffer } from "buffer";
 
 /* global BigInt */
@@ -22,24 +19,24 @@ class TokenUtils {
         this.chainGrpcWasmApi = new ChainGrpcWasmApi(this.RPC);
     }
 
-    async getTokenInfo(denom) {
+    async getTokenInfo(denom: string) {
         try {
             const query = Buffer.from(JSON.stringify({ token_info: {} })).toString('base64')
             const token = await this.chainGrpcWasmApi.fetchSmartContractState(denom, query)
             return JSON.parse(new TextDecoder().decode(token.data));
         } catch (error) {
-            console.error('Error fetching token info:', denom, error.message || error);
+            console.error('Error fetching token info:', denom, error);
             return {}
         }
     }
 
-    async getTokenHolders(tokenAddress) {
+    async getTokenHolders(tokenAddress: string) {
         console.log("get token holders")
 
         const info = await this.getTokenInfo(tokenAddress)
         const decimals = info.decimals
 
-        const accountsWithBalances = {};
+        const accountsWithBalances: Record<string, string> = {};
         try {
             let startAfter = "";
             let hasMore = true;
@@ -105,7 +102,7 @@ class TokenUtils {
                 }
             }
 
-            holders.sort((a, b) => b.percentageHeld - a.percentageHeld);
+            holders.sort((a, b) => Number(b.percentageHeld) - Number(a.percentageHeld));
 
             return holders;
 
