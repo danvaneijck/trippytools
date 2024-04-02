@@ -65,15 +65,15 @@ class TokenUtils {
                     JSON.stringify({
                         all_accounts: {
                             start_after: startAfter,
-                            limit: 10
+                            limit: 30
                         }
                     })
                 ).toString("base64");
                 console.log("do query, start after ", startAfter)
                 const accountsInfo = await this.chainGrpcWasmApi.fetchSmartContractState(tokenAddress, accountsQuery);
                 callback(num => num + 1)
-                console.log(accountsInfo)
                 const accountsDecoded = JSON.parse(new TextDecoder().decode(accountsInfo.data));
+                console.log(accountsDecoded)
 
                 if (accountsDecoded && accountsDecoded.accounts && accountsDecoded.accounts.length > 0) {
                     for (const walletAddress of accountsDecoded.accounts) {
