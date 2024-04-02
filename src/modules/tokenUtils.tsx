@@ -45,7 +45,7 @@ class TokenUtils {
         }
     }
 
-    async getTokenHolders(tokenAddress: string): Promise<Holder[]> {
+    async getTokenHolders(tokenAddress: string, callback: React.Dispatch<React.SetStateAction<number>>): Promise<Holder[]> {
         console.log("get token holders")
 
         const info = await this.getTokenInfo(tokenAddress); // Consider typing `info` more strictly
@@ -71,6 +71,7 @@ class TokenUtils {
                 ).toString("base64");
                 console.log("do query, start after ", startAfter)
                 const accountsInfo = await this.chainGrpcWasmApi.fetchSmartContractState(tokenAddress, accountsQuery);
+                callback(num => num + 1)
                 console.log(accountsInfo)
                 const accountsDecoded = JSON.parse(new TextDecoder().decode(accountsInfo.data));
 

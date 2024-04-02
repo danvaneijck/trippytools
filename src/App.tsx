@@ -1,11 +1,12 @@
 import TokenHolders from "./views/TokenHolders";
+import logo from './assets/trippy.webp';
 
 const App = () => {
   return (
     <div>
       <header className="fixed top-0 left-0 w-full bg-gray-800 shadow-md z-10">
         <div className="container mx-auto flex items-center p-2">
-          <img src="src//assets/trippy.webp" alt="Logo" className="h-12 mr-3" />
+          <img src={logo} alt="Logo" className="h-12 mr-3" />
           <h1 className="text-lg font-semibold">trippytools</h1>
         </div>
       </header>

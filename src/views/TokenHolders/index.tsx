@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { useCallback, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
+import { GridLoader } from "react-spinners";
 
 
 const MAIN_NET = {
@@ -34,13 +35,16 @@ const TokenHolders = () => {
 
     const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
     const [holders, setHolders] = useState<Holder[]>([]);
-
+    const [queriesPerformed, setQueriedPerformed] = useState<number>(0);
 
     const [loading, setLoading] = useState(false);
 
     const getTokenHolders = useCallback(() => {
         console.log(contractAddress);
         setLoading(true);
+        setQueriedPerformed(0)
+        setHolders([])
+
         const module = new TokenUtils(MAIN_NET);
 
         module.getTokenInfo(contractAddress).then(r => {
@@ -49,7 +53,7 @@ const TokenHolders = () => {
             console.log(e)
         });
 
-        module.getTokenHolders(contractAddress).then((r: Holder[]) => {
+        module.getTokenHolders(contractAddress, setQueriedPerformed).then((r: Holder[]) => {
             console.log(r);
             setHolders(r)
             setLoading(false)
@@ -91,10 +95,13 @@ const TokenHolders = () => {
                     </div>
                 }
 
-                {loading && <div className="">getting token holders...</div>}
+                {loading && <div className="items-center justify-center flex flex-col pt-5">
+                    <GridLoader color="#36d7b7" /> <br />
+                    <div>queries performed: {queriesPerformed}</div>
+                </div>}
 
                 {holders.length > 0 && <div>
-                    <div className="my-2">Token holder results: </div>
+                    <div className="my-2">Total holders: {holders.length}</div>
                     <div className="">Address, Balance, Percentage held</div>
                 </div>
                 }
