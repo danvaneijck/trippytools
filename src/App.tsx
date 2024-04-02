@@ -7,7 +7,7 @@ const App = () => {
       <header className="fixed top-0 left-0 w-full bg-gray-800 shadow-md z-10">
         <div className="container mx-auto flex items-center p-2">
           <img src={logo} alt="Logo" className="h-12 mr-3" />
-          <h1 className="text-lg font-semibold">trippytools</h1>
+          <h1 className="text-lg font-semibold">trippytools on injective</h1>
         </div>
       </header>
 

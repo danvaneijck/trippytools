@@ -69,6 +69,8 @@ const TokenHolders = () => {
 
             <div>
                 <div className="text-white text-xl">Get cw20 token holders</div>
+                <div className="text-white text-xs">on Injective main net</div>
+
                 <br />
                 <div>token address</div>
                 <input
@@ -87,7 +89,7 @@ const TokenHolders = () => {
                 </button>
 
                 {tokenInfo !== null &&
-                    <div className="mt-2">
+                    <div className="mt-2 text-xl">
                         <div>name: {tokenInfo.name}</div>
                         <div>symbol: {tokenInfo.symbol}</div>
                         <div>decimals: {tokenInfo.decimals}</div>
@@ -97,7 +99,7 @@ const TokenHolders = () => {
 
                 {loading && <div className="items-center justify-center flex flex-col pt-5">
                     <GridLoader color="#36d7b7" /> <br />
-                    <div>queries performed: {queriesPerformed}</div>
+                    <div className="text-sm">queries performed: {queriesPerformed}</div>
                 </div>}
 
                 {holders.length > 0 && <div>
