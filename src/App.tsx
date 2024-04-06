@@ -6,13 +6,10 @@ const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/token-holders" Component={TokenHolders} />
-        <Route path="/" Component={PreSaleInfo} />
+        <Route path="/token-holders" element={<TokenHolders />} />
+        <Route path="/" element={<PreSaleInfo />} />
       </Routes>
-
     </Router>
-
-
   );
 };
 
