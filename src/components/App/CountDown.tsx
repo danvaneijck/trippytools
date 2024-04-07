@@ -1,7 +1,20 @@
 import { useEffect, useState } from 'react';
 
-function Countdown({ targetUtcTime }) {
-    const [timeLeft, setTimeLeft] = useState({
+// Define a type for the component props
+interface CountdownProps {
+    targetUtcTime: string;
+}
+
+// Define a type for the state
+interface TimeLeft {
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+}
+
+function Countdown({ targetUtcTime }: CountdownProps) {
+    const [timeLeft, setTimeLeft] = useState<TimeLeft>({
         days: 0,
         hours: 0,
         minutes: 0,
@@ -32,7 +45,7 @@ function Countdown({ targetUtcTime }) {
             });
         };
 
-        // Update the count down every second
+        // Update the countdown every second
         const interval = setInterval(updateCountdown, 1000);
 
         // Cleanup the interval on component unmount
@@ -42,7 +55,7 @@ function Countdown({ targetUtcTime }) {
     return (
         <div>
             <p>
-                pre sale in <br />{timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
+                Pre-sale in <br />{timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
             </p>
         </div>
     );
