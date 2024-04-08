@@ -29,7 +29,7 @@ const PreSaleInfo = () => {
     const shroomAddress = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 
     const [balance, setBalance] = useState(0)
-    const [goal, setGoal] = useState(2800)
+    const [goal] = useState(2800)
 
     const [shroomBalance, setShroomBalance] = useState(0)
 
