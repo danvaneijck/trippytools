@@ -5,3 +5,23 @@
 body {
   @apply bg-gray-900 text-white;
 }
+
+@keyframes rainbow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.rainbow-background {
+  background-image: linear-gradient(to left, 
+  hsl(273, 76%, 25%), /* darker violet */
+  hsl(238, 100%, 25%), /* darker indigo */
+  hsl(240, 100%, 25%), /* darker blue */
+  hsl(120, 100%, 25%), /* darker green */
+  hsl(60, 100%, 40%), /* darker yellow */
+  hsl(39, 100%, 50%), /* darker orange */
+  hsl(0, 100%, 50%) /* darker red */
+);
+
+  background-size: 200% 200%;
+  animation: rainbow 10s linear infinite;
+}

@@ -4,7 +4,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
-    ChainGrpcWasmApi
+    ChainGrpcWasmApi, ChainGrpcBankApi
 } from "@injectivelabs/sdk-ts";
 import { Buffer } from "buffer";
 
@@ -24,6 +24,7 @@ class TokenUtils {
     endpoints: EndpointConfig;
     RPC: string;
     chainGrpcWasmApi: ChainGrpcWasmApi;
+    chainGrpcBankApi: ChainGrpcBankApi;
 
     constructor(endpoints: EndpointConfig) {
         this.endpoints = endpoints;
@@ -32,6 +33,28 @@ class TokenUtils {
         console.log(`Init tools on ${this.RPC}`);
 
         this.chainGrpcWasmApi = new ChainGrpcWasmApi(this.RPC);
+        this.chainGrpcBankApi = new ChainGrpcBankApi(this.RPC)
+
+    }
+
+    async getBalanceOfToken(denom: string, wallet: string) {
+        return await this.chainGrpcBankApi.fetchBalance({
+            accountAddress: wallet,
+            denom,
+        })
+    }
+
+    async queryTokenForBalance(tokenAddress: string, wallet: string) {
+        try {
+            const query = Buffer.from(JSON.stringify({ balance: { address: wallet } })).toString('base64');
+            const info = await this.chainGrpcWasmApi.fetchSmartContractState(tokenAddress, query);
+            const decoded = JSON.parse(new TextDecoder().decode(info.data));
+            console.log(decoded)
+            return decoded
+        }
+        catch (e) {
+            console.log(`Error queryTokenForBalance: ${tokenAddress} ${e}`)
+        }
     }
 
     async getTokenInfo(denom: string) {
