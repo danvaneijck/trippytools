@@ -130,6 +130,14 @@ const PreSaleInfo = () => {
                             {shroomBalance.toFixed(0)} shroooms eaten 🍄
                         </a>
                     </div>
+                    <div>
+                        <Link
+                            to="/trippy-distribution"
+                            className='text-sm md:text-lg hover:cursor-pointer hover:text-xl mr-10'
+                        >
+                            view $TRIPPY distribution
+                        </Link>
+                    </div>
                     <div className='text-center mt-5 text-xl md:text-3xl font-bold flex flex-row justify-center items-center'>
                         <FaDiscord className='mr-5 text-5xl' /> <a href='https://discord.gg/zH2xDWDy'>https://discord.gg/zH2xDWDy</a>
                     </div>
