@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import shroom from '../../assets/shroom.jpg';
 import TokenUtils from '../../modules/tokenUtils';
 import { FaDiscord } from "react-icons/fa";
+import Countdown from '../../components/App/CountDown';
 
 const MAIN_NET = {
     grpc: "https://sentry.chain.grpc-web.injective.network",
@@ -108,7 +109,7 @@ const PreSaleInfo = () => {
                             <div className=''>
                                 pre sale wallet:
                             </div>
-                            <div className='font-bold'>
+                            <div className='font-bold hover:underline'>
                                 <a href={`https://explorer.injective.network/account/${wallet}`}>
                                     {wallet}
                                 </a>
@@ -130,16 +131,19 @@ const PreSaleInfo = () => {
                             {shroomBalance.toFixed(0)} shroooms eaten 🍄
                         </a>
                     </div>
+                    <div className='text-center w-full text-lg'>
+                        <Countdown targetUtcTime='2024-04-15T20:00:00Z' />
+                    </div>
                     <div>
                         <Link
                             to="/trippy-distribution"
-                            className='text-sm md:text-lg hover:cursor-pointer hover:text-xl mr-10'
+                            className='text-sm md:text-lg hover:cursor-pointer hover:underline hover:text-xl mr-10'
                         >
                             view $TRIPPY distribution
                         </Link>
                     </div>
                     <div className='text-center mt-5 text-xl md:text-3xl font-bold flex flex-row justify-center items-center'>
-                        <FaDiscord className='mr-5 text-5xl' /> <a href='https://discord.gg/zH2xDWDy'>https://discord.gg/zH2xDWDy</a>
+                        <FaDiscord className='mr-5 text-5xl' /> <a className='hover:underline' href='https://discord.gg/zH2xDWDy'>https://discord.gg/zH2xDWDy</a>
                     </div>
                     <div className='text-center mt-5 text-2xl md:text-3xl font-bold'>
                         supply: 1,000,000,000

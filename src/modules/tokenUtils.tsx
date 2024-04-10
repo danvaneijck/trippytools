@@ -79,7 +79,6 @@ class TokenUtils {
             const query = Buffer.from(JSON.stringify({ balance: { address: wallet } })).toString('base64');
             const info = await this.chainGrpcWasmApi.fetchSmartContractState(tokenAddress, query);
             const decoded = JSON.parse(new TextDecoder().decode(info.data));
-            console.log(decoded)
             return decoded
         }
         catch (e) {
@@ -99,7 +98,6 @@ class TokenUtils {
     }
 
     async getTokenHolders(tokenAddress: string, callback: React.Dispatch<React.SetStateAction<number>>): Promise<Holder[]> {
-        console.log("get token holders")
 
         const info = await this.getTokenInfo(tokenAddress); // Consider typing `info` more strictly
         if (!info || typeof info.decimals !== 'number') {
@@ -122,11 +120,9 @@ class TokenUtils {
                         }
                     })
                 ).toString("base64");
-                console.log("do query, start after ", startAfter)
                 const accountsInfo = await this.chainGrpcWasmApi.fetchSmartContractState(tokenAddress, accountsQuery);
                 callback(num => num + 1)
                 const accountsDecoded = JSON.parse(new TextDecoder().decode(accountsInfo.data));
-                console.log(accountsDecoded)
 
                 if (accountsDecoded && accountsDecoded.accounts && accountsDecoded.accounts.length > 0) {
                     for (const walletAddress of accountsDecoded.accounts) {
@@ -284,7 +280,6 @@ class TokenUtils {
 
         let totalAmountReceived = 0;
         let totalValidContributions = 0;
-        let totalToRefund = 0;
 
         let maxCapHit = false;
         let maxCapBlock = null;
@@ -426,15 +421,14 @@ class TokenUtils {
                                 const amountRefunded =
                                     (Number(entry.amountRefunded) ?? 0) + Number(amount);
 
-                                let toRefund = (entry.toRefund ?? 0) - amountRefunded
+                                let toRefund = Number(entry.toRefund) ?? 0 - amountRefunded
                                 if (toRefund < 0) toRefund = 0
 
                                 this.preSaleAmounts.set(participant, {
                                     ...entry,
                                     address: participant,
                                     amountRefunded: amountRefunded,
-                                    contribution:
-                                        (entry.contribution ?? 0),
+                                    contribution: entry.contribution ?? 0,
                                     toRefund: toRefund
                                 });
                             }
@@ -453,12 +447,12 @@ class TokenUtils {
                                 }
 
                                 if (totalSent > maxContribution) {
-                                    toRefund = totalSent - maxContribution;
+                                    toRefund = Number(totalSent) - Number(maxContribution);
                                 } else if (totalSent < minContribution) {
-                                    toRefund = amount;
+                                    toRefund = Number(amount);
                                 }
 
-                                toRefund -= (Number(entry.amountRefunded) ?? 0)
+                                toRefund -= entry.amountRefunded ? Number(entry.amountRefunded) : 0
 
                                 this.preSaleAmounts.set(sender, {
                                     ...entry,
@@ -467,6 +461,9 @@ class TokenUtils {
                                     contribution: totalSent - toRefund,
                                     toRefund: toRefund,
                                 });
+
+
+
                                 if (totalSent - toRefund < 0) {
                                     console.log("contrib lower than 0")
                                 }
@@ -480,9 +477,11 @@ class TokenUtils {
                                 address: sender,
                                 timeSent: blockTimestamp.format(),
                                 amountSent: Number(amount),
-                                contribution: Number(amount) - toRefund,
+                                contribution: Number(amount) - Number(toRefund),
                                 toRefund: toRefund,
                             });
+
+
 
                             if (Number(amount) - toRefund < 0) {
                                 console.log("contrib lower than 0")
@@ -504,9 +503,9 @@ class TokenUtils {
         );
 
         this.preSaleAmounts.forEach((value, key) => {
-            const amountSentFormatted = Number(value.amountSent ?? 0) / Math.pow(10, 18);
-            const totalContributionFormatted = Number(value.contribution ?? 0) / Math.pow(10, 18);
-            const toRefundFormatted = Number(value.toRefund ?? 0) / Math.pow(10, 18);
+            const amountSentFormatted = (Number(value.amountSent) ?? 0) / Math.pow(10, 18);
+            const totalContributionFormatted = (Number(value.contribution) ?? 0) / Math.pow(10, 18);
+            const toRefundFormatted = (Number(value.toRefund) ?? 0) / Math.pow(10, 18);
             const amountRefundedFormatted = (Number(value.amountRefunded) ?? 0) / Math.pow(10, 18);
 
             this.preSaleAmounts.set(key, {
@@ -520,16 +519,20 @@ class TokenUtils {
 
         let totalRefunded = 0;
         let totalContribution = 0;
+        let totalToRefund = 0;
 
         Array.from(this.preSaleAmounts.values()).forEach((entry) => {
-            totalRefunded += entry.amountRefunded ?? 0;
-            totalContribution += entry.contribution ?? 0;
-            totalToRefund += entry.toRefund ?? 0;
 
-            if (entry.totalContributionFormatted && entry.totalContributionFormatted > 0 && !entry.tokensSent) {
-                console.log(entry.address);
-            }
+            if (entry.amountRefunded) totalRefunded += Number(entry.amountRefunded) ?? 0;
+            if (entry.contribution) totalContribution += Number(entry.contribution) ?? 0;
+            if (entry.toRefund) totalToRefund += Number(entry.toRefund) ?? 0;
+
+            // if (entry.totalContributionFormatted && entry.totalContributionFormatted > 0 && !entry.tokensSent) {
+            //     console.log(entry.address);
+            // }
         });
+
+        console.log(totalToRefund, totalContribution)
 
         console.log(
             "to refund: ",
@@ -552,9 +555,9 @@ class TokenUtils {
         const totalR = Number(
             (totalAmountReceived / Math.pow(10, 18)).toFixed(2)
         );
-        const totalC = Number((totalContribution / Math.pow(10, 18)).toFixed(2));
-        const totalRef = Number((totalToRefund / Math.pow(10, 18)).toFixed(2));
-        totalRefunded = Number((totalRefunded / Math.pow(10, 18)).toFixed(2));
+        const totalC = (Number(totalContribution) / Math.pow(10, 18));
+        const totalRef = (Number(totalToRefund) / Math.pow(10, 18));
+        totalRefunded = Number((totalRefunded / Math.pow(10, 18)));
 
         const leftOver = totalR - totalC - totalRef - totalRefunded;
 
@@ -587,7 +590,7 @@ class TokenUtils {
                         const amount = message.value.msg.transfer.amount
                         const sender = message.value.sender
                         if (recipient == presaleWallet) {
-                            console.log(`sender ${sender} sent ${amount / Math.pow(10, 18)} shroom to pre sale wallet`)
+                            // console.log(`sender ${sender} sent ${amount / Math.pow(10, 18)} shroom to pre sale wallet`)
 
                             if (this.preSaleAmounts.has(sender)) {
                                 const entry = this.preSaleAmounts.get(sender)
@@ -689,6 +692,11 @@ class TokenUtils {
 
         });
 
+        let total = 0
+        this.preSaleAmounts.forEach((entry) => {
+            if (entry.adjustedContribution) total += Number(entry.adjustedContribution)
+        })
+        console.log("total adjusted contribution", total)
         return this.preSaleAmounts
     }
 
