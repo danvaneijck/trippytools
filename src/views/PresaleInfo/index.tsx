@@ -1,6 +1,8 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 // @ts-ignore
-import CELLS from 'vanta/dist/vanta.cells.min'
+// import CELLS from 'vanta/dist/vanta.cells.min'
+import WAVES from 'vanta/dist/vanta.waves.min'
+
 import { Link } from 'react-router-dom';
 // import logo from '../../assets/trippy-coin2.jpg';
 import shroom from '../../assets/shroom.jpg';
@@ -38,13 +40,17 @@ const PreSaleInfo = () => {
 
     useEffect(() => {
         if (!vantaEffect) {
-            setVantaEffect(CELLS({
+            setVantaEffect(WAVES({
                 el: myRef.current,
+                minHeight: 200.00,
+                minWidth: 200.00,
                 scale: 1.00,
-                color1: 0x2a400,
-                color2: 0xa7800,
-                size: 1.10,
-                speed: 1.40
+                scaleMobile: 1.00,
+                color: 0xf14,
+                shininess: 25.00,
+                waveHeight: 19.50,
+                waveSpeed: 0.55,
+                zoom: 0.65
             }))
         }
 
@@ -109,7 +115,7 @@ const PreSaleInfo = () => {
             </div>
         </header>
         <div>
-            <div className='pt-20 text-center pt-8 text-4xl md:text-5xl font-bold '>
+            <div className='text-center pt-20 text-4xl md:text-5xl font-bold '>
                 TRIPPY
             </div>
             <div className='text-center text-xl md:text-3xl '>

@@ -19,13 +19,13 @@ interface TokenInfo {
     name: string;
     symbol: string;
     decimals: number;
-    total_supply: number; // Adjust according to actual property names
+    total_supply: number;
 }
 
 interface Holder {
     address: string;
-    balance: string; // or string if it represents a big number
-    percentageHeld: string; // Adjust according to actual property names and types
+    balance: string;
+    percentageHeld: string;
 }
 
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
@@ -140,7 +140,7 @@ const TokenHolders = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {holders.filter(holder => holder.balance !== 0).map((holder, index) => (
+                                            {holders.filter(holder => Number(holder.balance) !== 0).map((holder, index) => (
                                                 <tr key={index} className="text-white border-b">
                                                     <td className="px-6 py-1 whitespace-nowrap">
                                                         <a className="hover:text-indigo-900" href={`https://explorer.injective.network/account/${holder.address}`}>

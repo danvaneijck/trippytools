@@ -114,7 +114,7 @@ const TrippyDistribution = () => {
             </div>
         </header>
         <div>
-            <div className='pt-20 text-center pt-8 text-4xl md:text-5xl font-bold flex flex-row justify-center items-center'>
+            <div className='pt-20 text-center text-4xl md:text-5xl font-bold flex flex-row justify-center items-center'>
                 TRIPPY distribution
                 <img
                     src={logo}

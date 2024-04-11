@@ -28,6 +28,18 @@ interface Holder {
     percentageHeld: string;
 }
 
+interface TokenMeta {
+    denom: string;
+}
+
+interface PairInfo {
+    token0Meta: TokenMeta;
+    token1Meta: TokenMeta;
+    liquidity_token: string;
+    contract_addr: string;
+}
+
+
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
 const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
 
@@ -41,44 +53,44 @@ const TokenLiquidity = () => {
 
     const [holders, setHolders] = useState<Holder[]>([]);
     const [queriesPerformed, setQueriedPerformed] = useState<number>(0);
-    const [pairInfo, setPairInfo] = useState()
+    const [pairInfo, setPairInfo] = useState<PairInfo | undefined>(undefined);
 
     const [loading, setLoading] = useState(false);
 
     const getTokenHolders = useCallback(() => {
         console.log(contractAddress);
         setLoading(true);
-        setQueriedPerformed(0)
-        setHolders([])
+        setQueriedPerformed(0);
+        setHolders([]);
 
         const module = new TokenUtils(MAIN_NET);
 
-        module.getPairInfo(contractAddress).then(r => {
-            console.log(r)
-            setPairInfo(r)
+        module.getPairInfo(contractAddress).then((r: PairInfo) => {
+            console.log(r);
+            setPairInfo(r);
 
             const memeAddress = r.token0Meta.denom === 'inj'
                 ? r.token1Meta.denom
                 : r.token0Meta.denom;
 
-            module.getTokenInfo(memeAddress).then(r => {
-                setTokenInfo(r)
+            module.getTokenInfo(memeAddress).then((r: any) => { // Assuming getTokenInfo's return type is dynamic, otherwise define an interface
+                setTokenInfo(r);
             }).catch((e: unknown) => {
-                console.log(e)
+                console.log(e);
             });
 
-            const liquidityToken = r.liquidity_token
+            const liquidityToken = r.liquidity_token;
             module.getTokenHolders(liquidityToken, setQueriedPerformed).then((r: Holder[]) => {
                 console.log(r);
-                setHolders(r)
-                setLoading(false)
+                setHolders(r);
+                setLoading(false);
             }).catch((e: unknown) => {
-                console.log(e)
-                setLoading(false)
+                console.log(e);
+                setLoading(false);
             });
         }).catch(e => {
-            console.log(e)
-        })
+            console.log(e);
+        });
 
     }, [contractAddress]);
 
