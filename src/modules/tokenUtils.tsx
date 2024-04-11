@@ -63,6 +63,7 @@ class TokenUtils {
             this.endpoints.explorer
         );
 
+
         this.preSaleAmounts = new Map();
 
     }
@@ -95,6 +96,12 @@ class TokenUtils {
             console.error('Error fetching token info:', denom, error);
             return {}
         }
+    }
+
+    async getCW20Balances(tokenAddress: string) {
+        const balances = await this.indexerRestExplorerApi.fetchCW20Balances(tokenAddress)
+        console.log(balances)
+        return balances
     }
 
     async getTokenHolders(tokenAddress: string, callback: React.Dispatch<React.SetStateAction<number>>): Promise<Holder[]> {

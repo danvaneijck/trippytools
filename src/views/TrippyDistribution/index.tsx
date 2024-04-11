@@ -101,30 +101,30 @@ const TrippyDistribution = () => {
 
     return <div className='overflow-hidden'>
         <header className="bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
-            <div className="container mx-auto flex items-center p-2">
-                <Link to="/" className="text-base font-bold hover:underline mr-10">
-                    $TRIPPY pre sale
+            <div className="container mx-auto flex items-center p-2 text-sm md:text-base">
+                <Link to="/" className="font-bold hover:underline mr-5">
+                    pre sale
                 </Link>
-                <Link to="/token-holders" className="text-base font-bold hover:underline mr-10">
-                    token holders tool
+                <Link to="/token-holders" className="font-bold hover:underline mr-5">
+                    holders tool
                 </Link>
-                <Link to="/token-liquidity" className="text-base font-bold hover:underline ">
-                    token liquidity tool
+                <Link to="/token-liquidity" className="font-bold hover:underline ">
+                    liquidity tool
                 </Link>
             </div>
         </header>
         <div>
-            <div className='pt-20 text-center text-4xl md:text-5xl font-bold flex flex-row justify-center items-center'>
+            <div className='pt-14 text-center text-xl md:text-4xl font-bold flex flex-row justify-center items-center'>
                 TRIPPY distribution
                 <img
                     src={logo}
-                    style={{ borderRadius: '50%', width: 60, height: 60 }}
-                    className="animate-3dspin ml-5"
+                    style={{ borderRadius: '50%', width: 50, height: 50 }}
+                    className="animate-3dspin ml-4"
                     alt="Spinning Image"
                 />
 
             </div>
-            <div className='text-center mb-2 hover:underline'>
+            <div className='text-center mt-2 mb-2 hover:underline'>
                 <Link to={"/"}>{"<-"} back to presale homepage</Link>
             </div>
             <div className='text-center w-full'>
@@ -141,7 +141,7 @@ const TrippyDistribution = () => {
             </div>}
             <div className='mt-2 overflow-x-scroll md:overflow-x-none w-full pb-10 pl-5 pr-10'>
                 <div className="mx-auto max-w-screen-xl">
-                    <table className="w-full">
+                    <table className="w-full ">
                         <thead>
                             <tr className='text-left'>
                                 <th className='pr-10'>Address</th>
