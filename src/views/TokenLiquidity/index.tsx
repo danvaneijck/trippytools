@@ -73,6 +73,14 @@ const TokenLiquidity = () => {
                 ? r.token1Meta.denom
                 : r.token0Meta.denom;
 
+            // if (
+            //     memeAddress.includes("factory")
+            //     || memeAddress.includes("peggy")
+            //     || memeAddress.includes("ibc")
+            // ) {
+            //     module.getDenomMetadata(memeAddress)
+            // }
+
             module.getTokenInfo(memeAddress).then((r: any) => { // Assuming getTokenInfo's return type is dynamic, otherwise define an interface
                 setTokenInfo(r);
             }).catch((e: unknown) => {
@@ -172,7 +180,7 @@ const TokenLiquidity = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="">
-                                        {holders.filter(holder => Number(holder.balance) !== 0).map((holder, index) => (
+                                        {holders.map((holder, index) => (
                                             <tr key={index} className="border-b">
                                                 <td className="px-4 py-1 text-blue-600">
                                                     <a href={`https://explorer.injective.network/account/${holder.address}`}>

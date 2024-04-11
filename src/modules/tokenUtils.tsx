@@ -98,6 +98,10 @@ class TokenUtils {
         }
     }
 
+    // async getDenomMetadata() {
+
+    // }
+
     async getCW20Balances(tokenAddress: string) {
         const balances = await this.indexerRestExplorerApi.fetchCW20Balances(tokenAddress)
         console.log(balances)
@@ -170,10 +174,10 @@ class TokenUtils {
                 const balance = BigInt(accountsWithBalances[address]);
                 if (balance > 0) {
                     const percentageHeld = Number(balance) / Number(totalAmountHeld) * 100;
-                    if (Number((Number(balance) / Math.pow(10, decimals)).toFixed(2)) !== 0)
+                    if (Number((Number(balance) / Math.pow(10, decimals)).toFixed(4)) !== 0)
                         holders.push({
                             address,
-                            balance: (Number(balance) / Math.pow(10, decimals)).toFixed(2),
+                            balance: (Number(balance) / Math.pow(10, decimals)).toFixed(4),
                             percentageHeld: percentageHeld.toFixed(2)
                         });
                 }
