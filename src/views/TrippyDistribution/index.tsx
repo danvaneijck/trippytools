@@ -66,7 +66,6 @@ const TrippyDistribution = () => {
                 maxPerWallet,
             );
 
-            console.log("TOTAL RAISED", totalRaised)
             setTotalRaised(totalRaised)
 
             const totalAdjustedContribution = await module.getMultiplier(wallet, shroomAddress)
@@ -80,10 +79,7 @@ const TrippyDistribution = () => {
                 devAllocation,
             );
 
-            console.log(preSaleAmounts)
-
             return preSaleAmounts
-
         }
 
     }, [preSaleAirdropPercent]);
@@ -104,8 +100,21 @@ const TrippyDistribution = () => {
     }, [amounts, getAmounts, loading])
 
     return <div className='overflow-hidden'>
+        <header className="bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
+            <div className="container mx-auto flex items-center p-2">
+                <Link to="/" className="text-base font-bold hover:underline mr-10">
+                    $TRIPPY pre sale
+                </Link>
+                <Link to="/token-holders" className="text-base font-bold hover:underline mr-10">
+                    token holders tool
+                </Link>
+                <Link to="/token-liquidity" className="text-base font-bold hover:underline ">
+                    token liquidity tool
+                </Link>
+            </div>
+        </header>
         <div>
-            <div className='text-center pt-8 text-4xl md:text-5xl font-bold flex flex-row justify-center items-center'>
+            <div className='pt-20 text-center pt-8 text-4xl md:text-5xl font-bold flex flex-row justify-center items-center'>
                 TRIPPY distribution
                 <img
                     src={logo}

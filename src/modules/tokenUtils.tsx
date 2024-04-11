@@ -163,11 +163,12 @@ class TokenUtils {
                 const balance = BigInt(accountsWithBalances[address]);
                 if (balance > 0) {
                     const percentageHeld = Number(balance) / Number(totalAmountHeld) * 100;
-                    holders.push({
-                        address,
-                        balance: (Number(balance) / Math.pow(10, decimals)).toFixed(2),
-                        percentageHeld: percentageHeld.toFixed(2)
-                    });
+                    if (Number((Number(balance) / Math.pow(10, decimals)).toFixed(2)) !== 0)
+                        holders.push({
+                            address,
+                            balance: (Number(balance) / Math.pow(10, decimals)).toFixed(2),
+                            percentageHeld: percentageHeld.toFixed(2)
+                        });
                 }
             }
 
@@ -698,6 +699,33 @@ class TokenUtils {
         })
         console.log("total adjusted contribution", total)
         return this.preSaleAmounts
+    }
+
+    async getPairInfo(pairAddress: string) {
+        const pairQuery = Buffer.from(JSON.stringify({ pair: {} })).toString('base64');
+        const pairInfo = await this.chainGrpcWasmApi.fetchSmartContractState(pairAddress, pairQuery);
+        const infoDecoded = JSON.parse(new TextDecoder().decode(pairInfo.data));
+
+        const assetInfos = infoDecoded['asset_infos'];
+        const tokenInfos = [];
+        for (const assetInfo of assetInfos) {
+            const denom = assetInfo['native_token']
+                ? assetInfo['native_token']['denom']
+                : assetInfo['token']['contract_addr'];
+
+            tokenInfos.push({
+                denom: denom,
+            });
+        }
+
+        if (tokenInfos.length !== 2) return null
+        const [token0Info, token1Info] = tokenInfos;
+
+        return {
+            token0Meta: token0Info,
+            token1Meta: token1Info,
+            ...infoDecoded
+        };
     }
 
 

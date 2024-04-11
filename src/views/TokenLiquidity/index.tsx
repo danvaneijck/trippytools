@@ -19,27 +19,29 @@ interface TokenInfo {
     name: string;
     symbol: string;
     decimals: number;
-    total_supply: number; // Adjust according to actual property names
+    total_supply: number;
 }
 
 interface Holder {
     address: string;
-    balance: string; // or string if it represents a big number
-    percentageHeld: string; // Adjust according to actual property names and types
+    balance: string;
+    percentageHeld: string;
 }
 
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
 const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
 
 
-const TokenHolders = () => {
+const TokenLiquidity = () => {
     const [contractAddress, setContractAddress] = useState(
-        "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
+        "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
     );
 
     const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
+
     const [holders, setHolders] = useState<Holder[]>([]);
     const [queriesPerformed, setQueriedPerformed] = useState<number>(0);
+    const [pairInfo, setPairInfo] = useState()
 
     const [loading, setLoading] = useState(false);
 
@@ -51,25 +53,37 @@ const TokenHolders = () => {
 
         const module = new TokenUtils(MAIN_NET);
 
-        module.getTokenInfo(contractAddress).then(r => {
-            setTokenInfo(r)
-        }).catch((e: unknown) => {
-            console.log(e)
-        });
+        module.getPairInfo(contractAddress).then(r => {
+            console.log(r)
+            setPairInfo(r)
 
-        module.getTokenHolders(contractAddress, setQueriedPerformed).then((r: Holder[]) => {
-            console.log(r);
-            setHolders(r)
-            setLoading(false)
-        }).catch((e: unknown) => {
+            const memeAddress = r.token0Meta.denom === 'inj'
+                ? r.token1Meta.denom
+                : r.token0Meta.denom;
+
+            module.getTokenInfo(memeAddress).then(r => {
+                setTokenInfo(r)
+            }).catch((e: unknown) => {
+                console.log(e)
+            });
+
+            const liquidityToken = r.liquidity_token
+            module.getTokenHolders(liquidityToken, setQueriedPerformed).then((r: Holder[]) => {
+                console.log(r);
+                setHolders(r)
+                setLoading(false)
+            }).catch((e: unknown) => {
+                console.log(e)
+                setLoading(false)
+            });
+        }).catch(e => {
             console.log(e)
-            setLoading(false)
-        });
+        })
 
     }, [contractAddress]);
 
     return (
-        <div className="flex flex-col min-h-screen pb-10">
+        <div className="flex flex-col min-h-screen">
             <header className="bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
                 <div className="container mx-auto flex items-center p-2">
                     <Link to="/" className="text-base font-bold hover:underline mr-5">
@@ -78,24 +92,24 @@ const TokenHolders = () => {
                     <Link to="/trippy-distribution" className="text-base font-bold hover:underline mr-5">
                         $TRIPPY distribution
                     </Link>
-                    <Link to="/token-liquidity" className="text-base font-bold hover:underline ">
-                        token liquidity tool
+                    <Link to="/token-holders" className="text-base font-bold hover:underline ">
+                        token holder tool
                     </Link>
                 </div>
             </header>
 
+            {/* Adjust padding-top to match header height + some space */}
             <div className="pt-20 flex-grow">
-                <div className="flex justify-center items-center min-h-full">
-                    <div className="w-full max-w-screen-xl px-2 py-10">
+                <div className="flex justify-center items-center w-full py-10">
+                    <div className="w-full max-w-screen-xl px-2">
                         <div className="text-center text-white">
-                            <div className="text-xl">Get cw20 token holders</div>
+                            <div className="text-xl">Get cw20 liquidity token holders</div>
                             <div className="text-xs">on Injective main net</div>
                         </div>
 
                         <div className="mt-4 space-y-2">
-                            <label htmlFor="token-address" className="block text-white">Token address</label>
+                            <label htmlFor="token-address" className="block text-white">Pair address</label>
                             <input
-                                id="token-address"
                                 type="text"
                                 className="text-black w-full"
                                 onChange={(e) => setContractAddress(e.target.value)}
@@ -106,17 +120,24 @@ const TokenHolders = () => {
                         <button
                             disabled={loading}
                             onClick={getTokenHolders}
-                            className="mt-5 bg-gray-800 rounded p-2 w-full text-white border border-white"
+                            className="bg-gray-800 rounded p-2 mt-5 w-full text-white border border-white"
                         >
-                            Get token holders
+                            Get token liquidity
                         </button>
 
                         {tokenInfo && (
-                            <div className="mt-2 text-base text-white">
+                            <div className="mt-5 text-base text-white">
                                 <div>name: {tokenInfo.name}</div>
                                 <div>symbol: {tokenInfo.symbol}</div>
                                 <div>decimals: {tokenInfo.decimals}</div>
                                 <div>total supply: {tokenInfo.total_supply / Math.pow(10, tokenInfo.decimals)}</div>
+                            </div>
+                        )}
+
+                        {pairInfo && (
+                            <div className="mt-2 text-white">
+                                <div>pair address: {pairInfo.contract_addr}</div>
+                                <div>liquidity token: {pairInfo.liquidity_token}</div>
                             </div>
                         )}
 
@@ -128,35 +149,32 @@ const TokenHolders = () => {
                         )}
 
                         {holders.length > 0 && (
-                            <div className="mt-5">
+                            <div className="mt-2 overflow-x-auto">
                                 <div>Total holders: {holders.length}</div>
-                                <div className="overflow-x-auto mt-2">
-                                    <table className="table-auto w-full">
-                                        <thead className="text-white">
-                                            <tr>
-                                                <th className="px-4 py-2">Address</th>
-                                                <th className="px-4 py-2">Balance</th>
-                                                <th className="px-4 py-2">Percentage Held</th>
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="">
+                                        <tr>
+                                            <th className="px-4 py-2">Address</th>
+                                            <th className="px-4 py-2">Balance</th>
+                                            <th className="px-4 py-2">Percentage Held</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="">
+                                        {holders.filter(holder => Number(holder.balance) !== 0).map((holder, index) => (
+                                            <tr key={index} className="border-b">
+                                                <td className="px-4 py-1 text-blue-600">
+                                                    <a href={`https://explorer.injective.network/account/${holder.address}`}>
+                                                        {holder.address}
+                                                    </a>
+                                                    {holder.address === dojoBurnAddress && <span className="text-red-500 ml-2">  DOJO BURN ADDY 🔒</span>}
+                                                    {holder.address === injBurnAddress && <span className="text-red-500 ml-2">  INJ BURN ADDY 🔒</span>}
+                                                </td>
+                                                <td className="px-4 py-2">{holder.balance}</td>
+                                                <td className="px-4 py-2">{holder.percentageHeld}%</td>
                                             </tr>
-                                        </thead>
-                                        <tbody>
-                                            {holders.filter(holder => holder.balance !== 0).map((holder, index) => (
-                                                <tr key={index} className="text-white border-b">
-                                                    <td className="px-6 py-1 whitespace-nowrap">
-                                                        <a className="hover:text-indigo-900" href={`https://explorer.injective.network/account/${holder.address}`}>
-                                                            {holder.address}
-                                                        </a>
-
-                                                        {holder.address === dojoBurnAddress && <span className="text-red-500 ml-2">  DOJO BURN ADDY 🔥</span>}
-                                                        {holder.address === injBurnAddress && <span className="text-red-500 ml-2">  INJ BURN ADDY 🔥</span>}
-                                                    </td>
-                                                    <td className="px-6 py-1">{holder.balance} {tokenInfo?.symbol}</td>
-                                                    <td className="px-6 py-1">{holder.percentageHeld}%</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         )}
                     </div>
@@ -167,7 +185,8 @@ const TokenHolders = () => {
                 buy me a coffee: inj1q2m26a7jdzjyfdn545vqsude3zwwtfrdap5jgz
             </footer>
         </div>
+
     );
 };
 
-export default TokenHolders;
+export default TokenLiquidity;

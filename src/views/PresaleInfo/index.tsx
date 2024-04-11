@@ -69,16 +69,16 @@ const PreSaleInfo = () => {
         });
 
 
-    }, [wallet]); // Include wallet here if it's expected to change
+    }, [wallet]);
 
     useEffect(() => {
-        getBalance(); // Initial call
+        getBalance();
 
         const interval = setInterval(() => {
-            getBalance(); // This will be called every 10 seconds
+            getBalance();
         }, 10000);
 
-        return () => clearInterval(interval); // Cleanup interval on component unmount
+        return () => clearInterval(interval);
     }, [getBalance]);
 
     const divStyle = {
@@ -95,15 +95,28 @@ const PreSaleInfo = () => {
 
 
     return <div ref={myRef} className='overflow-hidden'>
+        <header className="bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
+            <div className="container mx-auto flex items-center p-2">
+                <Link to="/trippy-distribution" className="text-base font-bold hover:underline mr-10">
+                    $TRIPPY distribution
+                </Link>
+                <Link to="/token-holders" className="text-base font-bold hover:underline mr-10">
+                    token holders tool
+                </Link>
+                <Link to="/token-liquidity" className="text-base font-bold hover:underline ">
+                    token liquidity tool
+                </Link>
+            </div>
+        </header>
         <div>
-            <div className='text-center pt-8 text-4xl md:text-5xl font-bold '>
+            <div className='pt-20 text-center pt-8 text-4xl md:text-5xl font-bold '>
                 TRIPPY
             </div>
             <div className='text-center text-xl md:text-3xl '>
                 on injective
             </div>
             <div className='flex flex-row justify-center'>
-                <div className='mt-2 text-center py-2 text-2xl md:text-4xl md:w-1/2 rounded-xl p-2 mb-2 bg-gradient-to-br from-transparent to-black mx-2'>
+                <div className='mt-2 text-center py-4 text-2xl md:text-4xl md:w-1/2 rounded-xl p-2 mb-2 bg-gradient-to-br from-transparent to-black mx-2'>
                     <div className='flex flex-row items-center justify-center mb-5 '>
                         <div className='text-base md:text-xl flex flex-col'>
                             <div className=''>
