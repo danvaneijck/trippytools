@@ -58,6 +58,8 @@ interface ChainGrpcWasmApiResponse {
     // Add other properties of the response if necessary
 }
 
+const INJ_USD_DOJO_ADDRESS = "inj1h0mpv48ctcsmydymh2hnkal7hla5gl4gftemqv"
+
 class TokenUtils {
     endpoints: EndpointConfig;
     RPC: string;
@@ -83,6 +85,41 @@ class TokenUtils {
             new IndexerGrpcAccountPortfolioApi(endpoints.indexer);
 
         this.preSaleAmounts = new Map();
+    }
+
+    async updateBaseAssetPrice() {
+        const baseAssetPair = await this.getPairInfo(INJ_USD_DOJO_ADDRESS)
+        console.log(baseAssetPair)
+        const quote = await this.getQuote(baseAssetPair.contract_addr, 1)
+        if (!quote) return
+        console.log(Number(quote['return_amount']))
+        return Number(quote['return_amount']) / Math.pow(10, 6)
+    }
+
+    async getQuote(pair: string, amount: number) {
+        if (!pair) return
+        const offerAmount = amount * Math.pow(10, 18);
+        const simulationQuery = {
+            simulation: {
+                offer_asset: {
+                    info: {
+                        native_token: {
+                            denom: 'inj'
+                        }
+                    },
+                    amount: offerAmount.toString()
+                }
+            }
+        };
+        try {
+            const query = Buffer.from(JSON.stringify(simulationQuery)).toString('base64');
+            const sim = await this.chainGrpcWasmApi.fetchSmartContractState(pair, query);
+
+            const decodedData = JSON.parse(new TextDecoder().decode(sim.data));
+            return decodedData;
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     async getBalanceOfToken(denom: string, wallet: string) {
@@ -842,19 +879,7 @@ class TokenUtils {
             totalSupply * Math.pow(10, decimals) * percentToAirdrop;
         const forDev = totalSupply * Math.pow(10, decimals) * devAllocation;
         amountToDrop -= forDev;
-
-        console.log(`dev allocated tokens: ${forDev / Math.pow(10, 18)}`);
-        console.log(
-            `number of tokens to airdrop: ${amountToDrop / Math.pow(10, decimals)
-            }`
-        );
         console.log(`total raised INJ: ${totalContribution}`);
-        console.log(
-            `LP starting price: ${(
-                (totalContribution * Math.pow(10, 18)) /
-                amountToDrop
-            ).toFixed(8)} INJ`
-        );
 
         const dropAmounts = new Map();
 

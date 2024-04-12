@@ -43,6 +43,8 @@ const TrippyDistribution = () => {
     const [loading, setLoading] = useState(false);
 
     const [totalRaised, setTotalRaised] = useState(0);
+    const [injPrice, setInjPrice] = useState(0);
+    const [lpStartingPrice, setLpStartingPrice] = useState(0);
 
     const tokenSupply = 1000000000;
     const tokenDecimals = 18;
@@ -52,6 +54,13 @@ const TrippyDistribution = () => {
 
     const getAmounts = useCallback(async () => {
         const module = new TokenUtils(MAIN_NET);
+
+        module.updateBaseAssetPrice().then(r => {
+            console.log(r)
+            if (r) setInjPrice(r)
+        }).catch(e => {
+            console.log(e)
+        })
 
         const allTransactions = await module.getAccountTx(wallet);
         const maxCap = Number(2800); // INJ
@@ -73,6 +82,30 @@ const TrippyDistribution = () => {
                 wallet,
                 shroomAddress
             );
+
+            let amountToDrop =
+                tokenSupply * Math.pow(10, tokenDecimals) * preSaleAirdropPercent;
+            const forDev = tokenSupply * Math.pow(10, tokenDecimals) * devAllocation;
+            amountToDrop -= forDev;
+
+            console.log(`dev allocated tokens: ${forDev / Math.pow(10, 18)}`);
+            console.log(
+                `number of tokens to airdrop: ${amountToDrop / Math.pow(10, tokenDecimals)
+                }`
+            );
+            console.log(`total raised INJ: ${totalRaised}`);
+
+            console.log(
+                `LP starting price: ${(
+                    (totalRaised * Math.pow(10, 18)) /
+                    amountToDrop
+                ).toFixed(8)} INJ`
+            );
+
+            setLpStartingPrice((
+                (totalRaised * Math.pow(10, 18)) /
+                amountToDrop
+            ))
 
             const preSaleAmounts = module.generateAirdropCSV(
                 totalRaised,
@@ -142,7 +175,19 @@ const TrippyDistribution = () => {
                 </div>
                 <div className="text-center w-full">
                     total raised: {totalRaised != 0 && totalRaised.toFixed(2)}{" "}
-                    INJ
+                    INJ / ${(totalRaised * injPrice).toFixed(2)}
+                </div>
+                <div className="text-center w-full">
+                    INJ price on DojoSwap: ${injPrice.toFixed(2)}
+                </div>
+                <div className="text-center w-full">
+                    LP starting price: {lpStartingPrice.toFixed(10)} INJ
+                </div>
+                <div className="text-center w-full">
+                    starting liquidity: ${((totalRaised * injPrice) * 2).toFixed(2)}
+                </div>
+                <div className="text-center w-full">
+                    starting market cap: ${((lpStartingPrice * 1000000000) * injPrice).toFixed(2)}
                 </div>
                 <div className="text-center w-full pt-2">
                     unique wallets {amounts && Array.from(amounts.values()).filter(amount => amount.address).length}
@@ -162,6 +207,7 @@ const TrippyDistribution = () => {
                                     <th className="pr-10">SHROOM</th>
                                     <th className="pr-10">Multiplier</th>
                                     <th className="pr-10">TRIPPY</th>
+                                    <th className="pr-10">USD value</th>
                                     <th className="">% of supply</th>
                                 </tr>
                             </thead>
@@ -201,7 +247,7 @@ const TrippyDistribution = () => {
                                                 </td>
                                                 <td className="pr-10">
                                                     {amount.multiplierTokensSent &&
-                                                        amount.multiplierTokensSent.toFixed(
+                                                        Math.min(amount.multiplierTokensSent, 10000000).toFixed(
                                                             0
                                                         )}{" "}
                                                     {amount.multiplierTokensSent !==
@@ -235,6 +281,15 @@ const TrippyDistribution = () => {
                                                         className="ml-2"
                                                         alt="Spinning Image"
                                                     />
+                                                </td>
+                                                <td className="pr-10 ">
+                                                    ${amount.tokensToSend && lpStartingPrice && injPrice &&
+                                                        (
+                                                            (Number(
+                                                                amount.tokensToSend
+                                                            ) / Math.pow(10, 18)) * lpStartingPrice * injPrice
+                                                        ).toFixed(2)}
+
                                                 </td>
                                                 <td className="">
                                                     {amount.tokensToSend &&

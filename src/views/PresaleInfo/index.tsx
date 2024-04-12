@@ -34,8 +34,9 @@ const PreSaleInfo = () => {
 
     const [balance, setBalance] = useState(0)
     const [goal] = useState(2800)
+    const [injPrice, setInjPrice] = useState(0);
 
-    // const [shroomBalance, setShroomBalance] = useState(0)
+    const [shroomBalance, setShroomBalance] = useState(0)
 
 
     useEffect(() => {
@@ -59,6 +60,13 @@ const PreSaleInfo = () => {
     const getBalance = useCallback(() => {
         const module = new TokenUtils(MAIN_NET);
 
+        module.updateBaseAssetPrice().then(r => {
+            console.log(r)
+            if (r) setInjPrice(r)
+        }).catch(e => {
+            console.log(e)
+        })
+
         module.getBalanceOfToken('inj', wallet).then(r => {
             console.log(r)
             setBalance(Number(r.amount) / Math.pow(10, 18));
@@ -68,7 +76,7 @@ const PreSaleInfo = () => {
 
         module.queryTokenForBalance(shroomAddress, wallet).then((r: ShroomBalanceResponse) => {
             if (r.balance) {
-                // setShroomBalance((Number(r.balance)) / Math.pow(10, 18))
+                setShroomBalance((Number(r.balance)) / Math.pow(10, 18))
             }
         }).catch(e => {
             console.log(e);
@@ -124,7 +132,7 @@ const PreSaleInfo = () => {
             <div className='flex-grow'>
                 <div className='flex justify-center'>
                     <div className='mt-2 text-center py-4 text-2xl md:text-4xl md:w-1/2 rounded-xl p-2 mb-2 bg-gradient-to-br from-transparent to-black mx-2'>
-                        <div className='flex flex-row items-center justify-center mb-5 '>
+                        <div className='flex flex-row items-center justify-center mb-2 '>
                             <div className='text-base md:text-xl flex flex-col'>
                                 <div className=''>
                                     pre sale wallet:
@@ -135,6 +143,9 @@ const PreSaleInfo = () => {
                                     </a>
                                 </div>
                             </div>
+                        </div>
+                        <div className='text-center text-lg md:text-2xl mb-2'>
+                            ${(balance * injPrice).toFixed(2)} USD
                         </div>
                         <div className="w-full bg-gray-200 rounded-full dark:bg-gray-700 mb-1">
                             <div
@@ -147,11 +158,11 @@ const PreSaleInfo = () => {
                             {balance.toFixed(2)} INJ / {goal} INJ raised
                         </div>
 
-                        {/* <div className='text-center font-bold text-base'>
+                        <div className='text-center font-bold text-base'>
                             <a href='https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl'>
                                 {shroomBalance.toFixed(0)} shroooms eaten 🍄
                             </a>
-                        </div> */}
+                        </div>
 
                         <div className='text-center w-full text-lg'>
                             <Countdown targetUtcTime='2024-04-15T20:00:00Z' />
@@ -187,14 +198,13 @@ const PreSaleInfo = () => {
                         </div>
                     </div>
                 </div>
-
             </div>
             <div className='flex flex-row justify-center'>
                 <div className='mt-3 text-center py-5 text-2xl md:text-4xl md:w-1/2  m-auto rounded-xl p-2 mb-2 bg-gradient-to-br from-transparent to-black mx-2'>
                     <div className='flex flex-row items-center justify-between'>
                         <img src={shroom} style={{ borderRadius: '50%', width: 40, height: 40 }} className="animate-3dspin" alt="Spinning Image" />
                         <a
-                            className='hover:cursor-pointer hover:text-6xl'
+                            className='hover:cursor-pointer hover:text-4xl'
                             href='https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl'
                         >
                             SHROOM multiplier
