@@ -228,6 +228,13 @@ const TokenLiquidity = () => {
                                                                 INJ BURN ADDY 🔒
                                                             </span>
                                                         )}
+                                                    {holder.address ==
+                                                        "inj1lq9wn94d49tt7gc834cxkm0j5kwlwu4gm65lhe" && (
+                                                            <span className="text-green-400 ml-2">
+                                                                {" "}
+                                                                trippykiwi 🥷
+                                                            </span>
+                                                        )}
                                                 </td>
                                                 <td className="px-4 py-2">
                                                     {holder.balance}

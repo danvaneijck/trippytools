@@ -211,6 +211,20 @@ const TokenHolders = () => {
                                                                         ADDY 🔥
                                                                     </span>
                                                                 )}
+                                                            {holder.address ==
+                                                                "inj1lq9wn94d49tt7gc834cxkm0j5kwlwu4gm65lhe" && (
+                                                                    <span className="text-green-400 ml-2">
+                                                                        {" "}
+                                                                        trippykiwi 🥷
+                                                                    </span>
+                                                                )}
+                                                            {holder.address ==
+                                                                "inj1yegzy0u8z8k0mzcq6532nzk8eg2z9yyuppqxgk" && (
+                                                                    <span className="text-red-500 ml-2">
+                                                                        {" "}
+                                                                        pre sale address 🔥
+                                                                    </span>
+                                                                )}
                                                         </td>
                                                         <td className="px-6 py-1">
                                                             {holder.balance}{" "}

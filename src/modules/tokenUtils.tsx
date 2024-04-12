@@ -254,19 +254,9 @@ class TokenUtils {
         const accounts = [];
 
         try {
-            let cachedAddresses: string[] = [];
-            const cacheKey = `${tokenAddress}_addresses`;
+            let addresses: string[] = [];
 
-            const data = localStorage.getItem(cacheKey);
-
-            if (data) {
-                cachedAddresses = JSON.parse(data);
-                accounts.push(...cachedAddresses);
-            } else {
-                console.log("No cache found in localStorage, starting fresh.");
-            }
-
-            let startAfter = cachedAddresses.at(-1) ?? "";
+            let startAfter = "";
             let hasMore = true;
 
             while (hasMore) {
@@ -295,14 +285,10 @@ class TokenUtils {
                     accountsDecoded.accounts.length > 0
                 ) {
                     const newAccounts = accountsDecoded.accounts.filter(
-                        (account: string) => !cachedAddresses.includes(account)
+                        (account: string) => !addresses.includes(account)
                     );
 
-                    cachedAddresses = [...cachedAddresses, ...newAccounts];
-                    localStorage.setItem(
-                        cacheKey,
-                        JSON.stringify(cachedAddresses)
-                    );
+                    addresses = [...addresses, ...newAccounts];
 
                     accounts.push(...newAccounts);
                     startAfter = accountsDecoded.accounts.at(-1);
@@ -313,7 +299,7 @@ class TokenUtils {
 
             const accountsWithBalances = await this.fetchBalancesInBatches(
                 accounts,
-                10,
+                5,
                 tokenAddress,
                 callback
             );
