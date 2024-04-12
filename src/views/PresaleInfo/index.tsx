@@ -35,7 +35,7 @@ const PreSaleInfo = () => {
     const [balance, setBalance] = useState(0)
     const [goal] = useState(2800)
 
-    const [shroomBalance, setShroomBalance] = useState(0)
+    // const [shroomBalance, setShroomBalance] = useState(0)
 
 
     useEffect(() => {
@@ -68,7 +68,7 @@ const PreSaleInfo = () => {
 
         module.queryTokenForBalance(shroomAddress, wallet).then((r: ShroomBalanceResponse) => {
             if (r.balance) {
-                setShroomBalance((Number(r.balance)) / Math.pow(10, 18))
+                // setShroomBalance((Number(r.balance)) / Math.pow(10, 18))
             }
         }).catch(e => {
             console.log(e);
@@ -146,11 +146,13 @@ const PreSaleInfo = () => {
                         <div className='text-center font-bold text-base'>
                             {balance.toFixed(2)} INJ / {goal} INJ raised
                         </div>
-                        <div className='text-center font-bold text-base'>
+
+                        {/* <div className='text-center font-bold text-base'>
                             <a href='https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl'>
                                 {shroomBalance.toFixed(0)} shroooms eaten 🍄
                             </a>
-                        </div>
+                        </div> */}
+
                         <div className='text-center w-full text-lg'>
                             <Countdown targetUtcTime='2024-04-15T20:00:00Z' />
                         </div>

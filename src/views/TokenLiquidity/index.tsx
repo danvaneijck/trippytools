@@ -2,9 +2,8 @@
 import { useCallback, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { GridLoader } from "react-spinners";
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 import { Holder, PairInfo, TokenInfo } from "../../types";
-
 
 const MAIN_NET = {
     grpc: "https://sentry.chain.grpc-web.injective.network",
@@ -13,12 +12,11 @@ const MAIN_NET = {
     indexer: "https://sentry.exchange.grpc-web.injective.network",
     chainId: "injective-1",
     dojoFactory: "inj1pc2vxcmnyzawnwkf03n2ggvt997avtuwagqngk",
-    explorerUrl: "https://explorer.injective.network"
-}
+    explorerUrl: "https://explorer.injective.network",
+};
 
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
 const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
-
 
 const TokenLiquidity = () => {
     const [contractAddress, setContractAddress] = useState(
@@ -41,49 +39,58 @@ const TokenLiquidity = () => {
 
         const module = new TokenUtils(MAIN_NET);
 
-        module.getPairInfo(contractAddress).then((r: PairInfo) => {
-            console.log(r);
-            setPairInfo(r);
-
-            const memeAddress = r.token0Meta.denom === 'inj'
-                ? r.token1Meta.denom
-                : r.token0Meta.denom;
-
-            if (
-                memeAddress.includes("factory")
-                || memeAddress.includes("peggy")
-                || memeAddress.includes("ibc")
-            ) {
-                module.getDenomMetadata(memeAddress).then(r => {
-                    setTokenInfo(r)
-                }).catch((e: unknown) => {
-                    console.log(e)
-                });
-
-            }
-            else {
-                module.getTokenInfo(memeAddress).then((r: any) => { // Assuming getTokenInfo's return type is dynamic, otherwise define an interface
-                    setTokenInfo(r);
-                }).catch((e: unknown) => {
-                    console.log(e);
-                });
-
-            }
-
-
-            const liquidityToken = r.liquidity_token;
-            module.getTokenHolders(liquidityToken, setQueriedPerformed).then((r: Holder[]) => {
+        module
+            .getPairInfo(contractAddress)
+            .then((r: PairInfo) => {
                 console.log(r);
-                setHolders(r);
-                setLoading(false);
-            }).catch((e: unknown) => {
-                console.log(e);
-                setLoading(false);
-            });
-        }).catch(e => {
-            console.log(e);
-        });
+                setPairInfo(r);
 
+                const memeAddress =
+                    r.token0Meta.denom === "inj"
+                        ? r.token1Meta.denom
+                        : r.token0Meta.denom;
+
+                if (
+                    memeAddress.includes("factory") ||
+                    memeAddress.includes("peggy") ||
+                    memeAddress.includes("ibc")
+                ) {
+                    module
+                        .getDenomMetadata(memeAddress)
+                        .then((r) => {
+                            setTokenInfo(r);
+                        })
+                        .catch((e: unknown) => {
+                            console.log(e);
+                        });
+                } else {
+                    module
+                        .getTokenInfo(memeAddress)
+                        .then((r: any) => {
+                            // Assuming getTokenInfo's return type is dynamic, otherwise define an interface
+                            setTokenInfo(r);
+                        })
+                        .catch((e: unknown) => {
+                            console.log(e);
+                        });
+                }
+
+                const liquidityToken = r.liquidity_token;
+                module
+                    .getTokenHolders(liquidityToken, setQueriedPerformed)
+                    .then((r: Holder[]) => {
+                        console.log(r);
+                        setHolders(r);
+                        setLoading(false);
+                    })
+                    .catch((e: unknown) => {
+                        console.log(e);
+                        setLoading(false);
+                    });
+            })
+            .catch((e) => {
+                console.log(e);
+            });
     }, [contractAddress]);
 
     return (
@@ -93,30 +100,44 @@ const TokenLiquidity = () => {
                     <Link to="/" className="font-bold hover:underline mr-5">
                         pre sale
                     </Link>
-                    <Link to="/trippy-distribution" className="font-bold hover:underline mr-5">
+                    <Link
+                        to="/trippy-distribution"
+                        className="font-bold hover:underline mr-5"
+                    >
                         $TRIPPY distribution
                     </Link>
-                    <Link to="/token-holders" className="font-bold hover:underline ">
+                    <Link
+                        to="/token-holders"
+                        className="font-bold hover:underline "
+                    >
                         holder tool
                     </Link>
                 </div>
             </header>
 
-            {/* Adjust padding-top to match header height + some space */}
             <div className="pt-14 flex-grow mx-2 pb-20">
                 <div className="flex justify-center items-center w-full py-10">
                     <div className="w-full max-w-screen-xl px-2">
                         <div className="text-center text-white">
-                            <div className="text-xl">Get cw20 liquidity token holders</div>
+                            <div className="text-xl">
+                                Get cw20 liquidity token holders
+                            </div>
                             <div className="text-xs">on Injective main net</div>
                         </div>
 
                         <div className="mt-4 space-y-2">
-                            <label htmlFor="token-address" className="block text-white">Pair address</label>
+                            <label
+                                htmlFor="token-address"
+                                className="block text-white"
+                            >
+                                Pair address
+                            </label>
                             <input
                                 type="text"
                                 className="text-black w-full"
-                                onChange={(e) => setContractAddress(e.target.value)}
+                                onChange={(e) =>
+                                    setContractAddress(e.target.value)
+                                }
                                 value={contractAddress}
                             />
                         </div>
@@ -134,21 +155,33 @@ const TokenLiquidity = () => {
                                 <div>name: {tokenInfo.name}</div>
                                 <div>symbol: {tokenInfo.symbol}</div>
                                 <div>decimals: {tokenInfo.decimals}</div>
-                                {tokenInfo.total_supply && <div>total supply: {tokenInfo.total_supply / Math.pow(10, tokenInfo.decimals)}</div>}
+                                {tokenInfo.total_supply && (
+                                    <div>
+                                        total supply:{" "}
+                                        {tokenInfo.total_supply /
+                                            Math.pow(10, tokenInfo.decimals)}
+                                    </div>
+                                )}
                             </div>
                         )}
 
                         {pairInfo && (
                             <div className="mt-2 text-white">
-                                <div>pair address: {pairInfo.contract_addr}</div>
-                                <div>liquidity token: {pairInfo.liquidity_token}</div>
+                                <div>
+                                    pair address: {pairInfo.contract_addr}
+                                </div>
+                                <div>
+                                    liquidity token: {pairInfo.liquidity_token}
+                                </div>
                             </div>
                         )}
 
                         {loading && (
                             <div className="flex flex-col items-center justify-center pt-5">
                                 <GridLoader color="#36d7b7" />
-                                <div className="text-sm mt-2">queries performed: {queriesPerformed}</div>
+                                <div className="text-sm mt-2">
+                                    wallets checked: {queriesPerformed}
+                                </div>
                             </div>
                         )}
 
@@ -158,23 +191,50 @@ const TokenLiquidity = () => {
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="">
                                         <tr>
-                                            <th className="px-4 py-2">Address</th>
-                                            <th className="px-4 py-2">Balance</th>
-                                            <th className="px-4 py-2">Percentage</th>
+                                            <th className="px-4 py-2">
+                                                Address
+                                            </th>
+                                            <th className="px-4 py-2">
+                                                Balance
+                                            </th>
+                                            <th className="px-4 py-2">
+                                                Percentage
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="">
                                         {holders.map((holder, index) => (
-                                            <tr key={index} className="border-b">
+                                            <tr
+                                                key={index}
+                                                className="border-b"
+                                            >
                                                 <td className="px-4 py-1 text-blue-600">
-                                                    <a href={`https://explorer.injective.network/account/${holder.address}`}>
+                                                    <a
+                                                        href={`https://explorer.injective.network/account/${holder.address}`}
+                                                    >
                                                         {holder.address}
                                                     </a>
-                                                    {holder.address === dojoBurnAddress && <span className="text-red-500 ml-2">  DOJO BURN ADDY 🔒</span>}
-                                                    {holder.address === injBurnAddress && <span className="text-red-500 ml-2">  INJ BURN ADDY 🔒</span>}
+                                                    {holder.address ===
+                                                        dojoBurnAddress && (
+                                                            <span className="text-red-500 ml-2">
+                                                                {" "}
+                                                                DOJO BURN ADDY 🔒
+                                                            </span>
+                                                        )}
+                                                    {holder.address ===
+                                                        injBurnAddress && (
+                                                            <span className="text-red-500 ml-2">
+                                                                {" "}
+                                                                INJ BURN ADDY 🔒
+                                                            </span>
+                                                        )}
                                                 </td>
-                                                <td className="px-4 py-2">{holder.balance}</td>
-                                                <td className="px-4 py-2">{holder.percentageHeld}%</td>
+                                                <td className="px-4 py-2">
+                                                    {holder.balance}
+                                                </td>
+                                                <td className="px-4 py-2">
+                                                    {holder.percentageHeld}%
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -189,7 +249,6 @@ const TokenLiquidity = () => {
                 buy me a coffee: inj1q2m26a7jdzjyfdn545vqsude3zwwtfrdap5jgz
             </footer>
         </div>
-
     );
 };
 
