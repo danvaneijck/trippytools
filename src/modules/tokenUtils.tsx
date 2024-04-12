@@ -6,17 +6,19 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
     ChainGrpcWasmApi, ChainGrpcBankApi, IndexerRestExplorerApi,
-    ExplorerTransaction,
+    ExplorerTransaction, IndexerGrpcAccountPortfolioApi,
     Message
 } from "@injectivelabs/sdk-ts";
 import { Buffer } from "buffer";
 import moment from "moment";
+import { TokenInfo } from "../types";
 
 /* global BigInt */
 
 interface EndpointConfig {
     grpc: string;
     explorer: string
+    indexer: string
 }
 
 interface Holder {
@@ -50,6 +52,7 @@ class TokenUtils {
     chainGrpcBankApi: ChainGrpcBankApi;
     indexerRestExplorerApi: IndexerRestExplorerApi;
     preSaleAmounts: Map<string, PresaleAmount>;
+    indexerGrpcAccountPortfolioApi: IndexerGrpcAccountPortfolioApi;
 
     constructor(endpoints: EndpointConfig) {
         this.endpoints = endpoints;
@@ -62,6 +65,11 @@ class TokenUtils {
         this.indexerRestExplorerApi = new IndexerRestExplorerApi(
             this.endpoints.explorer
         );
+
+        this.indexerGrpcAccountPortfolioApi = new IndexerGrpcAccountPortfolioApi(
+            endpoints.indexer,
+        )
+
 
 
         this.preSaleAmounts = new Map();
@@ -98,8 +106,24 @@ class TokenUtils {
         }
     }
 
-    // async getDenomMetadata() {
+    async getDenomMetadata(denom: string) {
+        const data = await this.chainGrpcBankApi.fetchDenomMetadata(denom)
+        const matchingDenomUnit = data.denomUnits.find(unit => unit.denom === data.display);
 
+        const supply = await this.chainGrpcBankApi.fetchSupplyOf(denom)
+
+        const tokenInfo: TokenInfo = {
+            name: data.name,
+            symbol: data.symbol,
+            decimals: matchingDenomUnit ? matchingDenomUnit.exponent : 0,
+            total_supply: Number(supply.amount)
+        };
+
+        return tokenInfo;
+    }
+
+    // getTokenFactoryHolders() {
+    //     this.chainGrpcBankApi
     // }
 
     async getCW20Balances(tokenAddress: string) {

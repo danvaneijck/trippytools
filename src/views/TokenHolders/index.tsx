@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { GridLoader } from "react-spinners";
 import { Link } from 'react-router-dom';
+import { Holder, TokenInfo } from "../../types";
 
 
 const MAIN_NET = {
@@ -13,19 +14,6 @@ const MAIN_NET = {
     chainId: "injective-1",
     dojoFactory: "inj1pc2vxcmnyzawnwkf03n2ggvt997avtuwagqngk",
     explorerUrl: "https://explorer.injective.network"
-}
-
-interface TokenInfo {
-    name: string;
-    symbol: string;
-    decimals: number;
-    total_supply: number;
-}
-
-interface Holder {
-    address: string;
-    balance: string;
-    percentageHeld: string;
 }
 
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
@@ -51,17 +39,25 @@ const TokenHolders = () => {
 
         const module = new TokenUtils(MAIN_NET);
 
-        module.getTokenInfo(contractAddress).then(r => {
-            setTokenInfo(r)
-        }).catch((e: unknown) => {
-            console.log(e)
-        });
+        if (
+            contractAddress.includes("factory")
+            || contractAddress.includes("peggy")
+            || contractAddress.includes("ibc")
+        ) {
+            module.getDenomMetadata(contractAddress).then(r => {
+                setTokenInfo(r)
+            }).catch((e: unknown) => {
+                console.log(e)
+            });
 
-        // module.getCW20Balances(contractAddress).then(r => {
-        //     console.log(r)
-        // }).catch(e => {
-        //     console.log(e)
-        // })
+        }
+        else {
+            module.getTokenInfo(contractAddress).then(r => {
+                setTokenInfo(r)
+            }).catch((e: unknown) => {
+                console.log(e)
+            });
+        }
 
         module.getTokenHolders(contractAddress, setQueriedPerformed).then((r: Holder[]) => {
             console.log(r);
@@ -122,7 +118,7 @@ const TokenHolders = () => {
                                 <div>name: {tokenInfo.name}</div>
                                 <div>symbol: {tokenInfo.symbol}</div>
                                 <div>decimals: {tokenInfo.decimals}</div>
-                                <div>total supply: {tokenInfo.total_supply / Math.pow(10, tokenInfo.decimals)}</div>
+                                {tokenInfo.total_supply && <div>total supply: {tokenInfo.total_supply / Math.pow(10, tokenInfo.decimals)}</div>}
                             </div>
                         )}
 

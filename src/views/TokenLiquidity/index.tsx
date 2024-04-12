@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { GridLoader } from "react-spinners";
 import { Link } from 'react-router-dom';
+import { Holder, PairInfo, TokenInfo } from "../../types";
 
 
 const MAIN_NET = {
@@ -14,31 +15,6 @@ const MAIN_NET = {
     dojoFactory: "inj1pc2vxcmnyzawnwkf03n2ggvt997avtuwagqngk",
     explorerUrl: "https://explorer.injective.network"
 }
-
-interface TokenInfo {
-    name: string;
-    symbol: string;
-    decimals: number;
-    total_supply: number;
-}
-
-interface Holder {
-    address: string;
-    balance: string;
-    percentageHeld: string;
-}
-
-interface TokenMeta {
-    denom: string;
-}
-
-interface PairInfo {
-    token0Meta: TokenMeta;
-    token1Meta: TokenMeta;
-    liquidity_token: string;
-    contract_addr: string;
-}
-
 
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
 const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
@@ -73,19 +49,27 @@ const TokenLiquidity = () => {
                 ? r.token1Meta.denom
                 : r.token0Meta.denom;
 
-            // if (
-            //     memeAddress.includes("factory")
-            //     || memeAddress.includes("peggy")
-            //     || memeAddress.includes("ibc")
-            // ) {
-            //     module.getDenomMetadata(memeAddress)
-            // }
+            if (
+                memeAddress.includes("factory")
+                || memeAddress.includes("peggy")
+                || memeAddress.includes("ibc")
+            ) {
+                module.getDenomMetadata(memeAddress).then(r => {
+                    setTokenInfo(r)
+                }).catch((e: unknown) => {
+                    console.log(e)
+                });
 
-            module.getTokenInfo(memeAddress).then((r: any) => { // Assuming getTokenInfo's return type is dynamic, otherwise define an interface
-                setTokenInfo(r);
-            }).catch((e: unknown) => {
-                console.log(e);
-            });
+            }
+            else {
+                module.getTokenInfo(memeAddress).then((r: any) => { // Assuming getTokenInfo's return type is dynamic, otherwise define an interface
+                    setTokenInfo(r);
+                }).catch((e: unknown) => {
+                    console.log(e);
+                });
+
+            }
+
 
             const liquidityToken = r.liquidity_token;
             module.getTokenHolders(liquidityToken, setQueriedPerformed).then((r: Holder[]) => {
@@ -150,7 +134,7 @@ const TokenLiquidity = () => {
                                 <div>name: {tokenInfo.name}</div>
                                 <div>symbol: {tokenInfo.symbol}</div>
                                 <div>decimals: {tokenInfo.decimals}</div>
-                                <div>total supply: {tokenInfo.total_supply / Math.pow(10, tokenInfo.decimals)}</div>
+                                {tokenInfo.total_supply && <div>total supply: {tokenInfo.total_supply / Math.pow(10, tokenInfo.decimals)}</div>}
                             </div>
                         )}
 
