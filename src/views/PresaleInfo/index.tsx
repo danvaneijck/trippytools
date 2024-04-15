@@ -2,6 +2,7 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 // @ts-ignore
 // import CELLS from 'vanta/dist/vanta.cells.min'
 import WAVES from 'vanta/dist/vanta.waves.min'
+import logo from "../../assets/trippy-coin2.jpg";
 
 import { Link } from 'react-router-dom';
 // import logo from '../../assets/trippy-coin2.jpg';
@@ -33,7 +34,7 @@ const PreSaleInfo = () => {
     const shroomAddress = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 
     const [balance, setBalance] = useState(0)
-    const [goal] = useState(2800)
+    const [goal] = useState(1000)
     const [injPrice, setInjPrice] = useState(0);
 
     const [shroomBalance, setShroomBalance] = useState(0)
@@ -163,17 +164,28 @@ const PreSaleInfo = () => {
                                 {shroomBalance.toFixed(0)} shroooms eaten 🍄
                             </a>
                         </div>
+                       
 
-                        <div className='text-center w-full text-lg'>
-                            <Countdown targetUtcTime='2024-04-15T20:00:00Z' />
+                        <div className='text-center w-full text-2xl'>
+                            <Countdown targetUtcTime='2024-04-19T20:00:00Z' />
                         </div>
-                        <div>
+                        <div className='text-center  text-base mt-2 mx-5'>
+                            If max cap is not hit OR unique wallets are not over 100, all INJ and SHROOM will be refunded. 
+                            Otherwise, all airdrops will be completed and liquidity added on 4:20pm April 20th UTC 😎
+                        </div>
+                        <div className='flex flex-row items-center justify-center mt-2'>
                             <Link
                                 to="/trippy-distribution"
                                 className='text-sm md:text-lg hover:cursor-pointer hover:underline hover:text-xl mr-10'
                             >
-                                view $TRIPPY distribution
+                                view $TRIPPY distribution 
                             </Link>
+                            <img
+                                src={logo}
+                                style={{ borderRadius: "50%", width: 20, height: 20 }}
+                                className=""
+                                alt="Spinning Image"
+                            />
                         </div>
                         <div className='text-center mt-5 text-xl md:text-3xl font-bold flex flex-row justify-center items-center'>
                             <FaDiscord className='mr-5 text-5xl' /> <a className='hover:underline' href='https://discord.gg/zH2xDWDy'>https://discord.gg/zH2xDWDy</a>

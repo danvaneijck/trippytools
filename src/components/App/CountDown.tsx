@@ -55,7 +55,7 @@ function Countdown({ targetUtcTime }: CountdownProps) {
     return (
         <div>
             <p>
-                pre sale finishes in {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
+                finishes in {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
             </p>
         </div>
     );

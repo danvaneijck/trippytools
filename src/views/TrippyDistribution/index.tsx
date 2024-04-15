@@ -167,11 +167,11 @@ const TrippyDistribution = () => {
                         alt="Spinning Image"
                     />
                 </div>
-                <div className="text-center mt-2 mb-2 hover:underline">
+                <div className="text-center mt-2 mb-1 hover:underline">
                     <Link to={"/"}>{"<-"} back to presale homepage</Link>
                 </div>
-                <div className="text-center w-full">
-                    <Countdown targetUtcTime="2024-04-15T20:00:00Z" />
+                <div className="text-center w-full text-xl">
+                    <Countdown targetUtcTime="2024-04-19T20:00:00Z" />
                 </div>
                 <div className="text-center w-full">
                     total raised: {totalRaised != 0 && totalRaised.toFixed(2)}{" "}
@@ -306,7 +306,7 @@ const TrippyDistribution = () => {
                                                                 100;
                                                             let emoji = "🦐";
                                                             if (
-                                                                percentage > 5
+                                                                percentage > 4
                                                             ) {
                                                                 emoji = "🐋";
                                                             } else if (
@@ -314,7 +314,7 @@ const TrippyDistribution = () => {
                                                             ) {
                                                                 emoji = "🦈";
                                                             } else if (
-                                                                percentage > 1
+                                                                percentage > 0.5
                                                             ) {
                                                                 emoji = "🐟";
                                                             }
