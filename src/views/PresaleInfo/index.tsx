@@ -188,7 +188,7 @@ const PreSaleInfo = () => {
                             />
                         </div>
                         <div className='text-center mt-5 text-xl md:text-3xl font-bold flex flex-row justify-center items-center'>
-                            <FaDiscord className='mr-5 text-5xl' /> <a className='hover:underline' href='https://discord.gg/zH2xDWDy'>https://discord.gg/zH2xDWDy</a>
+                            <FaDiscord className='mr-5 text-5xl' /> <a className='hover:underline' href='https://discord.gg/Nnz34jzA5T'>https://discord.gg/Nnz34jzA5T</a>
                         </div>
                         <div className='text-center text-sm'>join the discord community and get trippy to access inj-sniper and sei-sniper bots that log new pairs and liquidity</div>
                         <div className='text-center mt-5 text-2xl md:text-3xl font-bold'>
