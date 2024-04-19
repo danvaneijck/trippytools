@@ -1,12 +1,8 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState } from 'react';
 // @ts-ignore
 // import CELLS from 'vanta/dist/vanta.cells.min'
 import WAVES from 'vanta/dist/vanta.waves.min'
-
 import { Link } from 'react-router-dom';
-// import logo from '../../assets/trippy-coin2.jpg';
-import shroom from '../../assets/shroom.jpg';
-
 
 const Home = () => {
 
