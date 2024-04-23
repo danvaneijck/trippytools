@@ -21,3 +21,14 @@ export interface PairInfo {
     liquidity_token: string;
     contract_addr: string;
 }
+
+export interface MarketingInfo  {
+        project: string
+        description: string
+        logo: {
+            url: string
+        },
+        marketing: string
+    }
+
+

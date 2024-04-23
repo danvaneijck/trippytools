@@ -2,10 +2,8 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 // @ts-ignore
 // import CELLS from 'vanta/dist/vanta.cells.min'
 import WAVES from 'vanta/dist/vanta.waves.min'
-import logo from "../../assets/trippy-coin2.jpg";
 
 import { Link } from 'react-router-dom';
-// import logo from '../../assets/trippy-coin2.jpg';
 import shroom from '../../assets/shroom.jpg';
 import TokenUtils from '../../modules/tokenUtils';
 import { FaDiscord } from "react-icons/fa";
@@ -112,13 +110,13 @@ const PreSaleInfo = () => {
     return <div ref={myRef} className='overflow-hidden'>
         <header className="bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
             <div className="container mx-auto flex items-center p-2 text-sm md:text-base">
-                <Link to="/trippy-distribution" className="font-bold hover:underline mr-5">
+                {/* <Link to="/trippy-distribution" className="font-bold hover:underline mr-5">
                     $TRIPPY distribution
-                </Link>
-                <Link to="/token-holders" className="font-bold hover:underline mr-5">
+                </Link> */}
+                <Link to="/token-holders?address=inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8" className="font-bold hover:underline mr-5">
                     holders tool
                 </Link>
-                <Link to="/token-liquidity" className="font-bold hover:underline ">
+                <Link to="/token-liquidity?address=inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl" className="font-bold hover:underline ">
                     liquidity tool
                 </Link>
             </div>
@@ -180,12 +178,12 @@ const PreSaleInfo = () => {
                             >
                                 view $TRIPPY distribution 
                             </Link>
-                            <img
+                            {/* <img
                                 src={logo}
                                 style={{ borderRadius: "50%", width: 20, height: 20 }}
                                 className=""
                                 alt="Spinning Image"
-                            />
+                            /> */}
                         </div>
                         <div className='text-center mt-5 text-xl md:text-3xl font-bold flex flex-row justify-center items-center'>
                             <FaDiscord className='mr-5 text-5xl' /> <a className='hover:underline' href='https://discord.gg/Nnz34jzA5T'>https://discord.gg/Nnz34jzA5T</a>
@@ -235,7 +233,7 @@ const PreSaleInfo = () => {
                     <div className='text-sm my-5'>🍄🔥 all shrooms sent in will be burned🔥 🍄</div>
                     <div className='flex flex-row justify-center'>
                         <Link
-                            to="/token-holders"
+                            to="/token-holders?address=inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
                             className='text-sm md:text-lg hover:cursor-pointer hover:text-xl mr-10'
                         >
                             view $SHROOM holder distribution

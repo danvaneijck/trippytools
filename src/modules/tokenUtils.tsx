@@ -161,11 +161,29 @@ class TokenUtils {
         }
     }
 
+    async getTokenMarketing(denom: string) {
+        try {
+            const query = Buffer.from(
+                JSON.stringify({ marketing_info: {} })
+            ).toString("base64");
+            const token = await this.chainGrpcWasmApi.fetchSmartContractState(
+                denom,
+                query
+            );
+            return JSON.parse(new TextDecoder().decode(token.data));
+        } catch (error) {
+            console.error("Error fetching token info:", denom, error);
+            return {};
+        }
+    }
+
     async getDenomMetadata(denom: string) {
         const data = await this.chainGrpcBankApi.fetchDenomMetadata(denom);
         const matchingDenomUnit = data.denomUnits.find(
             (unit) => unit.denom === data.display
         );
+
+        console.log("DENOM METADATA", data)
 
         const supply = await this.chainGrpcBankApi.fetchSupplyOf(denom);
 

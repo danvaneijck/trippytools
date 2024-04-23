@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from "react";
-import logo from "../../assets/trippy-coin2.jpg";
 import TokenUtils from "../../modules/tokenUtils";
 import { GridLoader } from "react-spinners";
 import { Link } from "react-router-dom";
@@ -141,16 +140,16 @@ const TrippyDistribution = () => {
             <header className="bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
                 <div className="container mx-auto flex items-center p-2 text-sm md:text-base">
                     <Link to="/" className="font-bold hover:underline mr-5">
-                        pre sale
+                        home
                     </Link>
                     <Link
-                        to="/token-holders"
+                        to="/token-holders?address=inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
                         className="font-bold hover:underline mr-5"
                     >
                         holders tool
                     </Link>
                     <Link
-                        to="/token-liquidity"
+                        to="/token-liquidity?address=inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
                         className="font-bold hover:underline "
                     >
                         liquidity tool
@@ -160,12 +159,12 @@ const TrippyDistribution = () => {
             <div>
                 <div className="pt-14 text-center text-xl md:text-4xl font-bold flex flex-row justify-center items-center">
                     TRIPPY distribution
-                    <img
+                    {/* <img
                         src={logo}
                         style={{ borderRadius: "50%", width: 50, height: 50 }}
                         className="animate-3dspin ml-4"
                         alt="Spinning Image"
-                    />
+                    /> */}
                 </div>
                 <div className="text-center mt-2 mb-1 hover:underline">
                     <Link to={"/"}>{"<-"} back to presale homepage</Link>
@@ -271,7 +270,7 @@ const TrippyDistribution = () => {
                                                                 amount.tokensToSend
                                                             ) / Math.pow(10, 18)
                                                         ).toFixed(0)}
-                                                    <img
+                                                    {/* <img
                                                         src={logo}
                                                         style={{
                                                             borderRadius: "50%",
@@ -280,7 +279,7 @@ const TrippyDistribution = () => {
                                                         }}
                                                         className="ml-2"
                                                         alt="Spinning Image"
-                                                    />
+                                                    /> */}
                                                 </td>
                                                 <td className="pr-10 ">
                                                     ${amount.tokensToSend && lpStartingPrice && injPrice &&

@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { GridLoader } from "react-spinners";
 import { Link } from "react-router-dom";
-import { Holder, TokenInfo } from "../../types";
+import { Holder, MarketingInfo, TokenInfo } from "../../types";
+import { useSearchParams } from 'react-router-dom';
 
 const MAIN_NET = {
     grpc: "https://sentry.chain.grpc-web.injective.network",
@@ -19,31 +20,60 @@ const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
 const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
 
 const TokenHolders = () => {
+
+    const [module, setModule] = useState<TokenUtils | null>(null);
+
     const [contractAddress, setContractAddress] = useState(
         "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
     );
 
+    const [searchParams, setSearchParams] = useSearchParams();
+
     const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
+    const [pairMarketing, setPairMarketing] = useState<MarketingInfo | null>(null);
+
     const [holders, setHolders] = useState<Holder[]>([]);
     const [queriesPerformed, setQueriedPerformed] = useState<number>(0);
 
     const [loading, setLoading] = useState(false);
 
-    const getTokenHolders = useCallback(() => {
-        console.log(contractAddress);
+    const [lastLoadedAddress, setLastLoadedAddress] = useState("")
+
+    useEffect(() => {
+        if (!module) {
+            setModule(new TokenUtils(MAIN_NET))
+        }
+    }, [])
+
+    useEffect(() => {
+        const address = searchParams.get("address")
+        if (address && address !== lastLoadedAddress && module) {
+            setContractAddress(address)
+            getTokenHolders(address)
+        }
+    }, [searchParams, lastLoadedAddress, module])
+
+    const setAddress = useCallback(() => {
+        setSearchParams({
+            address: contractAddress
+        })
+    }, [setSearchParams, contractAddress])
+
+    const getTokenHolders = useCallback((address: string) => {
+        if (!module) return
+
+        console.log(address);
         setLoading(true);
         setQueriedPerformed(0);
         setHolders([]);
 
-        const module = new TokenUtils(MAIN_NET);
-
         if (
-            contractAddress.includes("factory") ||
-            contractAddress.includes("peggy") ||
-            contractAddress.includes("ibc")
+            address.includes("factory") ||
+            address.includes("peggy") ||
+            address.includes("ibc")
         ) {
             module
-                .getDenomMetadata(contractAddress)
+                .getDenomMetadata(address)
                 .then((r) => {
                     setTokenInfo(r);
                 })
@@ -52,17 +82,23 @@ const TokenHolders = () => {
                 });
         } else {
             module
-                .getTokenInfo(contractAddress)
+                .getTokenInfo(address)
                 .then((r) => {
                     setTokenInfo(r);
                 })
                 .catch((e: unknown) => {
                     console.log(e);
                 });
+            module.getTokenMarketing(address).then(r => {
+                console.log(r)
+                setPairMarketing(r)
+            }).catch(e => {
+                console.log(e)
+            })
         }
 
         module
-            .getTokenHolders(contractAddress, setQueriedPerformed)
+            .getTokenHolders(address, setQueriedPerformed)
             .then((r: Holder[]) => {
                 console.log(r);
                 setHolders(r);
@@ -72,23 +108,25 @@ const TokenHolders = () => {
                 console.log(e);
                 setLoading(false);
             });
-    }, [contractAddress]);
+        setLastLoadedAddress(address)
+
+    }, [module]);
 
     return (
         <div className="flex flex-col min-h-screen pb-10">
             <header className="bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
                 <div className="container mx-auto flex items-center p-2 text-sm md:text-base">
                     <Link to="/" className="font-bold hover:underline mr-5">
-                        pre sale
+                        home
                     </Link>
-                    <Link
+                    {/* <Link
                         to="/trippy-distribution"
                         className="font-bold hover:underline mr-5"
                     >
                         $TRIPPY distribution
-                    </Link>
+                    </Link> */}
                     <Link
-                        to="/token-liquidity"
+                        to="/token-liquidity?address=inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
                         className="font-bold hover:underline "
                     >
                         liquidity tool
@@ -126,26 +164,42 @@ const TokenHolders = () => {
 
                         <button
                             disabled={loading}
-                            onClick={getTokenHolders}
+                            onClick={setAddress}
                             className="mt-5 bg-gray-800 rounded p-2 w-full text-white border border-white"
                         >
                             Get token holders
                         </button>
 
-                        {tokenInfo && (
-                            <div className="mt-2 text-base text-white">
-                                <div>name: {tokenInfo.name}</div>
-                                <div>symbol: {tokenInfo.symbol}</div>
-                                <div>decimals: {tokenInfo.decimals}</div>
-                                {tokenInfo.total_supply && (
-                                    <div>
-                                        total supply:{" "}
-                                        {tokenInfo.total_supply /
-                                            Math.pow(10, tokenInfo.decimals)}
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                        <div className="flex flex-col md:flex-row justify-between">
+                            {tokenInfo && (
+                                <div className="mt-5 text-base text-white">
+                                    <div>name: {tokenInfo.name}</div>
+                                    <div>symbol: {tokenInfo.symbol}</div>
+                                    <div>decimals: {tokenInfo.decimals}</div>
+                                    {tokenInfo.total_supply && (
+                                        <div>
+                                            total supply:{" "}
+                                            {tokenInfo.total_supply /
+                                                Math.pow(10, tokenInfo.decimals)}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                            {pairMarketing && (
+                                <div className="mt-5 text-base text-white">
+                                    <img
+                                        src={pairMarketing.logo.url}
+                                        style={{ width: 50, height: 50 }}
+                                        className="mb-2"
+                                        alt="logo"
+                                    />
+                                    <div>project: {pairMarketing.project}</div>
+                                    <div>description: {pairMarketing.description}</div>
+                                    <div>marketing: {pairMarketing.marketing}</div>
+                                    
+                                </div>
+                            )}
+                        </div>
 
                         {loading && (
                             <div className="flex flex-col items-center justify-center pt-5">
@@ -158,7 +212,7 @@ const TokenHolders = () => {
 
                         {holders.length > 0 && (
                             <div className="mt-5">
-                                <div>Total holders: {holders.length}</div>
+                                <div>Total token holders: {holders.length}</div>
                                 <div className="overflow-x-auto mt-2">
                                     <table className="table-auto w-full">
                                         <thead className="text-white">

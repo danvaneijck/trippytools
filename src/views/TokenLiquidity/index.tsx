@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { GridLoader } from "react-spinners";
 import { Link } from "react-router-dom";
-import { Holder, PairInfo, TokenInfo } from "../../types";
+import { Holder, MarketingInfo, PairInfo, TokenInfo } from "../../types";
+import { useSearchParams } from 'react-router-dom';
+import { IoIosWarning } from "react-icons/io";
 
 const MAIN_NET = {
     grpc: "https://sentry.chain.grpc-web.injective.network",
@@ -19,28 +21,57 @@ const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
 const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
 
 const TokenLiquidity = () => {
+
+    const [module, setModule] = useState<TokenUtils | null>(null);
+
     const [contractAddress, setContractAddress] = useState(
         "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
     );
 
+    const [lastLoadedAddress, setLastLoadedAddress] = useState("")
+    const [searchParams, setSearchParams] = useSearchParams();
     const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
-
     const [holders, setHolders] = useState<Holder[]>([]);
     const [queriesPerformed, setQueriedPerformed] = useState<number>(0);
-    const [pairInfo, setPairInfo] = useState<PairInfo | undefined>(undefined);
+    const [pairInfo, setPairInfo] = useState<PairInfo | null>(null);
+    const [pairMarketing, setPairMarketing] = useState<MarketingInfo | null>(null);
 
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null)
 
-    const getTokenHolders = useCallback(() => {
-        console.log(contractAddress);
+    useEffect(() => {
+        const address = searchParams.get("address")
+        if (address && address !== lastLoadedAddress && module) {
+            setContractAddress(address)
+            getTokenHolders(address)
+        }
+    }, [searchParams, lastLoadedAddress, module])
+
+    const setAddress = useCallback(() => {
+        setSearchParams({
+            address: contractAddress
+        })
+    }, [setSearchParams, contractAddress])
+
+    useEffect(() => {
+        if (!module) {
+            setModule(new TokenUtils(MAIN_NET))
+        }
+    }, [])
+
+    const getTokenHolders = useCallback((address: string) => {
+        if (!module) return
+
+        setError(null)
         setLoading(true);
+        setTokenInfo(null);
+        setPairInfo(null);
+        setPairMarketing(null);
         setQueriedPerformed(0);
         setHolders([]);
 
-        const module = new TokenUtils(MAIN_NET);
-
         module
-            .getPairInfo(contractAddress)
+            .getPairInfo(address)
             .then((r: PairInfo) => {
                 console.log(r);
                 setPairInfo(r);
@@ -67,12 +98,17 @@ const TokenLiquidity = () => {
                     module
                         .getTokenInfo(memeAddress)
                         .then((r: any) => {
-                            // Assuming getTokenInfo's return type is dynamic, otherwise define an interface
                             setTokenInfo(r);
                         })
                         .catch((e: unknown) => {
                             console.log(e);
                         });
+                    module.getTokenMarketing(memeAddress).then(r => {
+                        console.log(r)
+                        setPairMarketing(r)
+                    }).catch(e => {
+                        console.log(e)
+                    })
                 }
 
                 const liquidityToken = r.liquidity_token;
@@ -89,28 +125,33 @@ const TokenLiquidity = () => {
                     });
             })
             .catch((e) => {
+                setLoading(false);
                 console.log(e);
+                setError(e.message)
             });
-    }, [contractAddress]);
+
+        setLastLoadedAddress(address)
+
+    }, [module]);
 
     return (
         <div className="flex flex-col min-h-screen">
             <header className="bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
                 <div className="container mx-auto flex items-center p-2 text-sm md:text-base">
                     <Link to="/" className="font-bold hover:underline mr-5">
-                        pre sale
+                        home
                     </Link>
-                    <Link
+                    {/* <Link
                         to="/trippy-distribution"
                         className="font-bold hover:underline mr-5"
                     >
                         $TRIPPY distribution
-                    </Link>
+                    </Link> */}
                     <Link
-                        to="/token-holders"
+                        to="/token-holders?address=inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
                         className="font-bold hover:underline "
                     >
-                        holder tool
+                        token holder tool
                     </Link>
                 </div>
             </header>
@@ -144,26 +185,48 @@ const TokenLiquidity = () => {
 
                         <button
                             disabled={loading}
-                            onClick={getTokenHolders}
+                            onClick={setAddress}
                             className="bg-gray-800 rounded p-2 mt-5 w-full text-white border border-white"
                         >
                             Get token liquidity
                         </button>
 
-                        {tokenInfo && (
-                            <div className="mt-5 text-base text-white">
-                                <div>name: {tokenInfo.name}</div>
-                                <div>symbol: {tokenInfo.symbol}</div>
-                                <div>decimals: {tokenInfo.decimals}</div>
-                                {tokenInfo.total_supply && (
-                                    <div>
-                                        total supply:{" "}
-                                        {tokenInfo.total_supply /
-                                            Math.pow(10, tokenInfo.decimals)}
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                        {error && <div className="text-red-500 mt-2">
+                            {error}
+                        </div>
+                        }
+
+                        <div className="flex flex-col md:flex-row justify-between">
+                            {tokenInfo && (
+                                <div className="mt-5 text-base text-white">
+                                    <div>name: {tokenInfo.name}</div>
+                                    <div>symbol: {tokenInfo.symbol}</div>
+                                    <div>decimals: {tokenInfo.decimals}</div>
+                                    {tokenInfo.total_supply && (
+                                        <div>
+                                            total supply:{" "}
+                                            {tokenInfo.total_supply /
+                                                Math.pow(10, tokenInfo.decimals)}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                            {pairMarketing && (
+                                <div className="mt-5 text-base text-white">
+                                    <img
+                                        src={pairMarketing.logo.url}
+                                        style={{ width: 50, height: 50 }}
+                                        className="mb-2"
+                                        alt="logo"
+                                    />
+                                    <div>project: {pairMarketing.project}</div>
+                                    <div>description: {pairMarketing.description}</div>
+                                    <div>marketing: {pairMarketing.marketing}</div>
+                                    
+                                </div>
+                            )}
+                        </div>
+
 
                         {pairInfo && (
                             <div className="mt-2 text-white">
@@ -187,7 +250,7 @@ const TokenLiquidity = () => {
 
                         {holders.length > 0 && (
                             <div className="mt-2 overflow-x-auto">
-                                <div>Total holders: {holders.length}</div>
+                                <div>Total liquidity holders: {holders.length}</div>
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="">
                                         <tr>
@@ -208,7 +271,7 @@ const TokenLiquidity = () => {
                                                 key={index}
                                                 className="border-b"
                                             >
-                                                <td className="px-4 py-1 text-blue-600">
+                                                <td className="px-4 py-1 text-blue-600 flex flex-row items-center">
                                                     <a
                                                         href={`https://explorer.injective.network/account/${holder.address}`}
                                                     >
@@ -232,9 +295,20 @@ const TokenLiquidity = () => {
                                                         "inj1lq9wn94d49tt7gc834cxkm0j5kwlwu4gm65lhe" && (
                                                             <span className="text-green-400 ml-2">
                                                                 {" "}
-                                                                trippykiwi 🥷
+                                                                trippykiwi (dev) 🥷
                                                             </span>
                                                         )}
+                                                    {pairInfo && holder.address == pairInfo.contract_addr && (
+                                                        <span className="text-blue-400 ml-2">
+                                                            {" "}
+                                                            pair contract
+                                                        </span>
+                                                    )}
+                                                    {holder.address != dojoBurnAddress && holder.address != injBurnAddress && Number(holder.percentageHeld) > 99 && (
+                                                        <span className="text-orange-400 ml-2 flex text-xl">
+                                                            <IoIosWarning />
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="px-4 py-2">
                                                     {holder.balance}
