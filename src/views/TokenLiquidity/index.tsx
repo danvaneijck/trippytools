@@ -32,20 +32,12 @@ const TokenLiquidity = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
     const [holders, setHolders] = useState<Holder[]>([]);
-    const [queriesPerformed, setQueriedPerformed] = useState<number>(0);
+    const [progress, setProgress] = useState<string>("");
     const [pairInfo, setPairInfo] = useState<PairInfo | null>(null);
     const [pairMarketing, setPairMarketing] = useState<MarketingInfo | null>(null);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null)
-
-    useEffect(() => {
-        const address = searchParams.get("address")
-        if (address && address !== lastLoadedAddress && module) {
-            setContractAddress(address)
-            getTokenHolders(address)
-        }
-    }, [searchParams, lastLoadedAddress, module])
 
     const setAddress = useCallback(() => {
         setSearchParams({
@@ -57,7 +49,7 @@ const TokenLiquidity = () => {
         if (!module) {
             setModule(new TokenUtils(MAIN_NET))
         }
-    }, [])
+    }, [module])
 
     const getTokenHolders = useCallback((address: string) => {
         if (!module) return
@@ -67,7 +59,7 @@ const TokenLiquidity = () => {
         setTokenInfo(null);
         setPairInfo(null);
         setPairMarketing(null);
-        setQueriedPerformed(0);
+        setProgress("");
         setHolders([]);
 
         module
@@ -113,7 +105,7 @@ const TokenLiquidity = () => {
 
                 const liquidityToken = r.liquidity_token;
                 module
-                    .getCW20TokenHolders(liquidityToken, setQueriedPerformed)
+                    .getCW20TokenHolders(liquidityToken, setProgress)
                     .then((r: Holder[]) => {
                         console.log(r);
                         setHolders(r);
@@ -127,12 +119,22 @@ const TokenLiquidity = () => {
             .catch((e) => {
                 setLoading(false);
                 console.log(e);
-                setError(e.message)
+                if (e && e.message) {
+                    setError(e.message)
+                }
             });
 
         setLastLoadedAddress(address)
 
     }, [module]);
+
+    useEffect(() => {
+        const address = searchParams.get("address")
+        if (address && address !== lastLoadedAddress && module) {
+            setContractAddress(address)
+            getTokenHolders(address)
+        }
+    }, [searchParams, lastLoadedAddress, module, getTokenHolders])
 
     return (
         <div className="flex flex-col min-h-screen">
@@ -141,12 +143,7 @@ const TokenLiquidity = () => {
                     <Link to="/" className="font-bold hover:underline mr-5">
                         home
                     </Link>
-                    {/* <Link
-                        to="/trippy-distribution"
-                        className="font-bold hover:underline mr-5"
-                    >
-                        $TRIPPY distribution
-                    </Link> */}
+
                     <Link
                         to="/token-holders?address=inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
                         className="font-bold hover:underline "
@@ -242,9 +239,10 @@ const TokenLiquidity = () => {
                         {loading && (
                             <div className="flex flex-col items-center justify-center pt-5">
                                 <GridLoader color="#36d7b7" />
-                                <div className="text-sm mt-2">
-                                    wallets checked: {queriesPerformed}
+                                {progress.length > 0 && <div className="text-sm mt-2">
+                                    {progress}
                                 </div>
+                                }
                             </div>
                         )}
 

@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { useRef, useEffect, useState } from 'react';
 // @ts-ignore
-// import CELLS from 'vanta/dist/vanta.cells.min'
 import WAVES from 'vanta/dist/vanta.waves.min'
 import { Link } from 'react-router-dom';
 
@@ -42,9 +44,6 @@ const Home = () => {
     return <div ref={myRef} className='overflow-hidden h-screen'>
         <header className="bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
             <div className="container mx-auto flex items-center p-2 text-sm md:text-base">
-                {/* <Link to="/trippy-distribution" className="font-bold hover:underline mr-5">
-                    $TRIPPY distribution
-                </Link> */}
                 <Link to="/token-holders?address=inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8" className="font-bold hover:underline mr-5">
                     token holders tool
                 </Link>
@@ -60,12 +59,12 @@ const Home = () => {
             <div className='text-center text-xl md:text-3xl '>
                 on injective
             </div>
-            
+
             <div className='flex-grow'>
-            <div className='flex justify-center'>
-                <div className='mt-2 text-center py-4 text-2xl md:text-4xl md:w-1/2 rounded-xl p-2 mb-2 bg-gradient-to-br from-transparent to-black mx-2'>
-                    Building tools for the community 
-                </div>
+                <div className='flex justify-center'>
+                    <div className='mt-2 text-center py-4 text-2xl md:text-4xl md:w-1/2 rounded-xl p-2 mb-2 bg-gradient-to-br from-transparent to-black mx-2'>
+                        Building tools for the community
+                    </div>
                 </div>
             </div>
 
