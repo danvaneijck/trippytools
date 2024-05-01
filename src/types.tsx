@@ -3,11 +3,12 @@ export interface TokenInfo {
     symbol: string;
     decimals: number;
     total_supply?: number;
+    description?: string
 }
 
 export interface Holder {
     address: string;
-    balance: string;
+    balance: string | number;
     percentageHeld: string;
 }
 
@@ -22,13 +23,13 @@ export interface PairInfo {
     contract_addr: string;
 }
 
-export interface MarketingInfo  {
-        project: string
-        description: string
-        logo: {
-            url: string
-        },
-        marketing: string
-    }
+export interface MarketingInfo {
+    project: string
+    description: string
+    logo: {
+        url: string
+    },
+    marketing: string
+}
 
 

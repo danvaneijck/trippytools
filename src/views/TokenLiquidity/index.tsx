@@ -113,7 +113,7 @@ const TokenLiquidity = () => {
 
                 const liquidityToken = r.liquidity_token;
                 module
-                    .getTokenHolders(liquidityToken, setQueriedPerformed)
+                    .getCW20TokenHolders(liquidityToken, setQueriedPerformed)
                     .then((r: Holder[]) => {
                         console.log(r);
                         setHolders(r);
@@ -222,7 +222,7 @@ const TokenLiquidity = () => {
                                     <div>project: {pairMarketing.project}</div>
                                     <div>description: {pairMarketing.description}</div>
                                     <div>marketing: {pairMarketing.marketing}</div>
-                                    
+
                                 </div>
                             )}
                         </div>

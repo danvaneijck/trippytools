@@ -33,9 +33,9 @@ const TokenHolders = () => {
     const [pairMarketing, setPairMarketing] = useState<MarketingInfo | null>(null);
 
     const [holders, setHolders] = useState<Holder[]>([]);
-    const [queriesPerformed, setQueriedPerformed] = useState<number>(0);
 
     const [loading, setLoading] = useState(false);
+    const [progress, setProgress] = useState("");
 
     const [lastLoadedAddress, setLastLoadedAddress] = useState("")
 
@@ -43,15 +43,8 @@ const TokenHolders = () => {
         if (!module) {
             setModule(new TokenUtils(MAIN_NET))
         }
-    }, [])
+    }, [module])
 
-    useEffect(() => {
-        const address = searchParams.get("address")
-        if (address && address !== lastLoadedAddress && module) {
-            setContractAddress(address)
-            getTokenHolders(address)
-        }
-    }, [searchParams, lastLoadedAddress, module])
 
     const setAddress = useCallback(() => {
         setSearchParams({
@@ -63,8 +56,10 @@ const TokenHolders = () => {
         if (!module) return
 
         console.log(address);
+        setTokenInfo(null)
+        setPairMarketing(null)
         setLoading(true);
-        setQueriedPerformed(0);
+        setProgress("")
         setHolders([]);
 
         if (
@@ -75,6 +70,7 @@ const TokenHolders = () => {
             module
                 .getDenomMetadata(address)
                 .then((r) => {
+                    console.log(r)
                     setTokenInfo(r);
                 })
                 .catch((e: unknown) => {
@@ -97,20 +93,44 @@ const TokenHolders = () => {
             })
         }
 
-        module
-            .getTokenHolders(address, setQueriedPerformed)
-            .then((r: Holder[]) => {
-                console.log(r);
-                setHolders(r);
+        if (
+            address.includes("factory") ||
+            address.includes("peggy") ||
+            address.includes("ibc")
+        ) {
+            module.getTokenFactoryTokenHolders(address, setProgress).then(r => {
+                console.log(r)
+                if (r) setHolders(r);
                 setLoading(false);
+            }).catch(e => {
+                console.log(e)
             })
-            .catch((e: unknown) => {
-                console.log(e);
-                setLoading(false);
-            });
-        setLastLoadedAddress(address)
+        }
+        else {
+            module
+                .getCW20TokenHolders(address, setProgress)
+                .then((r: Holder[]) => {
+                    console.log(r);
+                    setHolders(r);
+                    setLoading(false);
+                })
+                .catch((e: unknown) => {
+                    console.log(e);
+                    setLoading(false);
+                });
+            setLastLoadedAddress(address)
+        }
 
     }, [module]);
+
+    useEffect(() => {
+        const address = searchParams.get("address")
+        if (address && address !== lastLoadedAddress && module) {
+            setContractAddress(address)
+            getTokenHolders(address)
+        }
+    }, [searchParams, lastLoadedAddress, module, getTokenHolders])
+
 
     return (
         <div className="flex flex-col min-h-screen pb-10">
@@ -139,7 +159,7 @@ const TokenHolders = () => {
                     <div className="w-full max-w-screen-xl px-2 py-10">
                         <div className="text-center text-white">
                             <div className="text-xl">
-                                Get cw20 token holders
+                                Get cw20 / token factory token holders
                             </div>
                             <div className="text-xs">on Injective main net</div>
                         </div>
@@ -176,6 +196,7 @@ const TokenHolders = () => {
                                     <div>name: {tokenInfo.name}</div>
                                     <div>symbol: {tokenInfo.symbol}</div>
                                     <div>decimals: {tokenInfo.decimals}</div>
+                                    {tokenInfo.description && <div>description: {tokenInfo.description}</div>}
                                     {tokenInfo.total_supply && (
                                         <div>
                                             total supply:{" "}
@@ -196,7 +217,7 @@ const TokenHolders = () => {
                                     <div>project: {pairMarketing.project}</div>
                                     <div>description: {pairMarketing.description}</div>
                                     <div>marketing: {pairMarketing.marketing}</div>
-                                    
+
                                 </div>
                             )}
                         </div>
@@ -204,9 +225,11 @@ const TokenHolders = () => {
                         {loading && (
                             <div className="flex flex-col items-center justify-center pt-5">
                                 <GridLoader color="#36d7b7" />
-                                <div className="text-sm mt-2">
-                                    wallets checked: {queriesPerformed}
-                                </div>
+                                {progress.length > 0 &&
+                                    <div className="mt-2">
+                                        {progress}
+                                    </div>
+                                }
                             </div>
                         )}
 

@@ -15,6 +15,7 @@ import {
 import { Buffer } from "buffer";
 import moment from "moment";
 import { TokenInfo } from "../types";
+import { Coin } from "@injectivelabs/ts-types";
 
 /* global BigInt */
 
@@ -183,8 +184,6 @@ class TokenUtils {
             (unit) => unit.denom === data.display
         );
 
-        console.log("DENOM METADATA", data)
-
         const supply = await this.chainGrpcBankApi.fetchSupplyOf(denom);
 
         const tokenInfo: TokenInfo = {
@@ -192,6 +191,7 @@ class TokenUtils {
             symbol: data.symbol,
             decimals: matchingDenomUnit ? matchingDenomUnit.exponent : 0,
             total_supply: Number(supply.amount),
+            description: data.description
         };
 
         return tokenInfo;
@@ -209,7 +209,7 @@ class TokenUtils {
         accounts: string[],
         batchSize: number,
         tokenAddress: string,
-        callback: React.Dispatch<React.SetStateAction<number>>
+        setProgress: React.Dispatch<React.SetStateAction<string>>
     ): Promise<Record<string, string | null>> {
         const accountsWithBalances: Record<string, string | null> = {};
 
@@ -228,7 +228,7 @@ class TokenUtils {
                                 tokenAddress,
                                 balanceQuery
                             );
-                        callback((num) => num + 1);
+                        setProgress(`wallets checked: ${Object.values(accountsWithBalances).length}`);
                         const balanceDecoded = JSON.parse(
                             new TextDecoder().decode(balanceInfo.data)
                         );
@@ -256,9 +256,9 @@ class TokenUtils {
         return accountsWithBalances;
     }
 
-    async getTokenHolders(
+    async getCW20TokenHolders(
         tokenAddress: string,
-        callback: React.Dispatch<React.SetStateAction<number>>
+        setProgress: React.Dispatch<React.SetStateAction<string>>
     ): Promise<Holder[]> {
         const info = await this.getTokenInfo(tokenAddress);
 
@@ -292,7 +292,6 @@ class TokenUtils {
                         tokenAddress,
                         accountsQuery
                     );
-                callback((num) => num + 1);
 
                 const accountsDecoded = JSON.parse(
                     new TextDecoder().decode(accountsInfo.data)
@@ -319,7 +318,7 @@ class TokenUtils {
                 accounts,
                 5,
                 tokenAddress,
-                callback
+                setProgress
             );
 
             let nonZeroHolders = 0;
@@ -380,6 +379,77 @@ class TokenUtils {
             return [];
         }
     }
+
+    async getTokenFactoryTokenHolders(denom: string, setProgress: React.Dispatch<React.SetStateAction<string>>) {
+        try {
+
+            const info = await this.getDenomMetadata(denom)
+            const decimals = info.decimals
+
+            let allBalances: {
+                address: string;
+                balance: Coin | undefined;
+            }[] = [];
+            let total = 0
+
+            let nextPage: string | null = '';
+            do {
+                const response = await this.chainGrpcBankApi.fetchDenomOwners(denom, { key: nextPage });
+                if (response && response.pagination.total) {
+                    total = response.pagination.total
+                }
+
+                if (response && response.denomOwners) {
+                    allBalances = allBalances.concat(response.denomOwners);
+                } else {
+                    console.log("No balances found for the provided denom.");
+                    break;
+                }
+
+                nextPage = response.pagination.next;
+                console.log(nextPage, allBalances.length, response.pagination)
+                setProgress(`wallets checked: ${allBalances.length} / ${total}`)
+            } while (nextPage);
+
+            const accountsWithBalances = allBalances.map((holder) => {
+
+                return {
+                    address: holder.address,
+                    balance: holder.balance ? Number(holder.balance.amount) / Math.pow(10, decimals) : 0
+                }
+            })
+
+            const totalAmountHeld = accountsWithBalances.reduce((total, holder) => total + holder.balance, 0);
+            console.log(
+                `Total amount held: ${(
+                    Number(totalAmountHeld) / Math.pow(10, decimals)
+                ).toFixed(2)}`
+            );
+
+            const holdersWithPercentage = accountsWithBalances.map((holder) => ({
+                ...holder,
+                percentageHeld: totalAmountHeld === 0 ? 0 : (holder.balance / totalAmountHeld) * 100
+            }));
+
+            const sortedHolders = holdersWithPercentage.sort((a, b) => b.percentageHeld - a.percentageHeld);
+
+            console.log(`Total number of holders with non-zero balance: ${accountsWithBalances.length}`);
+            console.log(`Total amount held: ${(totalAmountHeld / Math.pow(10, decimals)).toFixed(2)}`);
+
+            const formattedHolders = sortedHolders.map((holder) => {
+                return {
+                    ...holder,
+                    percentageHeld: holder.percentageHeld.toFixed(2)
+                }
+            });
+
+            return formattedHolders;
+
+        } catch (error) {
+            console.error("Error fetching token holders:", error);
+        }
+    }
+
 
     async getAccountTx(address: string) {
         console.log("get presale tx from address", address);
