@@ -217,7 +217,6 @@ const TokenHolders = () => {
                                     <div>project: {pairMarketing.project}</div>
                                     <div>description: {pairMarketing.description}</div>
                                     <div>marketing: {pairMarketing.marketing}</div>
-
                                 </div>
                             )}
                         </div>
@@ -302,6 +301,13 @@ const TokenHolders = () => {
                                                                         pre sale address 🔥
                                                                     </span>
                                                                 )}
+                                                            {holder.address ==
+                                                                lastLoadedAddress && (
+                                                                    <span className="text-red-500 ml-2">
+                                                                        {" "}
+                                                                        token contract 🔥
+                                                                    </span>
+                                                                )}
                                                         </td>
                                                         <td className="px-6 py-1">
                                                             {holder.balance}{" "}
@@ -309,7 +315,7 @@ const TokenHolders = () => {
                                                         </td>
                                                         <td className="px-6 py-1">
                                                             {
-                                                                holder.percentageHeld
+                                                                holder.percentageHeld.toFixed(2)
                                                             }
                                                             %
                                                         </td>

@@ -44,11 +44,14 @@ const Home = () => {
     return <div ref={myRef} className='overflow-hidden h-screen'>
         <header className="bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
             <div className="container mx-auto flex items-center p-2 text-sm md:text-base">
-                <Link to="/token-holders?address=inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8" className="font-bold hover:underline mr-5">
+                <Link to="/token-holders" className="font-bold hover:underline mr-5">
                     token holders tool
                 </Link>
-                <Link to="/token-liquidity?address=inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl" className="font-bold hover:underline ">
+                <Link to="/token-liquidity?address=inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl" className="font-bold hover:underline mr-5">
                     token liquidity tool
+                </Link>
+                <Link to="/token-launch" className="font-bold hover:underline ">
+                    token launch tool
                 </Link>
             </div>
         </header>

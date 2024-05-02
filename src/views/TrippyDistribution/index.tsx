@@ -143,7 +143,7 @@ const TrippyDistribution = () => {
                         home
                     </Link>
                     <Link
-                        to="/token-holders?address=inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
+                        to="/token-holders"
                         className="font-bold hover:underline mr-5"
                     >
                         holders tool

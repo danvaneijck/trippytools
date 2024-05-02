@@ -28,7 +28,7 @@ interface EndpointConfig {
 interface Holder {
     address: string;
     balance: string;
-    percentageHeld: string;
+    percentageHeld: number;
 }
 
 interface PresaleAmount {
@@ -158,8 +158,8 @@ class TokenUtils {
             return JSON.parse(new TextDecoder().decode(token.data));
         } catch (error) {
             console.error("Error fetching token info:", denom, error);
-            return {};
         }
+        return
     }
 
     async getTokenMarketing(denom: string) {
@@ -174,7 +174,7 @@ class TokenUtils {
             return JSON.parse(new TextDecoder().decode(token.data));
         } catch (error) {
             console.error("Error fetching token info:", denom, error);
-            return {};
+
         }
     }
 
@@ -360,7 +360,7 @@ class TokenUtils {
                             balance: (
                                 Number(balance) / Math.pow(10, decimals)
                             ).toFixed(4),
-                            percentageHeld: percentageHeld.toFixed(2),
+                            percentageHeld: percentageHeld,
                         });
                     }
                 }
@@ -412,7 +412,6 @@ class TokenUtils {
             } while (nextPage);
 
             const accountsWithBalances = allBalances.map((holder) => {
-
                 return {
                     address: holder.address,
                     balance: holder.balance ? Number(holder.balance.amount) / Math.pow(10, decimals) : 0
@@ -422,7 +421,7 @@ class TokenUtils {
             const totalAmountHeld = accountsWithBalances.reduce((total, holder) => total + holder.balance, 0);
             console.log(
                 `Total amount held: ${(
-                    Number(totalAmountHeld) / Math.pow(10, decimals)
+                    Number(totalAmountHeld)
                 ).toFixed(2)}`
             );
 
@@ -434,12 +433,11 @@ class TokenUtils {
             const sortedHolders = holdersWithPercentage.sort((a, b) => b.percentageHeld - a.percentageHeld);
 
             console.log(`Total number of holders with non-zero balance: ${accountsWithBalances.length}`);
-            console.log(`Total amount held: ${(totalAmountHeld / Math.pow(10, decimals)).toFixed(2)}`);
 
             const formattedHolders = sortedHolders.map((holder) => {
                 return {
                     ...holder,
-                    percentageHeld: holder.percentageHeld.toFixed(2)
+                    percentageHeld: holder.percentageHeld
                 }
             });
 

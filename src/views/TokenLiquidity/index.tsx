@@ -145,7 +145,7 @@ const TokenLiquidity = () => {
                     </Link>
 
                     <Link
-                        to="/token-holders?address=inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
+                        to="/token-holders"
                         className="font-bold hover:underline "
                     >
                         token holder tool
@@ -312,7 +312,7 @@ const TokenLiquidity = () => {
                                                     {holder.balance}
                                                 </td>
                                                 <td className="px-4 py-2">
-                                                    {holder.percentageHeld}%
+                                                    {holder.percentageHeld.toFixed(2)}%
                                                 </td>
                                             </tr>
                                         ))}

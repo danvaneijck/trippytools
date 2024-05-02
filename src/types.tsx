@@ -9,7 +9,7 @@ export interface TokenInfo {
 export interface Holder {
     address: string;
     balance: string | number;
-    percentageHeld: string;
+    percentageHeld: number;
 }
 
 export interface TokenMeta {

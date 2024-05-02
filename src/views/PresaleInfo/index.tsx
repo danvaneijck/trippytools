@@ -113,7 +113,7 @@ const PreSaleInfo = () => {
                 {/* <Link to="/trippy-distribution" className="font-bold hover:underline mr-5">
                     $TRIPPY distribution
                 </Link> */}
-                <Link to="/token-holders?address=inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8" className="font-bold hover:underline mr-5">
+                <Link to="/token-holders" className="font-bold hover:underline mr-5">
                     holders tool
                 </Link>
                 <Link to="/token-liquidity?address=inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl" className="font-bold hover:underline ">
@@ -162,13 +162,13 @@ const PreSaleInfo = () => {
                                 {shroomBalance.toFixed(0)} shroooms eaten 🍄
                             </a>
                         </div>
-                       
+
 
                         <div className='text-center w-full text-2xl'>
                             <Countdown targetUtcTime='2024-04-19T20:00:00Z' />
                         </div>
                         <div className='text-center  text-base mt-2 mx-5'>
-                            If max cap is not hit OR unique wallets are not over 100, all INJ and SHROOM will be refunded. 
+                            If max cap is not hit OR unique wallets are not over 100, all INJ and SHROOM will be refunded.
                             Otherwise, all airdrops will be completed and liquidity added on 4:20pm April 20th UTC 😎
                         </div>
                         <div className='flex flex-row items-center justify-center mt-2'>
@@ -176,7 +176,7 @@ const PreSaleInfo = () => {
                                 to="/trippy-distribution"
                                 className='text-sm md:text-lg hover:cursor-pointer hover:underline hover:text-xl mr-10'
                             >
-                                view $TRIPPY distribution 
+                                view $TRIPPY distribution
                             </Link>
                             {/* <img
                                 src={logo}
