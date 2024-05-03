@@ -11,6 +11,7 @@ import {
     ExplorerTransaction,
     IndexerGrpcAccountPortfolioApi,
     Message,
+    ChainGrpcTokenFactoryApi,
 } from "@injectivelabs/sdk-ts";
 import { Buffer } from "buffer";
 import moment from "moment";
@@ -69,6 +70,7 @@ class TokenUtils {
     indexerRestExplorerApi: IndexerRestExplorerApi;
     preSaleAmounts: Map<string, PresaleAmount>;
     indexerGrpcAccountPortfolioApi: IndexerGrpcAccountPortfolioApi;
+    chainGrpcTokenFactoryApi: ChainGrpcTokenFactoryApi;
 
     constructor(endpoints: EndpointConfig) {
         this.endpoints = endpoints;
@@ -81,6 +83,7 @@ class TokenUtils {
         this.indexerRestExplorerApi = new IndexerRestExplorerApi(
             this.endpoints.explorer
         );
+        this.chainGrpcTokenFactoryApi = new ChainGrpcTokenFactoryApi(this.RPC)
 
         this.indexerGrpcAccountPortfolioApi =
             new IndexerGrpcAccountPortfolioApi(endpoints.indexer);
@@ -121,6 +124,12 @@ class TokenUtils {
         } catch (error) {
             console.error(error);
         }
+    }
+
+    async getUserTokens(address: string) {
+        const tokens = await this.chainGrpcTokenFactoryApi.fetchDenomsFromCreator(address)
+        console.log(tokens)
+        return tokens
     }
 
     async getBalanceOfToken(denom: string, wallet: string) {

@@ -4,18 +4,24 @@ import TokenLiquidity from "./views/TokenLiquidity";
 import TokenLaunch from './views/TokenLaunch';
 import TrippyDistribution from "./views/TrippyDistribution";
 import Home from "./views/Home";
+import MyTokens from './views/MyTokens';
+import { store } from './store/store';
+import { Provider } from 'react-redux';
 
 const App = () => {
   return (
-    <Router>
-      <Routes>
-        <Route path="/token-holders" element={<TokenHolders />} />
-        <Route path="/token-liquidity" element={<TokenLiquidity />} />
-        <Route path="/token-launch" element={<TokenLaunch />} />
-        <Route path="/trippy-distribution" element={<TrippyDistribution />} />
-        <Route path="/" element={<Home />} />
-      </Routes>
-    </Router>
+    <Provider store={store}>
+      <Router>
+        <Routes>
+          <Route path="/token-holders" element={<TokenHolders />} />
+          <Route path="/token-liquidity" element={<TokenLiquidity />} />
+          <Route path="/token-launch" element={<TokenLaunch />} />
+          <Route path="/trippy-distribution" element={<TrippyDistribution />} />
+          <Route path="/manage-tokens" element={<MyTokens />} />
+          <Route path="/" element={<Home />} />
+        </Routes>
+      </Router>
+    </Provider>
   );
 };
 
