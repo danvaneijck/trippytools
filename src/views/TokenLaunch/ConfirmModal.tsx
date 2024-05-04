@@ -11,7 +11,6 @@ import {
     CosmosTxV1Beta1Tx,
     createTransaction,
     getTxRawFromTxRawOrDirectSignResponse,
-    MsgChangeAdmin,
     MsgCreateDenom,
     MsgMint,
     MsgMultiSend,
@@ -124,7 +123,7 @@ const ConfirmModal = (props: {
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
 
-        const records = airdropDetails.map((record: { address: any; amountToAirdrop: any; }) => {
+        const records = airdropDetails.filter(record => (Number(record.amountToAirdrop) !== 0)).map((record: { address: any; amountToAirdrop: any; }) => {
             return {
                 address: record.address,
                 amount: record.amountToAirdrop
@@ -177,16 +176,6 @@ const ConfirmModal = (props: {
         await handleSendTx(pubKey, msg, injectiveAddress, offlineSigner, gas)
 
     }, [getKeplr, handleSendTx])
-
-
-    const burnAdmin = useCallback(async () => {
-        const msgChangeAdmin = MsgChangeAdmin.fromJSON({
-            denom: `factory/${injectiveAddress}/${subdenom}`,
-            sender: injectiveAddress,
-            newAdmin: 'inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49' /** SET TO ZERO ADDRESS */
-        });
-        // burn admin rights
-    }, [])
 
 
     const createAndMint = useCallback(async () => {
@@ -253,22 +242,17 @@ const ConfirmModal = (props: {
         console.log("metadata")
         setProgress("Upload denom metadata")
         await handleSendTx(pubKey, msgSetDenomMetadata, injectiveAddress, offlineSigner)
-        setProgress("Done...")
 
+        if (props.airdropDetails !== null && props.airdropDetails.length > 0) {
+            console.log("airdrop")
+            setProgress("Send airdrops")
+            await sendAirdrops(denom, props.tokenDecimals, props.airdropDetails)
+        }
+
+        setProgress("Done...")
         navigate('/manage-tokens');
 
-    }, [
-        getKeplr,
-        handleSendTx,
-        navigate,
-        networkConfig.chainId,
-        props.tokenDecimals,
-        props.tokenDescription,
-        props.tokenImage,
-        props.tokenName,
-        props.tokenSupply,
-        props.tokenSymbol
-    ])
+    }, [getKeplr, handleSendTx, navigate, networkConfig.chainId, props.airdropDetails, props.tokenDecimals, props.tokenDescription, props.tokenImage, props.tokenName, props.tokenSupply, props.tokenSymbol, sendAirdrops])
 
     return (
         <>
@@ -302,6 +286,55 @@ const ConfirmModal = (props: {
                                         <MdImageNotSupported className="text-5xl text-slate-500" />
                                     }
                                 </div>
+                            </div>
+                            <div>
+                                {props.airdropDetails !== null && props.airdropDetails.length > 0 &&
+                                    <div className="mt-5">
+                                        <div className="max-h-80 overflow-y-scroll overflow-x-auto">
+                                            <div>Total participants: {props.airdropDetails.filter(x => x.includeInDrop).length}</div>
+                                            <div className="text-xs">You should exclude addresses such as burn addresses, the pair contract etc..</div>
+                                            <div className="mt-2">
+                                                <table className="table-auto w-full">
+                                                    <thead className="text-white">
+                                                        <tr>
+
+                                                            <th className="px-4 py-2">
+                                                                Address
+                                                            </th>
+                                                            <th className="px-4 py-2">
+                                                                Airdrop
+                                                            </th>
+                                                            <th className="px-4 py-2">
+                                                                Percentage
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {props.airdropDetails.map((holder, index) => (
+                                                            <tr key={index} className="text-white border-b text-xs">
+
+                                                                <td className="px-6 py-1 whitespace-nowrap">
+                                                                    <a
+                                                                        className="hover:text-indigo-900"
+                                                                        href={`https://explorer.injective.network/account/${holder.address}`}
+                                                                    >
+                                                                        {holder.address}
+                                                                    </a>
+                                                                </td>
+                                                                <td className="px-6 py-1">
+                                                                    {Number(holder.amountToAirdrop).toFixed(4)}{" "}
+                                                                </td>
+                                                                <td className="px-6 py-1">
+                                                                    {Number(holder.percentToAirdrop).toFixed(2)}%
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
                             </div>
                             {progress && <div className="mt-5">progress: {progress}</div>}
                             {txLoading && <CircleLoader color="#36d7b7" className="mt-2 m-auto" />}

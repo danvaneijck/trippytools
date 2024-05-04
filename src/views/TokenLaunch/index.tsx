@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { useCallback, useEffect, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { Link } from "react-router-dom";
@@ -11,15 +9,16 @@ import { useSelector } from "react-redux";
 
 interface AirdropData {
     address: string
+    balance: number | string
     amountToAirdrop: string | number
     percentToAirdrop: string | number
+    includeInDrop: boolean
 }
 
 
 const TokenLaunch = () => {
 
     const connectedAddress = useSelector(state => state.network.connectedAddress);
-
     const currentNetwork = useSelector(state => state.network.currentNetwork);
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
 
@@ -92,21 +91,65 @@ const TokenLaunch = () => {
             const amountToAirdrop = supplyToAirdrop / holders.length;
             airdropData = holders.map(holder => ({
                 address: holder.address,
+                balance: holder.balance,
                 amountToAirdrop,
-                percentToAirdrop: (amountToAirdrop / tokenSupply) * 100
+                percentToAirdrop: (amountToAirdrop / tokenSupply) * 100,
+                includeInDrop: true
             }));
         } else if (distMode === "proportionate") {
             airdropData = holders.map(holder => ({
                 address: holder.address,
+                balance: holder.balance,
                 amountToAirdrop: (Number(holder.percentageHeld) / 100) * supplyToAirdrop,
-                percentToAirdrop: Number(holder.percentageHeld)
+                percentToAirdrop: Number(holder.percentageHeld),
+                includeInDrop: true
             }));
         }
 
         setAirdropDetails(airdropData)
         console.log("set airdrop data")
         setLoading(false)
-    }, [tokenAddress, distMode, tokenSupply, airdropPercent, networkConfig])
+    }, [tokenAddress, distMode, tokenSupply, airdropPercent, networkConfig]);
+
+    const updateAirdropAmounts = (details: any[]) => {
+        const supplyToAirdrop = tokenSupply * (airdropPercent / 100)
+        const includedHolders = details.filter((holder: { includeInDrop: any; }) => holder.includeInDrop);
+        if (distMode === "fair") {
+            const amountPerHolder = supplyToAirdrop / includedHolders.length;
+            details.forEach((holder: { includeInDrop: any; amountToAirdrop: number; percentToAirdrop: number; }) => {
+                if (holder.includeInDrop) {
+                    holder.amountToAirdrop = amountPerHolder;
+                    holder.percentToAirdrop = (amountPerHolder / tokenSupply) * 100;
+                } else {
+                    holder.amountToAirdrop = 0;
+                    holder.percentToAirdrop = 0;
+                }
+            });
+        } else if (distMode === "proportionate") {
+            const includedHolders = details.filter((holder: { includeInDrop: any; }) => holder.includeInDrop);
+            const totalAmountHeldByIncluded = includedHolders.reduce((total: number, holder: { balance: any; }) => total + Number(holder.balance), 0);
+            details.forEach((holder: { includeInDrop: any; balance: number; }) => {
+                if (holder.includeInDrop) {
+                    holder.percentageHeld = totalAmountHeldByIncluded === 0 ? 0 : (holder.balance / totalAmountHeldByIncluded) * 100
+                    holder.amountToAirdrop = (Number(holder.balance) / totalAmountHeldByIncluded) * supplyToAirdrop
+                    holder.percentToAirdrop = (holder.balance / totalAmountHeldByIncluded) * 100
+
+                } else {
+                    holder.amountToAirdrop = 0
+                    holder.percentToAirdrop = 0
+                    holder.percentageHeld = 0
+                }
+            })
+        }
+    };
+
+    const handleCheckboxChange = (index: number) => {
+        const newDetails = [...airdropDetails];
+        newDetails[index].includeInDrop = !newDetails[index].includeInDrop;
+
+        updateAirdropAmounts(newDetails);
+        setAirdropDetails(newDetails);
+    };
 
 
     return (
@@ -346,12 +389,9 @@ const TokenLaunch = () => {
                                                 </label>
                                             </div>
                                         </div>
-
-
                                     </div>
                                     <button
                                         disabled={loading}
-                                        // eslint-disable-next-line @typescript-eslint/no-misused-promises
                                         onClick={getAirdropPreview}
                                         className="bg-gray-800 rounded p-2 w-full text-white border border-white"
                                     >
@@ -360,11 +400,15 @@ const TokenLaunch = () => {
                                     {airdropDetails.length > 0 &&
                                         <div className="mt-5">
                                             <div className="max-h-80 overflow-y-scroll overflow-x-auto">
-                                                <div>Total participants: {airdropDetails.length}</div>
-                                                <div className=" mt-2">
+                                                <div>Total participants: {airdropDetails.filter(x => x.includeInDrop).length}</div>
+                                                <div className="text-xs">You should exclude addresses such as burn addresses, the pair contract etc..</div>
+                                                <div className="mt-2">
                                                     <table className="table-auto w-full">
                                                         <thead className="text-white">
                                                             <tr>
+                                                                <th className="px-4 py-2">
+                                                                    Include
+                                                                </th>
                                                                 <th className="px-4 py-2">
                                                                     Address
                                                                 </th>
@@ -377,33 +421,32 @@ const TokenLaunch = () => {
                                                             </tr>
                                                         </thead>
                                                         <tbody>
-                                                            {airdropDetails
-                                                                .map((holder, index) => (
-                                                                    <tr
-                                                                        key={index}
-                                                                        className="text-white border-b text-xs"
-                                                                    >
-                                                                        <td className="px-6 py-1 whitespace-nowrap">
-                                                                            <a
-                                                                                className="hover:text-indigo-900"
-                                                                                href={`https://explorer.injective.network/account/${holder.address}`}
-                                                                            >
-                                                                                {holder.address}
-                                                                            </a>
+                                                            {airdropDetails.map((holder, index) => (
+                                                                <tr key={index} className="text-white border-b text-xs">
+                                                                    <td className="px-6 py-1">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={holder.includeInDrop || false}
+                                                                            onChange={() => handleCheckboxChange(index)}
 
-
-                                                                        </td>
-                                                                        <td className="px-6 py-1">
-                                                                            {Number(holder.amountToAirdrop).toFixed(4)}{" "}
-                                                                        </td>
-                                                                        <td className="px-6 py-1">
-                                                                            {
-                                                                                Number(holder.percentToAirdrop).toFixed(2)
-                                                                            }
-                                                                            %
-                                                                        </td>
-                                                                    </tr>
-                                                                ))}
+                                                                        />
+                                                                    </td>
+                                                                    <td className="px-6 py-1 whitespace-nowrap">
+                                                                        <a
+                                                                            className="hover:text-indigo-900"
+                                                                            href={`https://explorer.injective.network/account/${holder.address}`}
+                                                                        >
+                                                                            {holder.address}
+                                                                        </a>
+                                                                    </td>
+                                                                    <td className="px-6 py-1">
+                                                                        {Number(holder.amountToAirdrop).toFixed(4)}{" "}
+                                                                    </td>
+                                                                    <td className="px-6 py-1">
+                                                                        {Number(holder.percentToAirdrop).toFixed(2)}%
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
                                                         </tbody>
                                                     </table>
                                                 </div>
