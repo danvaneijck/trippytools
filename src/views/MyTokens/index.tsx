@@ -11,6 +11,7 @@ import { BaseAccount, BroadcastModeKeplr, ChainRestAuthApi, ChainRestTendermintA
 import { BigNumberInBase, DEFAULT_BLOCK_TIMEOUT_HEIGHT, getStdFee } from "@injectivelabs/utils";
 import { Buffer } from "buffer";
 import { TransactionException } from "@injectivelabs/exceptions";
+import ShroomBalance from "../../components/App/ShroomBalance";
 
 
 const MyTokens = () => {
@@ -24,22 +25,28 @@ const MyTokens = () => {
     const [loading, setLoading] = useState(false);
     const [txLoading, setTxLoading] = useState(false)
     const fetching = useRef(false)
+    const abortControllerRef = useRef(null);
 
     const getTokens = useCallback(async () => {
         if (fetching.current) {
             console.log('Fetch already in progress.');
             return;
         }
-
         fetching.current = true;
+        abortControllerRef.current = new AbortController();
+
         const module = new TokenUtils(networkConfig);
         try {
-            const userTokens = await module.getUserTokens(connectedAddress);
+            const userTokens = await module.getUserTokens(connectedAddress, { signal: abortControllerRef.current.signal });
             console.log(userTokens);
             return userTokens;
         } catch (error) {
-            console.error('Failed to fetch tokens:', error);
-            throw error;  // to be caught by the caller
+            if (error.name === 'AbortError') {
+                console.log('Fetch aborted.');
+            } else {
+                console.error('Failed to fetch tokens:', error);
+            }
+            throw error;
         } finally {
             fetching.current = false;
         }
@@ -47,14 +54,24 @@ const MyTokens = () => {
 
     useEffect(() => {
         setLoading(true);
+        setTokens([])
         getTokens().then(fetchedTokens => {
-            console.log("set tokens", fetchedTokens);
+            console.log("Set tokens", fetchedTokens);
             setTokens(fetchedTokens);
         }).catch(e => {
-            console.error("Failed to fetch tokens:", e);
+            if (e.name !== 'AbortError') {
+                console.error("Failed to fetch tokens:", e);
+            }
         }).finally(() => {
             setLoading(false);
         });
+
+        return () => {
+            // Abort the current fetch when networkConfig changes or the component unmounts
+            console.log("abort")
+            abortControllerRef.current?.abort();
+            setTokens([])
+        };
     }, [getTokens]);
 
     const TokenBalance = ({ denom, address, decimals }) => {
@@ -206,10 +223,12 @@ const MyTokens = () => {
 
             <div className="pt-14 flex-grow mx-2 pb-20">
                 <div className="flex justify-center items-center min-h-full">
-                    <div className="w-full max-w-screen-xl px-2 py-10">
+                    <div className="w-full max-w-screen-xl px-2 py-5">
 
                         {connectedAddress ?
                             <div>
+                                {currentNetwork == "mainnet" && <div className=""><ShroomBalance /></div>}
+
                                 <div className="text-center text-white mb-5">
                                     <div className="text-xl">
                                         Mange tokens

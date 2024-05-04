@@ -20,6 +20,9 @@ import { Coin } from "@injectivelabs/ts-types";
 
 /* global BigInt */
 
+const DOJO_ROUTER = "inj1t6g03pmc0qcgr7z44qjzaen804f924xke6menl"
+
+
 interface EndpointConfig {
     grpc: string;
     explorer: string;
@@ -91,10 +94,8 @@ class TokenUtils {
 
     async updateBaseAssetPrice() {
         const baseAssetPair = await this.getPairInfo(INJ_USD_DOJO_ADDRESS)
-        console.log(baseAssetPair)
         const quote = await this.getQuote(baseAssetPair.contract_addr, 1)
         if (!quote) return
-        console.log(Number(quote['return_amount']))
         return Number(quote['return_amount']) / Math.pow(10, 6)
     }
 
@@ -121,6 +122,53 @@ class TokenUtils {
             return decodedData;
         } catch (error) {
             console.error(error);
+        }
+    }
+
+    async getSellQuoteRouter(pair, amount) {
+        const pairName = `${pair.token0Meta.symbol}, ${pair.token1Meta.symbol}`;
+
+        try {
+            if (!pair || !pair.asset_infos || !Array.isArray(pair.asset_infos)) {
+                throw new Error(`Invalid pair or asset_infos for getSellQuoteFromRouter DojoSwap: ${pair}`);
+            }
+
+            const assetToSell = pair.asset_infos.findIndex(assetInfo => {
+                const isNativeToken = assetInfo.native_token && assetInfo.native_token.denom !== 'inj';
+                const isCW20Token = assetInfo.token && assetInfo.token.contract_addr !== 'inj';
+                return isNativeToken || isCW20Token;
+            });
+
+            if (assetToSell === -1) {
+                throw new Error(`Error finding ask asset for ${pairName}`);
+            }
+            const assetInfo = pair.asset_infos[assetToSell];
+
+            const simulationQuery = {
+                simulate_swap_operations: {
+                    offer_amount: amount.toString(),
+                    operations: [
+                        {
+                            dojo_swap: {
+                                offer_asset_info: assetInfo,
+                                ask_asset_info: {
+                                    native_token: {
+                                        denom: 'inj'
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            };
+
+            const query = Buffer.from(JSON.stringify(simulationQuery)).toString('base64');
+            const sim = await this.chainGrpcWasmApi.fetchSmartContractState(DOJO_ROUTER, query);
+            const decodedData = JSON.parse(new TextDecoder().decode(sim.data));
+            return decodedData;
+        } catch (error) {
+            console.error(`Error getting DojoSwap sell quote for ${pairName}: ${error}`);
+            return null;
         }
     }
 
