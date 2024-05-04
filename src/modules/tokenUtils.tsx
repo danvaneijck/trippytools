@@ -76,8 +76,6 @@ class TokenUtils {
         this.endpoints = endpoints;
         this.RPC = endpoints.grpc;
 
-        console.log(`Init tools on ${this.RPC}`);
-
         this.chainGrpcWasmApi = new ChainGrpcWasmApi(this.RPC);
         this.chainGrpcBankApi = new ChainGrpcBankApi(this.RPC);
         this.indexerRestExplorerApi = new IndexerRestExplorerApi(
@@ -127,9 +125,14 @@ class TokenUtils {
     }
 
     async getUserTokens(address: string) {
-        const tokens = await this.chainGrpcTokenFactoryApi.fetchDenomsFromCreator(address)
-        console.log(tokens)
-        return tokens
+        const tokens = await this.chainGrpcTokenFactoryApi.fetchDenomsFromCreator(address);
+
+        const tokensWithMetadata = await Promise.all(tokens.map(async (token) => {
+            const metadata = await this.getDenomMetadata(token);
+            return { token, metadata };
+        }));
+
+        return tokensWithMetadata;
     }
 
     async getBalanceOfToken(denom: string, wallet: string) {
@@ -167,8 +170,8 @@ class TokenUtils {
             return JSON.parse(new TextDecoder().decode(token.data));
         } catch (error) {
             console.error("Error fetching token info:", denom, error);
+            throw error
         }
-        return
     }
 
     async getTokenMarketing(denom: string) {
@@ -183,7 +186,7 @@ class TokenUtils {
             return JSON.parse(new TextDecoder().decode(token.data));
         } catch (error) {
             console.error("Error fetching token info:", denom, error);
-
+            throw error
         }
     }
 
@@ -194,13 +197,16 @@ class TokenUtils {
         );
 
         const supply = await this.chainGrpcBankApi.fetchSupplyOf(denom);
+        const admin = await this.chainGrpcTokenFactoryApi.fetchDenomAuthorityMetadata(denom.split("/")[1], denom.split("/")[2])
 
         const tokenInfo: TokenInfo = {
             name: data.name,
             symbol: data.symbol,
             decimals: matchingDenomUnit ? matchingDenomUnit.exponent : 0,
             total_supply: Number(supply.amount),
-            description: data.description
+            description: data.description,
+            logo: data.uri,
+            admin: admin.admin
         };
 
         return tokenInfo;
@@ -416,7 +422,6 @@ class TokenUtils {
                 }
 
                 nextPage = response.pagination.next;
-                console.log(nextPage, allBalances.length, response.pagination)
                 setProgress(`wallets checked: ${allBalances.length} / ${total}`)
             } while (nextPage);
 
@@ -428,11 +433,6 @@ class TokenUtils {
             })
 
             const totalAmountHeld = accountsWithBalances.reduce((total, holder) => total + holder.balance, 0);
-            console.log(
-                `Total amount held: ${(
-                    Number(totalAmountHeld)
-                ).toFixed(2)}`
-            );
 
             const holdersWithPercentage = accountsWithBalances.map((holder) => ({
                 ...holder,
@@ -440,8 +440,6 @@ class TokenUtils {
             }));
 
             const sortedHolders = holdersWithPercentage.sort((a, b) => b.percentageHeld - a.percentageHeld);
-
-            console.log(`Total number of holders with non-zero balance: ${accountsWithBalances.length}`);
 
             const formattedHolders = sortedHolders.map((holder) => {
                 return {

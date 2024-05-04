@@ -1,13 +1,13 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useDispatch, useSelector } from 'react-redux';
-import { switchNetwork } from '../../store/features/network';
+import { switchNetwork, setConnectedAddress, clearConnectedAddress } from '../../store/features/network';
 
 const ConnectKeplr = () => {
 
-    const [address, setAddress] = useState(null);
     const dispatch = useDispatch();
     const currentNetwork = useSelector(state => state.network.currentNetwork);
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const connectedAddress = useSelector(state => state.network.connectedAddress);
 
     const getKeplr = () => {
         if (!window.keplr) {
@@ -22,19 +22,20 @@ const ConnectKeplr = () => {
         const chainId = networkConfig.chainId;
         await keplr.enable(chainId);
         const injectiveAddresses = await keplr.getOfflineSigner(chainId).getAccounts();
-        setAddress(injectiveAddresses[0].address);
-    }, [networkConfig])
+        dispatch(setConnectedAddress(injectiveAddresses[0].address));
+
+    }, [dispatch, networkConfig])
 
     const disconnect = async () => {
         console.log("disconnect");
         const keplr = getKeplr();
         await keplr.disable();
-        setAddress(null);
+        dispatch(clearConnectedAddress());
     }
 
     return (
         <div className=''>
-            {address ? (
+            {connectedAddress ? (
                 <div className="text-xs flex flex-row">
                     <button onClick={() => {
                         dispatch(switchNetwork())
@@ -42,9 +43,9 @@ const ConnectKeplr = () => {
                     }}>
                         {currentNetwork}
                     </button>
-                    <div className='ml-5'>
-                        <div>{address}</div>
-                        <div onClick={disconnect}>Disconnect</div>
+                    <div className='ml-5 '>
+                        <div>{connectedAddress}</div>
+                        <div className="hover:cursor-pointer" onClick={disconnect}>Disconnect</div>
                     </div>
                 </div>
             ) : (

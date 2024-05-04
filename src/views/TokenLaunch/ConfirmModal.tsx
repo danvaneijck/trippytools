@@ -19,14 +19,15 @@ import {
     TxRaw,
     TxRestClient,
 } from "@injectivelabs/sdk-ts";
-import { ChainId } from '@injectivelabs/ts-types'
 import { TransactionException } from "@injectivelabs/exceptions";
 import { BigNumber, BigNumberInBase, BigNumberInWei, DEFAULT_BLOCK_TIMEOUT_HEIGHT, getStdFee } from "@injectivelabs/utils";
 import { Buffer } from "buffer";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
+import { useSelector } from "react-redux";
+import { MdImageNotSupported } from "react-icons/md";
+import { useNavigate } from 'react-router-dom';
+import { CircleLoader } from "react-spinners";
 
-const REST_API = "https://testnet.sentry.lcd.injective.network"
-// const REST_API = "https://sentry.lcd.injective.network";
 
 const ConfirmModal = (props: {
     airdropDetails: unknown;
@@ -40,18 +41,27 @@ const ConfirmModal = (props: {
     setShowModal: (arg0: boolean) => void;
 }) => {
 
-    const getKeplr = async (chainId: string) => {
-        await window.keplr.enable(chainId);
+    const connectedAddress = useSelector(state => state.network.connectedAddress);
 
-        const offlineSigner = window.keplr.getOfflineSigner(chainId);
+    const currentNetwork = useSelector(state => state.network.currentNetwork);
+    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const navigate = useNavigate();
+
+    const [progress, setProgress] = useState("")
+    const [txLoading, setTxLoading] = useState(false)
+
+    const [error, setError] = useState(null)
+
+    const getKeplr = useCallback(async () => {
+        await window.keplr.enable(networkConfig.chainId);
+        const offlineSigner = window.keplr.getOfflineSigner(networkConfig.chainId);
         const accounts = await offlineSigner.getAccounts();
-        const key = await window.keplr.getKey(chainId);
-
+        const key = await window.keplr.getKey(networkConfig.chainId);
         return { offlineSigner, accounts, key };
-    };
+    }, [networkConfig]);
 
     const broadcastTx = useCallback(async (chainId: string, txRaw: TxRaw) => {
-        await getKeplr(ChainId.Testnet);
+        await getKeplr();
         const result = await window.keplr.sendTx(
             chainId,
             CosmosTxV1Beta1Tx.TxRaw.encode(txRaw).finish(),
@@ -66,11 +76,12 @@ const ConfirmModal = (props: {
         }
 
         return Buffer.from(result).toString("hex");
-    }, []);
+    }, [getKeplr]);
 
-    const handleSendTx = useCallback(async (chainId: any, pubKey: any, msg: any, injectiveAddress: string, offlineSigner: { signDirect: (arg0: any, arg1: CosmosTxV1Beta1Tx.SignDoc) => any; }, gas: any = null) => {
-        const chainRestAuthApi = new ChainRestAuthApi(REST_API);
-        const chainRestTendermintApi = new ChainRestTendermintApi(REST_API);
+    const handleSendTx = useCallback(async (pubKey: any, msg: any, injectiveAddress: string, offlineSigner: { signDirect: (arg0: any, arg1: CosmosTxV1Beta1Tx.SignDoc) => any; }, gas: any = null) => {
+        setTxLoading(true)
+        const chainRestAuthApi = new ChainRestAuthApi(networkConfig.rest);
+        const chainRestTendermintApi = new ChainRestTendermintApi(networkConfig.rest);
 
         const latestBlock = await chainRestTendermintApi.fetchLatestBlock();
         const latestHeight = latestBlock.header.height;
@@ -83,12 +94,9 @@ const ConfirmModal = (props: {
         );
         const baseAccount = BaseAccount.fromRestApi(accountDetailsResponse);
 
-        console.log(getStdFee({}))
-        console.log(gas ?? getStdFee({}))
-
         const { signDoc } = createTransaction({
             pubKey: pubKey,
-            chainId,
+            chainId: networkConfig.chainId,
             fee: gas ?? getStdFee({}),
             message: msg,
             sequence: baseAccount.sequence,
@@ -102,17 +110,17 @@ const ConfirmModal = (props: {
         );
 
         const txRaw = getTxRawFromTxRawOrDirectSignResponse(directSignResponse);
-        const txHash = await broadcastTx(ChainId.Testnet, txRaw);
-        const response = await new TxRestClient(REST_API).fetchTxPoll(txHash);
+        const txHash = await broadcastTx(networkConfig.chainId, txRaw);
+        const response = await new TxRestClient(networkConfig.rest).fetchTxPoll(txHash);
 
         console.log(response);
+        setTxLoading(false)
         return response
-    }, [broadcastTx])
+    }, [broadcastTx, networkConfig])
 
     const sendAirdrops = useCallback(async (denom: any, decimals: number | undefined, airdropDetails: any[]) => {
-        const chainId = "injective-888"; /* ChainId.Mainnet  injective-1*/
 
-        const { key, offlineSigner } = await getKeplr(chainId);
+        const { key, offlineSigner } = await getKeplr();
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
 
@@ -166,16 +174,24 @@ const ConfirmModal = (props: {
             "gas": "4000000"
         }
         // return
-        await handleSendTx(chainId, pubKey, msg, injectiveAddress, offlineSigner, gas)
+        await handleSendTx(pubKey, msg, injectiveAddress, offlineSigner, gas)
 
-    }, [handleSendTx])
+    }, [getKeplr, handleSendTx])
 
+
+    const burnAdmin = useCallback(async () => {
+        const msgChangeAdmin = MsgChangeAdmin.fromJSON({
+            denom: `factory/${injectiveAddress}/${subdenom}`,
+            sender: injectiveAddress,
+            newAdmin: 'inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49' /** SET TO ZERO ADDRESS */
+        });
+        // burn admin rights
+    }, [])
 
 
     const createAndMint = useCallback(async () => {
-        const chainId = "injective-888"; /* ChainId.Mainnet  injective-1*/
-
-        const { key, offlineSigner } = await getKeplr(chainId);
+        setError(null)
+        const { key, offlineSigner } = await getKeplr(networkConfig.chainId);
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
 
@@ -198,14 +214,6 @@ const ConfirmModal = (props: {
             }
         });
 
-        console.log(msgMint)
-
-        const msgChangeAdmin = MsgChangeAdmin.fromJSON({
-            denom: `factory/${injectiveAddress}/${subdenom}`,
-            sender: injectiveAddress,
-            newAdmin: 'inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49' /** SET TO ZERO ADDRESS */
-        });
-
         const msgSetDenomMetadata = MsgSetDenomMetadata.fromJSON({
             sender: injectiveAddress,
             metadata: {
@@ -226,11 +234,6 @@ const ConfirmModal = (props: {
                         exponent: props.tokenDecimals,
                         aliases: [subdenom]
                     },
-                    // {
-                    //     denom: `factory/${injectiveAddress}/u${subdenom}`, /** notice the u */
-                    //     exponent: props.tokenDecimals,
-                    //     aliases: [`micro${subdenom}`]
-                    // },
                 ],
                 uriHash: ""
             }
@@ -238,35 +241,46 @@ const ConfirmModal = (props: {
 
         console.log(msgSetDenomMetadata)
 
-        // // create denom
-        // console.log("create denom")
-        // await handleSendTx(chainId, pubKey, msgCreateDenom, injectiveAddress, offlineSigner)
-        // // mint supply
-        // console.log("mint")
-        // await handleSendTx(chainId, pubKey, msgMint, injectiveAddress, offlineSigner)
-        // // set metadata
-        // console.log("metadata")
-        // await handleSendTx(chainId, pubKey, msgSetDenomMetadata, injectiveAddress, offlineSigner)
-        console.log(props.airdropDetails)
-        await sendAirdrops(denom, props.tokenDecimals, props.airdropDetails)
+        // create denom
+        console.log("create denom")
+        setProgress("Create new denom")
+        await handleSendTx(pubKey, msgCreateDenom, injectiveAddress, offlineSigner)
+        // mint supply
+        console.log("mint")
+        setProgress("Mint supply")
+        await handleSendTx(pubKey, msgMint, injectiveAddress, offlineSigner)
+        // set metadata
+        console.log("metadata")
+        setProgress("Upload denom metadata")
+        await handleSendTx(pubKey, msgSetDenomMetadata, injectiveAddress, offlineSigner)
+        setProgress("Done...")
 
-        // burn admin rights
-        // await handleSendTx(chainId, pubKey, msgChangeAdmin, injectiveAddress, offlineSigner)
-    }, [handleSendTx, props.airdropDetails, props.tokenDecimals, props.tokenDescription, props.tokenImage, props.tokenName, props.tokenSupply, props.tokenSymbol, sendAirdrops])
+        navigate('/manage-tokens');
 
+    }, [
+        getKeplr,
+        handleSendTx,
+        navigate,
+        networkConfig.chainId,
+        props.tokenDecimals,
+        props.tokenDescription,
+        props.tokenImage,
+        props.tokenName,
+        props.tokenSupply,
+        props.tokenSymbol
+    ])
 
     return (
         <>
             <div
-                className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none text-black"
+                className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none text-white text-sm"
             >
-                <div className="relative w-auto my-4 mx-auto max-w-3xl">
-                    <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-white outline-none focus:outline-none">
-                        <div className="flex items-start justify-between p-4 border-b border-solid border-blueGray-200 rounded-t">
+                <div className="relative w-auto my-4 mx-auto max-w-4xl">
+                    <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-slate-800 outline-none focus:outline-none">
+                        <div className="flex items-start justify-between p-4 border-b border-solid border-blueGray-900 rounded-t">
                             <h3 className="text-xl font-semibold">
-                                Launch and airdrop token
+                                Launch on {currentNetwork}
                             </h3>
-
                         </div>
                         <div className="relative p-6 flex-auto">
                             <div className="flex flex-row">
@@ -276,14 +290,22 @@ const ConfirmModal = (props: {
                                     <div>Supply: {props.tokenSupply}</div>
                                     <div>Decimals: {props.tokenDecimals}</div>
                                     <div>Tokens to airdrop: {props.tokenSupply * (props.airdropPercent / 100)}</div>
-                                    <div>Tokens to your wallet: {props.tokenSupply - (props.tokenSupply * (props.airdropPercent / 100))}</div>
+                                    <div>Admin address: {connectedAddress}</div>
+                                    <div>Token denom: {`factory/${connectedAddress}/${props.tokenSymbol}`}</div>
+                                    <div>Tokens to your wallet: {(props.tokenSupply - (props.tokenSupply * (props.airdropPercent / 100))).toFixed(props.tokenDecimals)}</div>
                                 </div>
                                 <div className="ml-10">
-                                    token image:
-                                    <img className="rounded" src={props.tokenImage} width={100} />
+                                    token image
+                                    {props.tokenImage ?
+                                        <img className="rounded" src={props.tokenImage} width={100} />
+                                        :
+                                        <MdImageNotSupported className="text-5xl text-slate-500" />
+                                    }
                                 </div>
                             </div>
-
+                            {progress && <div className="mt-5">progress: {progress}</div>}
+                            {txLoading && <CircleLoader color="#36d7b7" className="mt-2 m-auto" />}
+                            {error && <div className="text-red-500 mt-5">{error}</div>}
                         </div>
                         <div className="flex items-center justify-end p-4 border-t border-solid border-blueGray-200 rounded-b">
                             <button
@@ -296,7 +318,12 @@ const ConfirmModal = (props: {
                             <button
                                 className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
-                                onClick={() => createAndMint().then(() => console.log("done")).catch(e => console.log(e))}
+                                onClick={() => createAndMint().then(() => console.log("done")).catch(e => {
+                                    console.log(e)
+                                    setError(e.message)
+                                    setProgress("")
+                                    setTxLoading(false)
+                                })}
                             >
                                 Launch
                             </button>

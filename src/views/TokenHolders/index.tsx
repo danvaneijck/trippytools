@@ -5,23 +5,17 @@ import { GridLoader } from "react-spinners";
 import { Link } from "react-router-dom";
 import { Holder, MarketingInfo, TokenInfo } from "../../types";
 import { useSearchParams } from 'react-router-dom';
-
-const MAIN_NET = {
-    grpc: "https://sentry.chain.grpc-web.injective.network",
-    explorer: `https://sentry.explorer.grpc-web.injective.network/api/explorer/v1`,
-    rest: "https://sentry.lcd.injective.network",
-    indexer: "https://sentry.exchange.grpc-web.injective.network",
-    chainId: "injective-1",
-    dojoFactory: "inj1pc2vxcmnyzawnwkf03n2ggvt997avtuwagqngk",
-    explorerUrl: "https://explorer.injective.network",
-};
+import ConnectKeplr from "../../components/App/ConnectKeplr";
+import { useSelector } from "react-redux";
 
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
 const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
 
 const TokenHolders = () => {
 
-    const [module, setModule] = useState<TokenUtils | null>(null);
+    const connectedAddress = useSelector(state => state.network.connectedAddress);
+    const currentNetwork = useSelector(state => state.network.currentNetwork);
+    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
 
     const [contractAddress, setContractAddress] = useState(
         "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
@@ -36,15 +30,9 @@ const TokenHolders = () => {
 
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState("");
+    const [error, setError] = useState(null)
 
     const [lastLoadedAddress, setLastLoadedAddress] = useState("")
-
-    useEffect(() => {
-        if (!module) {
-            setModule(new TokenUtils(MAIN_NET))
-        }
-    }, [module])
-
 
     const setAddress = useCallback(() => {
         setSearchParams({
@@ -52,10 +40,14 @@ const TokenHolders = () => {
         })
     }, [setSearchParams, contractAddress])
 
-    const getTokenHolders = useCallback((address: string) => {
-        if (!module) return
+    useEffect(() => {
+        setLastLoadedAddress("")
+    }, [networkConfig])
 
+    const getTokenHolders = useCallback((address: string) => {
+        const module = new TokenUtils(networkConfig)
         console.log(address);
+        setError(null)
         setTokenInfo(null)
         setPairMarketing(null)
         setLoading(true);
@@ -75,6 +67,10 @@ const TokenHolders = () => {
                 })
                 .catch((e: unknown) => {
                     console.log(e);
+                    setLoading(false);
+                    if (e && e.message) {
+                        setError(e.message)
+                    }
                 });
         } else {
             module
@@ -84,12 +80,20 @@ const TokenHolders = () => {
                 })
                 .catch((e: unknown) => {
                     console.log(e);
+                    setLoading(false);
+                    if (e && e.message) {
+                        setError(e.message)
+                    }
                 });
             module.getTokenMarketing(address).then(r => {
                 console.log(r)
                 setPairMarketing(r)
             }).catch(e => {
                 console.log(e)
+                setLoading(false);
+                if (e && e.message) {
+                    setError(e.message)
+                }
             })
         }
 
@@ -104,6 +108,10 @@ const TokenHolders = () => {
                 setLoading(false);
             }).catch(e => {
                 console.log(e)
+                setLoading(false);
+                if (e && e.message) {
+                    setError(e.message)
+                }
             })
         }
         else {
@@ -117,40 +125,49 @@ const TokenHolders = () => {
                 .catch((e: unknown) => {
                     console.log(e);
                     setLoading(false);
+                    if (e && e.message) {
+                        setError(e.message)
+                    }
                 });
             setLastLoadedAddress(address)
         }
 
-    }, [module]);
+    }, [networkConfig]);
 
     useEffect(() => {
         const address = searchParams.get("address")
-        if (address && address !== lastLoadedAddress && module) {
+        if (address && address !== lastLoadedAddress) {
             setContractAddress(address)
             getTokenHolders(address)
         }
-    }, [searchParams, lastLoadedAddress, module, getTokenHolders])
+    }, [searchParams, lastLoadedAddress, getTokenHolders])
+
+
 
 
     return (
         <div className="flex flex-col min-h-screen pb-10">
-            <header className="bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
-                <div className="container mx-auto flex items-center p-2 text-sm md:text-base">
-                    <Link to="/" className="font-bold hover:underline mr-5">
+            <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
+                <div className="container mx-auto flex items-center p-2 text-sm md:text-sm">
+                    <Link to="/" className="font-bold hover:underline mx-5">
                         home
                     </Link>
-                    {/* <Link
-                        to="/trippy-distribution"
-                        className="font-bold hover:underline mr-5"
-                    >
-                        $TRIPPY distribution
-                    </Link> */}
+
                     <Link
                         to="/token-liquidity?address=inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
-                        className="font-bold hover:underline "
+                        className="font-bold hover:underline mr-5"
                     >
                         liquidity tool
                     </Link>
+                    <Link
+                        to="/manage-tokens"
+                        className="font-bold hover:underline "
+                    >
+                        manage tokens
+                    </Link>
+                </div>
+                <div className="m-2">
+                    <ConnectKeplr />
                 </div>
             </header>
 
@@ -189,6 +206,9 @@ const TokenHolders = () => {
                         >
                             Get token holders
                         </button>
+                        {error && <div className="text-red-500 mt-2">
+                            {error}
+                        </div>}
 
                         <div className="flex flex-col md:flex-row justify-between">
                             {tokenInfo && (
@@ -233,7 +253,7 @@ const TokenHolders = () => {
                         )}
 
                         {holders.length > 0 && (
-                            <div className="mt-5">
+                            <div className="mt-5 text-sm">
                                 <div>Total token holders: {holders.length}</div>
                                 <div className="overflow-x-auto mt-2">
                                     <table className="table-auto w-full">

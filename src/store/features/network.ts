@@ -2,6 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
     currentNetwork: 'mainnet',
+    connectedAddress: null, 
     networks: {
         mainnet: {
             grpc: "https://sentry.chain.grpc-web.injective.network",
@@ -29,8 +30,14 @@ export const networkSlice = createSlice({
         switchNetwork: (state) => {
             state.currentNetwork = state.currentNetwork === 'mainnet' ? 'testnet' : 'mainnet';
         },
+        setConnectedAddress: (state, action) => {
+            state.connectedAddress = action.payload;  
+        },
+        clearConnectedAddress: (state) => {
+            state.connectedAddress = null;
+        }
     },
 });
 
-export const { switchNetwork } = networkSlice.actions;
+export const { switchNetwork, setConnectedAddress, clearConnectedAddress } = networkSlice.actions;
 export default networkSlice.reducer;
