@@ -11,6 +11,7 @@ import {
     ExplorerTransaction,
     IndexerGrpcAccountPortfolioApi,
     Message,
+    ChainGrpcTokenFactoryApi,
 } from "@injectivelabs/sdk-ts";
 import { Buffer } from "buffer";
 import moment from "moment";
@@ -28,7 +29,7 @@ interface EndpointConfig {
 interface Holder {
     address: string;
     balance: string;
-    percentageHeld: string;
+    percentageHeld: number;
 }
 
 interface PresaleAmount {
@@ -69,18 +70,18 @@ class TokenUtils {
     indexerRestExplorerApi: IndexerRestExplorerApi;
     preSaleAmounts: Map<string, PresaleAmount>;
     indexerGrpcAccountPortfolioApi: IndexerGrpcAccountPortfolioApi;
+    chainGrpcTokenFactoryApi: ChainGrpcTokenFactoryApi;
 
     constructor(endpoints: EndpointConfig) {
         this.endpoints = endpoints;
         this.RPC = endpoints.grpc;
-
-        console.log(`Init tools on ${this.RPC}`);
 
         this.chainGrpcWasmApi = new ChainGrpcWasmApi(this.RPC);
         this.chainGrpcBankApi = new ChainGrpcBankApi(this.RPC);
         this.indexerRestExplorerApi = new IndexerRestExplorerApi(
             this.endpoints.explorer
         );
+        this.chainGrpcTokenFactoryApi = new ChainGrpcTokenFactoryApi(this.RPC)
 
         this.indexerGrpcAccountPortfolioApi =
             new IndexerGrpcAccountPortfolioApi(endpoints.indexer);
@@ -123,6 +124,17 @@ class TokenUtils {
         }
     }
 
+    async getUserTokens(address: string) {
+        const tokens = await this.chainGrpcTokenFactoryApi.fetchDenomsFromCreator(address);
+
+        const tokensWithMetadata = await Promise.all(tokens.map(async (token) => {
+            const metadata = await this.getDenomMetadata(token);
+            return { token, metadata };
+        }));
+
+        return tokensWithMetadata;
+    }
+
     async getBalanceOfToken(denom: string, wallet: string) {
         return await this.chainGrpcBankApi.fetchBalance({
             accountAddress: wallet,
@@ -158,7 +170,7 @@ class TokenUtils {
             return JSON.parse(new TextDecoder().decode(token.data));
         } catch (error) {
             console.error("Error fetching token info:", denom, error);
-            return {};
+            throw error
         }
     }
 
@@ -174,7 +186,7 @@ class TokenUtils {
             return JSON.parse(new TextDecoder().decode(token.data));
         } catch (error) {
             console.error("Error fetching token info:", denom, error);
-            return {};
+            throw error
         }
     }
 
@@ -185,13 +197,16 @@ class TokenUtils {
         );
 
         const supply = await this.chainGrpcBankApi.fetchSupplyOf(denom);
+        const admin = await this.chainGrpcTokenFactoryApi.fetchDenomAuthorityMetadata(denom.split("/")[1], denom.split("/")[2])
 
         const tokenInfo: TokenInfo = {
             name: data.name,
             symbol: data.symbol,
             decimals: matchingDenomUnit ? matchingDenomUnit.exponent : 0,
             total_supply: Number(supply.amount),
-            description: data.description
+            description: data.description,
+            logo: data.uri,
+            admin: admin.admin
         };
 
         return tokenInfo;
@@ -360,7 +375,7 @@ class TokenUtils {
                             balance: (
                                 Number(balance) / Math.pow(10, decimals)
                             ).toFixed(4),
-                            percentageHeld: percentageHeld.toFixed(2),
+                            percentageHeld: percentageHeld,
                         });
                     }
                 }
@@ -407,12 +422,10 @@ class TokenUtils {
                 }
 
                 nextPage = response.pagination.next;
-                console.log(nextPage, allBalances.length, response.pagination)
                 setProgress(`wallets checked: ${allBalances.length} / ${total}`)
             } while (nextPage);
 
             const accountsWithBalances = allBalances.map((holder) => {
-
                 return {
                     address: holder.address,
                     balance: holder.balance ? Number(holder.balance.amount) / Math.pow(10, decimals) : 0
@@ -420,11 +433,6 @@ class TokenUtils {
             })
 
             const totalAmountHeld = accountsWithBalances.reduce((total, holder) => total + holder.balance, 0);
-            console.log(
-                `Total amount held: ${(
-                    Number(totalAmountHeld) / Math.pow(10, decimals)
-                ).toFixed(2)}`
-            );
 
             const holdersWithPercentage = accountsWithBalances.map((holder) => ({
                 ...holder,
@@ -433,13 +441,10 @@ class TokenUtils {
 
             const sortedHolders = holdersWithPercentage.sort((a, b) => b.percentageHeld - a.percentageHeld);
 
-            console.log(`Total number of holders with non-zero balance: ${accountsWithBalances.length}`);
-            console.log(`Total amount held: ${(totalAmountHeld / Math.pow(10, decimals)).toFixed(2)}`);
-
             const formattedHolders = sortedHolders.map((holder) => {
                 return {
                     ...holder,
-                    percentageHeld: holder.percentageHeld.toFixed(2)
+                    percentageHeld: holder.percentageHeld
                 }
             });
 

@@ -6,6 +6,8 @@ import { Link } from "react-router-dom";
 import { Holder, MarketingInfo, PairInfo, TokenInfo } from "../../types";
 import { useSearchParams } from 'react-router-dom';
 import { IoIosWarning } from "react-icons/io";
+import { useSelector } from "react-redux";
+import ConnectKeplr from "../../components/App/ConnectKeplr";
 
 const MAIN_NET = {
     grpc: "https://sentry.chain.grpc-web.injective.network",
@@ -22,7 +24,9 @@ const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
 
 const TokenLiquidity = () => {
 
-    const [module, setModule] = useState<TokenUtils | null>(null);
+    const connectedAddress = useSelector(state => state.network.connectedAddress);
+    const currentNetwork = useSelector(state => state.network.currentNetwork);
+    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
 
     const [contractAddress, setContractAddress] = useState(
         "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
@@ -46,14 +50,11 @@ const TokenLiquidity = () => {
     }, [setSearchParams, contractAddress])
 
     useEffect(() => {
-        if (!module) {
-            setModule(new TokenUtils(MAIN_NET))
-        }
-    }, [module])
+        setLastLoadedAddress("")
+    }, [networkConfig])
 
     const getTokenHolders = useCallback((address: string) => {
-        if (!module) return
-
+        const module = new TokenUtils(networkConfig)
         setError(null)
         setLoading(true);
         setTokenInfo(null);
@@ -126,30 +127,39 @@ const TokenLiquidity = () => {
 
         setLastLoadedAddress(address)
 
-    }, [module]);
+    }, [networkConfig]);
 
     useEffect(() => {
         const address = searchParams.get("address")
-        if (address && address !== lastLoadedAddress && module) {
+        if (address && address !== lastLoadedAddress) {
             setContractAddress(address)
             getTokenHolders(address)
         }
-    }, [searchParams, lastLoadedAddress, module, getTokenHolders])
+    }, [searchParams, lastLoadedAddress, getTokenHolders])
 
     return (
         <div className="flex flex-col min-h-screen">
-            <header className="bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
-                <div className="container mx-auto flex items-center p-2 text-sm md:text-base">
-                    <Link to="/" className="font-bold hover:underline mr-5">
+            <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
+                <div className="container mx-auto flex items-center p-2 text-sm md:text-sm">
+                    <Link to="/" className="font-bold hover:underline mx-5">
                         home
                     </Link>
 
                     <Link
-                        to="/token-holders?address=inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
+                        to="/token-holders"
+                        className="font-bold hover:underline mr-5"
+                    >
+                        holder tool
+                    </Link>
+                    <Link
+                        to="/manage-tokens"
                         className="font-bold hover:underline "
                     >
-                        token holder tool
+                        manage tokens
                     </Link>
+                </div>
+                <div className="m-2">
+                    <ConnectKeplr />
                 </div>
             </header>
 
@@ -190,8 +200,7 @@ const TokenLiquidity = () => {
 
                         {error && <div className="text-red-500 mt-2">
                             {error}
-                        </div>
-                        }
+                        </div>}
 
                         <div className="flex flex-col md:flex-row justify-between">
                             {tokenInfo && (
@@ -247,7 +256,7 @@ const TokenLiquidity = () => {
                         )}
 
                         {holders.length > 0 && (
-                            <div className="mt-2 overflow-x-auto">
+                            <div className="mt-2 overflow-x-auto text-sm">
                                 <div>Total liquidity holders: {holders.length}</div>
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="">
@@ -312,7 +321,7 @@ const TokenLiquidity = () => {
                                                     {holder.balance}
                                                 </td>
                                                 <td className="px-4 py-2">
-                                                    {holder.percentageHeld}%
+                                                    {holder.percentageHeld.toFixed(2)}%
                                                 </td>
                                             </tr>
                                         ))}
