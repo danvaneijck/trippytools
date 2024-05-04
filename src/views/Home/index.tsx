@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { useRef, useEffect, useState } from 'react';
-// @ts-ignore
 import WAVES from 'vanta/dist/vanta.waves.min'
 import { Link } from 'react-router-dom';
+import ConnectKeplr from '../../components/App/ConnectKeplr';
+import shroom from "../../assets/shroom.jpg"
+import { FaDiscord } from 'react-icons/fa';
 
 const Home = () => {
 
@@ -42,35 +41,69 @@ const Home = () => {
     };
 
     return <div ref={myRef} className='overflow-hidden h-screen'>
-        <header className="bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
-            <div className="container mx-auto flex items-center p-2 text-sm md:text-base">
-                <Link to="/token-holders?address=inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8" className="font-bold hover:underline mr-5">
-                    token holders tool
+        <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
+            <div className="container mx-auto flex items-center p-2 text-sm md:text-sm">
+                <Link to="/token-holders" className="font-bold hover:underline mx-5">
+                    holder tool
                 </Link>
-                <Link to="/token-liquidity?address=inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl" className="font-bold hover:underline ">
-                    token liquidity tool
+                <Link to="/token-liquidity?address=inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl" className="font-bold hover:underline mr-5">
+                    liquidity tool
                 </Link>
+                <Link to="/manage-tokens" className="font-bold hover:underline ">
+                    manage tokens
+                </Link>
+            </div>
+            <div className="m-2">
+                <ConnectKeplr />
             </div>
         </header>
         <div>
-            <div className='text-center pt-14 text-4xl md:text-5xl font-bold '>
-                TRIPPY
+            <div className='text-center pt-20 text-2xl md:text-3xl font-bold '>
+                TRIPPY token tools
             </div>
-            <div className='text-center text-xl md:text-3xl '>
+            <div className='text-center text-base md:text-xl '>
                 on injective
             </div>
 
             <div className='flex-grow'>
                 <div className='flex justify-center'>
-                    <div className='mt-2 text-center py-4 text-2xl md:text-4xl md:w-1/2 rounded-xl p-2 mb-2 bg-gradient-to-br from-transparent to-black mx-2'>
-                        Building tools for the community
+                    <div className='mt-2 text-center py-4  md:w-1/2 rounded-xl p-2 mb-2 bg-gradient-to-br from-transparent to-black mx-2'>
+                        <div className='text-xl md:text-2xl'>Building tools for the community</div>
+
+                        <a href='https://discord.gg/Nnz34jzA5T' >
+                            <div className='flex flex-row mt-5 text-sm items-center justify-center  w-auto rounded-lg hover:font-bold'>
+                                <FaDiscord className='mr-2 text-3xl' />
+                                Join the discord
+                            </div>
+                        </a>
+                        <Link to="/token-holders">
+                            <div className='mt-5 text-sm hover:font-bold'>
+                                Query token holders for cw20 tokens and native token factory tokens
+                            </div>
+                        </Link>
+                        <Link to="/token-liquidity">
+                            <div className='mt-5 text-sm hover:font-bold'>
+                                Query Astroport and DojoSwap liquidity holders for a given pair
+                            </div>
+                        </Link>
+                        <Link to="/manage-tokens">
+                            <div className='mt-5 text-sm hover:font-bold'>
+                                Manage your native token factory tokens
+                            </div>
+                        </Link>
+                        <a href='https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl' >
+                            <div className='flex flex-row mt-5 text-sm items-center justify-center p-2 w-auto rounded-lg  hover:font-bold'>
+                                <img src={shroom} style={{ borderRadius: '50%', width: 40, height: 40 }} className="animate-3dspin mr-2" alt="Spinning Image" />
+                                Trade shroom on Coin hall
+                            </div>
+                        </a>
+
                     </div>
                 </div>
             </div>
 
             <div
                 id="dexscreener-embed"
-                // @ts-ignore
                 style={divStyle}
                 className='mt-2 flex justify-center flex-row mx-2'
             >

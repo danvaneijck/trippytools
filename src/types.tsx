@@ -4,12 +4,14 @@ export interface TokenInfo {
     decimals: number;
     total_supply?: number;
     description?: string
+    logo?: string
+    admin?: string
 }
 
 export interface Holder {
     address: string;
     balance: string | number;
-    percentageHeld: string;
+    percentageHeld: number;
 }
 
 export interface TokenMeta {
