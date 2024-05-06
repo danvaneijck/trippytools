@@ -7,6 +7,7 @@ import { Holder, MarketingInfo, TokenInfo } from "../../types";
 import { useSearchParams } from 'react-router-dom';
 import ConnectKeplr from "../../components/App/ConnectKeplr";
 import { useSelector } from "react-redux";
+import IPFSImage from "../../components/App/IpfsImage";
 
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
 const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
@@ -142,27 +143,6 @@ const TokenHolders = () => {
         }
     }, [searchParams, lastLoadedAddress, getTokenHolders])
 
-    const IPFSImage = ({ ipfsPath }) => {
-        const baseUrl = "https://cloudflare-ipfs.com/ipfs/";
-
-        const getImageUrl = (path) => {
-            if (path.startsWith("https://")) {
-                return path;
-            }
-            else if (path.startsWith("ipfs://")) {
-                return path.replace("ipfs://", baseUrl);
-            }
-            return path;
-        };
-
-        const imageUrl = getImageUrl(ipfsPath);
-
-        return <img src={imageUrl} style={{ width: 100 }}
-            className="mb-2"
-            alt="logo" alt="IPFS Image" />;
-    };
-
-
     return (
         <div className="flex flex-col min-h-screen pb-10">
             <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
@@ -247,6 +227,8 @@ const TokenHolders = () => {
                             {!pairMarketing && tokenInfo && tokenInfo.logo && (
                                 <div className="mt-5 text-base text-white">
                                     <IPFSImage
+                                        width={100}
+                                        className={'mb-2'}
                                         ipfsPath={tokenInfo.logo}
 
                                     />

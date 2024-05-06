@@ -12,6 +12,7 @@ import { GridLoader } from "react-spinners";
 
 const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
+const SPORE_DENOM = "factory/inj1lq9wn94d49tt7gc834cxkm0j5kwlwu4gm65lhe/spore"
 
 interface AirdropData {
     address: string
@@ -35,8 +36,8 @@ const TokenLaunch = () => {
     const [tokenImageUrl, setTokenImageUrl] = useState("");
     const [tokenDescription, setTokenDescription] = useState("token description");
 
-    const [airdropPercent, setAirdropPercent] = useState(50);
-    const [tokenAddress, setTokenAddress] = useState("inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8");
+    const [airdropPercent, setAirdropPercent] = useState(90);
+    const [tokenAddress, setTokenAddress] = useState(SPORE_DENOM);
     const [distMode, setDistMode] = useState("fair");
 
     const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
@@ -151,10 +152,10 @@ const TokenLaunch = () => {
         }
     }, [currentNetwork, networkConfig])
 
-    const updateAirdropAmounts = (details: any[]) => {
+    const updateAirdropAmounts = useCallback((details: any[], dist: string) => {
         const supplyToAirdrop = tokenSupply * (airdropPercent / 100)
         const includedHolders = details.filter((holder: { includeInDrop: any; }) => holder.includeInDrop);
-        if (distMode === "fair") {
+        if (dist === "fair") {
             const amountPerHolder = supplyToAirdrop / includedHolders.length;
             details.forEach((holder: { includeInDrop: any; amountToAirdrop: number; percentToAirdrop: number; }) => {
                 if (holder.includeInDrop) {
@@ -165,7 +166,7 @@ const TokenLaunch = () => {
                     holder.percentToAirdrop = 0;
                 }
             });
-        } else if (distMode === "proportionate") {
+        } else if (dist === "proportionate") {
             const includedHolders = details.filter((holder: { includeInDrop: any; }) => holder.includeInDrop);
             const totalAmountHeldByIncluded = includedHolders.reduce((total: number, holder: { balance: any; }) => total + Number(holder.balance), 0);
             details.forEach((holder: { includeInDrop: any; balance: number; }) => {
@@ -181,16 +182,20 @@ const TokenLaunch = () => {
                 }
             })
         }
-    };
+    }, [airdropPercent, tokenSupply]);
 
-    const handleCheckboxChange = (index: number) => {
+    const handleCheckboxChange = (index: number, dist: string) => {
         const newDetails = [...airdropDetails];
         newDetails[index].includeInDrop = !newDetails[index].includeInDrop;
-
-        updateAirdropAmounts(newDetails);
+        updateAirdropAmounts(newDetails, dist);
         setAirdropDetails(newDetails);
     };
 
+    const updateList = (dist: string) => {
+        const newDetails = [...airdropDetails];
+        updateAirdropAmounts(newDetails, dist);
+        setAirdropDetails(newDetails);
+    }
 
     return (
         <>
@@ -404,11 +409,17 @@ const TokenLaunch = () => {
                                             Distribution
                                         </label>
                                         <div className="flex flex-row w-full justify-between ">
-                                            <div className="flex flex-row" onClick={() => setDistMode("fair")}>
+                                            <div className="flex flex-row" onClick={() => {
+                                                setDistMode("fair")
+                                                updateList("fair")
+                                            }}>
                                                 <input
                                                     type="checkbox"
                                                     className="text-black w-full rounded p-1"
-                                                    onChange={() => { setDistMode("fair") }}
+                                                    onChange={() => {
+                                                        setDistMode("fair")
+                                                        updateList("fair")
+                                                    }}
                                                     checked={distMode == "fair"}
                                                 />
                                                 <label
@@ -417,11 +428,17 @@ const TokenLaunch = () => {
                                                     fair
                                                 </label>
                                             </div>
-                                            <div className="flex flex-row" onClick={() => setDistMode("proportionate")}>
+                                            <div className="flex flex-row" onClick={() => {
+                                                setDistMode("proportionate")
+                                                updateList("proportionate")
+                                            }}>
                                                 <input
                                                     type="checkbox"
                                                     className="text-black w-full rounded p-1"
-                                                    onChange={() => { setDistMode("proportionate") }}
+                                                    onChange={() => {
+                                                        setDistMode("proportionate")
+                                                        updateList("proportionate")
+                                                    }}
                                                     checked={distMode == "proportionate"}
                                                 />
                                                 <label
@@ -478,7 +495,7 @@ const TokenLaunch = () => {
                                                                         <input
                                                                             type="checkbox"
                                                                             checked={holder.includeInDrop || false}
-                                                                            onChange={() => handleCheckboxChange(index)}
+                                                                            onChange={() => handleCheckboxChange(index, distMode)}
 
                                                                         />
                                                                     </td>
