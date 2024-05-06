@@ -23,7 +23,6 @@ const ConnectKeplr = () => {
         await keplr.enable(chainId);
         const injectiveAddresses = await keplr.getOfflineSigner(chainId).getAccounts();
         dispatch(setConnectedAddress(injectiveAddresses[0].address));
-
     }, [dispatch, networkConfig])
 
     const disconnect = async () => {

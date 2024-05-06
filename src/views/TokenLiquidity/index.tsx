@@ -137,6 +137,26 @@ const TokenLiquidity = () => {
         }
     }, [searchParams, lastLoadedAddress, getTokenHolders])
 
+    const IPFSImage = ({ ipfsPath }) => {
+        const baseUrl = "https://cloudflare-ipfs.com/ipfs/";
+
+        const getImageUrl = (path) => {
+            if (path.startsWith("https://")) {
+                return path;
+            }
+            else if (path.startsWith("ipfs://")) {
+                return path.replace("ipfs://", baseUrl);
+            }
+            return path;
+        };
+
+        const imageUrl = getImageUrl(ipfsPath);
+
+        return <img src={imageUrl} style={{ width: 100 }}
+            className="mb-2"
+            alt="logo" alt="IPFS Image" />;
+    };
+
     return (
         <div className="flex flex-col min-h-screen">
             <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
@@ -215,6 +235,14 @@ const TokenLiquidity = () => {
                                                 Math.pow(10, tokenInfo.decimals)}
                                         </div>
                                     )}
+                                </div>
+                            )}
+                            {!pairMarketing && tokenInfo && tokenInfo.logo && (
+                                <div className="mt-5 text-base text-white">
+                                    <IPFSImage
+                                        ipfsPath={tokenInfo.logo}
+
+                                    />
                                 </div>
                             )}
                             {pairMarketing && (
