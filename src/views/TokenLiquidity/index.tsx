@@ -8,6 +8,7 @@ import { useSearchParams } from 'react-router-dom';
 import { IoIosWarning } from "react-icons/io";
 import { useSelector } from "react-redux";
 import ConnectKeplr from "../../components/App/ConnectKeplr";
+import IPFSImage from "../../components/App/IpfsImage";
 
 const MAIN_NET = {
     grpc: "https://sentry.chain.grpc-web.injective.network",
@@ -137,25 +138,6 @@ const TokenLiquidity = () => {
         }
     }, [searchParams, lastLoadedAddress, getTokenHolders])
 
-    const IPFSImage = ({ ipfsPath }) => {
-        const baseUrl = "https://cloudflare-ipfs.com/ipfs/";
-
-        const getImageUrl = (path) => {
-            if (path.startsWith("https://")) {
-                return path;
-            }
-            else if (path.startsWith("ipfs://")) {
-                return path.replace("ipfs://", baseUrl);
-            }
-            return path;
-        };
-
-        const imageUrl = getImageUrl(ipfsPath);
-
-        return <img src={imageUrl} style={{ width: 100 }}
-            className="mb-2"
-            alt="logo" alt="IPFS Image" />;
-    };
 
     return (
         <div className="flex flex-col min-h-screen">
@@ -240,6 +222,8 @@ const TokenLiquidity = () => {
                             {!pairMarketing && tokenInfo && tokenInfo.logo && (
                                 <div className="mt-5 text-base text-white">
                                     <IPFSImage
+                                        width={100}
+                                        className={'mb-2'}
                                         ipfsPath={tokenInfo.logo}
 
                                     />
