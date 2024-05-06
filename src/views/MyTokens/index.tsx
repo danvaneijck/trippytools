@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { GridLoader } from "react-spinners";
 import { Link } from "react-router-dom";
@@ -24,31 +24,20 @@ const MyTokens = () => {
 
     const [loading, setLoading] = useState(false);
     const [txLoading, setTxLoading] = useState(false)
-    const fetching = useRef(false)
-    const abortControllerRef = useRef(null);
+
 
     const getTokens = useCallback(async () => {
-        if (fetching.current) {
-            console.log('Fetch already in progress.');
-            return;
-        }
-        fetching.current = true;
-        abortControllerRef.current = new AbortController();
-
+        console.log("GET TOKENS")
         const module = new TokenUtils(networkConfig);
         try {
-            const userTokens = await module.getUserTokens(connectedAddress, { signal: abortControllerRef.current.signal });
+            const userTokens = await module.getUserTokens(connectedAddress);
             console.log(userTokens);
             return userTokens;
         } catch (error) {
-            if (error.name === 'AbortError') {
-                console.log('Fetch aborted.');
-            } else {
-                console.error('Failed to fetch tokens:', error);
-            }
+
+            console.error('Failed to fetch tokens:', error);
+
             throw error;
-        } finally {
-            fetching.current = false;
         }
     }, [networkConfig, connectedAddress]);
 
@@ -65,54 +54,60 @@ const MyTokens = () => {
         }).finally(() => {
             setLoading(false);
         });
-
-        return () => {
-            // Abort the current fetch when networkConfig changes or the component unmounts
-            console.log("abort")
-            abortControllerRef.current?.abort();
-            setTokens([])
-        };
     }, [getTokens]);
 
-    const TokenBalance = ({ denom, address, decimals }) => {
-        const [balance, setBalance] = useState(null)
-        useEffect(() => {
-            if (balance) return
-            const module = new TokenUtils(networkConfig)
-            module.getBalanceOfToken(denom, address).then(balance => {
-                setBalance(Number(balance.amount) / Math.pow(10, decimals))
-            }).catch(e => {
-                console.error("Failed to fetch balance:", e);
-            });
-        }, [denom, address, decimals, balance])
-
-        return (
-            <div>
-                {balance ? balance : "..."}
-            </div>
-        )
-    }
-
-    const TokenHolders = ({ denom }) => {
-        const [holders, setHolders] = useState(null)
-        const [progress, setProgress] = useState("")
+    const TokenBalance = memo(({ denom, address, decimals }) => {
+        const [balance, setBalance] = useState(null);
 
         useEffect(() => {
-            if (holders) return
-            const module = new TokenUtils(networkConfig)
-            module.getTokenFactoryTokenHolders(denom, setProgress).then(holders => {
-                setHolders(holders.length)
+            if (balance) return;
+
+            const controller = new AbortController();
+            const signal = controller.signal;
+            const module = new TokenUtils(networkConfig);
+
+            module.getBalanceOfToken(denom, address, { signal }).then(balance => {
+                setBalance(Number(balance.amount) / Math.pow(10, decimals));
             }).catch(e => {
-                console.error("Failed to fetch balance:", e);
+                if (e.name !== 'AbortError') {
+                    console.error("Failed to fetch balance:", e);
+                }
             });
-        }, [denom, holders])
+
+            return () => controller.abort(); // Cleanup function to cancel the request
+        }, [denom, address, decimals, balance]);
+
+        return <div>{balance ? balance : "..."}</div>;
+    });
+
+    const TokenHolders = memo(({ denom }) => {
+        const [holders, setHolders] = useState(null);
+        const [progress, setProgress] = useState("");
+
+        useEffect(() => {
+            if (holders) return;
+
+            const controller = new AbortController();
+            const signal = controller.signal;
+            const module = new TokenUtils(networkConfig);
+
+            module.getTokenFactoryTokenHolders(denom, setProgress, { signal }).then(holders => {
+                setHolders(holders.length);
+            }).catch(e => {
+                if (e.name !== 'AbortError') {
+                    console.error("Failed to fetch holders:", e);
+                }
+            });
+
+            return () => controller.abort(); // Cleanup function to cancel the request
+        }, [denom, holders]);
 
         return (
             <div className="">
-                {holders ? <div className="flex flex-row items-center">{holders}{" "}<FaEye className="ml-4" /></div> : "..."}
+                {holders ? <div className="flex flex-row items-center">{holders} <FaEye className="ml-4" /></div> : "..."}
             </div>
-        )
-    }
+        );
+    });
 
     const getKeplr = useCallback(async () => {
         await window.keplr.enable(networkConfig.chainId);
@@ -222,12 +217,13 @@ const MyTokens = () => {
             </header>
 
             <div className="pt-14 flex-grow mx-2 pb-20">
+                {currentNetwork == "mainnet" && <div className=""><ShroomBalance /></div>}
+
                 <div className="flex justify-center items-center min-h-full">
                     <div className="w-full max-w-screen-xl px-2 py-5">
 
                         {connectedAddress ?
                             <div>
-                                {currentNetwork == "mainnet" && <div className=""><ShroomBalance /></div>}
 
                                 <div className="text-center text-white mb-5">
                                     <div className="text-xl">
@@ -262,12 +258,11 @@ const MyTokens = () => {
                                                             <th className="px-4 py-2">Balance</th>
                                                             <th className="px-4 py-2">Holders</th>
                                                             <th className="px-4 py-2">Actions</th>
-
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {tokens.map((token, index) => (
-                                                            <tr key={index} className="bg-slate-700 rounded-lg m-2 shadow-lg">
+                                                        {tokens.map((token) => (
+                                                            <tr key={token.token} className="bg-slate-700 rounded-lg m-2 shadow-lg">
                                                                 <td className="px-4 py-2">
                                                                     {token.metadata.logo ? (
                                                                         <img className="rounded-lg" src={token.metadata.logo} alt="Token Logo" width={50} />
@@ -300,7 +295,7 @@ const MyTokens = () => {
                                                                     <Link
                                                                         to={`/token-holders?address=${token.token}`}
                                                                     >
-                                                                        <TokenHolders denom={token.token} />
+                                                                        {/* <TokenHolders denom={token.token} /> */} view holders
                                                                     </Link>
                                                                 </td>
                                                                 <td className="px-4 py-2 text-xs">
