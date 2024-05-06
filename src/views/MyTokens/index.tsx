@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { GridLoader } from "react-spinners";
 import { Link } from "react-router-dom";
@@ -6,6 +7,11 @@ import ConnectKeplr from "../../components/App/ConnectKeplr";
 import { useSelector } from "react-redux";
 import { MdImageNotSupported } from "react-icons/md";
 import { FaEye } from "react-icons/fa";
+import { BaseAccount, BroadcastModeKeplr, ChainRestAuthApi, ChainRestTendermintApi, CosmosTxV1Beta1Tx, createTransaction, getTxRawFromTxRawOrDirectSignResponse, MsgChangeAdmin, TxRaw, TxRestClient } from "@injectivelabs/sdk-ts";
+import { BigNumberInBase, DEFAULT_BLOCK_TIMEOUT_HEIGHT, getStdFee } from "@injectivelabs/utils";
+import { Buffer } from "buffer";
+import { TransactionException } from "@injectivelabs/exceptions";
+import ShroomBalance from "../../components/App/ShroomBalance";
 
 
 const MyTokens = () => {
@@ -17,65 +23,171 @@ const MyTokens = () => {
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
 
     const [loading, setLoading] = useState(false);
+    const [txLoading, setTxLoading] = useState(false)
+
 
     const getTokens = useCallback(async () => {
-        const module = new TokenUtils(networkConfig)
-        const userTokens = await module.getUserTokens(connectedAddress);
-        console.log(userTokens)
-        return userTokens;
+        console.log("GET TOKENS")
+        const module = new TokenUtils(networkConfig);
+        try {
+            const userTokens = await module.getUserTokens(connectedAddress);
+            console.log(userTokens);
+            return userTokens;
+        } catch (error) {
+
+            console.error('Failed to fetch tokens:', error);
+
+            throw error;
+        }
     }, [networkConfig, connectedAddress]);
 
     useEffect(() => {
-        setLoading(true)
+        setLoading(true);
+        setTokens([])
         getTokens().then(fetchedTokens => {
-            console.log("set tokens", fetchedTokens)
+            console.log("Set tokens", fetchedTokens);
             setTokens(fetchedTokens);
-            setLoading(false)
         }).catch(e => {
-            console.error("Failed to fetch tokens:", e);
-            setLoading(false)
+            if (e.name !== 'AbortError') {
+                console.error("Failed to fetch tokens:", e);
+            }
+        }).finally(() => {
+            setLoading(false);
         });
-    }, [getTokens, networkConfig]);
+    }, [getTokens]);
 
-    const TokenBalance = ({ denom, address, decimals }) => {
-        const [balance, setBalance] = useState(null)
-        useEffect(() => {
-            if (balance) return
-            const module = new TokenUtils(networkConfig)
-            module.getBalanceOfToken(denom, address).then(balance => {
-                setBalance(Number(balance.amount) / Math.pow(10, decimals))
-            }).catch(e => {
-                console.error("Failed to fetch balance:", e);
-            });
-        }, [denom, address, decimals, balance])
-
-        return (
-            <div>
-                {balance ? balance : "..."}
-            </div>
-        )
-    }
-
-    const TokenHolders = ({ denom }) => {
-        const [holders, setHolders] = useState(null)
-        const [progress, setProgress] = useState("")
+    const TokenBalance = memo(({ denom, address, decimals }) => {
+        const [balance, setBalance] = useState(null);
 
         useEffect(() => {
-            if (holders) return
-            const module = new TokenUtils(networkConfig)
-            module.getTokenFactoryTokenHolders(denom, setProgress).then(holders => {
-                setHolders(holders.length)
+            if (balance) return;
+
+            const controller = new AbortController();
+            const signal = controller.signal;
+            const module = new TokenUtils(networkConfig);
+
+            module.getBalanceOfToken(denom, address, { signal }).then(balance => {
+                setBalance(Number(balance.amount) / Math.pow(10, decimals));
             }).catch(e => {
-                console.error("Failed to fetch balance:", e);
+                if (e.name !== 'AbortError') {
+                    console.error("Failed to fetch balance:", e);
+                }
             });
-        }, [denom, holders])
+
+            return () => controller.abort(); // Cleanup function to cancel the request
+        }, [denom, address, decimals, balance]);
+
+        return <div>{balance ? balance : "..."}</div>;
+    });
+
+    const TokenHolders = memo(({ denom }) => {
+        const [holders, setHolders] = useState(null);
+        const [progress, setProgress] = useState("");
+
+        useEffect(() => {
+            if (holders) return;
+
+            const controller = new AbortController();
+            const signal = controller.signal;
+            const module = new TokenUtils(networkConfig);
+
+            module.getTokenFactoryTokenHolders(denom, setProgress, { signal }).then(holders => {
+                setHolders(holders.length);
+            }).catch(e => {
+                if (e.name !== 'AbortError') {
+                    console.error("Failed to fetch holders:", e);
+                }
+            });
+
+            return () => controller.abort(); // Cleanup function to cancel the request
+        }, [denom, holders]);
 
         return (
             <div className="">
-                {holders ? <div className="flex flex-row items-center">{holders}{" "}<FaEye className="ml-4" /></div> : "..."}
+                {holders ? <div className="flex flex-row items-center">{holders} <FaEye className="ml-4" /></div> : "..."}
             </div>
-        )
-    }
+        );
+    });
+
+    const getKeplr = useCallback(async () => {
+        await window.keplr.enable(networkConfig.chainId);
+        const offlineSigner = window.keplr.getOfflineSigner(networkConfig.chainId);
+        const accounts = await offlineSigner.getAccounts();
+        const key = await window.keplr.getKey(networkConfig.chainId);
+        return { offlineSigner, accounts, key };
+    }, [networkConfig]);
+
+    const broadcastTx = useCallback(async (chainId: string, txRaw: TxRaw) => {
+        await getKeplr();
+        const result = await window.keplr.sendTx(
+            chainId,
+            CosmosTxV1Beta1Tx.TxRaw.encode(txRaw).finish(),
+            BroadcastModeKeplr.Sync
+        );
+
+        if (!result || result.length === 0) {
+            throw new TransactionException(
+                new Error("Transaction failed to be broadcasted"),
+                { contextModule: "Keplr" }
+            );
+        }
+
+        return Buffer.from(result).toString("hex");
+    }, [getKeplr]);
+
+    const handleSendTx = useCallback(async (pubKey: any, msg: any, injectiveAddress: string, offlineSigner: { signDirect: (arg0: any, arg1: CosmosTxV1Beta1Tx.SignDoc) => any; }, gas: any = null) => {
+        setTxLoading(true)
+        const chainRestAuthApi = new ChainRestAuthApi(networkConfig.rest);
+        const chainRestTendermintApi = new ChainRestTendermintApi(networkConfig.rest);
+
+        const latestBlock = await chainRestTendermintApi.fetchLatestBlock();
+        const latestHeight = latestBlock.header.height;
+        const timeoutHeight = new BigNumberInBase(latestHeight).plus(
+            DEFAULT_BLOCK_TIMEOUT_HEIGHT
+        );
+
+        const accountDetailsResponse = await chainRestAuthApi.fetchAccount(
+            injectiveAddress
+        );
+        const baseAccount = BaseAccount.fromRestApi(accountDetailsResponse);
+
+        const { signDoc } = createTransaction({
+            pubKey: pubKey,
+            chainId: networkConfig.chainId,
+            fee: gas ?? getStdFee({}),
+            message: msg,
+            sequence: baseAccount.sequence,
+            timeoutHeight: timeoutHeight.toNumber(),
+            accountNumber: baseAccount.accountNumber,
+        });
+
+        const directSignResponse = await offlineSigner.signDirect(
+            injectiveAddress,
+            signDoc
+        );
+
+        const txRaw = getTxRawFromTxRawOrDirectSignResponse(directSignResponse);
+        const txHash = await broadcastTx(networkConfig.chainId, txRaw);
+        const response = await new TxRestClient(networkConfig.rest).fetchTxPoll(txHash);
+
+        console.log(response);
+        setTxLoading(false)
+        return response
+    }, [broadcastTx, networkConfig])
+
+    const burnAdmin = useCallback(async (subdenom) => {
+        const { key, offlineSigner } = await getKeplr();
+        const pubKey = Buffer.from(key.pubKey).toString("base64");
+        const injectiveAddress = key.bech32Address;
+
+        const msgChangeAdmin = MsgChangeAdmin.fromJSON({
+            denom: `factory/${injectiveAddress}/${subdenom}`,
+            sender: injectiveAddress,
+            newAdmin: 'inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49' /** SET TO ZERO ADDRESS */
+        });
+        await handleSendTx(pubKey, msgChangeAdmin, injectiveAddress, offlineSigner)
+        await getTokens()
+    }, [getKeplr, getTokens, handleSendTx])
 
 
     return (
@@ -105,11 +217,14 @@ const MyTokens = () => {
             </header>
 
             <div className="pt-14 flex-grow mx-2 pb-20">
+                {currentNetwork == "mainnet" && <div className=""><ShroomBalance /></div>}
+
                 <div className="flex justify-center items-center min-h-full">
-                    <div className="w-full max-w-screen-xl px-2 py-10">
+                    <div className="w-full max-w-screen-xl px-2 py-5">
 
                         {connectedAddress ?
                             <div>
+
                                 <div className="text-center text-white mb-5">
                                     <div className="text-xl">
                                         Mange tokens
@@ -122,8 +237,8 @@ const MyTokens = () => {
                                             to="/token-launch"
 
                                         >
-                                            <button disabled className="my-2 bg-slate-700 shadow-lg p-2 rounded-lg text-sm">
-                                                Create New Token (soon)
+                                            <button className="my-2 bg-slate-700 shadow-lg p-2 rounded-lg text-sm">
+                                                Create New Token
                                             </button>
 
                                         </Link>
@@ -142,12 +257,12 @@ const MyTokens = () => {
                                                             <th className="px-4 py-2">Admin</th>
                                                             <th className="px-4 py-2">Balance</th>
                                                             <th className="px-4 py-2">Holders</th>
-
+                                                            <th className="px-4 py-2">Actions</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {tokens.map((token, index) => (
-                                                            <tr key={index} className="bg-slate-700 rounded-lg m-2 shadow-lg">
+                                                        {tokens.map((token) => (
+                                                            <tr key={token.token} className="bg-slate-700 rounded-lg m-2 shadow-lg">
                                                                 <td className="px-4 py-2">
                                                                     {token.metadata.logo ? (
                                                                         <img className="rounded-lg" src={token.metadata.logo} alt="Token Logo" width={50} />
@@ -180,8 +295,15 @@ const MyTokens = () => {
                                                                     <Link
                                                                         to={`/token-holders?address=${token.token}`}
                                                                     >
-                                                                        <TokenHolders denom={token.token} />
+                                                                        {/* <TokenHolders denom={token.token} /> */} view holders
                                                                     </Link>
+                                                                </td>
+                                                                <td className="px-4 py-2 text-xs">
+                                                                    {token.metadata.admin == connectedAddress &&
+                                                                        <button onClick={() => { burnAdmin(token.metadata.symbol) }} className="my-2 bg-slate-800 shadow-lg p-2 rounded-lg text-xs">
+                                                                            Burn admin
+                                                                        </button>
+                                                                    }
                                                                 </td>
                                                             </tr>
                                                         ))}

@@ -11,8 +11,8 @@ import {
     CosmosTxV1Beta1Tx,
     createTransaction,
     getTxRawFromTxRawOrDirectSignResponse,
-    MsgChangeAdmin,
     MsgCreateDenom,
+    MsgExecuteContract,
     MsgMint,
     MsgMultiSend,
     MsgSetDenomMetadata,
@@ -28,6 +28,8 @@ import { MdImageNotSupported } from "react-icons/md";
 import { useNavigate } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
 
+const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
+const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
 
 const ConfirmModal = (props: {
     airdropDetails: unknown;
@@ -38,6 +40,7 @@ const ConfirmModal = (props: {
     tokenSupply: number;
     tokenSymbol: string;
     tokenName: string;
+    shroomCost: number
     setShowModal: (arg0: boolean) => void;
 }) => {
 
@@ -124,10 +127,10 @@ const ConfirmModal = (props: {
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
 
-        const records = airdropDetails.map((record: { address: any; amountToAirdrop: any; }) => {
+        const records = airdropDetails.filter(record => (Number(record.amountToAirdrop) !== 0)).map((record: { address: any; amountToAirdrop: any; }) => {
             return {
                 address: record.address,
-                amount: record.amountToAirdrop
+                amount: Number(record.amountToAirdrop).toFixed(0)
             }
         })
 
@@ -135,7 +138,7 @@ const ConfirmModal = (props: {
             return acc.plus(new BigNumberInBase(record.amount).toWei(decimals));
         }, new BigNumberInWei(0));
 
-        console.log(totalToSend)
+        console.log(totalToSend.toString())
 
         const msg = MsgMultiSend.fromJSON({
             inputs: [
@@ -178,16 +181,24 @@ const ConfirmModal = (props: {
 
     }, [getKeplr, handleSendTx])
 
+    const payFee = useCallback(async () => {
+        const { key, offlineSigner } = await getKeplr();
+        const pubKey = Buffer.from(key.pubKey).toString("base64");
+        const injectiveAddress = key.bech32Address;
 
-    const burnAdmin = useCallback(async () => {
-        const msgChangeAdmin = MsgChangeAdmin.fromJSON({
-            denom: `factory/${injectiveAddress}/${subdenom}`,
+        const msg = MsgExecuteContract.fromJSON({
+            contractAddress: SHROOM_TOKEN_ADDRESS,
             sender: injectiveAddress,
-            newAdmin: 'inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49' /** SET TO ZERO ADDRESS */
+            msg: {
+                transfer: {
+                    recipient: FEE_COLLECTION_ADDRESS,
+                    amount: (props.shroomCost).toFixed(0) + "0".repeat(18),
+                },
+            },
         });
-        // burn admin rights
-    }, [])
-
+        console.log("send shroom fee", msg)
+        await handleSendTx(pubKey, msg, injectiveAddress, offlineSigner)
+    }, [getKeplr, handleSendTx, props.shroomCost])
 
     const createAndMint = useCallback(async () => {
         setError(null)
@@ -239,8 +250,6 @@ const ConfirmModal = (props: {
             }
         });
 
-        console.log(msgSetDenomMetadata)
-
         // create denom
         console.log("create denom")
         setProgress("Create new denom")
@@ -253,22 +262,26 @@ const ConfirmModal = (props: {
         console.log("metadata")
         setProgress("Upload denom metadata")
         await handleSendTx(pubKey, msgSetDenomMetadata, injectiveAddress, offlineSigner)
-        setProgress("Done...")
 
+        if (props.airdropDetails !== null && props.airdropDetails.length > 0) {
+            if (currentNetwork == "mainnet" && props.shroomCost !== 0) {
+                console.log("pay shroom fee")
+                setProgress("Pay shroom fee for airdrop")
+                await payFee()
+            }
+            console.log("airdrop")
+            setProgress("Send airdrops")
+            await sendAirdrops(denom, props.tokenDecimals, props.airdropDetails)
+        }
+
+        setProgress("Done...")
         navigate('/manage-tokens');
 
-    }, [
-        getKeplr,
-        handleSendTx,
-        navigate,
-        networkConfig.chainId,
-        props.tokenDecimals,
-        props.tokenDescription,
-        props.tokenImage,
-        props.tokenName,
-        props.tokenSupply,
-        props.tokenSymbol
-    ])
+    }, [getKeplr, networkConfig.chainId,
+        props.tokenSymbol, props.tokenSupply,
+        props.tokenDecimals, props.tokenDescription,
+        props.tokenName, props.tokenImage, props.airdropDetails,
+        props.shroomCost, handleSendTx, navigate, currentNetwork, sendAirdrops, payFee])
 
     return (
         <>
@@ -303,10 +316,64 @@ const ConfirmModal = (props: {
                                     }
                                 </div>
                             </div>
+                            <div>
+                                {props.airdropDetails !== null && props.airdropDetails.length > 0 &&
+                                    <div className="mt-5">
+                                        <div className="max-h-80 overflow-y-scroll overflow-x-auto">
+                                            <div>Total participants: {props.airdropDetails.filter(x => x.includeInDrop).length}</div>
+                                            <div className="text-xs">You should exclude addresses such as burn addresses, the pair contract etc..</div>
+                                            <div className="mt-2">
+                                                <table className="table-auto w-full">
+                                                    <thead className="text-white">
+                                                        <tr>
+
+                                                            <th className="px-4 py-2">
+                                                                Address
+                                                            </th>
+                                                            <th className="px-4 py-2">
+                                                                Airdrop
+                                                            </th>
+                                                            <th className="px-4 py-2">
+                                                                Percentage
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {props.airdropDetails.map((holder, index) => (
+                                                            <tr key={index} className="text-white border-b text-xs">
+
+                                                                <td className="px-6 py-1 whitespace-nowrap">
+                                                                    <a
+                                                                        className="hover:text-indigo-900"
+                                                                        href={`https://explorer.injective.network/account/${holder.address}`}
+                                                                    >
+                                                                        {holder.address}
+                                                                    </a>
+                                                                </td>
+                                                                <td className="px-6 py-1">
+                                                                    {Number(holder.amountToAirdrop).toFixed(0)}{" "}
+                                                                </td>
+                                                                <td className="px-6 py-1">
+                                                                    {Number(holder.percentToAirdrop).toFixed(2)}%
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
                             {progress && <div className="mt-5">progress: {progress}</div>}
                             {txLoading && <CircleLoader color="#36d7b7" className="mt-2 m-auto" />}
                             {error && <div className="text-red-500 mt-5">{error}</div>}
                         </div>
+                        {currentNetwork == "mainnet" && (props.airdropDetails.length > 0) && <div className="m-5">
+                            Fee for airdrop: {props.shroomCost} shroom <br />
+                            <a href="https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl" className="underline text-sm">buy here</a>
+                        </div>
+                        }
                         <div className="flex items-center justify-end p-4 border-t border-solid border-blueGray-200 rounded-b">
                             <button
                                 className="text-slate-500 background-transparent font-bold uppercase px-6 py-2 text-sm outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
