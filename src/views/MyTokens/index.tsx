@@ -27,11 +27,9 @@ const MyTokens = () => {
 
 
     const getTokens = useCallback(async () => {
-        console.log("GET TOKENS")
         const module = new TokenUtils(networkConfig);
         try {
             const userTokens = await module.getUserTokens(connectedAddress);
-            console.log(userTokens);
             return userTokens;
         } catch (error) {
 
@@ -45,7 +43,6 @@ const MyTokens = () => {
         setLoading(true);
         setTokens([])
         getTokens().then(fetchedTokens => {
-            console.log("Set tokens", fetchedTokens);
             setTokens(fetchedTokens);
         }).catch(e => {
             if (e.name !== 'AbortError') {

@@ -38,7 +38,7 @@ const ShroomBalance = () => {
     useEffect(() => {
         if (!balance) {
             getBalance().then(r => {
-                console.log("got balance", r)
+                console.log(r)
             }).catch(e => {
                 console.log(e)
             })

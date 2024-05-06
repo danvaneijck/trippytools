@@ -27,6 +27,7 @@ import { useSelector } from "react-redux";
 import { MdImageNotSupported } from "react-icons/md";
 import { useNavigate } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
+import IPFSImage from "../../components/App/IpfsImage";
 
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
@@ -310,7 +311,12 @@ const ConfirmModal = (props: {
                                 <div className="ml-10">
                                     token image
                                     {props.tokenImage ?
-                                        <img className="rounded" src={props.tokenImage} width={100} />
+                                        <IPFSImage
+                                            width={100}
+                                            className={'rounded'}
+                                            ipfsPath={props.tokenImage}
+
+                                        />
                                         :
                                         <MdImageNotSupported className="text-5xl text-slate-500" />
                                     }
