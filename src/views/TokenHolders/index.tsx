@@ -8,9 +8,8 @@ import { useSearchParams } from 'react-router-dom';
 import ConnectKeplr from "../../components/App/ConnectKeplr";
 import { useSelector } from "react-redux";
 import IPFSImage from "../../components/App/IpfsImage";
+import { walletLabels } from "../../constants/walletLabels";
 
-const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
-const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
 
 const TokenHolders = () => {
 
@@ -171,7 +170,7 @@ const TokenHolders = () => {
 
             <div className="pt-14 flex-grow mx-2 pb-20">
                 <div className="flex justify-center items-center min-h-full">
-                    <div className="w-full max-w-screen-xl px-2 py-10">
+                    <div className="w-full max-w-screen-lg px-2 py-10">
                         <div className="text-center text-white">
                             <div className="text-xl">
                                 Get cw20 / token factory token holders
@@ -244,7 +243,16 @@ const TokenHolders = () => {
                                     />
                                     <div>project: {pairMarketing.project}</div>
                                     <div>description: {pairMarketing.description}</div>
-                                    <div>marketing: {pairMarketing.marketing}</div>
+                                    <div>
+                                        marketing: {pairMarketing.marketing}
+                                        {
+                                            walletLabels[pairMarketing.marketing] ? (
+                                                <span className={`${walletLabels[pairMarketing.marketing].bgColor} ${walletLabels[pairMarketing.marketing].textColor} ml-2`}>
+                                                    {walletLabels[pairMarketing.marketing].label}
+                                                </span>
+                                            ) : null
+                                        }
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -299,36 +307,13 @@ const TokenHolders = () => {
                                                                 {holder.address}
                                                             </a>
 
-                                                            {holder.address ===
-                                                                dojoBurnAddress && (
-                                                                    <span className="text-red-500 ml-2">
-                                                                        {" "}
-                                                                        DOJO BURN
-                                                                        ADDY 🔥
+                                                            {
+                                                                walletLabels[holder.address] ? (
+                                                                    <span className={`${walletLabels[holder.address].bgColor} ${walletLabels[holder.address].textColor} ml-2`}>
+                                                                        {walletLabels[holder.address].label}
                                                                     </span>
-                                                                )}
-                                                            {holder.address ===
-                                                                injBurnAddress && (
-                                                                    <span className="text-red-500 ml-2">
-                                                                        {" "}
-                                                                        INJ BURN
-                                                                        ADDY 🔥
-                                                                    </span>
-                                                                )}
-                                                            {holder.address ==
-                                                                "inj1lq9wn94d49tt7gc834cxkm0j5kwlwu4gm65lhe" && (
-                                                                    <span className="text-green-400 ml-2">
-                                                                        {" "}
-                                                                        trippykiwi 🥷
-                                                                    </span>
-                                                                )}
-                                                            {holder.address ==
-                                                                "inj1yegzy0u8z8k0mzcq6532nzk8eg2z9yyuppqxgk" && (
-                                                                    <span className="text-red-500 ml-2">
-                                                                        {" "}
-                                                                        pre sale address 🔥
-                                                                    </span>
-                                                                )}
+                                                                ) : null
+                                                            }
                                                             {holder.address ==
                                                                 lastLoadedAddress && (
                                                                     <span className="text-red-500 ml-2">

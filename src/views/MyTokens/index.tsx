@@ -271,7 +271,7 @@ const MyTokens = () => {
                                                                 <td className="px-4 py-2 text-xs">{token.metadata.symbol || "-"}</td>
                                                                 <td className="px-4 py-2 text-xs">{token.metadata.description || "-"}</td>
                                                                 <td className="px-4 py-2 text-xs">
-                                                                    <a href={`https://${currentNetwork}.explorer.injective.network/asset/?denom=${token.token}&tokenType=tokenFactory`}>{token.token.slice(0, 10)}...</a>
+                                                                    <a href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}explorer.injective.network/asset/?denom=${token.token}&tokenType=tokenFactory`}>{token.token.slice(0, 10)}...</a>
                                                                 </td>
                                                                 <td className="px-4 py-2 text-xs">{(token.metadata.total_supply / Math.pow(10, token.metadata.decimals)).toLocaleString()}</td>
                                                                 <td className="px-4 py-2 text-xs">{token.metadata.decimals}</td>

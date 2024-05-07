@@ -40,7 +40,7 @@ const Home = () => {
         border: 0,
     };
 
-    return <div ref={myRef} className='overflow-hidden h-screen'>
+    return <div ref={myRef} className='overflow-hidden min-h-screen pb-20'>
         <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
             <div className="container mx-auto flex items-center p-2 text-sm md:text-sm">
                 <Link to="/token-holders" className="font-bold hover:underline mx-5">
@@ -57,7 +57,7 @@ const Home = () => {
                 <ConnectKeplr />
             </div>
         </header>
-        <div>
+        <div className=''>
             <div className='text-center pt-20 text-2xl md:text-3xl font-bold '>
                 TRIPPY token tools
             </div>
@@ -114,7 +114,9 @@ const Home = () => {
                 ></iframe>
             </div>
         </div>
-
+        <footer className="bg-gray-800 text-white text-xs p-4 fixed bottom-0 left-0 right-0 z-10">
+            buy me a coffee: inj1q2m26a7jdzjyfdn545vqsude3zwwtfrdap5jgz
+        </footer>
     </div>
 };
 
