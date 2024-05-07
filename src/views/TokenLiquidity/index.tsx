@@ -9,6 +9,7 @@ import { IoIosWarning } from "react-icons/io";
 import { useSelector } from "react-redux";
 import ConnectKeplr from "../../components/App/ConnectKeplr";
 import IPFSImage from "../../components/App/IpfsImage";
+import { walletLabels } from "../../constants/walletLabels";
 
 const MAIN_NET = {
     grpc: "https://sentry.chain.grpc-web.injective.network",
@@ -167,7 +168,7 @@ const TokenLiquidity = () => {
 
             <div className="pt-14 flex-grow mx-2 pb-20">
                 <div className="flex justify-center items-center w-full py-10">
-                    <div className="w-full max-w-screen-xl px-2">
+                    <div className="w-full max-w-screen-lg px-2">
                         <div className="text-center text-white">
                             <div className="text-xl">
                                 Get cw20 liquidity token holders
@@ -239,7 +240,16 @@ const TokenLiquidity = () => {
                                     />
                                     <div>project: {pairMarketing.project}</div>
                                     <div>description: {pairMarketing.description}</div>
-                                    <div>marketing: {pairMarketing.marketing}</div>
+                                    <div>
+                                        marketing: {pairMarketing.marketing}
+                                        {
+                                            walletLabels[pairMarketing.marketing] ? (
+                                                <span className={`${walletLabels[pairMarketing.marketing].bgColor} ${walletLabels[pairMarketing.marketing].textColor} ml-2`}>
+                                                    {walletLabels[pairMarketing.marketing].label}
+                                                </span>
+                                            ) : null
+                                        }
+                                    </div>
 
                                 </div>
                             )}
@@ -296,27 +306,14 @@ const TokenLiquidity = () => {
                                                     >
                                                         {holder.address}
                                                     </a>
-                                                    {holder.address ===
-                                                        dojoBurnAddress && (
-                                                            <span className="text-red-500 ml-2">
-                                                                {" "}
-                                                                DOJO BURN ADDY 🔒
+                                                    {
+                                                        walletLabels[holder.address] ? (
+                                                            <span className={`${walletLabels[holder.address].bgColor} ${walletLabels[holder.address].textColor} ml-2`}>
+                                                                {walletLabels[holder.address].label}
                                                             </span>
-                                                        )}
-                                                    {holder.address ===
-                                                        injBurnAddress && (
-                                                            <span className="text-red-500 ml-2">
-                                                                {" "}
-                                                                INJ BURN ADDY 🔒
-                                                            </span>
-                                                        )}
-                                                    {holder.address ==
-                                                        "inj1lq9wn94d49tt7gc834cxkm0j5kwlwu4gm65lhe" && (
-                                                            <span className="text-green-400 ml-2">
-                                                                {" "}
-                                                                trippykiwi (dev) 🥷
-                                                            </span>
-                                                        )}
+                                                        ) : null
+                                                    }
+
                                                     {pairInfo && holder.address == pairInfo.contract_addr && (
                                                         <span className="text-blue-400 ml-2">
                                                             {" "}
