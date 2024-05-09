@@ -186,7 +186,7 @@ const MyTokens = () => {
             <div className="pt-14 flex-grow mx-2 pb-20">
                 {currentNetwork == "mainnet" && <div className=""><ShroomBalance /></div>}
                 <div className="flex justify-center items-center min-h-full">
-                    <div className="w-full max-w-screen-xl px-2 ">
+                    <div className="w-full max-w-screen-md px-2 ">
                         {connectedAddress ?
                             <div>
                                 <div className="text-center text-white mb-5">
