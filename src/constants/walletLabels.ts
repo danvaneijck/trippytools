@@ -5,6 +5,7 @@ const rugLord = "inj1nsqdlh065qveeqkeh64lhap3hm40ptrt8t2unw"
 const shroomPool = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
 const shroomMarketingWallet = "inj1pr5lyuez8ak94tpuz9fs7dkpst7pkc9uuhfhvm"
 const sporeShroomPool = "inj1rusfnzgtcvkn8z92h9hyvzuna60tc0x0yy74tf"
+const talisMarketPlace = "inj1l9nh9wv24fktjvclc4zgrgyzees7rwdtx45f54"
 
 export const walletLabels = {
     [rugLord]: {
@@ -39,6 +40,11 @@ export const walletLabels = {
     },
     [sporeShroomPool]: {
         label: "spore/shroom pool",
+        bgColor: "",
+        textColor: "text-green-500"
+    },
+    [talisMarketPlace]: {
+        label: "Talis Marketplace",
         bgColor: "",
         textColor: "text-green-500"
     }

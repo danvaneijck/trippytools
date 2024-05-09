@@ -77,35 +77,6 @@ const MyTokens = () => {
         return <div>{balance ? balance : "..."}</div>;
     });
 
-    const TokenHolders = memo(({ denom }) => {
-        const [holders, setHolders] = useState(null);
-        const [progress, setProgress] = useState("");
-
-        useEffect(() => {
-            if (holders) return;
-
-            const controller = new AbortController();
-            const signal = controller.signal;
-            const module = new TokenUtils(networkConfig);
-
-            module.getTokenFactoryTokenHolders(denom, setProgress, { signal }).then(holders => {
-                setHolders(holders.length);
-            }).catch(e => {
-                if (e.name !== 'AbortError') {
-                    console.error("Failed to fetch holders:", e);
-                }
-            });
-
-            return () => controller.abort(); // Cleanup function to cancel the request
-        }, [denom, holders]);
-
-        return (
-            <div className="">
-                {holders ? <div className="flex flex-row items-center">{holders} <FaEye className="ml-4" /></div> : "..."}
-            </div>
-        );
-    });
-
     const getKeplr = useCallback(async () => {
         await window.keplr.enable(networkConfig.chainId);
         const offlineSigner = window.keplr.getOfflineSigner(networkConfig.chainId);
@@ -212,16 +183,12 @@ const MyTokens = () => {
                     <ConnectKeplr />
                 </div>
             </header>
-
             <div className="pt-14 flex-grow mx-2 pb-20">
                 {currentNetwork == "mainnet" && <div className=""><ShroomBalance /></div>}
-
                 <div className="flex justify-center items-center min-h-full">
-                    <div className="w-full max-w-screen-xl px-2 py-5">
-
+                    <div className="w-full max-w-screen-xl px-2 ">
                         {connectedAddress ?
                             <div>
-
                                 <div className="text-center text-white mb-5">
                                     <div className="text-xl">
                                         Mange tokens
@@ -238,6 +205,13 @@ const MyTokens = () => {
                                                 Create New Token
                                             </button>
 
+                                        </Link>
+                                        <Link
+                                            to="/airdrop"
+                                        >
+                                            <button className="my-2 bg-slate-700 shadow-lg p-2 rounded-lg text-sm ml-2">
+                                                New Airdrop
+                                            </button>
                                         </Link>
                                         <div className="flex flex-col">
                                             {tokens && tokens.length > 0 ? (
