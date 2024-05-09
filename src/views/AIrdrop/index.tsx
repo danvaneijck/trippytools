@@ -322,7 +322,7 @@ const Airdrop = () => {
                     {currentNetwork == "mainnet" && <div className=""><ShroomBalance /></div>}
 
                     <div className="flex justify-center items-center min-h-full ">
-                        <div className="w-full max-w-screen-xl px-2 max-w-screen-md">
+                        <div className="w-full max-w-screen-md px-2 max-w-screen-md">
                             {connectedAddress ?
                                 <div>
 
@@ -538,7 +538,7 @@ const Airdrop = () => {
                                                             <div className="text-xs">You should exclude addresses such as burn addresses, the marketplace contract etc..</div>
                                                             <div className="mt-2">
                                                                 <table className="table-auto w-full">
-                                                                    <thead className="text-white">
+                                                                    <thead className="text-white text-left">
                                                                         <tr>
                                                                             <th className="px-4 py-2">
                                                                                 Include
@@ -681,7 +681,7 @@ const Airdrop = () => {
                                                                 <div className="text-xs">You should exclude addresses such as burn addresses, the pair contract etc..</div>
                                                                 <div className="mt-2">
                                                                     <table className="table-auto w-full">
-                                                                        <thead className="text-white">
+                                                                        <thead className="text-white text-left">
                                                                             <tr>
                                                                                 <th className="px-4 py-2">
                                                                                     Include
