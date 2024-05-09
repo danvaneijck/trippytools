@@ -205,7 +205,8 @@ const TokenHolders = () => {
                         </button>
                         {error && <div className="text-red-500 mt-2">
                             {error}
-                        </div>}
+                        </div>
+                        }
 
                         <div className="flex flex-col md:flex-row justify-between">
                             {tokenInfo && (
