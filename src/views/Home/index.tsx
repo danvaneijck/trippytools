@@ -3,7 +3,7 @@ import WAVES from 'vanta/dist/vanta.waves.min'
 import { Link } from 'react-router-dom';
 import ConnectKeplr from '../../components/App/ConnectKeplr';
 import shroom from "../../assets/shroom.jpg"
-import { FaDiscord } from 'react-icons/fa';
+import { FaDiscord, FaTelegram } from 'react-icons/fa';
 
 const Home = () => {
 
@@ -71,30 +71,36 @@ const Home = () => {
                         <div className='text-xl md:text-2xl'>Building tools for the community</div>
 
                         <a href='https://discord.gg/Nnz34jzA5T' >
-                            <div className='flex flex-row mt-5 text-sm items-center justify-center  w-auto rounded-lg hover:font-bold'>
+                            <div className='flex flex-row mt-2 text-sm items-center justify-center  w-auto rounded-lg hover:font-bold'>
                                 <FaDiscord className='mr-2 text-3xl' />
                                 Join the discord
                             </div>
                         </a>
+                        <a href='https://t.me/trippinj' >
+                            <div className='flex flex-row mt-2 text-sm items-center justify-center  w-auto rounded-lg hover:font-bold'>
+                                <FaTelegram className='mr-2 text-3xl' />
+                                Join the telegram
+                            </div>
+                        </a>
                         <Link to="/token-holders">
                             <div className='mt-5 text-sm hover:font-bold'>
-                                Query token holders for cw20 tokens and native token factory tokens
+                                Query token holders
                             </div>
                         </Link>
                         <Link to="/token-liquidity">
-                            <div className='mt-5 text-sm hover:font-bold'>
-                                Query Astroport and DojoSwap liquidity holders for a given pair
+                            <div className='mt-2 text-sm hover:font-bold'>
+                                Query Astroport and DojoSwap liquidity holders
                             </div>
                         </Link>
                         <Link to="/manage-tokens">
-                            <div className='mt-5 text-sm hover:font-bold'>
-                                Manage your native token factory tokens
+                            <div className='mt-2 text-sm hover:font-bold'>
+                                Create and airdrop token factory tokens
                             </div>
                         </Link>
                         <a href='https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl' >
                             <div className='flex flex-row mt-5 text-sm items-center justify-center p-2 w-auto rounded-lg  hover:font-bold'>
                                 <img src={shroom} style={{ borderRadius: '50%', width: 40, height: 40 }} className="animate-3dspin mr-2" alt="Spinning Image" />
-                                Trade shroom on Coin hall
+                                Trade shroom on Coinhall
                             </div>
                         </a>
 

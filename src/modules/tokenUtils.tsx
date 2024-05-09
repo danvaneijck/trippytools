@@ -1077,6 +1077,79 @@ class TokenUtils {
             ...infoDecoded,
         };
     }
+
+    async getNFTCollectionInfo(collectionAddress: string) {
+        const infoQuery = Buffer.from(
+            JSON.stringify({
+                contract_info: {}
+            })
+        ).toString("base64");
+
+        const info = await this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, infoQuery);
+        const infoDecoded = JSON.parse(new TextDecoder().decode(info.data));
+        return infoDecoded
+    }
+
+    async getNFTHolders(collectionAddress: string, setProgress: React.Dispatch<React.SetStateAction<string>>) {
+        const numTokensQuery = Buffer.from(
+            JSON.stringify({
+                num_tokens: {}
+            })
+        ).toString("base64");
+
+        const numTokensInfo = await this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, numTokensQuery);
+        const numTokensDecoded = JSON.parse(new TextDecoder().decode(numTokensInfo.data));
+        console.log(numTokensDecoded);
+        const totalTokens = numTokensDecoded.count;
+
+        let startAfter = "";
+        let hasMore = true;
+        const holderMap = {};
+
+        while (hasMore) {
+            const allTokensQuery = Buffer.from(
+                JSON.stringify({
+                    all_tokens: {
+                        start_after: startAfter.length > 0 ? startAfter : null,
+                        limit: 30
+                    }
+                })
+            ).toString("base64");
+
+            const allTokensInfo = await this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, allTokensQuery);
+            const allTokensDecoded = JSON.parse(new TextDecoder().decode(allTokensInfo.data));
+
+            if (allTokensDecoded && allTokensDecoded.tokens && allTokensDecoded.tokens.length > 0) {
+                allTokensDecoded.tokens.forEach(token => {
+                    const owner = token.owner;
+                    if (holderMap[owner]) {
+                        holderMap[owner].balance++;
+                        holderMap[owner].metadataIds.push(token.metadata_uri);
+                    } else {
+                        holderMap[owner] = {
+                            balance: 1,
+                            address: owner,
+                            metadataIds: [token.metadata_uri]
+                        };
+                    }
+                });
+
+                startAfter = allTokensDecoded.tokens[allTokensDecoded.tokens.length - 1].token_id;
+                setProgress(`wallets checked: ${Object.values(holderMap).length} / ${totalTokens}`)
+            } else {
+                hasMore = false;
+            }
+        }
+
+        Object.keys(holderMap).forEach(key => {
+            holderMap[key].percentageHeld = Number((holderMap[key].balance / totalTokens * 100).toFixed(4))
+        });
+
+        const sortedHolders = Object.values(holderMap).sort((a, b) => b.balance - a.balance);
+
+        return sortedHolders;
+    }
+
 }
 
 export default TokenUtils;

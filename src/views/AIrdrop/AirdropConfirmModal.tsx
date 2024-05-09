@@ -1,8 +1,3 @@
-/* eslint-disable @typescript-eslint/no-misused-promises */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
     BaseAccount,
     BroadcastModeKeplr,
@@ -11,11 +6,8 @@ import {
     CosmosTxV1Beta1Tx,
     createTransaction,
     getTxRawFromTxRawOrDirectSignResponse,
-    MsgCreateDenom,
     MsgExecuteContract,
-    MsgMint,
     MsgMultiSend,
-    MsgSetDenomMetadata,
     TxRaw,
     TxRestClient,
 } from "@injectivelabs/sdk-ts";
@@ -24,28 +16,20 @@ import { BigNumber, BigNumberInBase, BigNumberInWei, DEFAULT_BLOCK_TIMEOUT_HEIGH
 import { Buffer } from "buffer";
 import { useCallback, useState } from "react";
 import { useSelector } from "react-redux";
-import { MdImageNotSupported } from "react-icons/md";
 import { useNavigate } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
-import IPFSImage from "../../components/App/IpfsImage";
+import { walletLabels } from "../../constants/walletLabels";
 
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
 
-const ConfirmModal = (props: {
+const AirdropConfirmModal = (props: {
     airdropDetails: unknown;
-    tokenDescription: string;
-    tokenImage: string;
-    airdropPercent: number;
+    tokenAddress: string;
     tokenDecimals: number;
-    tokenSupply: number;
-    tokenSymbol: string;
-    tokenName: string;
     shroomCost: number
     setShowModal: (arg0: boolean) => void;
 }) => {
-
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
 
     const currentNetwork = useSelector(state => state.network.currentNetwork);
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
@@ -128,10 +112,10 @@ const ConfirmModal = (props: {
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
 
-        const records = airdropDetails.filter(record => (Number(record.amountToAirdrop) !== 0)).map((record: { address: any; amountToAirdrop: any; }) => {
+        const records = airdropDetails.filter(record => (Number(Number(record.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0)).map((record: { address: any; amountToAirdrop: any; }) => {
             return {
                 address: record.address,
-                amount: Number(record.amountToAirdrop).toFixed(0)
+                amount: Number(record.amountToAirdrop).toFixed(props.tokenDecimals)
             }
         })
 
@@ -172,15 +156,15 @@ const ConfirmModal = (props: {
             "amount": [
                 {
                     "denom": "inj",
-                    "amount": "64000000000000"
+                    "amount": "60000000000000"
                 }
             ],
-            "gas": "4000000"
+            "gas": "5000000"
         }
-        // return
+
         await handleSendTx(pubKey, msg, injectiveAddress, offlineSigner, gas)
 
-    }, [getKeplr, handleSendTx])
+    }, [getKeplr, handleSendTx, props.tokenDecimals])
 
     const payFee = useCallback(async () => {
         const { key, offlineSigner } = await getKeplr();
@@ -201,69 +185,8 @@ const ConfirmModal = (props: {
         await handleSendTx(pubKey, msg, injectiveAddress, offlineSigner)
     }, [getKeplr, handleSendTx, props.shroomCost])
 
-    const createAndMint = useCallback(async () => {
+    const startAirdrop = useCallback(async () => {
         setError(null)
-        const { key, offlineSigner } = await getKeplr(networkConfig.chainId);
-        const pubKey = Buffer.from(key.pubKey).toString("base64");
-        const injectiveAddress = key.bech32Address;
-
-        const subdenom = props.tokenSymbol
-        const denom = `factory/${injectiveAddress}/${subdenom}`;
-        const amount = props.tokenSupply
-
-        const msgCreateDenom = MsgCreateDenom.fromJSON({
-            subdenom,
-            sender: injectiveAddress,
-        });
-
-        const msgMint = MsgMint.fromJSON({
-            sender: injectiveAddress,
-            amount: {
-                denom: `factory/${injectiveAddress}/${subdenom}`,
-                amount: new BigNumberInBase(amount)
-                    .toWei(props.tokenDecimals)
-                    .toFixed()
-            }
-        });
-
-        const msgSetDenomMetadata = MsgSetDenomMetadata.fromJSON({
-            sender: injectiveAddress,
-            metadata: {
-                base: denom, /** the base denom */
-                description: props.tokenDescription, /** description of your token */
-                display: props.tokenSymbol, /** the displayed name of your token on UIs */
-                name: props.tokenName, /** the name of your token */
-                symbol: props.tokenSymbol, /** the symbol of your token */
-                uri: props.tokenImage /** the logo of your token, should be hosted on IPFS and should be a small webp image */,
-                denomUnits: [
-                    {
-                        denom: denom,
-                        exponent: 0,
-                        aliases: [subdenom]
-                    },
-                    {
-                        denom: subdenom,
-                        exponent: props.tokenDecimals,
-                        aliases: [subdenom]
-                    },
-                ],
-                uriHash: ""
-            }
-        });
-
-        // create denom
-        console.log("create denom")
-        setProgress("Create new denom")
-        await handleSendTx(pubKey, msgCreateDenom, injectiveAddress, offlineSigner)
-        // mint supply
-        console.log("mint")
-        setProgress("Mint supply")
-        await handleSendTx(pubKey, msgMint, injectiveAddress, offlineSigner)
-        // set metadata
-        console.log("metadata")
-        setProgress("Upload denom metadata")
-        await handleSendTx(pubKey, msgSetDenomMetadata, injectiveAddress, offlineSigner)
-
         if (props.airdropDetails !== null && props.airdropDetails.length > 0) {
             if (currentNetwork == "mainnet" && props.shroomCost !== 0) {
                 console.log("pay shroom fee")
@@ -272,17 +195,11 @@ const ConfirmModal = (props: {
             }
             console.log("airdrop")
             setProgress("Send airdrops")
-            await sendAirdrops(denom, props.tokenDecimals, props.airdropDetails)
+            await sendAirdrops(props.tokenAddress, props.tokenDecimals, props.airdropDetails)
+            setProgress("Done...")
+            navigate('/token-holders?address=' + props.tokenAddress);
         }
-
-        setProgress("Done...")
-        navigate('/manage-tokens');
-
-    }, [getKeplr, networkConfig.chainId,
-        props.tokenSymbol, props.tokenSupply,
-        props.tokenDecimals, props.tokenDescription,
-        props.tokenName, props.tokenImage, props.airdropDetails,
-        props.shroomCost, handleSendTx, navigate, currentNetwork, sendAirdrops, payFee])
+    }, [props.airdropDetails, props.tokenAddress, props.shroomCost, props.tokenDecimals, navigate, currentNetwork, sendAirdrops, payFee])
 
     return (
         <>
@@ -293,36 +210,16 @@ const ConfirmModal = (props: {
                     <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-slate-800 outline-none focus:outline-none">
                         <div className="flex items-start justify-between p-4 border-b border-solid border-blueGray-900 rounded-t">
                             <h3 className="text-xl font-semibold">
-                                Launch on {currentNetwork}
+                                Airdrop on {currentNetwork}
                             </h3>
-                        </div>
-                        <div className="relative p-6 flex-auto">
-                            <div className="flex flex-row">
-                                <div>
-                                    <div>Name: {props.tokenName}</div>
-                                    <div>Symbol: {props.tokenSymbol}</div>
-                                    <div>Supply: {props.tokenSupply}</div>
-                                    <div>Decimals: {props.tokenDecimals}</div>
-                                    <div>Tokens to airdrop: {props.tokenSupply * (props.airdropPercent / 100)}</div>
-                                    <div>Admin address: {connectedAddress}</div>
-                                    <div>Token denom: {`factory/${connectedAddress}/${props.tokenSymbol}`}</div>
-                                    <div>Tokens to your wallet: {(props.tokenSupply - (props.tokenSupply * (props.airdropPercent / 100))).toFixed(props.tokenDecimals)}</div>
-                                </div>
-                                <div className="ml-10">
-                                    token image
-                                    {props.tokenImage ?
-                                        <IPFSImage
-                                            width={100}
-                                            className={'rounded'}
-                                            ipfsPath={props.tokenImage}
 
-                                        />
-                                        :
-                                        <MdImageNotSupported className="text-5xl text-slate-500" />
-                                    }
-                                </div>
-                            </div>
+                        </div>
+
+                        <div className="relative p-6 flex-auto">
                             <div>
+                                <p>
+                                    Airdropping token <br />{props.tokenAddress}
+                                </p>
                                 {props.airdropDetails !== null && props.airdropDetails.length > 0 &&
                                     <div className="mt-5">
                                         <div className="max-h-80 overflow-y-scroll overflow-x-auto">
@@ -345,19 +242,25 @@ const ConfirmModal = (props: {
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {props.airdropDetails.map((holder, index) => (
+                                                        {props.airdropDetails.filter(x => Number(Number(x.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0).map((holder, index) => (
                                                             <tr key={index} className="text-white border-b text-xs">
-
                                                                 <td className="px-6 py-1 whitespace-nowrap">
                                                                     <a
                                                                         className="hover:text-indigo-900"
                                                                         href={`https://explorer.injective.network/account/${holder.address}`}
                                                                     >
                                                                         {holder.address}
+                                                                        {
+                                                                            walletLabels[holder.address] ? (
+                                                                                <span className={`${walletLabels[holder.address].bgColor} ${walletLabels[holder.address].textColor} ml-2`}>
+                                                                                    {walletLabels[holder.address].label}
+                                                                                </span>
+                                                                            ) : null
+                                                                        }
                                                                     </a>
                                                                 </td>
                                                                 <td className="px-6 py-1">
-                                                                    {Number(holder.amountToAirdrop).toFixed(0)}{" "}
+                                                                    {Number(holder.amountToAirdrop).toFixed(props.tokenDecimals)}{" "}
                                                                 </td>
                                                                 <td className="px-6 py-1">
                                                                     {Number(holder.percentToAirdrop).toFixed(2)}%
@@ -391,14 +294,14 @@ const ConfirmModal = (props: {
                             <button
                                 className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
-                                onClick={() => createAndMint().then(() => console.log("done")).catch(e => {
+                                onClick={() => startAirdrop().then(() => console.log("done")).catch(e => {
                                     console.log(e)
                                     setError(e.message)
                                     setProgress("")
                                     setTxLoading(false)
                                 })}
                             >
-                                Launch
+                                Do Airdrop
                             </button>
                         </div>
                     </div>
@@ -410,4 +313,4 @@ const ConfirmModal = (props: {
     )
 }
 
-export default ConfirmModal
+export default AirdropConfirmModal
