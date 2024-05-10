@@ -1,5 +1,6 @@
 export interface TokenInfo {
     name: string;
+    denom: string;
     symbol: string;
     decimals: number;
     total_supply?: number;

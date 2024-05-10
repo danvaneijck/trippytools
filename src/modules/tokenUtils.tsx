@@ -249,6 +249,7 @@ class TokenUtils {
 
         const tokenInfo: TokenInfo = {
             name: data.name,
+            denom: denom,
             symbol: data.symbol,
             decimals: matchingDenomUnit ? matchingDenomUnit.exponent : 0,
             total_supply: Number(supply.amount),

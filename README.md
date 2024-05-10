@@ -20,6 +20,9 @@ Clone the repository:
 - `git clone https://github.com/your-username/trippinj.git`
 - `cd trippinj`
 
+Use node 18
+- `nvm use 18`
+
 Install dependencies:
 - `yarn install`
 

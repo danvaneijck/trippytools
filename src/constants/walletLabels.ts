@@ -8,7 +8,7 @@ const sporeShroomPool = "inj1rusfnzgtcvkn8z92h9hyvzuna60tc0x0yy74tf"
 const talisMarketPlace = "inj1l9nh9wv24fktjvclc4zgrgyzees7rwdtx45f54"
 const stakedSporeLP = "inj164pyppndppdmazfjrvecajnwcs3hmq06agn4ka"
 
-export const walletLabels = {
+export const WALLET_LABELS = {
     [rugLord]: {
         label: "rugger",
         bgColor: "",

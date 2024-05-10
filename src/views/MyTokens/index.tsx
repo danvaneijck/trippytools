@@ -183,10 +183,10 @@ const MyTokens = () => {
                     <ConnectKeplr />
                 </div>
             </header>
-            <div className="pt-14 flex-grow mx-2 pb-20">
+            <div className="pt-14 mx-2 pb-20">
                 {currentNetwork == "mainnet" && <div className=""><ShroomBalance /></div>}
                 <div className="flex justify-center items-center min-h-full">
-                    <div className="w-full max-w-screen-md px-2 ">
+                    <div className="w-full px-2 ">
                         {connectedAddress ?
                             <div>
                                 <div className="text-center text-white mb-5">
@@ -201,7 +201,7 @@ const MyTokens = () => {
                                             to="/token-launch"
 
                                         >
-                                            <button className="my-2 bg-slate-700 shadow-lg p-2 rounded-lg text-sm">
+                                            <button className="my-2 bg-slate-700 shadow-lg p-2 rounded-lg text-sm  hover:font-bold">
                                                 Create New Token
                                             </button>
 
@@ -209,7 +209,7 @@ const MyTokens = () => {
                                         <Link
                                             to="/airdrop"
                                         >
-                                            <button className="my-2 bg-slate-700 shadow-lg p-2 rounded-lg text-sm ml-2">
+                                            <button className="my-2 bg-slate-700 shadow-lg p-2 rounded-lg text-sm ml-2 hover:font-bold">
                                                 New Airdrop
                                             </button>
                                         </Link>
