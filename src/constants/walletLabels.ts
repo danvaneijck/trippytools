@@ -6,6 +6,7 @@ const shroomPool = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
 const shroomMarketingWallet = "inj1pr5lyuez8ak94tpuz9fs7dkpst7pkc9uuhfhvm"
 const sporeShroomPool = "inj1rusfnzgtcvkn8z92h9hyvzuna60tc0x0yy74tf"
 const talisMarketPlace = "inj1l9nh9wv24fktjvclc4zgrgyzees7rwdtx45f54"
+const stakedSporeLP = "inj164pyppndppdmazfjrvecajnwcs3hmq06agn4ka"
 
 export const walletLabels = {
     [rugLord]: {
@@ -47,5 +48,10 @@ export const walletLabels = {
         label: "Talis Marketplace",
         bgColor: "",
         textColor: "text-green-500"
+    },
+    [stakedSporeLP]: {
+        label: "staked spore LP 🧑‍🌾",
+        bgColor: "",
+        textColor: "text-yellow-500"
     }
 }
