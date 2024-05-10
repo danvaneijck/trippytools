@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { useCallback, useEffect, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { GridLoader } from "react-spinners";
@@ -8,20 +7,21 @@ import { useSearchParams } from 'react-router-dom';
 import ConnectKeplr from "../../components/App/ConnectKeplr";
 import { useSelector } from "react-redux";
 import IPFSImage from "../../components/App/IpfsImage";
-import { walletLabels } from "../../constants/walletLabels";
+import { WALLET_LABELS } from "../../constants/walletLabels";
+import TokenSelect from "../../components/Inputs/TokenSelect";
+import { TOKENS } from "../../constants/contractAddresses";
 
 
 const TokenHolders = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
 
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
     const currentNetwork = useSelector(state => state.network.currentNetwork);
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
 
     const [contractAddress, setContractAddress] = useState(
-        "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
+        searchParams.get("address") ?? TOKENS[0]
     );
 
-    const [searchParams, setSearchParams] = useSearchParams();
 
     const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
     const [pairMarketing, setPairMarketing] = useState<MarketingInfo | null>(null);
@@ -36,7 +36,7 @@ const TokenHolders = () => {
 
     const setAddress = useCallback(() => {
         setSearchParams({
-            address: contractAddress
+            address: contractAddress.value
         })
     }, [setSearchParams, contractAddress])
 
@@ -46,7 +46,6 @@ const TokenHolders = () => {
 
     const getTokenHolders = useCallback((address: string) => {
         const module = new TokenUtils(networkConfig)
-        console.log(address);
         setError(null)
         setTokenInfo(null)
         setPairMarketing(null)
@@ -62,7 +61,6 @@ const TokenHolders = () => {
             module
                 .getDenomMetadata(address)
                 .then((r) => {
-                    console.log(r)
                     setTokenInfo(r);
                 })
                 .catch((e: unknown) => {
@@ -76,7 +74,10 @@ const TokenHolders = () => {
             module
                 .getTokenInfo(address)
                 .then((r) => {
-                    setTokenInfo(r);
+                    setTokenInfo({
+                        ...r,
+                        denom: address
+                    });
                 })
                 .catch((e: unknown) => {
                     console.log(e);
@@ -86,7 +87,6 @@ const TokenHolders = () => {
                     }
                 });
             module.getTokenMarketing(address).then(r => {
-                console.log(r)
                 setPairMarketing(r)
             }).catch(e => {
                 console.log(e)
@@ -103,7 +103,6 @@ const TokenHolders = () => {
             address.includes("ibc")
         ) {
             module.getTokenFactoryTokenHolders(address, setProgress).then(r => {
-                console.log(r)
                 if (r) setHolders(r);
                 setLoading(false);
             }).catch(e => {
@@ -137,8 +136,8 @@ const TokenHolders = () => {
     useEffect(() => {
         const address = searchParams.get("address")
         if (address && address !== lastLoadedAddress) {
-            setContractAddress(address)
             getTokenHolders(address)
+            setContractAddress(address => TOKENS.find(v => v.value == address) ?? address)
         }
     }, [searchParams, lastLoadedAddress, getTokenHolders])
 
@@ -185,21 +184,17 @@ const TokenHolders = () => {
                             >
                                 Token address
                             </label>
-                            <input
-                                id="token-address"
-                                type="text"
-                                className="text-black w-full"
-                                onChange={(e) =>
-                                    setContractAddress(e.target.value)
-                                }
-                                value={contractAddress}
+                            <TokenSelect
+                                options={TOKENS}
+                                selectedOption={contractAddress}
+                                setSelectedOption={setContractAddress}
                             />
                         </div>
 
                         <button
                             disabled={loading}
                             onClick={setAddress}
-                            className="mt-5 bg-gray-800 rounded p-2 w-full text-white border border-white"
+                            className="mt-5 bg-gray-800 rounded-lg p-2 w-full text-white border border-slate-800 shadow-lg font-bold"
                         >
                             Get token holders
                         </button>
@@ -208,9 +203,10 @@ const TokenHolders = () => {
                         </div>
                         }
 
-                        <div className="flex flex-col md:flex-row justify-between">
+                        <div className="flex flex-col md:flex-row justify-between text-sm">
                             {tokenInfo && (
-                                <div className="mt-5 text-base text-white">
+                                <div className="mt-5 text-white">
+                                    <div className="font-bold">denom: {tokenInfo.denom}</div>
                                     <div>name: {tokenInfo.name}</div>
                                     <div>symbol: {tokenInfo.symbol}</div>
                                     <div>decimals: {tokenInfo.decimals}</div>
@@ -225,17 +221,26 @@ const TokenHolders = () => {
                                 </div>
                             )}
                             {!pairMarketing && tokenInfo && tokenInfo.logo && (
-                                <div className="mt-5 text-base text-white">
+                                <div className="mt-5 text-sm text-white">
                                     <IPFSImage
                                         width={100}
-                                        className={'mb-2'}
+                                        className={'mb-2 rounded-lg'}
                                         ipfsPath={tokenInfo.logo}
-
                                     />
+                                    <a href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}explorer.injective.network/account/${tokenInfo.admin}`}>
+                                        admin: {tokenInfo.admin.slice(0, 5) + '...' + tokenInfo.admin.slice(-5)}
+                                        {
+                                            WALLET_LABELS[tokenInfo.admin] ? (
+                                                <span className={`${WALLET_LABELS[tokenInfo.admin].bgColor} ${WALLET_LABELS[tokenInfo.admin].textColor} ml-2`}>
+                                                    {WALLET_LABELS[tokenInfo.admin].label}
+                                                </span>
+                                            ) : null
+                                        }
+                                    </a>
                                 </div>
                             )}
                             {pairMarketing && (
-                                <div className="mt-5 text-base text-white">
+                                <div className="mt-5 text-sm text-white">
                                     <img
                                         src={pairMarketing.logo.url}
                                         style={{ width: 50, height: 50 }}
@@ -247,9 +252,9 @@ const TokenHolders = () => {
                                     <div>
                                         marketing: {pairMarketing.marketing}
                                         {
-                                            walletLabels[pairMarketing.marketing] ? (
-                                                <span className={`${walletLabels[pairMarketing.marketing].bgColor} ${walletLabels[pairMarketing.marketing].textColor} ml-2`}>
-                                                    {walletLabels[pairMarketing.marketing].label}
+                                            WALLET_LABELS[pairMarketing.marketing] ? (
+                                                <span className={`${WALLET_LABELS[pairMarketing.marketing].bgColor} ${WALLET_LABELS[pairMarketing.marketing].textColor} ml-2`}>
+                                                    {WALLET_LABELS[pairMarketing.marketing].label}
                                                 </span>
                                             ) : null
                                         }
@@ -309,9 +314,9 @@ const TokenHolders = () => {
                                                             </a>
 
                                                             {
-                                                                walletLabels[holder.address] ? (
-                                                                    <span className={`${walletLabels[holder.address].bgColor} ${walletLabels[holder.address].textColor} ml-2`}>
-                                                                        {walletLabels[holder.address].label}
+                                                                WALLET_LABELS[holder.address] ? (
+                                                                    <span className={`${WALLET_LABELS[holder.address].bgColor} ${WALLET_LABELS[holder.address].textColor} ml-2`}>
+                                                                        {WALLET_LABELS[holder.address].label}
                                                                     </span>
                                                                 ) : null
                                                             }
