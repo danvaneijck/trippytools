@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { useCallback, useEffect, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { GridLoader } from "react-spinners";
@@ -9,33 +8,25 @@ import { IoIosWarning } from "react-icons/io";
 import { useSelector } from "react-redux";
 import ConnectKeplr from "../../components/App/ConnectKeplr";
 import IPFSImage from "../../components/App/IpfsImage";
-import { walletLabels } from "../../constants/walletLabels";
+import { WALLET_LABELS } from "../../constants/walletLabels";
+import TokenSelect from "../../components/Inputs/TokenSelect";
+import { LIQUIDITY_POOLS } from "../../constants/contractAddresses";
 
-const MAIN_NET = {
-    grpc: "https://sentry.chain.grpc-web.injective.network",
-    explorer: `https://sentry.explorer.grpc-web.injective.network/api/explorer/v1`,
-    rest: "https://sentry.lcd.injective.network",
-    indexer: "https://sentry.exchange.grpc-web.injective.network",
-    chainId: "injective-1",
-    dojoFactory: "inj1pc2vxcmnyzawnwkf03n2ggvt997avtuwagqngk",
-    explorerUrl: "https://explorer.injective.network",
-};
 
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
 const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
 
 const TokenLiquidity = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
 
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
     const currentNetwork = useSelector(state => state.network.currentNetwork);
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
 
     const [contractAddress, setContractAddress] = useState(
-        "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
+        searchParams.get("address") ?? LIQUIDITY_POOLS[0]
     );
 
     const [lastLoadedAddress, setLastLoadedAddress] = useState("")
-    const [searchParams, setSearchParams] = useSearchParams();
     const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
     const [holders, setHolders] = useState<Holder[]>([]);
     const [progress, setProgress] = useState<string>("");
@@ -47,7 +38,7 @@ const TokenLiquidity = () => {
 
     const setAddress = useCallback(() => {
         setSearchParams({
-            address: contractAddress
+            address: contractAddress.value
         })
     }, [setSearchParams, contractAddress])
 
@@ -68,7 +59,6 @@ const TokenLiquidity = () => {
         module
             .getPairInfo(address)
             .then((r: PairInfo) => {
-                console.log(r);
                 setPairInfo(r);
 
                 const memeAddress =
@@ -93,13 +83,15 @@ const TokenLiquidity = () => {
                     module
                         .getTokenInfo(memeAddress)
                         .then((r: any) => {
-                            setTokenInfo(r);
+                            setTokenInfo({
+                                ...r,
+                                denom: memeAddress
+                            });
                         })
                         .catch((e: unknown) => {
                             console.log(e);
                         });
                     module.getTokenMarketing(memeAddress).then(r => {
-                        console.log(r)
                         setPairMarketing(r)
                     }).catch(e => {
                         console.log(e)
@@ -134,11 +126,11 @@ const TokenLiquidity = () => {
     useEffect(() => {
         const address = searchParams.get("address")
         if (address && address !== lastLoadedAddress) {
-            setContractAddress(address)
             getTokenHolders(address)
+            console.log(LIQUIDITY_POOLS.find(v => v.value == address) ?? address)
+            setContractAddress(address => LIQUIDITY_POOLS.find(v => v.value == address) ?? address)
         }
     }, [searchParams, lastLoadedAddress, getTokenHolders])
-
 
     return (
         <div className="flex flex-col min-h-screen">
@@ -183,20 +175,17 @@ const TokenLiquidity = () => {
                             >
                                 Pair address
                             </label>
-                            <input
-                                type="text"
-                                className="text-black w-full"
-                                onChange={(e) =>
-                                    setContractAddress(e.target.value)
-                                }
-                                value={contractAddress}
+                            <TokenSelect
+                                options={LIQUIDITY_POOLS}
+                                selectedOption={contractAddress}
+                                setSelectedOption={setContractAddress}
                             />
                         </div>
 
                         <button
                             disabled={loading}
                             onClick={setAddress}
-                            className="bg-gray-800 rounded p-2 mt-5 w-full text-white border border-white"
+                            className="bg-gray-800 rounded-lg p-2 mt-5 w-full text-white border border-slate-800 shadow-lg font-bold"
                         >
                             Get token liquidity
                         </button>
@@ -207,7 +196,7 @@ const TokenLiquidity = () => {
 
                         <div className="flex flex-col md:flex-row justify-between">
                             {tokenInfo && (
-                                <div className="mt-5 text-base text-white">
+                                <div className="mt-5 text-sm text-white">
                                     <div>name: {tokenInfo.name}</div>
                                     <div>symbol: {tokenInfo.symbol}</div>
                                     <div>decimals: {tokenInfo.decimals}</div>
@@ -221,17 +210,27 @@ const TokenLiquidity = () => {
                                 </div>
                             )}
                             {!pairMarketing && tokenInfo && tokenInfo.logo && (
-                                <div className="mt-5 text-base text-white">
+                                <div className="mt-5 text-sm text-white">
                                     <IPFSImage
                                         width={100}
-                                        className={'mb-2'}
+                                        className={'mb-2 rounded-lg'}
                                         ipfsPath={tokenInfo.logo}
 
                                     />
+                                    <a href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}explorer.injective.network/account/${tokenInfo.admin}`}>
+                                        admin: {tokenInfo.admin.slice(0, 5) + '...' + tokenInfo.admin.slice(-5)}
+                                        {
+                                            WALLET_LABELS[tokenInfo.admin] ? (
+                                                <span className={`${WALLET_LABELS[tokenInfo.admin].bgColor} ${WALLET_LABELS[tokenInfo.admin].textColor} ml-2`}>
+                                                    {WALLET_LABELS[tokenInfo.admin].label}
+                                                </span>
+                                            ) : null
+                                        }
+                                    </a>
                                 </div>
                             )}
                             {pairMarketing && (
-                                <div className="mt-5 text-base text-white">
+                                <div className="mt-5 text-sm text-white">
                                     <img
                                         src={pairMarketing.logo.url}
                                         style={{ width: 50, height: 50 }}
@@ -243,9 +242,9 @@ const TokenLiquidity = () => {
                                     <div>
                                         marketing: {pairMarketing.marketing}
                                         {
-                                            walletLabels[pairMarketing.marketing] ? (
-                                                <span className={`${walletLabels[pairMarketing.marketing].bgColor} ${walletLabels[pairMarketing.marketing].textColor} ml-2`}>
-                                                    {walletLabels[pairMarketing.marketing].label}
+                                            WALLET_LABELS[pairMarketing.marketing] ? (
+                                                <span className={`${WALLET_LABELS[pairMarketing.marketing].bgColor} ${WALLET_LABELS[pairMarketing.marketing].textColor} ml-2`}>
+                                                    {WALLET_LABELS[pairMarketing.marketing].label}
                                                 </span>
                                             ) : null
                                         }
@@ -257,7 +256,7 @@ const TokenLiquidity = () => {
 
 
                         {pairInfo && (
-                            <div className="mt-2 text-white">
+                            <div className="mt-2 text-white text-sm">
                                 <div>
                                     pair address: {pairInfo.contract_addr}
                                 </div>
@@ -276,7 +275,11 @@ const TokenLiquidity = () => {
                                 }
                             </div>
                         )}
-
+                        {!loading && holders.length == 0 && lastLoadedAddress &&
+                            <div className="mt-10 text-center">
+                                no liquidity yet
+                            </div>
+                        }
                         {holders.length > 0 && (
                             <div className="mt-2 overflow-x-auto text-sm">
                                 <div>Total liquidity holders: {holders.length}</div>
@@ -307,9 +310,9 @@ const TokenLiquidity = () => {
                                                         {holder.address}
                                                     </a>
                                                     {
-                                                        walletLabels[holder.address] ? (
-                                                            <span className={`${walletLabels[holder.address].bgColor} ${walletLabels[holder.address].textColor} ml-2`}>
-                                                                {walletLabels[holder.address].label}
+                                                        WALLET_LABELS[holder.address] ? (
+                                                            <span className={`${WALLET_LABELS[holder.address].bgColor} ${WALLET_LABELS[holder.address].textColor} ml-2`}>
+                                                                {WALLET_LABELS[holder.address].label}
                                                             </span>
                                                         ) : null
                                                     }

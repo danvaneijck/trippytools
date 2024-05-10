@@ -18,7 +18,7 @@ import { useCallback, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
-import { walletLabels } from "../../constants/walletLabels";
+import { WALLET_LABELS } from "../../constants/walletLabels";
 
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
@@ -251,9 +251,9 @@ const AirdropConfirmModal = (props: {
                                                                     >
                                                                         {holder.address}
                                                                         {
-                                                                            walletLabels[holder.address] ? (
-                                                                                <span className={`${walletLabels[holder.address].bgColor} ${walletLabels[holder.address].textColor} ml-2`}>
-                                                                                    {walletLabels[holder.address].label}
+                                                                            WALLET_LABELS[holder.address] ? (
+                                                                                <span className={`${WALLET_LABELS[holder.address].bgColor} ${WALLET_LABELS[holder.address].textColor} ml-2`}>
+                                                                                    {WALLET_LABELS[holder.address].label}
                                                                                 </span>
                                                                             ) : null
                                                                         }
