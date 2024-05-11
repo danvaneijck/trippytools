@@ -8,6 +8,7 @@ import MyTokens from './views/MyTokens';
 import { store } from './store/store';
 import { Provider } from 'react-redux';
 import Airdrop from './views/AIrdrop';
+import MyceliumFarm from './views/MyceliumFarm';
 
 const App = () => {
   return (
@@ -20,6 +21,7 @@ const App = () => {
           <Route path="/trippy-distribution" element={<TrippyDistribution />} />
           <Route path="/manage-tokens" element={<MyTokens />} />
           <Route path="/airdrop" element={<Airdrop />} />
+          <Route path="/mycelium-farm" element={<MyceliumFarm />} />
           <Route path="/" element={<Home />} />
         </Routes>
       </Router>

@@ -10,7 +10,7 @@ export default {
         },
       },
       animation: {
-        '3dspin': '3dspin 15s linear infinite',
+        '3dspin': '3dspin 5s linear infinite',
       },
     },
   },
