@@ -32,6 +32,11 @@ export const TOKENS = [
         img: "https://cloudflare-ipfs.com/ipfs/QmcWQeL2podyWSZFEpGLUfgPgeGopM49pV8c97vHbwswkH/myceliumlogo.JPG"
     },
     {
+        value: "factory/inj10pz3xq7zf8xudqxaqealgyrnfk66u3c99ud5m2/SMELLY",
+        label: "SMELLY",
+        img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
+    },
+    {
         value: "factory/inj13y5nqf8mymy9tfxkg055th7hdm2uaahs9q6q5w/SNAPPY",
         label: "SNAPPY",
         img: "https://pbs.twimg.com/profile_images/1771472945488998400/1TgqGcdy_400x400.jpg"
