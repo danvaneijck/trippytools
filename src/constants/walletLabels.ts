@@ -25,7 +25,7 @@ export const WALLET_LABELS = {
         textColor: "text-red-500"
     },
     [trippykiwiAddress]: {
-        label: "trippykiwi (dev) 🥷",
+        label: "trippykiwi 🥷",
         bgColor: "",
         textColor: "text-green-500"
     },
