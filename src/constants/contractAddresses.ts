@@ -3,15 +3,43 @@
 export const LIQUIDITY_POOLS = [
     {
         value: "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl",
-        label: "SHROOM / INJ"
+        label: "SHROOM / INJ",
+        img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg"
     },
     {
         value: "inj1rusfnzgtcvkn8z92h9hyvzuna60tc0x0yy74tf",
-        label: "spore / SHROOM"
+        label: "spore / SHROOM",
+        img: "https://bafybeia6kaiznad75mbzr2uwswfxw6qymt7ws3egcui6tzquomzh2w3cu4.ipfs.w3s.link/spore.webp"
     },
     {
         value: "inj1e35460gusk3f0lagmul6vzt9vjh6fp3zknl665",
-        label: "mycelium / spore"
+        label: "mycelium / spore",
+        img: "https://cloudflare-ipfs.com/ipfs/QmcWQeL2podyWSZFEpGLUfgPgeGopM49pV8c97vHbwswkH/myceliumlogo.JPG"
+    },
+    {
+        value: "inj1tpt9u0lvz2njw6a7m8pufdamd6mt8ymh8cw4nc",
+        label: "SMELLY / INJ",
+        img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
+    },
+    {
+        value: "inj1r7ahhyfe35l04ffa5gnzsxjkgmnn9jkd5ds0vg",
+        label: "NONJA / INJ",
+        img: "https://www.nonja.xyz/pfp.png"
+    },
+    {
+        value: "inj1eswdzx773we5zu2mz0zcmm7l5msr8wcss8ek0f",
+        label: "KIRA / INJ",
+        img: "https://raw.githubusercontent.com/kdelia12/injective-ts/dev/packages/token-metadata/src/images/kira.jpeg"
+    },
+    {
+        value: "inj1j6lxp4e68tfu96xs95h72rna3jl7ffngs08g47",
+        label: "MONKS / INJ",
+        img: "https://ipfs-gw.stargaze-apis.com/ipfs/QmQJMfHXWuFhxiAk6oC3TbkD8ZqkzVMSruF5AJhVLZSJfp"
+    },
+    {
+        value: "inj1uugfny4cqxq0jg9vd6svyunhmdlk2s6wjdftj8",
+        label: "GINGER / INJ",
+        img: "https://raw.githubusercontent.com/SHITcoinsonINJ/injective-ts/c8034284085e1340f8c4eb7e8a7bc3adfc94c1ec/packages/token-metadata/src/images/ginger.png"
     }
 ]
 
