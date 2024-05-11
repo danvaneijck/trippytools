@@ -4,6 +4,9 @@ import { Link } from 'react-router-dom';
 import ConnectKeplr from '../../components/App/ConnectKeplr';
 import shroom from "../../assets/shroom.jpg"
 import { FaDiscord, FaTelegram } from 'react-icons/fa';
+import { GiFarmer } from 'react-icons/gi';
+import myceliumLogo from "../../assets/mycelium.jpeg"
+import spore from "../../assets/spore.webp"
 
 const Home = () => {
 
@@ -97,10 +100,24 @@ const Home = () => {
                                 Create and airdrop token factory tokens
                             </div>
                         </Link>
+                        <Link to="/mycelium-farm" className='flex flex-row justify-center items-center mt-5'>
+                            <GiFarmer className='text-2xl' />
+                            <div className='mt-2 text-sm hover:font-bold ml-2'>
+                                Farm mycelium with spore / SHROOM LP
+                            </div>
+                            <img src={myceliumLogo} style={{ borderRadius: '50%', width: 30 }} className="animate-3dspin ml-2" alt="Spinning Image" />
+
+                        </Link>
                         <a href='https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl' >
-                            <div className='flex flex-row mt-5 text-sm items-center justify-center p-2 w-auto rounded-lg  hover:font-bold'>
+                            <div className='flex flex-row mt-5 text-sm items-center justify-center p-2 w-auto rounded-lg hover:font-bold'>
                                 <img src={shroom} style={{ borderRadius: '50%', width: 40, height: 40 }} className="animate-3dspin mr-2" alt="Spinning Image" />
                                 Trade shroom on Coinhall
+                            </div>
+                        </a>
+                        <a href='https://coinhall.org/injective/inj1rusfnzgtcvkn8z92h9hyvzuna60tc0x0yy74tf' >
+                            <div className='flex flex-row text-sm items-center justify-center p-2 w-auto rounded-lg  hover:font-bold'>
+                                <img src={spore} style={{ borderRadius: '50%', width: 40, height: 40 }} className="animate-3dspin mr-2" alt="Spinning Image" />
+                                Trade spore on Coinhall
                             </div>
                         </a>
 
