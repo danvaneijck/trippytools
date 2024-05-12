@@ -50,7 +50,7 @@ export const WALLET_LABELS = {
         textColor: "text-green-500"
     },
     [stakedSporeLP]: {
-        label: "staked spore LP 🧑‍🌾",
+        label: "astroport generator 🧑‍🌾",
         bgColor: "",
         textColor: "text-yellow-500"
     }
