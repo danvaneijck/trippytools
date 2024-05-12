@@ -79,7 +79,7 @@ const TokenLaunch = () => {
                                 />
                             </div>
 
-                            <div className="text-center mt-4">New Token Details</div>
+                            <div className="text-center mt-4 mb-1">New Token Details</div>
 
                             <div className="flex flex-col md:flex-row justify-between">
                                 <div className="mb-1">
@@ -97,12 +97,13 @@ const TokenLaunch = () => {
                                         value={tokenName}
                                     />
                                 </div>
-                                <div className="">
+                                <div className="ml-0 md:ml-2">
                                     <label
                                         className="block text-base font-bold text-white"
                                     >
                                         Token symbol
                                     </label>
+
                                     <input
                                         type="text"
                                         className="text-black w-full rounded p-1 text-sm"
@@ -111,6 +112,8 @@ const TokenLaunch = () => {
                                         }
                                         value={tokenSymbol}
                                     />
+                                    <span className="text-xs">all capitals if you want to launch LP on DojoSwap</span>
+
                                 </div>
                             </div>
 
@@ -168,7 +171,7 @@ const TokenLaunch = () => {
                                 >
                                     Token image URL
                                 </label>
-                                <span className="text-xs">the logo of your token, should be hosted on IPFS and should be a small webp image</span>
+                                <span className="text-xs">the logo of your token, should be hosted on IPFS and should be a small webp image and accessible via https://</span>
                                 <input
                                     type="text"
                                     className="text-black w-full rounded p-1 text-sm"
