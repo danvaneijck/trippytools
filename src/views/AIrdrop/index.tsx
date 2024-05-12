@@ -9,7 +9,7 @@ import { WALLET_LABELS } from "../../constants/walletLabels";
 import IPFSImage from "../../components/App/IpfsImage";
 import AirdropConfirmModal from "./AirdropConfirmModal";
 import { Holder } from "../../types";
-import { NFT_COLLECTIONS, TOKENS } from "../../constants/contractAddresses";
+import { LIQUIDITY_TOKENS, NFT_COLLECTIONS, TOKENS } from "../../constants/contractAddresses";
 import TokenSelect from "../../components/Inputs/TokenSelect";
 
 const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
@@ -32,10 +32,10 @@ const Airdrop = () => {
     const [shroomCost] = useState(10000)
     const [shroomPrice, setShroomPrice] = useState(null)
 
-    const [dropMode, setDropMode] = useState("NFT");
+    const [dropMode, setDropMode] = useState("TOKEN");
     const [nftCollection, setNftCollection] = useState(NFT_COLLECTIONS[0]);
     const [nftCollectionInfo, setNftCollectionInfo] = useState(null);
-    const [airdropTokenAddress, setAirdropTokenAddress] = useState(TOKENS[1]);
+    const [airdropTokenAddress, setAirdropTokenAddress] = useState(LIQUIDITY_TOKENS[0]);
     const [airdropTokenInfo, setAirdropTokenInfo] = useState(null);
 
     const [airdropDetails, setAirdropDetails] = useState([]);
@@ -688,7 +688,16 @@ const Airdrop = () => {
                                                             airdrop to holders of token
                                                         </label>
                                                         <TokenSelect
-                                                            options={TOKENS}
+                                                            options={[
+                                                                {
+                                                                    label: "LIQUIDITY tokens",
+                                                                    options: LIQUIDITY_TOKENS
+                                                                },
+                                                                {
+                                                                    label: "Tokens",
+                                                                    options: TOKENS
+                                                                }
+                                                            ]}
                                                             selectedOption={airdropTokenAddress}
                                                             setSelectedOption={setAirdropTokenAddress}
                                                         />
@@ -753,7 +762,7 @@ const Airdrop = () => {
                                                         <div className="mt-5">
                                                             <div className="max-h-80 overflow-y-scroll overflow-x-auto">
                                                                 <div>Total participants: {airdropDetails.filter(x => x.includeInDrop).length}</div>
-                                                                <div className="text-xs">You should exclude addresses such as burn addresses, the pair contract etc..</div>
+                                                                <div className="text-xs">You should exclude addresses such as burn addresses, astro generator, the pair contract etc..</div>
                                                                 <div className="my-1">
                                                                     <div className="items-center mt-2">
                                                                         <label

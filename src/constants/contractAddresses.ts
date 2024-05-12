@@ -43,6 +43,29 @@ export const LIQUIDITY_POOLS = [
     }
 ]
 
+export const LIQUIDITY_TOKENS = [
+    {
+        value: "inj1e8ng0tn23yqdlp6mvv4zc9q3phkg40mlsxrwzx",
+        label: "SHROOM / INJ LP",
+        img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg"
+    },
+    {
+        value: "inj16qksf53k0n07cvpgzqs4q6kvpzh5aw2c6f9589",
+        label: "spore / SHROOM LP",
+        img: "https://bafybeia6kaiznad75mbzr2uwswfxw6qymt7ws3egcui6tzquomzh2w3cu4.ipfs.w3s.link/spore.webp"
+    },
+    {
+        value: "inj1v53kddphdgpcdrvgrze773wnj8dlcmpdnlcygq",
+        label: "mycelium / spore LP",
+        img: "https://cloudflare-ipfs.com/ipfs/QmcWQeL2podyWSZFEpGLUfgPgeGopM49pV8c97vHbwswkH/myceliumlogo.JPG"
+    },
+    {
+        value: "inj1prnfc8d8famgvla4zcmsd4xsxcwvjjzpauv75q",
+        label: "SMELLY / INJ LP",
+        img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
+    },
+]
+
 export const TOKENS = [
     {
         value: "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8",
