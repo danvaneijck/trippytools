@@ -1102,6 +1102,7 @@ class TokenUtils {
         const numTokensDecoded = JSON.parse(new TextDecoder().decode(numTokensInfo.data));
         console.log(numTokensDecoded);
         const totalTokens = numTokensDecoded.count;
+        console.log("total tokens")
 
         let startAfter = "";
         let hasMore = true;
@@ -1149,6 +1150,31 @@ class TokenUtils {
         const sortedHolders = Object.values(holderMap).sort((a, b) => b.balance - a.balance);
 
         return sortedHolders;
+    }
+
+    async getCW404Holders(collectionAddress: string, setProgress: React.Dispatch<React.SetStateAction<string>>) {
+        const numTokensQuery = Buffer.from(
+            JSON.stringify({
+                num_tokens: {}
+            })
+        ).toString("base64");
+
+        const numTokensInfo = await this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, numTokensQuery);
+        const numTokensDecoded = JSON.parse(new TextDecoder().decode(numTokensInfo.data));
+        console.log(numTokensDecoded);
+        const totalTokens = numTokensDecoded.count;
+        console.log("total tokens", totalTokens)
+
+        const allTokensQuery = Buffer.from(
+            JSON.stringify({
+                tokens: {
+                }
+            })
+        ).toString("base64");
+
+        const allTokensInfo = await this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, allTokensQuery);
+        const allTokensDecoded = JSON.parse(new TextDecoder().decode(allTokensInfo.data));
+        console.log(allTokensDecoded);
     }
 
     async getPendingAstroRewards(generatorAddress: string, lpToken: string, wallet: string) {
