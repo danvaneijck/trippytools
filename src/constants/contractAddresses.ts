@@ -176,11 +176,6 @@ export const NFT_COLLECTIONS = [
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/6633e4e8fe915c81f644c6cc/miniaturePicture"
     },
     {
-        value: "inj1n73yuus64z0yrda9hvn77twkspc4uste9j9ydd",
-        label: "Sushi Fighters",
-        img: "https://talis-protocol.mo.cloudinary.net/inj/families/65d7825fefc5876b5878b430/miniaturePicture"
-    },
-    {
         value: "inj1p0kdm00l0j0mk7r7nt6ufkhj2cg8yxqwtrkpm3",
         label: "Destiny Punks",
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/6594acfc7789111dab2e5fb3/miniaturePicture"
@@ -196,13 +191,29 @@ export const NFT_COLLECTIONS = [
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/663dfdffa7369a8d6824f086/miniaturePicture"
     },
     {
-        value: "inj1dmn43jyt6w6kycgsuu5a3ygtmtk6fm49yvf73d",
-        label: "Panda Moonshot",
-        img: "https://talis-protocol.mo.cloudinary.net/inj/families/66170251b6b99c609875acf0/miniaturePicture"
-    },
-    {
         value: "inj1al52xc734m23xxjlee28m9mjjcpfuen38che4q",
         label: "NAPEJAS",
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/65e75806add77a2a935e81e2/miniaturePicture"
     }
+]
+
+export const CW404_TOKENS = [
+    {
+        value: "inj1dmn43jyt6w6kycgsuu5a3ygtmtk6fm49yvf73d",
+        label: "Panda Moonshot",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/66170251b6b99c609875acf0/miniaturePicture",
+        isDisabled: true
+    },
+    {
+        value: "inj1n73yuus64z0yrda9hvn77twkspc4uste9j9ydd",
+        label: "Sushi Fighters",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/65d7825fefc5876b5878b430/miniaturePicture",
+        isDisabled: true
+    },
+    {
+        value: "inj14rgkkvwar36drhuajheu3u84jh9gdk27acfphy",
+        label: "Yakuza",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/66074809f642a97ae37ed7b2/miniaturePicture",
+        isDisabled: true
+    },
 ]
