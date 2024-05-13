@@ -253,11 +253,11 @@ const TokenLiquidity = () => {
                                 </div>
                             )}
                         </div>
-                        {pairInfo && <a href={"https://coinhall.org/injective/" + pairInfo.contract_addr}
-                            className="bg-gray-800 rounded-lg p-2 text-white border border-slate-800 shadow-lg font-bold"
+                        {pairInfo && <div className="mt-4 md:mt-0"><a href={"https://coinhall.org/injective/" + pairInfo.contract_addr}
+                            className="bg-gray-800 rounded-lg p-2 text-white border border-slate-800 shadow-lg font-bold "
                         >
                             Trade on coinhall
-                        </a>
+                        </a></div>
                         }
 
                         {pairInfo && (
