@@ -7,7 +7,7 @@ import Home from "./views/Home";
 import MyTokens from './views/MyTokens';
 import { store } from './store/store';
 import { Provider } from 'react-redux';
-import Airdrop from './views/AIrdrop';
+import Airdrop from './views/Airdrop';
 import MyceliumFarm from './views/MyceliumFarm';
 
 const App = () => {
