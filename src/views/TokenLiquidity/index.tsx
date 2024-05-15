@@ -229,7 +229,7 @@ const TokenLiquidity = () => {
                                     </a>
                                 </div>
                             )}
-                            {pairMarketing && (
+                            {pairMarketing && pairMarketing.logo && (
                                 <div className="mt-5 text-sm text-white">
                                     <img
                                         src={pairMarketing.logo.url}
