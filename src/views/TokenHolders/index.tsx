@@ -128,8 +128,9 @@ const TokenHolders = () => {
                         setError(e.message)
                     }
                 });
-            setLastLoadedAddress(address)
+
         }
+        setLastLoadedAddress(address)
 
     }, [networkConfig]);
 
