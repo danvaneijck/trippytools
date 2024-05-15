@@ -20,6 +20,7 @@ import { useSelector } from "react-redux";
 import { useNavigate } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
 import { WALLET_LABELS } from "../../constants/walletLabels";
+import { sendTelegramMessage } from "../../modules/telegram";
 
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
@@ -32,6 +33,7 @@ const AirdropConfirmModal = (props: {
     setShowModal: (arg0: boolean) => void;
 }) => {
 
+    const connectedAddress = useSelector(state => state.network.connectedAddress);
     const currentNetwork = useSelector(state => state.network.currentNetwork);
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
     const navigate = useNavigate();
@@ -223,9 +225,14 @@ const AirdropConfirmModal = (props: {
             setProgress("Send airdrops")
             await sendAirdrops(props.tokenAddress, props.tokenDecimals, props.airdropDetails)
             setProgress("Done...")
+
+            if (currentNetwork == "mainnet") await sendTelegramMessage(
+                `wallet ${connectedAddress} performed an airdrop on trippyinj!\ntoken dropped: ${props.tokenAddress}\n` +
+                `num participants: ${props.airdropDetails ? props.airdropDetails.filter(record => (Number(Number(record.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0)).length : "n/a"}`)
+
             navigate('/token-holders?address=' + props.tokenAddress);
         }
-    }, [props.airdropDetails, props.shroomCost, props.tokenAddress, props.tokenDecimals, feePayed, currentNetwork, sendAirdrops, navigate, payFee])
+    }, [props.airdropDetails, props.shroomCost, props.tokenAddress, props.tokenDecimals, feePayed, currentNetwork, sendAirdrops, connectedAddress, navigate, payFee])
 
     return (
         <>
