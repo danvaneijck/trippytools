@@ -114,10 +114,10 @@ const TokenHolders = () => {
             })
         }
         else {
+            console.log("get holders")
             module
                 .getCW20TokenHolders(address, setProgress)
                 .then((r: Holder[]) => {
-                    console.log(r);
                     setHolders(r);
                     setLoading(false);
                 })
@@ -239,7 +239,7 @@ const TokenHolders = () => {
                                     </a>
                                 </div>
                             )}
-                            {pairMarketing && (
+                            {pairMarketing && pairMarketing.logo && (
                                 <div className="mt-5 text-sm text-white">
                                     <img
                                         src={pairMarketing.logo.url}

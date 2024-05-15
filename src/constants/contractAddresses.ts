@@ -88,6 +88,21 @@ export const TOKENS = [
         img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
     },
     {
+        value: "inj1zdj9kqnknztl2xclm5ssv25yre09f8908d4923",
+        label: "DOJO",
+        img: "https://dojo.trading/images/tokens/dojo.svg"
+    },
+    {
+        value: "inj19dtllzcquads0hu3ykda9m58llupksqwekkfnw",
+        label: "babyDOJO",
+        img: "https://i.ibb.co/cJKFfpz/Baby-Dojo-Logo.png"
+    },
+    {
+        value: "inj1jusxykgkl04rgaam65gmvyyymth9flxjdpdruh",
+        label: "DAOJO",
+        img: "https://i.imgur.com/Huc1Kcd.png"
+    },
+    {
         value: "factory/inj13y5nqf8mymy9tfxkg055th7hdm2uaahs9q6q5w/SNAPPY",
         label: "SNAPPY",
         img: "https://pbs.twimg.com/profile_images/1771472945488998400/1TgqGcdy_400x400.jpg"
