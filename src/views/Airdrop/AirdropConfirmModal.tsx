@@ -214,8 +214,8 @@ const AirdropConfirmModal = (props: {
 
     const startAirdrop = useCallback(async () => {
         setError(null)
-        if (props.airdropDetails !== null && props.airdropDetails.length > 0 && !feePayed) {
-            if (currentNetwork == "mainnet" && props.shroomCost !== 0) {
+        if (props.airdropDetails !== null && props.airdropDetails.length > 0) {
+            if (currentNetwork == "mainnet" && props.shroomCost !== 0 && !feePayed) {
                 console.log("pay shroom fee")
                 setProgress("Pay shroom fee for airdrop")
                 const result = await payFee()
@@ -311,7 +311,7 @@ const AirdropConfirmModal = (props: {
                             {txLoading && <CircleLoader color="#36d7b7" className="mt-2 m-auto" />}
                             {error && <div className="text-red-500 mt-5">{error}</div>}
                         </div>
-                        <div className="pl-6">If the airdrop TX fails, up the gas !</div>
+                        <div className="pl-6">If the airdrop TX fails, up the gas ! DO NOT REFRESH THE PAGE</div>
                         {currentNetwork == "mainnet" && (props.airdropDetails.length > 0) && <div className="m-5">
                             Fee for airdrop: {props.shroomCost} shroom <br />
                             <a href="https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl" className="underline text-sm">buy here</a>
