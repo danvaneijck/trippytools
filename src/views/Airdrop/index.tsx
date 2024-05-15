@@ -8,7 +8,7 @@ import ShroomBalance from "../../components/App/ShroomBalance";
 import { WALLET_LABELS } from "../../constants/walletLabels";
 import IPFSImage from "../../components/App/IpfsImage";
 import AirdropConfirmModal from "./AirdropConfirmModal";
-import { Holder } from "../../types";
+import { Holder, MarketingInfo } from "../../types";
 import { CW404_TOKENS, LIQUIDITY_TOKENS, NFT_COLLECTIONS, TOKENS } from "../../constants/contractAddresses";
 import TokenSelect from "../../components/Inputs/TokenSelect";
 
@@ -20,8 +20,9 @@ const Airdrop = () => {
     const currentNetwork = useSelector(state => state.network.currentNetwork);
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
 
-    const [tokenAddress, setTokenAddress] = useState(TOKENS[1]);
+    const [tokenAddress, setTokenAddress] = useState(TOKENS[0]);
     const [tokenInfo, setTokenInfo] = useState(null);
+    const [pairMarketing, setPairMarketing] = useState<MarketingInfo | null>(null);
 
     const [balance, setBalance] = useState(0)
     const [balanceToDrop, setBalanceToDrop] = useState(0)
@@ -29,7 +30,7 @@ const Airdrop = () => {
     const [limitSwitch, setLimitSwitch] = useState(false)
     const [walletLimit, setWalletLimit] = useState(0)
 
-    const [shroomCost] = useState(10000)
+    const [shroomCost] = useState(100000)
     const [shroomPrice, setShroomPrice] = useState(null)
 
     const [dropMode, setDropMode] = useState("TOKEN");
@@ -47,16 +48,16 @@ const Airdrop = () => {
     const [distMode, setDistMode] = useState("fair");
     const [progress, setProgress] = useState("")
 
-    const handleCheckboxChange = (index: number, dist: string) => {
+    const handleCheckboxChange = (index: number, dist: string, balance) => {
         const newDetails = [...airdropDetails];
         newDetails[index].includeInDrop = !newDetails[index].includeInDrop;
-        updateAirdropAmounts(newDetails, dist);
+        updateAirdropAmounts(newDetails, dist, null, balance);
         setAirdropDetails(newDetails);
     };
 
-    const updateList = (dist: string, walletLimit) => {
+    const updateList = (dist: string, walletLimit, balance) => {
         const newDetails = [...airdropDetails];
-        updateAirdropAmounts(newDetails, dist, walletLimit);
+        updateAirdropAmounts(newDetails, dist, walletLimit, balance);
         setAirdropDetails(newDetails);
     }
 
@@ -68,7 +69,9 @@ const Airdrop = () => {
 
     useEffect(() => {
         setTokenInfo(null)
+        setPairMarketing(null)
         setAirdropDetails([])
+        setShowConfirm(false)
     }, [tokenAddress])
 
     useEffect(() => {
@@ -96,7 +99,7 @@ const Airdrop = () => {
                     module.updateBaseAssetPrice(),
                     module.getPairInfo(SHROOM_PAIR_ADDRESS)
                 ]);
-                const quote = await module.getSellQuoteRouter(pairInfo, '10000000000000000000000');
+                const quote = await module.getSellQuoteRouter(pairInfo, shroomCost + "0".repeat(18));
                 console.log(quote)
                 const returnAmount = Number(quote.amount) / Math.pow(10, 18);
                 const totalUsdValue = (returnAmount * baseAssetPrice).toFixed(3);
@@ -113,12 +116,13 @@ const Airdrop = () => {
                 console.log(e)
             })
         }
-    }, [currentNetwork, networkConfig])
+    }, [currentNetwork, networkConfig, shroomCost])
 
     const getTokenInfo = useCallback(() => {
         setLoading(true)
         setError(null)
         setTokenInfo(null)
+        setPairMarketing(null)
         const module = new TokenUtils(networkConfig);
         if (
             tokenAddress.value.includes("factory") ||
@@ -150,13 +154,47 @@ const Airdrop = () => {
                     }
                 });
         } else {
-            setError("Only factory tokens supported for now")
-            setLoading(false)
+            module
+                .getTokenInfo(tokenAddress.value)
+                .then((meta) => {
+                    setTokenInfo(
+                        meta
+                    );
+                    console.log(meta)
+                    module.queryTokenForBalance(tokenAddress.value, connectedAddress).then((r) => {
+                        setBalance(Number(r.balance) / Math.pow(10, meta.decimals));
+                        setBalanceToDrop(Number(r.balance) / Math.pow(10, meta.decimals))
+                        setLoading(false)
+                    })
+                        .catch((e: unknown) => {
+                            console.log(e);
+                            setLoading(false);
+                            if (e && e.message) {
+                                setError(e.message)
+                            }
+                        });
+                })
+                .catch((e: unknown) => {
+                    console.log(e);
+                    setLoading(false);
+                    if (e && e.message) {
+                        setError(e.message)
+                    }
+                });
+            module.getTokenMarketing(tokenAddress.value).then(r => {
+                setPairMarketing(r)
+            }).catch(e => {
+                console.log(e)
+                setLoading(false);
+                if (e && e.message) {
+                    setError(e.message)
+                }
+            })
         }
     }, [networkConfig, tokenAddress, connectedAddress])
 
 
-    const updateAirdropAmounts = useCallback((details: any[], dist: string, walletLimit = null) => {
+    const updateAirdropAmounts = (details: any[], dist: string, walletLimit = null, balanceToDrop: number) => {
         const supplyToAirdrop = (balanceToDrop - (balanceToDrop * 0.001))
         let includedHolders = details.filter(holder => holder.includeInDrop);
 
@@ -195,7 +233,7 @@ const Airdrop = () => {
                 }
             })
         }
-    }, [balanceToDrop]);
+    };
 
     const getNftCollection = useCallback(async () => {
         const is404 = CW404_TOKENS.find(x => x.value == nftCollection.value) !== undefined
@@ -328,7 +366,7 @@ const Airdrop = () => {
                     tokenAddress={tokenAddress.value}
                     tokenDecimals={tokenInfo.decimals}
                     airdropDetails={airdropDetails}
-                    shroomCost={10000}
+                    shroomCost={shroomCost}
                 />
             }
             <div className="flex flex-col min-h-screen pb-10">
@@ -408,14 +446,45 @@ const Airdrop = () => {
                                                     )}
                                                 </div>
                                             )}
-                                            {tokenInfo && tokenInfo.logo && (
-                                                <div className="mt-5 text-base text-white">
+                                            {!pairMarketing && tokenInfo && tokenInfo.logo && (
+                                                <div className="mt-5 text-sm text-white">
                                                     <IPFSImage
                                                         width={100}
-                                                        className={'mb-2'}
+                                                        className={'mb-2 rounded-lg'}
                                                         ipfsPath={tokenInfo.logo}
-
                                                     />
+                                                    <a href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}explorer.injective.network/account/${tokenInfo.admin}`}>
+                                                        admin: {tokenInfo.admin.slice(0, 5) + '...' + tokenInfo.admin.slice(-5)}
+                                                        {
+                                                            WALLET_LABELS[tokenInfo.admin] ? (
+                                                                <span className={`${WALLET_LABELS[tokenInfo.admin].bgColor} ${WALLET_LABELS[tokenInfo.admin].textColor} ml-2`}>
+                                                                    {WALLET_LABELS[tokenInfo.admin].label}
+                                                                </span>
+                                                            ) : null
+                                                        }
+                                                    </a>
+                                                </div>
+                                            )}
+                                            {pairMarketing && pairMarketing.logo && (
+                                                <div className="mt-5 text-sm text-white">
+                                                    <img
+                                                        src={pairMarketing.logo.url}
+                                                        style={{ width: 50, height: 50 }}
+                                                        className="mb-2"
+                                                        alt="logo"
+                                                    />
+                                                    <div>project: {pairMarketing.project}</div>
+                                                    <div>description: {pairMarketing.description}</div>
+                                                    <div>
+                                                        marketing: {pairMarketing.marketing}
+                                                        {
+                                                            WALLET_LABELS[pairMarketing.marketing] ? (
+                                                                <span className={`${WALLET_LABELS[pairMarketing.marketing].bgColor} ${WALLET_LABELS[pairMarketing.marketing].textColor} ml-2`}>
+                                                                    {WALLET_LABELS[pairMarketing.marketing].label}
+                                                                </span>
+                                                            ) : null
+                                                        }
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
@@ -435,7 +504,7 @@ const Airdrop = () => {
                                                         className="text-black w-full rounded p-1 text-sm"
                                                         onChange={(e) => {
                                                             setBalanceToDrop(e.target.value)
-                                                            updateList(distMode, walletLimit)
+                                                            updateList(distMode, walletLimit, e.target.value)
                                                         }
                                                         }
                                                         value={balanceToDrop}
@@ -526,14 +595,14 @@ const Airdrop = () => {
                                                     <div className="flex flex-row w-full justify-between ">
                                                         <div className="flex flex-row" onClick={() => {
                                                             setDistMode("fair")
-                                                            updateList("fair", walletLimit)
+                                                            updateList("fair", walletLimit, balanceToDrop)
                                                         }}>
                                                             <input
                                                                 type="checkbox"
                                                                 className="text-black w-full rounded p-1 text-sm"
                                                                 onChange={() => {
                                                                     setDistMode("fair")
-                                                                    updateList("fair", walletLimit)
+                                                                    updateList("fair", walletLimit, balanceToDrop)
                                                                 }}
                                                                 checked={distMode == "fair"}
                                                             />
@@ -546,14 +615,14 @@ const Airdrop = () => {
 
                                                         <div className="flex flex-row" onClick={() => {
                                                             setDistMode("proportionate")
-                                                            updateList("proportionate", walletLimit)
+                                                            updateList("proportionate", walletLimit, balanceToDrop)
                                                         }}>
                                                             <input
                                                                 type="checkbox"
                                                                 className="text-black w-full rounded p-1 text-sm"
                                                                 onChange={() => {
                                                                     setDistMode("proportionate")
-                                                                    updateList("proportionate", walletLimit)
+                                                                    updateList("proportionate", walletLimit, balanceToDrop)
                                                                 }}
                                                                 checked={distMode == "proportionate"}
                                                             />
@@ -613,7 +682,7 @@ const Airdrop = () => {
                                                                             className="bg-slate-700 p-1 mt-2 rounded ml-2 text-sm"
                                                                             onClick={() => {
                                                                                 const d = [...airdropDetails]
-                                                                                updateAirdropAmounts(d, distMode, walletLimit)
+                                                                                updateAirdropAmounts(d, distMode, walletLimit, balanceToDrop)
                                                                                 setAirdropDetails(d)
                                                                             }}
                                                                         >
@@ -625,7 +694,7 @@ const Airdrop = () => {
                                                                                 d.forEach((holder, index) => {
                                                                                     holder.includeInDrop = true
                                                                                 });
-                                                                                updateAirdropAmounts(d, distMode)
+                                                                                updateAirdropAmounts(d, distMode, null, balanceToDrop)
                                                                                 setAirdropDetails(d)
                                                                             }}
                                                                             className="bg-slate-700 p-1 mt-2 rounded ml-2 text-sm"
@@ -663,7 +732,7 @@ const Airdrop = () => {
                                                                                     <input
                                                                                         type="checkbox"
                                                                                         checked={holder.includeInDrop || false}
-                                                                                        onChange={() => handleCheckboxChange(index, distMode)}
+                                                                                        onChange={() => handleCheckboxChange(index, distMode, balanceToDrop)}
                                                                                     />
                                                                                 </td>
                                                                                 <td className="px-6 py-1 whitespace-nowrap">
@@ -733,14 +802,14 @@ const Airdrop = () => {
                                                         <div className="flex flex-row w-full justify-between ">
                                                             <div className="flex flex-row" onClick={() => {
                                                                 setDistMode("fair")
-                                                                updateList("fair", walletLimit)
+                                                                updateList("fair", walletLimit, balanceToDrop)
                                                             }}>
                                                                 <input
                                                                     type="checkbox"
                                                                     className="text-black w-full rounded p-1"
                                                                     onChange={() => {
                                                                         setDistMode("fair")
-                                                                        updateList("fair", walletLimit)
+                                                                        updateList("fair", walletLimit, balanceToDrop)
                                                                     }}
                                                                     checked={distMode == "fair"}
                                                                 />
@@ -752,14 +821,14 @@ const Airdrop = () => {
                                                             </div>
                                                             <div className="flex flex-row" onClick={() => {
                                                                 setDistMode("proportionate")
-                                                                updateList("proportionate", walletLimit)
+                                                                updateList("proportionate", walletLimit, balanceToDrop)
                                                             }}>
                                                                 <input
                                                                     type="checkbox"
                                                                     className="text-black w-full rounded p-1"
                                                                     onChange={() => {
                                                                         setDistMode("proportionate")
-                                                                        updateList("proportionate", walletLimit)
+                                                                        updateList("proportionate", walletLimit, balanceToDrop)
                                                                     }}
                                                                     checked={distMode == "proportionate"}
                                                                 />
@@ -815,7 +884,7 @@ const Airdrop = () => {
                                                                                 className="bg-slate-700 p-1 mt-2 rounded ml-2 text-sm"
                                                                                 onClick={() => {
                                                                                     const d = [...airdropDetails]
-                                                                                    updateAirdropAmounts(d, distMode, walletLimit)
+                                                                                    updateAirdropAmounts(d, distMode, walletLimit, balanceToDrop)
                                                                                     setAirdropDetails(d)
                                                                                 }}
                                                                             >
@@ -827,7 +896,7 @@ const Airdrop = () => {
                                                                                     d.forEach((holder, index) => {
                                                                                         holder.includeInDrop = true
                                                                                     });
-                                                                                    updateAirdropAmounts(d, distMode)
+                                                                                    updateAirdropAmounts(d, distMode, null, balanceToDrop)
                                                                                     setAirdropDetails(d)
                                                                                 }}
                                                                                 className="bg-slate-700 p-1 mt-2 rounded ml-2 text-sm"
@@ -865,7 +934,7 @@ const Airdrop = () => {
                                                                                         <input
                                                                                             type="checkbox"
                                                                                             checked={holder.includeInDrop || false}
-                                                                                            onChange={() => handleCheckboxChange(index, distMode)}
+                                                                                            onChange={() => handleCheckboxChange(index, distMode, balanceToDrop)}
 
                                                                                         />
                                                                                     </td>
