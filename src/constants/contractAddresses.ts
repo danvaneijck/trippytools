@@ -3,7 +3,12 @@
 export const LIQUIDITY_POOLS = [
     {
         value: "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl",
-        label: "SHROOM / INJ",
+        label: "SHROOM / INJ DojoSwap",
+        img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg"
+    },
+    {
+        value: "inj1ylcr85kkksgkqnpzmmrmg5tmfnqmq7trjpe4vs",
+        label: "SHROOM / INJ Astroport",
         img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg"
     },
     {
@@ -18,7 +23,12 @@ export const LIQUIDITY_POOLS = [
     },
     {
         value: "inj1tpt9u0lvz2njw6a7m8pufdamd6mt8ymh8cw4nc",
-        label: "SMELLY / INJ",
+        label: "SMELLY / INJ DojoSwap",
+        img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
+    },
+    {
+        value: "inj1uhkcvq3pw879t4mttdm9hjjxwjczvs8c5330ty",
+        label: "SMELLY / INJ Astroport",
         img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
     },
     {
@@ -46,7 +56,12 @@ export const LIQUIDITY_POOLS = [
 export const LIQUIDITY_TOKENS = [
     {
         value: "inj1e8ng0tn23yqdlp6mvv4zc9q3phkg40mlsxrwzx",
-        label: "SHROOM / INJ LP",
+        label: "SHROOM / INJ DOJO LP",
+        img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg"
+    },
+    {
+        value: "inj1yr2vl9vkwhw0g3tuhhm5jujpx2kzfmpp6lurrm",
+        label: "SHROOM / INJ ASTRO LP",
         img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg"
     },
     {
@@ -61,7 +76,12 @@ export const LIQUIDITY_TOKENS = [
     },
     {
         value: "inj1prnfc8d8famgvla4zcmsd4xsxcwvjjzpauv75q",
-        label: "SMELLY / INJ LP",
+        label: "SMELLY / INJ DOJO LP",
+        img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
+    },
+    {
+        value: "inj15gt5d8nkx8gmwglx2wze9tjxjd8ydrsht6zlx5",
+        label: "SMELLY / INJ ASTRO LP",
         img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
     },
 ]
@@ -91,6 +111,11 @@ export const TOKENS = [
         value: "inj1zdj9kqnknztl2xclm5ssv25yre09f8908d4923",
         label: "DOJO",
         img: "https://dojo.trading/images/tokens/dojo.svg"
+    },
+    {
+        value: "factory/inj1etz0laas6h7vemg3qtd67jpr6lh8v7xz7gfzqw/hdro",
+        label: "HDRO",
+        img: "https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/injective/factory/inj1etz0laas6h7vemg3qtd67jpr6lh8v7xz7gfzqw/hdro.png"
     },
     {
         value: "inj19dtllzcquads0hu3ykda9m58llupksqwekkfnw",
@@ -136,6 +161,16 @@ export const TOKENS = [
         value: "factory/inj1xtel2knkt8hmc9dnzpjz6kdmacgcfmlv5f308w/ninja",
         label: "ninja",
         img: "https://i.ibb.co/qJwYW3X/NINJA.png"
+    },
+    {
+        value: "inj1fu5u29slsg2xtsj7v5la22vl4mr4ywl7wlqeck",
+        label: "NONJA",
+        img: "https://www.nonja.xyz/pfp.png"
+    },
+    {
+        value: "inj19vy83ne9tzta2yqynj8yg7dq9ghca6yqn9hyej",
+        label: "Drugs",
+        img: "https://i.imgur.com/8f9uHTN.png"
     }
 ]
 
