@@ -239,6 +239,7 @@ const Airdrop = () => {
         const is404 = CW404_TOKENS.find(x => x.value == nftCollection.value) !== undefined
         console.log(is404)
         if (is404) {
+            setLoading(true)
             const module = new TokenUtils(networkConfig);
             await module.getCW404Holders(nftCollection.value, setProgress)
             return

@@ -18,7 +18,6 @@ import { Buffer } from "buffer";
 import moment from "moment";
 import { TokenInfo } from "../types";
 import { Coin } from "@injectivelabs/ts-types";
-
 /* global BigInt */
 
 const DOJO_ROUTER = "inj1t6g03pmc0qcgr7z44qjzaen804f924xke6menl"
@@ -1082,30 +1081,64 @@ class TokenUtils {
         return sortedHolders;
     }
 
+
     async getCW404Holders(collectionAddress: string, setProgress: React.Dispatch<React.SetStateAction<string>>) {
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+        // Query the total number of tokens
         const numTokensQuery = Buffer.from(
-            JSON.stringify({
-                num_tokens: {}
-            })
+            JSON.stringify({ num_tokens: {} })
         ).toString("base64");
 
         const numTokensInfo = await this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, numTokensQuery);
         const numTokensDecoded = JSON.parse(new TextDecoder().decode(numTokensInfo.data));
-        console.log(numTokensDecoded);
         const totalTokens = numTokensDecoded.count;
-        console.log("total tokens", totalTokens)
+        console.log("Total tokens:", totalTokens);
 
-        const allTokensQuery = Buffer.from(
-            JSON.stringify({
-                tokens: {
+        let tokenOwners = [];
+        const batchSize = 5;
+        let delayMs = 1000; // Start with a 1 second delay
+
+        for (let i = 0; i < totalTokens; i += batchSize) {
+            const promises = [];
+            for (let j = 0; j < batchSize && i + j < totalTokens; j++) {
+                const tokenId = (i + j).toString();
+                const ownerOfQuery = Buffer.from(
+                    JSON.stringify({ owner_of: { token_id: tokenId } })
+                ).toString("base64");
+
+                promises.push(
+                    this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, ownerOfQuery)
+                        .then(response => {
+                            const ownerInfoDecoded = JSON.parse(new TextDecoder().decode(response.data));
+                            return {
+                                tokenId: tokenId,
+                                owner: ownerInfoDecoded.owner
+                            };
+                        })
+                );
+            }
+
+            try {
+                const results = await Promise.all(promises);
+                tokenOwners = tokenOwners.concat(results);
+                setProgress(`Fetched ${i + batchSize > totalTokens ? totalTokens : i + batchSize} / ${totalTokens} tokens`);
+            } catch (error) {
+                if (error.response && error.response.status === 429) {
+                    console.error('Rate limit exceeded, retrying with delay...');
+                    await delay(delayMs);
+                    delayMs *= 2; // Exponential backoff
+                    i -= batchSize; // Retry the same batch
+                } else {
+                    console.error('Error fetching data:', error);
                 }
-            })
-        ).toString("base64");
+            }
 
-        const allTokensInfo = await this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, allTokensQuery);
-        const allTokensDecoded = JSON.parse(new TextDecoder().decode(allTokensInfo.data));
-        console.log(allTokensDecoded);
+            await delay(1000); // Delay between batches to avoid rate limit
+        }
+
+        console.log("Token owners:", tokenOwners);
     }
+
 
     async getPendingAstroRewards(generatorAddress: string, lpToken: string, wallet: string) {
         const pendingRewardsQuery = Buffer.from(JSON.stringify({
