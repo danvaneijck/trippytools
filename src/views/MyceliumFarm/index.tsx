@@ -14,6 +14,7 @@ import farmBackground from "../../assets/farmBackground.webp"
 
 const ASTRO_GENERATOR = "inj164pyppndppdmazfjrvecajnwcs3hmq06agn4ka"
 const SPORE_SHROOM_LP = "inj16qksf53k0n07cvpgzqs4q6kvpzh5aw2c6f9589"
+const SHROOM_INJ_LP = "inj1yr2vl9vkwhw0g3tuhhm5jujpx2kzfmpp6lurrm"
 
 const MyceliumFarm = () => {
     const connectedAddress = useSelector(state => state.network.connectedAddress);
@@ -31,12 +32,12 @@ const MyceliumFarm = () => {
         try {
             setLoading(true)
             const module = new TokenUtils(networkConfig)
-            const info = await module.getGeneratorPoolInfo(ASTRO_GENERATOR, SPORE_SHROOM_LP)
+            const info = await module.getGeneratorPoolInfo(ASTRO_GENERATOR, SHROOM_INJ_LP)
             console.log(info)
-            const config = await module.getAstroRewardsInfo(ASTRO_GENERATOR, SPORE_SHROOM_LP)
+            const config = await module.getAstroRewardsInfo(ASTRO_GENERATOR, SHROOM_INJ_LP)
             console.log(config)
             setRewardInfo((Number(config[0].rps) / Math.pow(10, 6)).toFixed(4))
-            const pendingRewards = await module.getPendingAstroRewards(ASTRO_GENERATOR, SPORE_SHROOM_LP, connectedAddress)
+            const pendingRewards = await module.getPendingAstroRewards(ASTRO_GENERATOR, SHROOM_INJ_LP, connectedAddress)
             console.log(pendingRewards)
             if (pendingRewards) {
                 setPendingRewards(Number(pendingRewards[0].amount) / Math.pow(10, 6))
@@ -141,7 +142,7 @@ const MyceliumFarm = () => {
                 contractAddress: ASTRO_GENERATOR,
                 msg: {
                     claim_rewards: {
-                        lp_tokens: [SPORE_SHROOM_LP],
+                        lp_tokens: [SHROOM_INJ_LP],
                     },
                 },
             });
@@ -202,9 +203,9 @@ const MyceliumFarm = () => {
                                 </div>
 
                                 <div className="font-bold text-lg">
-                                    stake spore / SHROOM LP on astroport to earn $mycelium
+                                    stake SHROOM / INJ LP on astroport to earn $mycelium
                                     <br />
-                                    <a href="https://app.astroport.fi/pools/inj1rusfnzgtcvkn8z92h9hyvzuna60tc0x0yy74tf" className="underline">astroport link</a>
+                                    <a href="https://app.astroport.fi/pools/inj1ylcr85kkksgkqnpzmmrmg5tmfnqmq7trjpe4vs" className="underline">astroport link</a>
                                 </div>
 
                                 <button
@@ -233,11 +234,11 @@ const MyceliumFarm = () => {
                                 >
                                     {txLoading ? <> <BeatLoader color="white" size={9} className="m-1" /></> : <>claim rewards 🍄</>}
                                 </button>
-                                <div className="font-bold text-base mt-5">
+                                {/* <div className="font-bold text-base mt-5">
                                     consider adding to mycelium / spore
                                     <br />
                                     <a href="https://app.astroport.fi/pools/inj1e35460gusk3f0lagmul6vzt9vjh6fp3zknl665" className="underline">astroport link</a>
-                                </div>
+                                </div> */}
                             </div> :
                             <div className="text-center text-white font-bold">
                                 Please connect wallet to view your farm info
