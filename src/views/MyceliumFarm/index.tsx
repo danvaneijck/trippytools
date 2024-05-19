@@ -28,16 +28,18 @@ const MyceliumFarm = () => {
     const [pendingRewards, setPendingRewards] = useState(null)
     const [rewardInfo, setRewardInfo] = useState(null)
 
+    const [selectedPool, setSelectedPool] = useState("SPORE")
+
     const getPendingRewards = useCallback(async () => {
         try {
             setLoading(true)
             const module = new TokenUtils(networkConfig)
-            const info = await module.getGeneratorPoolInfo(ASTRO_GENERATOR, SHROOM_INJ_LP)
+            const info = await module.getGeneratorPoolInfo(ASTRO_GENERATOR, selectedPool == "SPORE" ? SPORE_SHROOM_LP : SHROOM_INJ_LP)
             console.log(info)
-            const config = await module.getAstroRewardsInfo(ASTRO_GENERATOR, SHROOM_INJ_LP)
+            const config = await module.getAstroRewardsInfo(ASTRO_GENERATOR, selectedPool == "SPORE" ? SPORE_SHROOM_LP : SHROOM_INJ_LP)
             console.log(config)
             setRewardInfo((Number(config[0].rps) / Math.pow(10, 6)).toFixed(4))
-            const pendingRewards = await module.getPendingAstroRewards(ASTRO_GENERATOR, SHROOM_INJ_LP, connectedAddress)
+            const pendingRewards = await module.getPendingAstroRewards(ASTRO_GENERATOR, selectedPool == "SPORE" ? SPORE_SHROOM_LP : SHROOM_INJ_LP, connectedAddress)
             console.log(pendingRewards)
             if (pendingRewards) {
                 setPendingRewards(Number(pendingRewards[0].amount) / Math.pow(10, 6))
@@ -52,7 +54,7 @@ const MyceliumFarm = () => {
             setLoading(false)
             setPendingRewards(0)
         }
-    }, [networkConfig, connectedAddress])
+    }, [networkConfig, connectedAddress, selectedPool])
 
     useEffect(() => {
         if (connectedAddress) {
@@ -62,7 +64,7 @@ const MyceliumFarm = () => {
                 console.log(e)
             })
         }
-    }, [connectedAddress])
+    }, [connectedAddress, selectedPool])
 
     const getKeplr = useCallback(async () => {
         await window.keplr.enable(networkConfig.chainId);
@@ -142,7 +144,7 @@ const MyceliumFarm = () => {
                 contractAddress: ASTRO_GENERATOR,
                 msg: {
                     claim_rewards: {
-                        lp_tokens: [SHROOM_INJ_LP],
+                        lp_tokens: selectedPool == "SPORE" ? [SPORE_SHROOM_LP] : [SHROOM_INJ_LP],
                     },
                 },
             });
@@ -153,7 +155,7 @@ const MyceliumFarm = () => {
             setTxLoading(false)
         }
 
-    }, [getKeplr, getPendingRewards, handleSendTx])
+    }, [getKeplr, getPendingRewards, handleSendTx, selectedPool])
 
     return (
         <div className="flex flex-col min-h-screen pb-10">
@@ -194,7 +196,20 @@ const MyceliumFarm = () => {
                                 }}
                                 className="px-2 md:px-56 py-10 pb-40 rounded-xl"  // Example Tailwind classes for full screen
                             >
-
+                                <div className="flex flex-row justify-between">
+                                    <div
+                                        onClick={() => setSelectedPool("SPORE")}
+                                        className={`p-2 ${selectedPool == "SPORE" ? 'bg-slate-900' : 'bg-slate-600'} text-white rounded hover:cursor-pointer shadow-lg`}
+                                    >
+                                        SPORE / SHROOM
+                                    </div>
+                                    <div
+                                        onClick={() => setSelectedPool("SHROOM")}
+                                        className={`p-2 ${selectedPool == "SHROOM" ? 'bg-slate-900' : 'bg-slate-600'}  text-white rounded hover:cursor-pointer shadow-lg`}
+                                    >
+                                        SHROOM / INJ
+                                    </div>
+                                </div>
                                 <div className="text-center text-slate-900 font-bold mb-5 mt-10">
                                     <div className="text-3xl">
                                         Farm mycelium
@@ -203,9 +218,9 @@ const MyceliumFarm = () => {
                                 </div>
 
                                 <div className="font-bold text-lg">
-                                    stake SHROOM / INJ LP on astroport to earn $mycelium
+                                    stake LP on astroport to earn $mycelium
                                     <br />
-                                    <a href="https://app.astroport.fi/pools/inj1ylcr85kkksgkqnpzmmrmg5tmfnqmq7trjpe4vs" className="underline">astroport link</a>
+                                    <a href={`https://app.astroport.fi/pools/${selectedPool == "SPORE" ? 'inj1rusfnzgtcvkn8z92h9hyvzuna60tc0x0yy74tf' : 'inj1ylcr85kkksgkqnpzmmrmg5tmfnqmq7trjpe4vs'}`} className="underline">astroport link</a>
                                 </div>
 
                                 <button
