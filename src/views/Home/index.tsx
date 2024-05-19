@@ -103,7 +103,7 @@ const Home = () => {
                         <Link to="/mycelium-farm" className='flex flex-row justify-center items-center mt-5'>
                             <GiFarmer className='text-2xl' />
                             <div className='mt-2 text-sm hover:font-bold ml-2'>
-                                Farm mycelium with spore / SHROOM LP
+                                Farm mycelium
                             </div>
                             <img src={myceliumLogo} style={{ borderRadius: '50%', width: 30 }} className="animate-3dspin ml-2" alt="Spinning Image" />
 
