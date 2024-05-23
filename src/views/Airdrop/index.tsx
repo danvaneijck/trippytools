@@ -710,6 +710,9 @@ const Airdrop = () => {
                                                                     <thead className="text-white text-left">
                                                                         <tr>
                                                                             <th className="px-4 py-2">
+                                                                                Position
+                                                                            </th>
+                                                                            <th className="px-4 py-2">
                                                                                 Include
                                                                             </th>
                                                                             <th className="px-4 py-2">
@@ -729,6 +732,9 @@ const Airdrop = () => {
                                                                     <tbody>
                                                                         {airdropDetails.map((holder, index) => (
                                                                             <tr key={index} className="text-white border-b text-xs">
+                                                                                <td className="px-6 py-1">
+                                                                                    {index + 1}
+                                                                                </td>
                                                                                 <td className="px-6 py-1">
                                                                                     <input
                                                                                         type="checkbox"
@@ -912,6 +918,9 @@ const Airdrop = () => {
                                                                         <thead className="text-white text-left">
                                                                             <tr>
                                                                                 <th className="px-4 py-2">
+                                                                                    Position
+                                                                                </th>
+                                                                                <th className="px-4 py-2">
                                                                                     Include
                                                                                 </th>
                                                                                 <th className="px-4 py-2">
@@ -931,6 +940,9 @@ const Airdrop = () => {
                                                                         <tbody>
                                                                             {airdropDetails.map((holder, index) => (
                                                                                 <tr key={index} className="text-white border-b text-xs">
+                                                                                    <td className="px-6 py-1">
+                                                                                        {index + 1}
+                                                                                    </td>
                                                                                     <td className="px-6 py-1">
                                                                                         <input
                                                                                             type="checkbox"

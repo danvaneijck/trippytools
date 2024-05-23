@@ -11,6 +11,7 @@ import IPFSImage from "../../components/App/IpfsImage";
 import { WALLET_LABELS } from "../../constants/walletLabels";
 import TokenSelect from "../../components/Inputs/TokenSelect";
 import { LIQUIDITY_POOLS } from "../../constants/contractAddresses";
+import { CSVLink } from 'react-csv';
 
 
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
@@ -46,9 +47,10 @@ const TokenLiquidity = () => {
         setLastLoadedAddress("")
     }, [networkConfig])
 
-    const getTokenHolders = useCallback((address: string) => {
-        const module = new TokenUtils(networkConfig)
-        setError(null)
+    const getTokenHolders = useCallback(async (address: string) => {
+        if (loading) return
+        const module = new TokenUtils(networkConfig);
+        setError(null);
         setLoading(true);
         setTokenInfo(null);
         setPairInfo(null);
@@ -56,72 +58,44 @@ const TokenLiquidity = () => {
         setProgress("");
         setHolders([]);
 
-        module
-            .getPairInfo(address)
-            .then((r: PairInfo) => {
-                setPairInfo(r);
+        try {
+            const pairInfo = await module.getPairInfo(address);
+            setPairInfo(pairInfo);
 
-                const memeAddress =
-                    r.token0Meta.denom === "inj"
-                        ? r.token1Meta.denom
-                        : r.token0Meta.denom;
+            const memeAddress =
+                pairInfo.token0Meta.denom === "inj"
+                    ? pairInfo.token1Meta.denom
+                    : pairInfo.token0Meta.denom;
 
-                if (
-                    memeAddress.includes("factory") ||
-                    memeAddress.includes("peggy") ||
-                    memeAddress.includes("ibc")
-                ) {
-                    module
-                        .getDenomMetadata(memeAddress)
-                        .then((r) => {
-                            setTokenInfo(r);
-                        })
-                        .catch((e: unknown) => {
-                            console.log(e);
-                        });
+            try {
+                if (memeAddress.includes("factory") || memeAddress.includes("peggy") || memeAddress.includes("ibc")) {
+                    const denomMetadata = await module.getDenomMetadata(memeAddress);
+                    setTokenInfo(denomMetadata);
                 } else {
-                    module
-                        .getTokenInfo(memeAddress)
-                        .then((r: any) => {
-                            setTokenInfo({
-                                ...r,
-                                denom: memeAddress
-                            });
-                        })
-                        .catch((e: unknown) => {
-                            console.log(e);
-                        });
-                    module.getTokenMarketing(memeAddress).then(r => {
-                        setPairMarketing(r)
-                    }).catch(e => {
-                        console.log(e)
-                    })
+                    const tokenInfo = await module.getTokenInfo(memeAddress);
+                    setTokenInfo({ ...tokenInfo, denom: memeAddress });
+
+                    const marketingInfo = await module.getTokenMarketing(memeAddress);
+                    setPairMarketing(marketingInfo);
                 }
+            } catch (innerError) {
+                console.log(innerError);
+            }
 
-                const liquidityToken = r.liquidity_token;
-                module
-                    .getCW20TokenHolders(liquidityToken, setProgress)
-                    .then((r: Holder[]) => {
-                        console.log(r);
-                        setHolders(r);
-                        setLoading(false);
-                    })
-                    .catch((e: unknown) => {
-                        console.log(e);
-                        setLoading(false);
-                    });
-            })
-            .catch((e) => {
-                setLoading(false);
-                console.log(e);
-                if (e && e.message) {
-                    setError(e.message)
-                }
-            });
+            const liquidityToken = pairInfo.liquidity_token;
+            const holders = await module.getCW20TokenHolders(liquidityToken, setProgress);
+            setHolders(holders);
+        } catch (e) {
+            console.log(e);
+            if (e && e.message) {
+                setError(e.message);
+            }
+        } finally {
+            setLoading(false);
+            setLastLoadedAddress(address);
+        }
+    }, [networkConfig, loading]);
 
-        setLastLoadedAddress(address)
-
-    }, [networkConfig]);
 
     useEffect(() => {
         const address = searchParams.get("address")
@@ -131,6 +105,12 @@ const TokenLiquidity = () => {
             setContractAddress(address => LIQUIDITY_POOLS.find(v => v.value == address) ?? address)
         }
     }, [searchParams, lastLoadedAddress, getTokenHolders])
+
+    const headers = [
+        { label: "Holder Address", key: "address" },
+        { label: "Balance", key: "balance" },
+        { label: "Percentage Held", key: "percentageHeld" }
+    ];
 
     return (
         <div className="flex flex-col min-h-screen">
@@ -253,7 +233,7 @@ const TokenLiquidity = () => {
                                 </div>
                             )}
                         </div>
-                        {pairInfo && <div className="mt-4 md:mt-0"><a href={"https://coinhall.org/injective/" + pairInfo.contract_addr}
+                        {pairInfo && <div className="mt-6 md:mt-0"><a href={"https://coinhall.org/injective/" + pairInfo.contract_addr}
                             className="bg-gray-800 rounded-lg p-2 text-white border border-slate-800 shadow-lg font-bold "
                         >
                             Trade on coinhall
@@ -287,10 +267,16 @@ const TokenLiquidity = () => {
                         }
                         {holders.length > 0 && (
                             <div className="mt-2 overflow-x-auto text-sm">
+                                <CSVLink data={holders} headers={headers} filename={"holders.csv"}>
+                                    <button className="p-1 bg-slate-800 rounded mb-2 mt-2">Download Holders CSV</button>
+                                </CSVLink>
                                 <div>Total liquidity holders: {holders.length}</div>
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="">
                                         <tr>
+                                            <th className="px-4 py-2">
+                                                Position
+                                            </th>
                                             <th className="px-4 py-2">
                                                 Address
                                             </th>
@@ -308,6 +294,9 @@ const TokenLiquidity = () => {
                                                 key={index}
                                                 className="border-b"
                                             >
+                                                <td className="px-6 py-1">
+                                                    {index + 1}
+                                                </td>
                                                 <td className="px-4 py-1 text-blue-600 flex flex-row items-center">
                                                     <a
                                                         href={`https://explorer.injective.network/account/${holder.address}`}
