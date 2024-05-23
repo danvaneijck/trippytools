@@ -17,12 +17,12 @@ export const WALLET_LABELS = {
         textColor: "text-red-500"
     },
     [dojoBurnAddress]: {
-        label: "DOJO BURN ADDY 🔒",
+        label: "DOJO BURN ADDY 🔥",
         bgColor: "",
         textColor: "text-red-500"
     },
     [injBurnAddress]: {
-        label: "INJ BURN ADDY 🔒",
+        label: "INJ BURN ADDY 🔥",
         bgColor: "",
         textColor: "text-red-500"
     },
