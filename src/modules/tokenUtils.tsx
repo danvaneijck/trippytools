@@ -1102,6 +1102,7 @@ class TokenUtils {
         const numTokensDecoded = JSON.parse(new TextDecoder().decode(numTokensInfo.data));
         console.log(numTokensDecoded);
         const totalTokens = numTokensDecoded.count;
+        console.log("total tokens")
 
         let startAfter = "";
         let hasMore = true;
@@ -1150,6 +1151,86 @@ class TokenUtils {
 
         return sortedHolders;
     }
+
+    async getCW404Holders(collectionAddress: string, setProgress: React.Dispatch<React.SetStateAction<string>>) {
+        const numTokensQuery = Buffer.from(
+            JSON.stringify({
+                num_tokens: {}
+            })
+        ).toString("base64");
+
+        const numTokensInfo = await this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, numTokensQuery);
+        const numTokensDecoded = JSON.parse(new TextDecoder().decode(numTokensInfo.data));
+        console.log(numTokensDecoded);
+        const totalTokens = numTokensDecoded.count;
+        console.log("total tokens", totalTokens)
+
+        const allTokensQuery = Buffer.from(
+            JSON.stringify({
+                tokens: {
+                }
+            })
+        ).toString("base64");
+
+        const allTokensInfo = await this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, allTokensQuery);
+        const allTokensDecoded = JSON.parse(new TextDecoder().decode(allTokensInfo.data));
+        console.log(allTokensDecoded);
+    }
+
+    async getPendingAstroRewards(generatorAddress: string, lpToken: string, wallet: string) {
+        const pendingRewardsQuery = Buffer.from(JSON.stringify({
+            pending_rewards: {
+                lp_token: lpToken,
+                user: wallet
+            }
+        })).toString(
+            "base64"
+        );
+        const pendingRewards = await this.chainGrpcWasmApi.fetchSmartContractState(
+            generatorAddress,
+            pendingRewardsQuery
+        );
+        const infoDecoded = JSON.parse(new TextDecoder().decode(pendingRewards.data));
+        return infoDecoded
+    }
+
+    async getGeneratorPoolInfo(generatorAddress: string, lpToken: string) {
+        const pendingRewardsQuery = Buffer.from(JSON.stringify({
+            pool_info: {
+                lp_token: lpToken,
+            }
+        })).toString(
+            "base64"
+        );
+        const pendingRewards = await this.chainGrpcWasmApi.fetchSmartContractState(
+            generatorAddress,
+            pendingRewardsQuery
+        );
+        const infoDecoded = JSON.parse(new TextDecoder().decode(pendingRewards.data));
+        return infoDecoded
+    }
+
+    async getAstroRewardsInfo(generatorAddress: string, lpToken: string) {
+        const pendingRewardsQuery = Buffer.from(JSON.stringify({
+            reward_info: {
+                lp_token: lpToken,
+            }
+        })).toString(
+            "base64"
+        );
+        const pendingRewards = await this.chainGrpcWasmApi.fetchSmartContractState(
+            generatorAddress,
+            pendingRewardsQuery
+        );
+        const infoDecoded = JSON.parse(new TextDecoder().decode(pendingRewards.data));
+        return infoDecoded
+    }
+
+    // async getAllStakers(generatorAddress: string, lpToken: string) {
+
+    // }
+
+
 
 }
 

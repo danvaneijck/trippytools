@@ -9,7 +9,7 @@ import { WALLET_LABELS } from "../../constants/walletLabels";
 import IPFSImage from "../../components/App/IpfsImage";
 import AirdropConfirmModal from "./AirdropConfirmModal";
 import { Holder } from "../../types";
-import { NFT_COLLECTIONS, TOKENS } from "../../constants/contractAddresses";
+import { CW404_TOKENS, LIQUIDITY_TOKENS, NFT_COLLECTIONS, TOKENS } from "../../constants/contractAddresses";
 import TokenSelect from "../../components/Inputs/TokenSelect";
 
 const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
@@ -32,10 +32,10 @@ const Airdrop = () => {
     const [shroomCost] = useState(10000)
     const [shroomPrice, setShroomPrice] = useState(null)
 
-    const [dropMode, setDropMode] = useState("NFT");
+    const [dropMode, setDropMode] = useState("TOKEN");
     const [nftCollection, setNftCollection] = useState(NFT_COLLECTIONS[0]);
     const [nftCollectionInfo, setNftCollectionInfo] = useState(null);
-    const [airdropTokenAddress, setAirdropTokenAddress] = useState(TOKENS[1]);
+    const [airdropTokenAddress, setAirdropTokenAddress] = useState(LIQUIDITY_TOKENS[0]);
     const [airdropTokenInfo, setAirdropTokenInfo] = useState(null);
 
     const [airdropDetails, setAirdropDetails] = useState([]);
@@ -198,41 +198,54 @@ const Airdrop = () => {
     }, [balanceToDrop]);
 
     const getNftCollection = useCallback(async () => {
-        setAirdropDetails([])
-        setLoading(true)
-        setNftCollectionInfo(null)
-        const module = new TokenUtils(networkConfig);
-        const info = await module.getNFTCollectionInfo(nftCollection.value)
-        const holders = await module.getNFTHolders(nftCollection.value, setProgress)
-        console.log(info, holders)
-        setNftCollectionInfo(info)
+        const is404 = CW404_TOKENS.find(x => x.value == nftCollection.value) !== undefined
+        console.log(is404)
+        if (is404) {
+            const module = new TokenUtils(networkConfig);
+            await module.getCW404Holders(nftCollection.value, setProgress)
+            return
+        }
+        try {
+            setAirdropDetails([])
+            setLoading(true)
+            setNftCollectionInfo(null)
+            const module = new TokenUtils(networkConfig);
+            const info = await module.getNFTCollectionInfo(nftCollection.value)
+            const holders = await module.getNFTHolders(nftCollection.value, setProgress)
+            console.log(info, holders)
+            setNftCollectionInfo(info)
 
-        const supplyToAirdrop = (balanceToDrop - (balanceToDrop * 0.001))
+            const supplyToAirdrop = (balanceToDrop - (balanceToDrop * 0.001))
 
-        let airdropData = [];
-        if (distMode === "fair") {
-            const amountToAirdrop = supplyToAirdrop / holders.length;
-            airdropData = holders.map(holder => ({
-                address: holder.address,
-                balance: holder.balance,
-                percentageHeld: holder.percentageHeld,
-                amountToAirdrop,
-                percentToAirdrop: (amountToAirdrop / balanceToDrop) * 100,
-                includeInDrop: true
-            }));
-        } else if (distMode === "proportionate") {
-            airdropData = holders.map(holder => ({
-                address: holder.address,
-                balance: holder.balance,
-                percentageHeld: holder.percentageHeld,
-                amountToAirdrop: (Number(holder.percentageHeld) / 100) * supplyToAirdrop,
-                percentToAirdrop: Number(holder.percentageHeld),
-                includeInDrop: true
-            }));
+            let airdropData = [];
+            if (distMode === "fair") {
+                const amountToAirdrop = supplyToAirdrop / holders.length;
+                airdropData = holders.map(holder => ({
+                    address: holder.address,
+                    balance: holder.balance,
+                    percentageHeld: holder.percentageHeld,
+                    amountToAirdrop,
+                    percentToAirdrop: (amountToAirdrop / balanceToDrop) * 100,
+                    includeInDrop: true
+                }));
+            } else if (distMode === "proportionate") {
+                airdropData = holders.map(holder => ({
+                    address: holder.address,
+                    balance: holder.balance,
+                    percentageHeld: holder.percentageHeld,
+                    amountToAirdrop: (Number(holder.percentageHeld) / 100) * supplyToAirdrop,
+                    percentToAirdrop: Number(holder.percentageHeld),
+                    includeInDrop: true
+                }));
+            }
+
+            setAirdropDetails(airdropData)
+            setLoading(false)
+        }
+        catch (e) {
+            console.log(e)
         }
 
-        setAirdropDetails(airdropData)
-        setLoading(false)
     }, [networkConfig, nftCollection, balanceToDrop, distMode])
 
     const getTokenHolders = useCallback(async () => {
@@ -338,6 +351,10 @@ const Airdrop = () => {
                         </Link>
                         <Link to="/manage-tokens" className="font-bold hover:underline">
                             manage tokens
+                        </Link>
+
+                        <Link to="/sushi-tool" className="font-bold hover:underline mx-5">
+                            sushi tool
                         </Link>
                     </div>
                     <div className="m-2">
@@ -490,7 +507,16 @@ const Airdrop = () => {
                                                         NFT collection address
                                                     </label>
                                                     <TokenSelect
-                                                        options={NFT_COLLECTIONS}
+                                                        options={[
+                                                            {
+                                                                label: "CW404 (SOON)",
+                                                                options: CW404_TOKENS
+                                                            },
+                                                            {
+                                                                label: "NFT",
+                                                                options: NFT_COLLECTIONS
+                                                            }
+                                                        ]}
                                                         selectedOption={nftCollection}
                                                         setSelectedOption={setNftCollection}
                                                     />
@@ -688,7 +714,16 @@ const Airdrop = () => {
                                                             airdrop to holders of token
                                                         </label>
                                                         <TokenSelect
-                                                            options={TOKENS}
+                                                            options={[
+                                                                {
+                                                                    label: "LIQUIDITY tokens",
+                                                                    options: LIQUIDITY_TOKENS
+                                                                },
+                                                                {
+                                                                    label: "Tokens",
+                                                                    options: TOKENS
+                                                                }
+                                                            ]}
                                                             selectedOption={airdropTokenAddress}
                                                             setSelectedOption={setAirdropTokenAddress}
                                                         />
@@ -753,7 +788,7 @@ const Airdrop = () => {
                                                         <div className="mt-5">
                                                             <div className="max-h-80 overflow-y-scroll overflow-x-auto">
                                                                 <div>Total participants: {airdropDetails.filter(x => x.includeInDrop).length}</div>
-                                                                <div className="text-xs">You should exclude addresses such as burn addresses, the pair contract etc..</div>
+                                                                <div className="text-xs">You should exclude addresses such as burn addresses, astro generator, the pair contract etc..</div>
                                                                 <div className="my-1">
                                                                     <div className="items-center mt-2">
                                                                         <label

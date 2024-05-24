@@ -3,16 +3,67 @@
 export const LIQUIDITY_POOLS = [
     {
         value: "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl",
-        label: "SHROOM / INJ"
+        label: "SHROOM / INJ",
+        img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg"
     },
     {
         value: "inj1rusfnzgtcvkn8z92h9hyvzuna60tc0x0yy74tf",
-        label: "spore / SHROOM"
+        label: "spore / SHROOM",
+        img: "https://bafybeia6kaiznad75mbzr2uwswfxw6qymt7ws3egcui6tzquomzh2w3cu4.ipfs.w3s.link/spore.webp"
     },
     {
         value: "inj1e35460gusk3f0lagmul6vzt9vjh6fp3zknl665",
-        label: "mycelium / spore"
+        label: "mycelium / spore",
+        img: "https://cloudflare-ipfs.com/ipfs/QmcWQeL2podyWSZFEpGLUfgPgeGopM49pV8c97vHbwswkH/myceliumlogo.JPG"
+    },
+    {
+        value: "inj1tpt9u0lvz2njw6a7m8pufdamd6mt8ymh8cw4nc",
+        label: "SMELLY / INJ",
+        img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
+    },
+    {
+        value: "inj1r7ahhyfe35l04ffa5gnzsxjkgmnn9jkd5ds0vg",
+        label: "NONJA / INJ",
+        img: "https://www.nonja.xyz/pfp.png"
+    },
+    {
+        value: "inj1eswdzx773we5zu2mz0zcmm7l5msr8wcss8ek0f",
+        label: "KIRA / INJ",
+        img: "https://raw.githubusercontent.com/kdelia12/injective-ts/dev/packages/token-metadata/src/images/kira.jpeg"
+    },
+    {
+        value: "inj1j6lxp4e68tfu96xs95h72rna3jl7ffngs08g47",
+        label: "MONKS / INJ",
+        img: "https://ipfs-gw.stargaze-apis.com/ipfs/QmQJMfHXWuFhxiAk6oC3TbkD8ZqkzVMSruF5AJhVLZSJfp"
+    },
+    {
+        value: "inj1uugfny4cqxq0jg9vd6svyunhmdlk2s6wjdftj8",
+        label: "GINGER / INJ",
+        img: "https://raw.githubusercontent.com/SHITcoinsonINJ/injective-ts/c8034284085e1340f8c4eb7e8a7bc3adfc94c1ec/packages/token-metadata/src/images/ginger.png"
     }
+]
+
+export const LIQUIDITY_TOKENS = [
+    {
+        value: "inj1e8ng0tn23yqdlp6mvv4zc9q3phkg40mlsxrwzx",
+        label: "SHROOM / INJ LP",
+        img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg"
+    },
+    {
+        value: "inj16qksf53k0n07cvpgzqs4q6kvpzh5aw2c6f9589",
+        label: "spore / SHROOM LP",
+        img: "https://bafybeia6kaiznad75mbzr2uwswfxw6qymt7ws3egcui6tzquomzh2w3cu4.ipfs.w3s.link/spore.webp"
+    },
+    {
+        value: "inj1v53kddphdgpcdrvgrze773wnj8dlcmpdnlcygq",
+        label: "mycelium / spore LP",
+        img: "https://cloudflare-ipfs.com/ipfs/QmcWQeL2podyWSZFEpGLUfgPgeGopM49pV8c97vHbwswkH/myceliumlogo.JPG"
+    },
+    {
+        value: "inj1prnfc8d8famgvla4zcmsd4xsxcwvjjzpauv75q",
+        label: "SMELLY / INJ LP",
+        img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
+    },
 ]
 
 export const TOKENS = [
@@ -30,6 +81,11 @@ export const TOKENS = [
         value: "factory/inj14cpnzf4mxyxel7le3wp2zxyvwr8g0wukch9865/mycelium",
         label: "mycelium",
         img: "https://cloudflare-ipfs.com/ipfs/QmcWQeL2podyWSZFEpGLUfgPgeGopM49pV8c97vHbwswkH/myceliumlogo.JPG"
+    },
+    {
+        value: "factory/inj10pz3xq7zf8xudqxaqealgyrnfk66u3c99ud5m2/SMELLY",
+        label: "SMELLY",
+        img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
     },
     {
         value: "factory/inj13y5nqf8mymy9tfxkg055th7hdm2uaahs9q6q5w/SNAPPY",
@@ -113,5 +169,51 @@ export const NFT_COLLECTIONS = [
         value: "inj19syt7zhn4ytvf7xtpw8wml558hz5hh5yjjrszn",
         label: "Goblin Royale",
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/65a9700d15d89b465b3f7e1b/miniaturePicture"
+    },
+    {
+        value: "inj1e34fuwkxxdz8ve8n7h92jdk8kd68wxxc0waztg",
+        label: "INJECTIVE CLUB",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/6633e4e8fe915c81f644c6cc/miniaturePicture"
+    },
+    {
+        value: "inj1p0kdm00l0j0mk7r7nt6ufkhj2cg8yxqwtrkpm3",
+        label: "Destiny Punks",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/6594acfc7789111dab2e5fb3/miniaturePicture"
+    },
+    {
+        value: "inj1lcep44ttk8tra6xc98eh0exlhf7774cjueju8l",
+        label: "Ninja Shuttles",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/660564cfea3abedcf300c100/miniaturePicture"
+    },
+    {
+        value: "inj17jmvd3nm2nj84pmffu4p6sxfw2mqs5j4d7aa7n",
+        label: "$SNAPPY NFT Collection",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/663dfdffa7369a8d6824f086/miniaturePicture"
+    },
+    {
+        value: "inj1al52xc734m23xxjlee28m9mjjcpfuen38che4q",
+        label: "NAPEJAS",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/65e75806add77a2a935e81e2/miniaturePicture"
     }
+]
+
+export const CW404_TOKENS = [
+    {
+        value: "inj1dmn43jyt6w6kycgsuu5a3ygtmtk6fm49yvf73d",
+        label: "Panda Moonshot",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/66170251b6b99c609875acf0/miniaturePicture",
+        isDisabled: true
+    },
+    {
+        value: "inj1n73yuus64z0yrda9hvn77twkspc4uste9j9ydd",
+        label: "Sushi Fighters",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/65d7825fefc5876b5878b430/miniaturePicture",
+        isDisabled: true
+    },
+    {
+        value: "inj14rgkkvwar36drhuajheu3u84jh9gdk27acfphy",
+        label: "Yakuza",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/66074809f642a97ae37ed7b2/miniaturePicture",
+        isDisabled: true
+    },
 ]
