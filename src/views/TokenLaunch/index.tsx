@@ -56,6 +56,10 @@ const TokenLaunch = () => {
                         <Link to="/manage-tokens" className="font-bold hover:underline">
                             manage tokens
                         </Link>
+
+                        <Link to="/sushi-tool" className="font-bold hover:underline mx-5">
+                            sushi tool
+                        </Link>
                     </div>
                     <div className="m-2">
                         <ConnectKeplr />

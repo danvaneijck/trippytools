@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import TokenHolders from "./views/TokenHolders";
+import SushiTool from "./views/SushiTool";
 import TokenLiquidity from "./views/TokenLiquidity";
 import TokenLaunch from './views/TokenLaunch';
 import TrippyDistribution from "./views/TrippyDistribution";
@@ -16,6 +17,7 @@ const App = () => {
       <Router>
         <Routes>
           <Route path="/token-holders" element={<TokenHolders />} />
+          <Route path="/sushi-tool" element={<SushiTool />} />
           <Route path="/token-liquidity" element={<TokenLiquidity />} />
           <Route path="/token-launch" element={<TokenLaunch />} />
           <Route path="/trippy-distribution" element={<TrippyDistribution />} />
