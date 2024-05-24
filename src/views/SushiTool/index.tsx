@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ConnectKeplr from "../../components/App/ConnectKeplr";
-import { processSushiData, getAllNfts, getMetaData, getSushiStats} from "./SushiUtils";
+import { processSushiData, getAllNfts, getMetaData, getSushiStats } from "./SushiUtils";
+import { GridLoader } from "react-spinners";
 
-  
+
 const SushiTool = () => {
     // 18810
-    const [sushiId, setSushiId] = useState('');
+    const [sushiId, setSushiId] = useState('18810');
     const [data, setData] = useState([{}]);
     const [sushiStats, setSushiStats] = useState([]);
     const [loading, setLoading] = useState(true);
-    
+
 
     const [currentSushi, setCurrentSushi] = useState({});
     const [currentSushiImage, setCurrentSushiImage] = useState({});
@@ -28,11 +29,11 @@ const SushiTool = () => {
                 const nfts = await response1;
                 const metadata = await response2;
 
-                let _sushiStats = await repsonse3;
+                const _sushiStats = await repsonse3;
 
                 setSushiStats(_sushiStats["data"]["sortedWallets"]);
 
-                let result = processSushiData(metadata, nfts);
+                const result = processSushiData(metadata, nfts);
 
                 setData(result);
                 setLoading(false);
@@ -51,20 +52,16 @@ const SushiTool = () => {
 
 
     const handleSushiIdSearch = () => {
-        let temp: any = data.filter((i: any) => {
+        const temp: any = data.filter((i: any) => {
             return i.rank !== null && i.index === parseInt(sushiId)
         })[0];
         setCurrentSushiImage(temp.metadata.image)
         console.log(temp.metadata.image)
         console.log(temp);
         setCurrentSushi(temp);
-        
+
         console.log(sushiId);
     };
-
-
-
-
 
     return (
         <div className="flex flex-col min-h-screen pb-10">
@@ -101,7 +98,7 @@ const SushiTool = () => {
                     <div className="w-full max-w-screen-lg px-2 py-10">
                         <div className="text-center">
                             <div className="text-xl">
-                                sushi tool
+                                sushi holder tool
                             </div>
                             <div className="text-xs">on Injective main net</div>
                         </div>
@@ -129,51 +126,51 @@ const SushiTool = () => {
                                 get sushi rank and oma
                             </button>
                         ) : (
-                            <div>Loading data...</div>
+                            <div className="flex flex-col items-center justify-center pt-5">
+                                <GridLoader color="#36d7b7" />
+                            </div>
                         )}
 
                         {(currentSushi as any)?.rank ? (
-                            <div>
-                                <div> oma {(currentSushi as any) .totalOma} </div>
-                                <div> rank {(currentSushi as any) .rank} </div>
-                                <img   style={{ maxWidth: '300px', maxHeight: '300px' }}  src={currentSushiImage as string}/>
-                                
+                            <div className="my-2">
+                                <div> oma {(currentSushi as any).totalOma} </div>
+                                <div> rank {(currentSushi as any).rank} </div>
+                                <img className="rounded-lg" style={{ maxWidth: '300px', maxHeight: '300px' }} src={currentSushiImage as string} />
+
                             </div>
                         ) : (
                             <div></div>
                         )}
 
-                        {sushiStats.length >0 ? (
-                            <div>
-     
-                                    <table>
-                                    <thead>
+                        {sushiStats.length > 0 ? (
+                            <div className="mt-2">
+                                <table className="table-auto w-full">
+                                    <thead className="text-left">
                                         <tr>
-                                        <th>wallet</th>
-                                        <th>oma</th>
-                                        <th>staked</th>
-                                        <th>total</th>
+                                            <th>position</th>
+                                            <th>wallet</th>
+                                            <th>oma</th>
+                                            <th>staked</th>
+                                            <th>total</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {sushiStats.map((item, index) => (
-                                        <tr key={index}>
-                                            <td>{(item as any).wallet}</td>
-                                            <td>{Math.floor((item as any).oma)}</td>
-                                            <td>{(item as any).stakeCount}</td>
-                                            <td>{(item as any).totalCount}</td>
-                                        </tr>
+                                            <tr key={index}>
+                                                <td>{index + 1}</td>
+                                                <td>{(item as any).wallet}</td>
+                                                <td>{Math.floor((item as any).oma)}</td>
+                                                <td>{(item as any).stakeCount}</td>
+                                                <td>{(item as any).totalCount}</td>
+                                            </tr>
                                         ))}
                                     </tbody>
-                                    </table>
-                                
+                                </table>
+
                             </div>
                         ) : (
                             <div></div>
                         )}
-
-
-
 
                     </div>
                 </div>
