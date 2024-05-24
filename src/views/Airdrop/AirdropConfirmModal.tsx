@@ -7,6 +7,7 @@ import {
     createTransaction,
     getTxRawFromTxRawOrDirectSignResponse,
     MsgExecuteContract,
+    MsgExecuteContractCompat,
     MsgMultiSend,
     TxRaw,
     TxRestClient,
@@ -19,6 +20,7 @@ import { useSelector } from "react-redux";
 import { useNavigate } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
 import { WALLET_LABELS } from "../../constants/walletLabels";
+import { sendTelegramMessage } from "../../modules/telegram";
 
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
@@ -31,6 +33,7 @@ const AirdropConfirmModal = (props: {
     setShowModal: (arg0: boolean) => void;
 }) => {
 
+    const connectedAddress = useSelector(state => state.network.connectedAddress);
     const currentNetwork = useSelector(state => state.network.currentNetwork);
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
     const navigate = useNavigate();
@@ -39,6 +42,8 @@ const AirdropConfirmModal = (props: {
     const [txLoading, setTxLoading] = useState(false)
 
     const [error, setError] = useState(null)
+
+    const [feePayed, setFeePayed] = useState(false)
 
     const getKeplr = useCallback(async () => {
         await window.keplr.enable(networkConfig.chainId);
@@ -125,7 +130,7 @@ const AirdropConfirmModal = (props: {
 
         console.log(totalToSend.toString())
 
-        const msg = MsgMultiSend.fromJSON({
+        let msg = MsgMultiSend.fromJSON({
             inputs: [
                 {
                     address: injectiveAddress,
@@ -151,6 +156,28 @@ const AirdropConfirmModal = (props: {
                 };
             }),
         });
+
+        if (!denom.includes("factory")) {
+            const msgs = []
+            records.map((record) => {
+                return msgs.push(
+                    MsgExecuteContractCompat.fromJSON({
+                        contractAddress: denom,
+                        sender: injectiveAddress,
+                        msg: {
+                            transfer: {
+                                recipient: record.address,
+                                amount: new BigNumberInBase(record.amount)
+                                    .toWei(decimals)
+                                    .toFixed()
+                            },
+                        },
+                    })
+                )
+            })
+            msg = msgs
+        }
+
         console.log("send airdrops", msg)
         const gas = {
             "amount": [
@@ -182,24 +209,30 @@ const AirdropConfirmModal = (props: {
             },
         });
         console.log("send shroom fee", msg)
-        await handleSendTx(pubKey, msg, injectiveAddress, offlineSigner)
+        return await handleSendTx(pubKey, msg, injectiveAddress, offlineSigner)
     }, [getKeplr, handleSendTx, props.shroomCost])
 
     const startAirdrop = useCallback(async () => {
         setError(null)
         if (props.airdropDetails !== null && props.airdropDetails.length > 0) {
-            if (currentNetwork == "mainnet" && props.shroomCost !== 0) {
+            if (currentNetwork == "mainnet" && props.shroomCost !== 0 && !feePayed) {
                 console.log("pay shroom fee")
                 setProgress("Pay shroom fee for airdrop")
-                await payFee()
+                const result = await payFee()
+                if (result) setFeePayed(true)
             }
             console.log("airdrop")
             setProgress("Send airdrops")
             await sendAirdrops(props.tokenAddress, props.tokenDecimals, props.airdropDetails)
             setProgress("Done...")
+
+            if (currentNetwork == "mainnet") await sendTelegramMessage(
+                `wallet ${connectedAddress} performed an airdrop on trippyinj!\ntoken dropped: ${props.tokenAddress}\n` +
+                `num participants: ${props.airdropDetails ? props.airdropDetails.filter(record => (Number(Number(record.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0)).length : "n/a"}`)
+
             navigate('/token-holders?address=' + props.tokenAddress);
         }
-    }, [props.airdropDetails, props.tokenAddress, props.shroomCost, props.tokenDecimals, navigate, currentNetwork, sendAirdrops, payFee])
+    }, [props.airdropDetails, props.shroomCost, props.tokenAddress, props.tokenDecimals, feePayed, currentNetwork, sendAirdrops, connectedAddress, navigate, payFee])
 
     return (
         <>
@@ -278,9 +311,12 @@ const AirdropConfirmModal = (props: {
                             {txLoading && <CircleLoader color="#36d7b7" className="mt-2 m-auto" />}
                             {error && <div className="text-red-500 mt-5">{error}</div>}
                         </div>
+                        <div className="pl-6">If the airdrop TX fails, up the gas ! DO NOT REFRESH THE PAGE</div>
                         {currentNetwork == "mainnet" && (props.airdropDetails.length > 0) && <div className="m-5">
                             Fee for airdrop: {props.shroomCost} shroom <br />
                             <a href="https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl" className="underline text-sm">buy here</a>
+                            <br />
+                            <div className="mt-2">Fee payed: {feePayed ? "True" : "False"}</div>
                         </div>
                         }
                         <div className="flex items-center justify-end p-4 border-t border-solid border-blueGray-200 rounded-b">

@@ -21,6 +21,7 @@ import { MdImageNotSupported } from "react-icons/md";
 import { useNavigate } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
 import IPFSImage from "../../components/App/IpfsImage";
+import { sendTelegramMessage } from "../../modules/telegram";
 
 
 const TokenConfirmModal = (props: {
@@ -174,6 +175,9 @@ const TokenConfirmModal = (props: {
         await handleSendTx(pubKey, msgSetDenomMetadata, injectiveAddress, offlineSigner)
 
         setProgress("Done...")
+
+        if (networkConfig.chainId == "injective-1") await sendTelegramMessage(`wallet ${injectiveAddress} created a new token on trippyinj!\nname: ${props.tokenName}\nsymbol: ${props.tokenSymbol}\ndenom: ${denom}`)
+
         navigate('/manage-tokens');
 
     }, [getKeplr, networkConfig.chainId, props.tokenSymbol, props.tokenSupply, props.tokenDecimals, props.tokenDescription, props.tokenName, props.tokenImage, handleSendTx, navigate])

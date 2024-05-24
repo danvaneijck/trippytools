@@ -12,12 +12,12 @@ import {
     IndexerGrpcAccountPortfolioApi,
     Message,
     ChainGrpcTokenFactoryApi,
+    ContractAccountBalance,
 } from "@injectivelabs/sdk-ts";
 import { Buffer } from "buffer";
 import moment from "moment";
 import { TokenInfo } from "../types";
 import { Coin } from "@injectivelabs/ts-types";
-
 /* global BigInt */
 
 const DOJO_ROUTER = "inj1t6g03pmc0qcgr7z44qjzaen804f924xke6menl"
@@ -117,7 +117,6 @@ class TokenUtils {
         try {
             const query = Buffer.from(JSON.stringify(simulationQuery)).toString('base64');
             const sim = await this.chainGrpcWasmApi.fetchSmartContractState(pair, query);
-
             const decodedData = JSON.parse(new TextDecoder().decode(sim.data));
             return decodedData;
         } catch (error) {
@@ -323,7 +322,7 @@ class TokenUtils {
     async getCW20TokenHolders(
         tokenAddress: string,
         setProgress: React.Dispatch<React.SetStateAction<string>>
-    ): Promise<Holder[]> {
+    ) {
         const info = await this.getTokenInfo(tokenAddress);
 
         if (!info || typeof info.decimals !== "number") {
@@ -332,117 +331,47 @@ class TokenUtils {
         }
 
         const decimals = info.decimals;
+        let allBalances: ContractAccountBalance[] = [];
+        let nextPage: string | null = '';
 
-        const accounts = [];
-
-        try {
-            let addresses: string[] = [];
-
-            let startAfter = "";
-            let hasMore = true;
-
-            while (hasMore) {
-                const accountsQuery = Buffer.from(
-                    JSON.stringify({
-                        all_accounts: {
-                            start_after: startAfter,
-                            limit: 30,
-                        },
-                    })
-                ).toString("base64");
-
-                const accountsInfo =
-                    await this.chainGrpcWasmApi.fetchSmartContractState(
-                        tokenAddress,
-                        accountsQuery
-                    );
-
-                const accountsDecoded = JSON.parse(
-                    new TextDecoder().decode(accountsInfo.data)
-                );
-                if (
-                    accountsDecoded &&
-                    accountsDecoded.accounts &&
-                    accountsDecoded.accounts.length > 0
-                ) {
-                    const newAccounts = accountsDecoded.accounts.filter(
-                        (account: string) => !addresses.includes(account)
-                    );
-
-                    addresses = [...addresses, ...newAccounts];
-
-                    accounts.push(...newAccounts);
-                    startAfter = accountsDecoded.accounts.at(-1);
-                } else {
-                    hasMore = false;
-                }
-            }
-
-            const accountsWithBalances = await this.fetchBalancesInBatches(
-                accounts,
-                5,
-                tokenAddress,
-                setProgress
-            );
-
-            let nonZeroHolders = 0;
-            let totalAmountHeld = Number(0);
-
-            Object.values(accountsWithBalances).forEach((balanceStr) => {
-                const balance = Number(balanceStr);
-                if (balance > 0) {
-                    nonZeroHolders++;
-                    totalAmountHeld += balance;
-                }
+        do {
+            const response = await this.chainGrpcWasmApi.fetchContractAccountsBalance({
+                contractAddress: tokenAddress,
+                pagination: { limit: 100, key: nextPage }
             });
 
-            console.log(
-                `Total number of holders with non-zero balance: ${nonZeroHolders}`
-            );
-            console.log(
-                `Total amount held: ${(
-                    Number(totalAmountHeld) / Math.pow(10, decimals)
-                ).toFixed(2)}`
-            );
+            if (response && response.contractAccountsBalance) {
+                allBalances = allBalances.concat(response.contractAccountsBalance);
+            } else {
+                console.log("No balances found for the provided denom.");
+                break;
+            }
 
-            const holders: Holder[] = Object.entries(
-                accountsWithBalances
-            ).reduce((acc, [address, balanceStr]) => {
-                const balance = Number(balanceStr);
-                if (balance > 0) {
-                    const percentageHeld =
-                        (Number(balance) * 100) / Number(totalAmountHeld);
-                    if (
-                        Number(
-                            (Number(balance) / Math.pow(10, decimals)).toFixed(
-                                4
-                            )
-                        ) !== 0
-                    ) {
-                        acc.push({
-                            address,
-                            balance: (
-                                Number(balance) / Math.pow(10, decimals)
-                            ).toFixed(4),
-                            percentageHeld: percentageHeld,
-                        });
-                    }
-                }
-                return acc;
-            }, [] as Holder[]);
+            nextPage = response.pagination.next;
+            setProgress(`wallets checked: ${allBalances.length}`);
+        } while (nextPage);
 
-            holders.sort(
-                (a, b) => Number(b.percentageHeld) - Number(a.percentageHeld)
-            );
+        try {
+            const accountsWithBalances = allBalances.filter(holder => Number(holder.balance) > 0).map(holder => ({
+                address: holder.account,
+                balance: Number(holder.balance) > 0 ? Number(holder.balance) / Math.pow(10, decimals) : 0
+            }));
 
-            return holders;
+
+            const totalAmountHeld = accountsWithBalances.reduce((total, holder) => total + holder.balance, 0);
+
+            const holdersWithPercentage = accountsWithBalances.map(holder => ({
+                ...holder,
+                percentageHeld: totalAmountHeld === 0 ? 0 : (holder.balance / totalAmountHeld) * 100
+            }));
+
+            return holdersWithPercentage.sort((a, b) => b.percentageHeld - a.percentageHeld);
         } catch (e) {
-            console.log(
-                `Error in getTokenHoldersWithBalances: ${tokenAddress} ${e}`
-            );
+            console.error(`Error in getTokenHoldersWithBalances: ${tokenAddress}`, e);
             return [];
         }
     }
+
 
     async getTokenFactoryTokenHolders(denom: string, setProgress: React.Dispatch<React.SetStateAction<string>>) {
         try {
@@ -1152,30 +1081,64 @@ class TokenUtils {
         return sortedHolders;
     }
 
+
     async getCW404Holders(collectionAddress: string, setProgress: React.Dispatch<React.SetStateAction<string>>) {
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+        // Query the total number of tokens
         const numTokensQuery = Buffer.from(
-            JSON.stringify({
-                num_tokens: {}
-            })
+            JSON.stringify({ num_tokens: {} })
         ).toString("base64");
 
         const numTokensInfo = await this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, numTokensQuery);
         const numTokensDecoded = JSON.parse(new TextDecoder().decode(numTokensInfo.data));
-        console.log(numTokensDecoded);
         const totalTokens = numTokensDecoded.count;
-        console.log("total tokens", totalTokens)
+        console.log("Total tokens:", totalTokens);
 
-        const allTokensQuery = Buffer.from(
-            JSON.stringify({
-                tokens: {
+        let tokenOwners = [];
+        const batchSize = 5;
+        let delayMs = 1000; // Start with a 1 second delay
+
+        for (let i = 0; i < totalTokens; i += batchSize) {
+            const promises = [];
+            for (let j = 0; j < batchSize && i + j < totalTokens; j++) {
+                const tokenId = (i + j).toString();
+                const ownerOfQuery = Buffer.from(
+                    JSON.stringify({ owner_of: { token_id: tokenId } })
+                ).toString("base64");
+
+                promises.push(
+                    this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, ownerOfQuery)
+                        .then(response => {
+                            const ownerInfoDecoded = JSON.parse(new TextDecoder().decode(response.data));
+                            return {
+                                tokenId: tokenId,
+                                owner: ownerInfoDecoded.owner
+                            };
+                        })
+                );
+            }
+
+            try {
+                const results = await Promise.all(promises);
+                tokenOwners = tokenOwners.concat(results);
+                setProgress(`Fetched ${i + batchSize > totalTokens ? totalTokens : i + batchSize} / ${totalTokens} tokens`);
+            } catch (error) {
+                if (error.response && error.response.status === 429) {
+                    console.error('Rate limit exceeded, retrying with delay...');
+                    await delay(delayMs);
+                    delayMs *= 2; // Exponential backoff
+                    i -= batchSize; // Retry the same batch
+                } else {
+                    console.error('Error fetching data:', error);
                 }
-            })
-        ).toString("base64");
+            }
 
-        const allTokensInfo = await this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, allTokensQuery);
-        const allTokensDecoded = JSON.parse(new TextDecoder().decode(allTokensInfo.data));
-        console.log(allTokensDecoded);
+            await delay(1000); // Delay between batches to avoid rate limit
+        }
+
+        console.log("Token owners:", tokenOwners);
     }
+
 
     async getPendingAstroRewards(generatorAddress: string, lpToken: string, wallet: string) {
         const pendingRewardsQuery = Buffer.from(JSON.stringify({

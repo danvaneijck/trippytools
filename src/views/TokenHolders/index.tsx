@@ -10,6 +10,7 @@ import IPFSImage from "../../components/App/IpfsImage";
 import { WALLET_LABELS } from "../../constants/walletLabels";
 import TokenSelect from "../../components/Inputs/TokenSelect";
 import { TOKENS } from "../../constants/contractAddresses";
+import { CSVLink } from 'react-csv';
 
 
 const TokenHolders = () => {
@@ -21,7 +22,6 @@ const TokenHolders = () => {
     const [contractAddress, setContractAddress] = useState(
         searchParams.get("address") ?? TOKENS[0]
     );
-
 
     const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
     const [pairMarketing, setPairMarketing] = useState<MarketingInfo | null>(null);
@@ -44,102 +44,63 @@ const TokenHolders = () => {
         setLastLoadedAddress("")
     }, [networkConfig])
 
-    const getTokenHolders = useCallback((address: string) => {
-        const module = new TokenUtils(networkConfig)
-        setError(null)
-        setTokenInfo(null)
-        setPairMarketing(null)
+    const getTokenHolders = useCallback(async (address: string) => {
+        console.log("get token holders")
+        if (loading) return
+
+        const module = new TokenUtils(networkConfig);
+        setError(null);
+        setTokenInfo(null);
+        setPairMarketing(null);
         setLoading(true);
-        setProgress("")
+        setProgress("");
         setHolders([]);
 
-        if (
-            address.includes("factory") ||
-            address.includes("peggy") ||
-            address.includes("ibc")
-        ) {
-            module
-                .getDenomMetadata(address)
-                .then((r) => {
-                    setTokenInfo(r);
-                })
-                .catch((e: unknown) => {
-                    console.log(e);
-                    setLoading(false);
-                    if (e && e.message) {
-                        setError(e.message)
-                    }
-                });
-        } else {
-            module
-                .getTokenInfo(address)
-                .then((r) => {
-                    setTokenInfo({
-                        ...r,
-                        denom: address
-                    });
-                })
-                .catch((e: unknown) => {
-                    console.log(e);
-                    setLoading(false);
-                    if (e && e.message) {
-                        setError(e.message)
-                    }
-                });
-            module.getTokenMarketing(address).then(r => {
-                setPairMarketing(r)
-            }).catch(e => {
-                console.log(e)
-                setLoading(false);
-                if (e && e.message) {
-                    setError(e.message)
-                }
-            })
-        }
+        try {
+            if (address.includes("factory") || address.includes("peggy") || address.includes("ibc")) {
+                const metadata = await module.getDenomMetadata(address);
+                setTokenInfo(metadata);
+            } else {
+                const tokenInfo = await module.getTokenInfo(address);
+                setTokenInfo({ ...tokenInfo, denom: address });
 
-        if (
-            address.includes("factory") ||
-            address.includes("peggy") ||
-            address.includes("ibc")
-        ) {
-            module.getTokenFactoryTokenHolders(address, setProgress).then(r => {
-                if (r) setHolders(r);
-                setLoading(false);
-            }).catch(e => {
-                console.log(e)
-                setLoading(false);
-                if (e && e.message) {
-                    setError(e.message)
-                }
-            })
-        }
-        else {
-            module
-                .getCW20TokenHolders(address, setProgress)
-                .then((r: Holder[]) => {
-                    console.log(r);
-                    setHolders(r);
-                    setLoading(false);
-                })
-                .catch((e: unknown) => {
-                    console.log(e);
-                    setLoading(false);
-                    if (e && e.message) {
-                        setError(e.message)
-                    }
-                });
-            setLastLoadedAddress(address)
-        }
+                const marketingInfo = await module.getTokenMarketing(address);
+                setPairMarketing(marketingInfo);
+            }
 
-    }, [networkConfig]);
+            if (address.includes("factory") || address.includes("peggy") || address.includes("ibc")) {
+                const tokenHolders = await module.getTokenFactoryTokenHolders(address, setProgress);
+                if (tokenHolders) setHolders(tokenHolders);
+            } else {
+                const tokenHolders = await module.getCW20TokenHolders(address, setProgress);
+                setHolders(tokenHolders);
+            }
+
+            setLastLoadedAddress(address);
+        } catch (e) {
+            console.log(e);
+            if (e && e.message) {
+                setError(e.message);
+            }
+        } finally {
+            setLoading(false);
+
+        }
+    }, [networkConfig, loading]);
 
     useEffect(() => {
         const address = searchParams.get("address")
-        if (address && address !== lastLoadedAddress) {
-            getTokenHolders(address)
+        if (address && address !== lastLoadedAddress && !loading) {
+            getTokenHolders(address).then().catch()
             setContractAddress(address => TOKENS.find(v => v.value == address) ?? address)
         }
-    }, [searchParams, lastLoadedAddress, getTokenHolders])
+    }, [searchParams, lastLoadedAddress, getTokenHolders, loading])
+
+    const headers = [
+        { label: "Holder Address", key: "address" },
+        { label: "Balance", key: "balance" },
+        { label: "Percentage Held", key: "percentageHeld" }
+    ];
 
     return (
         <div className="flex flex-col min-h-screen pb-10">
@@ -239,7 +200,7 @@ const TokenHolders = () => {
                                     </a>
                                 </div>
                             )}
-                            {pairMarketing && (
+                            {pairMarketing && pairMarketing.logo && (
                                 <div className="mt-5 text-sm text-white">
                                     <img
                                         src={pairMarketing.logo.url}
@@ -276,11 +237,17 @@ const TokenHolders = () => {
 
                         {holders.length > 0 && (
                             <div className="mt-5 text-sm">
+                                <CSVLink data={holders} headers={headers} filename={"holders.csv"}>
+                                    <button className="p-1 bg-slate-800 rounded mb-2">Download Holders CSV</button>
+                                </CSVLink>
                                 <div>Total token holders: {holders.length}</div>
                                 <div className="overflow-x-auto mt-2">
                                     <table className="table-auto w-full">
                                         <thead className="text-white">
                                             <tr>
+                                                <th className="px-4 py-2">
+                                                    Position
+                                                </th>
                                                 <th className="px-4 py-2">
                                                     Address
                                                 </th>
@@ -305,6 +272,9 @@ const TokenHolders = () => {
                                                         key={index}
                                                         className="text-white border-b"
                                                     >
+                                                        <td className="px-6 py-1">
+                                                            {index + 1}
+                                                        </td>
                                                         <td className="px-6 py-1 whitespace-nowrap">
                                                             <a
                                                                 className="hover:text-indigo-900"
