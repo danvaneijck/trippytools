@@ -20,6 +20,7 @@ import { TokenInfo } from "../types";
 import { Coin } from "@injectivelabs/ts-types";
 /* global BigInt */
 import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { CW404_BALANCE_STARTING_KEYS } from "../constants/cw404BalanceKeys";
 
 const DOJO_ROUTER = "inj1t6g03pmc0qcgr7z44qjzaen804f924xke6menl"
 
@@ -1092,6 +1093,17 @@ class TokenUtils {
         return contractInfoDecoded
     }
 
+    hexStringToUint8Array(hexString: string): Uint8Array {
+        if (hexString.length % 2 !== 0) {
+            throw new Error('Invalid hex string');
+        }
+        const byteArray = new Uint8Array(hexString.length / 2);
+        for (let i = 0; i < hexString.length; i += 2) {
+            byteArray[i / 2] = parseInt(hexString.substr(i, 2), 16);
+        }
+        return byteArray;
+    }
+
     async getCW404Holders(collectionAddress: string, setProgress: React.Dispatch<React.SetStateAction<string>>) {
         const contractInfoDecoded = await this.getCW404TokenInfo(collectionAddress)
         const decimals = contractInfoDecoded.decimals
@@ -1099,6 +1111,11 @@ class TokenUtils {
         const client = await CosmWasmClient.connect(this.endpoints.rpc);
         const queryClient = client.forceGetQueryClient();
         let startAfter: Uint8Array | undefined;
+
+        const key = CW404_BALANCE_STARTING_KEYS.find(x => x.address == collectionAddress)
+        if (key) startAfter = this.hexStringToUint8Array(key.key)
+
+        console.log("start", startAfter)
 
         const balanceKeyHex = "000762616c616e6365";
 
@@ -1108,15 +1125,18 @@ class TokenUtils {
 
         while (true) {
             const state = await queryClient.wasm.getAllContractState(collectionAddress, startAfter);
+            let lastModel = null
             for (const model of state.models) {
                 const key = Buffer.from(model.key).toString("hex");
                 if (key.startsWith(balanceKeyHex)) {
                     if (!foundHolders) {
+                        console.log(collectionAddress, Buffer.from(lastModel.key).toString("hex"))
                         foundHolders = true
                     }
                     if (!hasHolders) {
                         hasHolders = true
                     }
+
                     try {
                         const amount = BigInt(
                             Buffer.from(model.value).toString("ascii").slice(1, -1),
@@ -1143,6 +1163,7 @@ class TokenUtils {
                         hasHolders = false
                     }
                 }
+                lastModel = model
             }
             startAfter = state.pagination?.nextKey;
             console.log(holders.length)
