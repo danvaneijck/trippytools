@@ -19,6 +19,8 @@ import moment from "moment";
 import { TokenInfo } from "../types";
 import { Coin } from "@injectivelabs/ts-types";
 /* global BigInt */
+import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { CW404_BALANCE_STARTING_KEYS } from "../constants/cw404BalanceKeys";
 
 const DOJO_ROUTER = "inj1t6g03pmc0qcgr7z44qjzaen804f924xke6menl"
 
@@ -1081,62 +1083,108 @@ class TokenUtils {
         return sortedHolders;
     }
 
-
-    async getCW404Holders(collectionAddress: string, setProgress: React.Dispatch<React.SetStateAction<string>>) {
-        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-        // Query the total number of tokens
-        const numTokensQuery = Buffer.from(
-            JSON.stringify({ num_tokens: {} })
+    async getCW404TokenInfo(collectionAddress: string) {
+        const infoQuery = Buffer.from(
+            JSON.stringify({ token_info: {} })
         ).toString("base64");
 
-        const numTokensInfo = await this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, numTokensQuery);
-        const numTokensDecoded = JSON.parse(new TextDecoder().decode(numTokensInfo.data));
-        const totalTokens = numTokensDecoded.count;
-        console.log("Total tokens:", totalTokens);
+        const contractInfo = await this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, infoQuery);
+        const contractInfoDecoded = JSON.parse(new TextDecoder().decode(contractInfo.data));
+        return contractInfoDecoded
+    }
 
-        let tokenOwners = [];
-        const batchSize = 5;
-        let delayMs = 1000; // Start with a 1 second delay
+    hexStringToUint8Array(hexString: string): Uint8Array {
+        if (hexString.length % 2 !== 0) {
+            throw new Error('Invalid hex string');
+        }
+        const byteArray = new Uint8Array(hexString.length / 2);
+        for (let i = 0; i < hexString.length; i += 2) {
+            byteArray[i / 2] = parseInt(hexString.substr(i, 2), 16);
+        }
+        return byteArray;
+    }
 
-        for (let i = 0; i < totalTokens; i += batchSize) {
-            const promises = [];
-            for (let j = 0; j < batchSize && i + j < totalTokens; j++) {
-                const tokenId = (i + j).toString();
-                const ownerOfQuery = Buffer.from(
-                    JSON.stringify({ owner_of: { token_id: tokenId } })
-                ).toString("base64");
+    async getCW404Holders(collectionAddress: string, setProgress: React.Dispatch<React.SetStateAction<string>>) {
+        const contractInfoDecoded = await this.getCW404TokenInfo(collectionAddress)
+        const decimals = contractInfoDecoded.decimals
 
-                promises.push(
-                    this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, ownerOfQuery)
-                        .then(response => {
-                            const ownerInfoDecoded = JSON.parse(new TextDecoder().decode(response.data));
-                            return {
-                                tokenId: tokenId,
-                                owner: ownerInfoDecoded.owner
-                            };
+        const client = await CosmWasmClient.connect(this.endpoints.rpc);
+        const queryClient = client.forceGetQueryClient();
+        let startAfter: Uint8Array | undefined;
+
+        const key = CW404_BALANCE_STARTING_KEYS.find(x => x.address == collectionAddress)
+        if (key) startAfter = this.hexStringToUint8Array(key.key)
+
+        console.log("start", startAfter)
+
+        const balanceKeyHex = "000762616c616e6365";
+
+        const holders = []
+        let foundHolders = false
+        let hasHolders = false
+
+        while (true) {
+            const state = await queryClient.wasm.getAllContractState(collectionAddress, startAfter);
+            let lastModel = null
+            for (const model of state.models) {
+                const key = Buffer.from(model.key).toString("hex");
+                if (key.startsWith(balanceKeyHex)) {
+                    if (!foundHolders) {
+                        console.log(collectionAddress, Buffer.from(lastModel.key).toString("hex"))
+                        foundHolders = true
+                    }
+                    if (!hasHolders) {
+                        hasHolders = true
+                    }
+
+                    try {
+                        const amount = BigInt(
+                            Buffer.from(model.value).toString("ascii").slice(1, -1),
+                        );
+
+                        if (amount === 0n) {
+                            continue;
+                        }
+                        const holder = Buffer.from(
+                            key.substring(balanceKeyHex.length),
+                            "hex",
+                        ).toString("utf8");
+
+                        holders.push({
+                            address: holder,
+                            balance: amount
                         })
-                );
-            }
-
-            try {
-                const results = await Promise.all(promises);
-                tokenOwners = tokenOwners.concat(results);
-                setProgress(`Fetched ${i + batchSize > totalTokens ? totalTokens : i + batchSize} / ${totalTokens} tokens`);
-            } catch (error) {
-                if (error.response && error.response.status === 429) {
-                    console.error('Rate limit exceeded, retrying with delay...');
-                    await delay(delayMs);
-                    delayMs *= 2; // Exponential backoff
-                    i -= batchSize; // Retry the same batch
+                        setProgress(`holders: ${holders.length}`)
+                    } catch (e) {
+                        console.log("error", key, Buffer.from(model.value).toString("ascii"));
+                    }
                 } else {
-                    console.error('Error fetching data:', error);
+                    if (foundHolders && hasHolders) {
+                        hasHolders = false
+                    }
                 }
+                lastModel = model
+            }
+            startAfter = state.pagination?.nextKey;
+            console.log(holders.length)
+            if (!startAfter || startAfter?.length === 0) {
+                break;
             }
 
-            await delay(1000); // Delay between batches to avoid rate limit
+            if (foundHolders && !hasHolders) {
+                break
+            }
         }
 
-        console.log("Token owners:", tokenOwners);
+        holders.sort((a, b) => (b.balance > a.balance ? 1 : -1));
+        const totalBalance = holders.reduce((sum, holder) => sum + holder.balance, 0n);
+        const holdersWithPercentage = holders.map(holder => ({
+            ...holder,
+            balance: Number(holder.balance) / Math.pow(10, decimals),
+            percentageHeld: Number(holder.balance) / Number(totalBalance) * 100
+        }));
+
+        return holdersWithPercentage;
     }
 
 

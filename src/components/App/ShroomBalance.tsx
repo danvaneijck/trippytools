@@ -11,11 +11,15 @@ const ShroomBalance = () => {
     const currentNetwork = useSelector(state => state.network.currentNetwork);
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
 
+    const [loading, setLoading] = useState(false)
+
+
     const [balance, setBalance] = useState(null)
     const [usd, setUsd] = useState(null)
 
     const getBalance = useCallback(async () => {
         if (!connectedAddress) return
+        console.log("get shroom bal")
         const module = new TokenUtils(networkConfig);
         try {
             const [baseAssetPrice, tokenBalance, pairInfo] = await Promise.all([
@@ -37,14 +41,19 @@ const ShroomBalance = () => {
 
 
     useEffect(() => {
+        if (!connectedAddress) return
+        if (loading) return
         if (!balance || !usd) {
+            setLoading(true)
             getBalance().then(r => {
                 console.log(r)
             }).catch(e => {
                 console.log(e)
+            }).finally(() => {
+                setLoading(false)
             })
         }
-    }, [balance, getBalance, usd])
+    }, [balance, getBalance, usd, loading, connectedAddress])
 
     return (
         <div className="flex self-end items-center text-sm w-full hover:cursor-pointer max-w-screen-sm" onClick={getBalance}>

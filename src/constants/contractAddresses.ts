@@ -32,6 +32,11 @@ export const LIQUIDITY_POOLS = [
         img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
     },
     {
+        value: "inj15v9dqklamssewc8sqwkwrs2cjve0r4xu5jfee4",
+        label: "SMELLY / SHROOM Astroport",
+        img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
+    },
+    {
         value: "inj1r7ahhyfe35l04ffa5gnzsxjkgmnn9jkd5ds0vg",
         label: "NONJA / INJ",
         img: "https://www.nonja.xyz/pfp.png"
@@ -82,6 +87,11 @@ export const LIQUIDITY_TOKENS = [
     {
         value: "inj15gt5d8nkx8gmwglx2wze9tjxjd8ydrsht6zlx5",
         label: "SMELLY / INJ ASTRO LP",
+        img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
+    },
+    {
+        value: "inj1sd3ep9x5rqeg76smy45hgw9rk9c9nl6d7gdwpd",
+        label: "SMELLY / SHROOM ASTRO LP",
         img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
     },
 ]
@@ -171,6 +181,11 @@ export const TOKENS = [
         value: "inj19vy83ne9tzta2yqynj8yg7dq9ghca6yqn9hyej",
         label: "Drugs",
         img: "https://i.imgur.com/8f9uHTN.png"
+    },
+    {
+        value: "factory/inj1q4z7jjxdk7whwmkt39x7krc49xaqapuswhjhkn/boys",
+        label: "BOYS",
+        img: "https://emerald-total-gamefowl-966.mypinata.cloud/ipfs/QmcboHz22kYJB5N2i9my9NjMUJzH3Zf1UyXb4APs5kx2Vh"
     }
 ]
 
@@ -252,18 +267,18 @@ export const CW404_TOKENS = [
         value: "inj1dmn43jyt6w6kycgsuu5a3ygtmtk6fm49yvf73d",
         label: "Panda Moonshot",
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/66170251b6b99c609875acf0/miniaturePicture",
-        isDisabled: true
+        isDisabled: false
     },
     {
         value: "inj1n73yuus64z0yrda9hvn77twkspc4uste9j9ydd",
         label: "Sushi Fighters",
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/65d7825fefc5876b5878b430/miniaturePicture",
-        isDisabled: true
+        isDisabled: false
     },
     {
         value: "inj14rgkkvwar36drhuajheu3u84jh9gdk27acfphy",
         label: "Yakuza",
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/66074809f642a97ae37ed7b2/miniaturePicture",
-        isDisabled: true
+        isDisabled: false
     },
 ]

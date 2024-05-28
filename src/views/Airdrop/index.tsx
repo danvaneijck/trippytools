@@ -237,20 +237,23 @@ const Airdrop = () => {
 
     const getNftCollection = useCallback(async () => {
         const is404 = CW404_TOKENS.find(x => x.value == nftCollection.value) !== undefined
-        console.log(is404)
-        if (is404) {
-            setLoading(true)
-            const module = new TokenUtils(networkConfig);
-            await module.getCW404Holders(nftCollection.value, setProgress)
-            return
-        }
+
         try {
             setAirdropDetails([])
             setLoading(true)
             setNftCollectionInfo(null)
+            let info, holders
             const module = new TokenUtils(networkConfig);
-            const info = await module.getNFTCollectionInfo(nftCollection.value)
-            const holders = await module.getNFTHolders(nftCollection.value, setProgress)
+
+            if (is404) {
+                info = await module.getCW404TokenInfo(nftCollection.value)
+                holders = await module.getCW404Holders(nftCollection.value, setProgress)
+            }
+            else {
+                info = await module.getNFTCollectionInfo(nftCollection.value)
+                holders = await module.getNFTHolders(nftCollection.value, setProgress)
+            }
+
             console.log(info, holders)
             setNftCollectionInfo(info)
 
@@ -762,7 +765,7 @@ const Airdrop = () => {
                                                                                     </a>
                                                                                 </td>
                                                                                 <td className="px-6 py-1">
-                                                                                    {Number(holder.balance).toFixed(0)}{" "}
+                                                                                    {Number(holder.balance).toFixed(2)}{" "}
                                                                                 </td>
 
                                                                                 <td className="px-6 py-1">
