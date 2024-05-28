@@ -9,7 +9,7 @@ import { useSelector } from "react-redux";
 import IPFSImage from "../../components/App/IpfsImage";
 import { WALLET_LABELS } from "../../constants/walletLabels";
 import TokenSelect from "../../components/Inputs/TokenSelect";
-import { TOKENS } from "../../constants/contractAddresses";
+import { CW404_TOKENS, NFT_COLLECTIONS, TOKENS } from "../../constants/contractAddresses";
 import { CSVLink } from 'react-csv';
 
 
@@ -45,8 +45,9 @@ const TokenHolders = () => {
     }, [networkConfig])
 
     const getTokenHolders = useCallback(async (address: string) => {
-        console.log("get token holders")
         if (loading) return
+        if (lastLoadedAddress == address) return
+        console.log("get token holders")
 
         const module = new TokenUtils(networkConfig);
         setError(null);
@@ -57,23 +58,36 @@ const TokenHolders = () => {
         setHolders([]);
 
         try {
-            if (address.includes("factory") || address.includes("peggy") || address.includes("ibc")) {
+            const is404 = CW404_TOKENS.find(x => x.value == address) !== undefined
+            const isNFT = NFT_COLLECTIONS.find(x => x.value == address) !== undefined
+
+            if (is404) {
+                const tokenInfo = await module.getCW404TokenInfo(address);
+                setTokenInfo({ ...tokenInfo, denom: address });
+                const holders = await module.getCW404Holders(address, setProgress)
+                if (holders) setHolders(holders);
+            }
+            else if (isNFT) {
+                const tokenInfo = await module.getNFTCollectionInfo(address)
+                const holders = await module.getNFTHolders(address, setProgress)
+                setTokenInfo({ ...tokenInfo, denom: address });
+                if (holders) setHolders(holders);
+            }
+            else if (address.includes("factory") || address.includes("peggy") || address.includes("ibc")) {
                 const metadata = await module.getDenomMetadata(address);
                 setTokenInfo(metadata);
-            } else {
+                const tokenHolders = await module.getTokenFactoryTokenHolders(address, setProgress);
+                if (tokenHolders) setHolders(tokenHolders);
+            }
+            else {
                 const tokenInfo = await module.getTokenInfo(address);
                 setTokenInfo({ ...tokenInfo, denom: address });
 
                 const marketingInfo = await module.getTokenMarketing(address);
                 setPairMarketing(marketingInfo);
-            }
 
-            if (address.includes("factory") || address.includes("peggy") || address.includes("ibc")) {
-                const tokenHolders = await module.getTokenFactoryTokenHolders(address, setProgress);
-                if (tokenHolders) setHolders(tokenHolders);
-            } else {
                 const tokenHolders = await module.getCW20TokenHolders(address, setProgress);
-                setHolders(tokenHolders);
+                if (tokenHolders) setHolders(tokenHolders);
             }
 
             setLastLoadedAddress(address);
@@ -86,12 +100,12 @@ const TokenHolders = () => {
             setLoading(false);
 
         }
-    }, [networkConfig, loading]);
+    }, [loading, lastLoadedAddress, networkConfig]);
 
     useEffect(() => {
         const address = searchParams.get("address")
         if (address && address !== lastLoadedAddress && !loading) {
-            getTokenHolders(address).then().catch()
+            getTokenHolders(address).then(() => console.log("got token holders")).catch(e => console.log(e))
             setContractAddress(address => TOKENS.find(v => v.value == address) ?? address)
         }
     }, [searchParams, lastLoadedAddress, getTokenHolders, loading])
@@ -133,7 +147,7 @@ const TokenHolders = () => {
                     <div className="w-full max-w-screen-lg px-2 py-10">
                         <div className="text-center text-white">
                             <div className="text-xl">
-                                Get cw20 / token factory token holders
+                                Get token holders
                             </div>
                             <div className="text-xs">on Injective main net</div>
                         </div>
@@ -146,7 +160,20 @@ const TokenHolders = () => {
                                 Token address
                             </label>
                             <TokenSelect
-                                options={TOKENS}
+                                options={[
+                                    {
+                                        label: "CW404",
+                                        options: CW404_TOKENS
+                                    },
+                                    {
+                                        label: "TOKENS",
+                                        options: TOKENS
+                                    },
+                                    {
+                                        label: "NFT",
+                                        options: NFT_COLLECTIONS
+                                    }
+                                ]}
                                 selectedOption={contractAddress}
                                 setSelectedOption={setContractAddress}
                             />
@@ -167,10 +194,10 @@ const TokenHolders = () => {
                         <div className="flex flex-col md:flex-row justify-between text-sm">
                             {tokenInfo && (
                                 <div className="mt-5 text-white">
-                                    <div className="font-bold">denom: {tokenInfo.denom}</div>
+                                    <div className="font-bold">address: {tokenInfo.denom}</div>
                                     <div>name: {tokenInfo.name}</div>
                                     <div>symbol: {tokenInfo.symbol}</div>
-                                    <div>decimals: {tokenInfo.decimals}</div>
+                                    {tokenInfo.decimals && <div>decimals: {tokenInfo.decimals}</div>}
                                     {tokenInfo.description && <div>description: {tokenInfo.description}</div>}
                                     {tokenInfo.total_supply && (
                                         <div>

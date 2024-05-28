@@ -25,33 +25,43 @@ const MyTokens = () => {
     const [loading, setLoading] = useState(false);
     const [txLoading, setTxLoading] = useState(false)
 
+    const [loaded, setLoaded] = useState(false);
 
     const getTokens = useCallback(async () => {
+        console.log("get user tokens")
         const module = new TokenUtils(networkConfig);
         try {
             const userTokens = await module.getUserTokens(connectedAddress);
             return userTokens;
         } catch (error) {
-
             console.error('Failed to fetch tokens:', error);
-
             throw error;
         }
     }, [networkConfig, connectedAddress]);
 
     useEffect(() => {
-        setLoading(true);
-        setTokens([])
-        getTokens().then(fetchedTokens => {
-            setTokens(fetchedTokens);
-        }).catch(e => {
-            if (e.name !== 'AbortError') {
-                console.error("Failed to fetch tokens:", e);
-            }
-        }).finally(() => {
-            setLoading(false);
-        });
-    }, [getTokens]);
+        setLoaded(false)
+    }, [connectedAddress])
+
+    useEffect(() => {
+        if (!connectedAddress) return
+        if (loaded) return
+        if (loading) return
+
+        setLoading(true)
+        getTokens()
+            .then(fetchedTokens => {
+                setTokens(fetchedTokens);
+                setLoaded(true)
+            })
+            .catch(e => {
+                if (e.name !== 'AbortError') {
+                    console.error("Failed to fetch tokens:", e);
+                }
+            }).finally(() => {
+                setLoading(false);
+            });
+    }, [getTokens, loaded, loading, connectedAddress]);
 
     const TokenBalance = memo(({ denom, address, decimals }) => {
         const [balance, setBalance] = useState(null);
@@ -157,10 +167,6 @@ const MyTokens = () => {
         await getTokens()
     }, [getKeplr, getTokens, handleSendTx])
 
-    useEffect(() => {
-        getTokens()
-    }, [getTokens, showMetaDataModel])
-
     return (
         <>
             {showMetaDataModel !== null && <TokenMetadataModal setShowModal={setShowMetadataModal} token={showMetaDataModel} />}
@@ -231,7 +237,7 @@ const MyTokens = () => {
                                                                 <th className="px-4 py-2">Total Supply</th>
                                                                 <th className="px-4 py-2">Decimals</th>
                                                                 <th className="px-4 py-2">Admin</th>
-                                                                <th className="px-4 py-2">Balance</th>
+                                                                {/* <th className="px-4 py-2">Balance</th> */}
                                                                 <th className="px-4 py-2">Holders</th>
                                                                 <th className="px-4 py-2">Actions</th>
                                                             </tr>
@@ -264,9 +270,9 @@ const MyTokens = () => {
                                                                             </div>
                                                                         }
                                                                     </td>
-                                                                    <td className="px-4 py-2 text-xs">
+                                                                    {/* <td className="px-4 py-2 text-xs">
                                                                         <TokenBalance denom={token.token} address={connectedAddress} decimals={token.metadata.decimals} />
-                                                                    </td>
+                                                                    </td> */}
                                                                     <td className="px-4 py-2 text-xs">
                                                                         <Link
                                                                             to={`/token-holders?address=${token.token}`}
