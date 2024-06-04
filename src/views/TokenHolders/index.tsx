@@ -307,7 +307,7 @@ const TokenHolders = () => {
                                                                 className="hover:text-indigo-900"
                                                                 href={`https://explorer.injective.network/account/${holder.address}`}
                                                             >
-                                                                {holder.address}
+                                                                {holder.address.slice(0, 5) + '...' + holder.address.slice(-5)}
                                                             </a>
 
                                                             {

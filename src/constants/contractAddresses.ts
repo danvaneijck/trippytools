@@ -37,6 +37,31 @@ export const LIQUIDITY_POOLS = [
         img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
     },
     {
+        value: "inj1tsgxdgywu9ftyfr5gg6223tkaxxgxsevhnayxg",
+        label: "BENANCE / SMROOM DojoSwap",
+        img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFd8vSLrDUKI--y4A1BmmyPu1y8M_7oNSBWWNx78RNng&s"
+    },
+    {
+        value: "inj1pvh5e4el96gqhs4avfcelzxwz06ept4ctn509m",
+        label: "BENANCE / SMELLY DojoSwap",
+        img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFd8vSLrDUKI--y4A1BmmyPu1y8M_7oNSBWWNx78RNng&s"
+    },
+    {
+        value: "inj17g93w4ujp0gr6a5eylda8uj8l3vpwp0ww2qj5h",
+        label: "BENANCE / KIRA DojoSwap",
+        img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFd8vSLrDUKI--y4A1BmmyPu1y8M_7oNSBWWNx78RNng&s"
+    },
+    {
+        value: "inj1325v8x3yzxnqydl7nskvtkw979vdy5lp4adxw9",
+        label: "BENANCE / SPUUN DojoSwap",
+        img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFd8vSLrDUKI--y4A1BmmyPu1y8M_7oNSBWWNx78RNng&s"
+    },
+    {
+        value: "inj1lw7ckehwnstrz6a2yzwaa20p4d7jxerd4jju4a",
+        label: "BENANCE / SNAPPY DojoSwap",
+        img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFd8vSLrDUKI--y4A1BmmyPu1y8M_7oNSBWWNx78RNng&s"
+    },
+    {
         value: "inj1r7ahhyfe35l04ffa5gnzsxjkgmnn9jkd5ds0vg",
         label: "NONJA / INJ",
         img: "https://www.nonja.xyz/pfp.png"
@@ -118,6 +143,11 @@ export const TOKENS = [
         img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
     },
     {
+        value: "inj1gn8ss00s3htff0gv6flycgdqhc9xdsmvdpzktd",
+        label: "BENANCE",
+        img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFd8vSLrDUKI--y4A1BmmyPu1y8M_7oNSBWWNx78RNng&s"
+    },
+    {
         value: "inj1zdj9kqnknztl2xclm5ssv25yre09f8908d4923",
         label: "DOJO",
         img: "https://dojo.trading/images/tokens/dojo.svg"
@@ -190,6 +220,11 @@ export const TOKENS = [
 ]
 
 export const NFT_COLLECTIONS = [
+    {
+        value: "inj1648ta60d4hk8pmmhvh25cte869tzwlg0n6uemd",
+        label: "TheMorcs",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/6632a4855ea764ca9c858ba0/miniaturePicture"
+    },
     {
         value: "inj1047jye6gwds2xu7f9qzuwqfjduvjnqt3daf5cy",
         label: "Cheebee",
