@@ -62,6 +62,11 @@ export const LIQUIDITY_POOLS = [
         img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFd8vSLrDUKI--y4A1BmmyPu1y8M_7oNSBWWNx78RNng&s"
     },
     {
+        value: "inj1y9fz2p2tpaz5p7th64njjmx6atfzm946gvszrq",
+        label: "KOGA / INJ",
+        img: "https://i.imgur.com/aeMe3q7.jpeg"
+    },
+    {
         value: "inj1r7ahhyfe35l04ffa5gnzsxjkgmnn9jkd5ds0vg",
         label: "NONJA / INJ",
         img: "https://www.nonja.xyz/pfp.png"
@@ -146,6 +151,11 @@ export const TOKENS = [
         value: "inj1gn8ss00s3htff0gv6flycgdqhc9xdsmvdpzktd",
         label: "BENANCE",
         img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFd8vSLrDUKI--y4A1BmmyPu1y8M_7oNSBWWNx78RNng&s"
+    },
+    {
+        value: "inj1npvknmdjsk7s35gmemwalxlq4dd38p68mywgvv",
+        label: "KOGA",
+        img: "https://i.imgur.com/aeMe3q7.jpeg"
     },
     {
         value: "inj1zdj9kqnknztl2xclm5ssv25yre09f8908d4923",
