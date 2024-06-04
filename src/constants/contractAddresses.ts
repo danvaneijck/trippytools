@@ -326,4 +326,10 @@ export const CW404_TOKENS = [
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/66074809f642a97ae37ed7b2/miniaturePicture",
         isDisabled: false
     },
+    {
+        value: "inj1eqtcpx655e582j5xyu7rf2z8w92pah2re5jmm3",
+        label: "The Musicians",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/66244b4a5162342f5922a75b/miniaturePicture",
+        isDisabled: false
+    },
 ]
