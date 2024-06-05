@@ -85,6 +85,16 @@ export const LIQUIDITY_POOLS = [
         value: "inj1uugfny4cqxq0jg9vd6svyunhmdlk2s6wjdftj8",
         label: "GINGER / INJ",
         img: "https://raw.githubusercontent.com/SHITcoinsonINJ/injective-ts/c8034284085e1340f8c4eb7e8a7bc3adfc94c1ec/packages/token-metadata/src/images/ginger.png"
+    },
+    {
+        value: "inj14z0hjhtwq7v6hep3dek9df8wl93zww7erhuhfg",
+        label: "SPUUN / DOJO",
+        img: "https://www.spuun.xyz/logob.png"
+    },
+    {
+        value: "inj1ah574rxey65a9uu6umn8g8whazvgj3sql55cu6",
+        label: "DAOJO / DOJO",
+        img: "https://i.imgur.com/Huc1Kcd.png"
     }
 ]
 

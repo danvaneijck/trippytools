@@ -69,7 +69,7 @@ const TokenLiquidity = () => {
 
             try {
                 if (memeAddress.includes("factory") || memeAddress.includes("peggy") || memeAddress.includes("ibc")) {
-                    const denomMetadata = await module.getDenomMetadata(memeAddress);
+                    const denomMetadata = await module.getDenomExtraMetadata(memeAddress);
                     setTokenInfo(denomMetadata);
                 } else {
                     const tokenInfo = await module.getTokenInfo(memeAddress);

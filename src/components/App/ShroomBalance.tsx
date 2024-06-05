@@ -23,7 +23,7 @@ const ShroomBalance = () => {
         const module = new TokenUtils(networkConfig);
         try {
             const [baseAssetPrice, tokenBalance, pairInfo] = await Promise.all([
-                module.updateBaseAssetPrice(),
+                module.getINJPrice(),
                 module.queryTokenForBalance(SHROOM_TOKEN_ADDRESS, connectedAddress),
                 module.getPairInfo(SHROOM_PAIR_ADDRESS)
             ]);

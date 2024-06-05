@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
-import { GridLoader } from "react-spinners";
+import { GridLoader, CircleLoader } from "react-spinners";
 import { Link } from "react-router-dom";
 import { Holder, MarketingInfo, TokenInfo } from "../../types";
 import { useSearchParams } from 'react-router-dom';
@@ -11,7 +11,7 @@ import { WALLET_LABELS } from "../../constants/walletLabels";
 import TokenSelect from "../../components/Inputs/TokenSelect";
 import { CW404_TOKENS, NFT_COLLECTIONS, TOKENS } from "../../constants/contractAddresses";
 import { CSVLink } from 'react-csv';
-
+import HoldersChart from "../../components/App/HoldersChart";
 
 const TokenHolders = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -34,6 +34,11 @@ const TokenHolders = () => {
 
     const [lastLoadedAddress, setLastLoadedAddress] = useState("")
 
+    const [liquidity, setLiquidity] = useState([])
+    const [findingLiq, setFindingLiq] = useState(false)
+    const [liqError, setLiqError] = useState(false)
+
+
     const setAddress = useCallback(() => {
         setSearchParams({
             address: contractAddress.value
@@ -44,18 +49,67 @@ const TokenHolders = () => {
         setLastLoadedAddress("")
     }, [networkConfig])
 
+    const findLiquidity = useCallback(async () => {
+        let assetInfo = {}
+        if (tokenInfo?.denom.includes("factory")) {
+            assetInfo = {
+                native_token: {
+                    denom: tokenInfo.denom
+                }
+            }
+        }
+        else {
+            assetInfo = {
+                token: {
+                    contract_addr: tokenInfo.denom
+                }
+            }
+        }
+        console.log(assetInfo)
+        const module = new TokenUtils(networkConfig);
+        setFindingLiq(true)
+        try {
+            const liquidity = await module.checkForLiquidity(assetInfo)
+            if (!liquidity) {
+                setFindingLiq(false)
+                setLiqError(true)
+                return
+            }
+            setLiquidity([liquidity])
+            setHolders(prevHolders => prevHolders.map(holder => ({
+                ...holder,
+                usdValue: Number(holder.balance) * liquidity?.price
+            })));
+            setFindingLiq(false)
+        }
+        catch (e) {
+            setFindingLiq(false)
+            setLiqError(true)
+        }
+
+    }, [tokenInfo, networkConfig])
+
+    useEffect(() => {
+        if (tokenInfo && holders.length > 0 && liquidity.length == 0 && !findingLiq && !liqError) {
+            findLiquidity();
+        }
+    }, [tokenInfo, holders, findLiquidity, liquidity, findingLiq, liqError]);
+
     const getTokenHolders = useCallback(async (address: string) => {
         if (loading) return
         if (lastLoadedAddress == address) return
         console.log("get token holders")
-
+        setLoading(true);
         const module = new TokenUtils(networkConfig);
         setError(null);
         setTokenInfo(null);
         setPairMarketing(null);
-        setLoading(true);
+
         setProgress("");
         setHolders([]);
+        setLiquidity([])
+        setFindingLiq(false)
+        setLiqError(false)
 
         try {
             const is404 = CW404_TOKENS.find(x => x.value == address) !== undefined
@@ -74,7 +128,7 @@ const TokenHolders = () => {
                 if (holders) setHolders(holders);
             }
             else if (address.includes("factory") || address.includes("peggy") || address.includes("ibc")) {
-                const metadata = await module.getDenomMetadata(address);
+                const metadata = await module.getDenomExtraMetadata(address);
                 setTokenInfo(metadata);
                 const tokenHolders = await module.getTokenFactoryTokenHolders(address, setProgress);
                 if (tokenHolders) setHolders(tokenHolders);
@@ -251,6 +305,34 @@ const TokenHolders = () => {
                             )}
                         </div>
 
+                        {holders.length > 0 &&
+                            <button onClick={findLiquidity} className="p-1 bg-slate-800 rounded mb-2 px-2 mt-2">
+                                {findingLiq ? <div className="text-sm text-center">
+                                    <CircleLoader color="white" size={20} />
+                                    <div className="mt-1 text-center">Finding liquidity</div>
+                                </div> : "Find Liquidity"}
+                            </button>
+                        }
+
+                        {liquidity.length > 0 && liquidity.map(({ infoDecoded, marketCap, price, factory }, index) => {
+                            return <div key={index} className="text-sm">
+                                <a href={"https://coinhall.org/injective/" + infoDecoded.contract_addr}
+                                    className="text-white hover:cursor-pointer font-bold"
+                                >
+                                    pool found on {factory.name}
+                                </a>
+                                <br />
+                                price: ${price.toFixed(10)}
+                                <br />
+                                market cap: ${marketCap.toFixed(2)}
+                                <br />
+                                <Link to={`/token-liquidity?address=${infoDecoded.contract_addr}`} className="font-bold hover:underline mr-5">
+                                    view liquidity holders
+                                </Link>
+
+                            </div>
+                        })}
+
                         {loading && (
                             <div className="flex flex-col items-center justify-center pt-5">
                                 <GridLoader color="#36d7b7" />
@@ -264,6 +346,7 @@ const TokenHolders = () => {
 
                         {holders.length > 0 && (
                             <div className="mt-5 text-sm">
+                                <HoldersChart data={holders} />
                                 <CSVLink data={holders} headers={headers} filename={"holders.csv"}>
                                     <button className="p-1 bg-slate-800 rounded mb-2">Download Holders CSV</button>
                                 </CSVLink>
@@ -283,6 +366,9 @@ const TokenHolders = () => {
                                                 </th>
                                                 <th className="px-4 py-2">
                                                     Percentage
+                                                </th>
+                                                <th className="px-4 py-2">
+                                                    USD
                                                 </th>
                                             </tr>
                                         </thead>
@@ -334,6 +420,12 @@ const TokenHolders = () => {
                                                                 holder.percentageHeld.toFixed(2)
                                                             }
                                                             %
+                                                        </td>
+                                                        <td className="px-6 py-1">
+                                                            {
+                                                                holder.usdValue?.toFixed(2)
+                                                            }
+
                                                         </td>
                                                     </tr>
                                                 ))}
