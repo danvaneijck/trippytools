@@ -96,7 +96,7 @@ const Airdrop = () => {
             const module = new TokenUtils(networkConfig)
             try {
                 const [baseAssetPrice, pairInfo] = await Promise.all([
-                    module.updateBaseAssetPrice(),
+                    module.getINJPrice(),
                     module.getPairInfo(SHROOM_PAIR_ADDRESS)
                 ]);
                 const quote = await module.getSellQuoteRouter(pairInfo, shroomCost + "0".repeat(18));
@@ -130,7 +130,7 @@ const Airdrop = () => {
             tokenAddress.value.includes("ibc")
         ) {
             module
-                .getDenomMetadata(tokenAddress.value)
+                .getDenomExtraMetadata(tokenAddress.value)
                 .then((meta) => {
                     setTokenInfo(meta);
                     module.getBalanceOfToken(tokenAddress.value, connectedAddress).then((r) => {
@@ -305,7 +305,7 @@ const Airdrop = () => {
                 airdropTokenAddress.value.includes("peggy") ||
                 airdropTokenAddress.value.includes("ibc")
             ) {
-                const r = await module.getDenomMetadata(airdropTokenAddress.value)
+                const r = await module.getDenomExtraMetadata(airdropTokenAddress.value)
                 setAirdropTokenInfo(r);
             } else {
                 const r = await module.getTokenInfo(airdropTokenAddress.value)

@@ -13,6 +13,7 @@ export interface Holder {
     address: string;
     balance: string | number;
     percentageHeld: number;
+    usdValue?: number
 }
 
 export interface TokenMeta {

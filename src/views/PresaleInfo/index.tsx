@@ -59,7 +59,7 @@ const PreSaleInfo = () => {
     const getBalance = useCallback(() => {
         const module = new TokenUtils(MAIN_NET);
 
-        module.updateBaseAssetPrice().then(r => {
+        module.getINJPrice().then(r => {
             console.log(r)
             if (r) setInjPrice(r)
         }).catch(e => {

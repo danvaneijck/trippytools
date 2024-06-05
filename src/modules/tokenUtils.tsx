@@ -21,11 +21,14 @@ import { Coin } from "@injectivelabs/ts-types";
 /* global BigInt */
 import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { CW404_BALANCE_STARTING_KEYS } from "../constants/cw404BalanceKeys";
+import { DenomClientAsync } from "@injectivelabs/sdk-ui-ts";
+import { Network } from "@injectivelabs/networks";
 
 const DOJO_ROUTER = "inj1t6g03pmc0qcgr7z44qjzaen804f924xke6menl"
 
 
 interface EndpointConfig {
+    rpc(rpc: any): unknown;
     grpc: string;
     explorer: string;
     indexer: string;
@@ -66,6 +69,7 @@ interface ChainGrpcWasmApiResponse {
 }
 
 const INJ_USD_DOJO_ADDRESS = "inj1h0mpv48ctcsmydymh2hnkal7hla5gl4gftemqv"
+const DOJO_USD_DOJO_ADDRESS = "inj12t4ysml8h5wrlguuy5jsdcpx53h559sz870uvh"
 
 class TokenUtils {
     endpoints: EndpointConfig;
@@ -76,6 +80,12 @@ class TokenUtils {
     preSaleAmounts: Map<string, PresaleAmount>;
     indexerGrpcAccountPortfolioApi: IndexerGrpcAccountPortfolioApi;
     chainGrpcTokenFactoryApi: ChainGrpcTokenFactoryApi;
+    baseAssets: ({ native_token: { denom: string; }; token?: undefined; } | { token: { contract_addr: string; }; native_token?: undefined; })[];
+    factories: { name: string; address: string; }[];
+    baseDenom: any;
+    dojoAssetInfo: { token: { contract_addr: string; }; };
+    injAssetInfo: { native_token: { denom: string; }; };
+    denomClient: DenomClientAsync;
 
     constructor(endpoints: EndpointConfig) {
         this.endpoints = endpoints;
@@ -92,13 +102,80 @@ class TokenUtils {
             new IndexerGrpcAccountPortfolioApi(endpoints.indexer);
 
         this.preSaleAmounts = new Map();
+
+        this.denomClient = new DenomClientAsync(Network.Mainnet, {
+            endpoints: {
+                grpc: this.RPC,
+                indexer: "https://sentry.exchange.grpc-web.injective.network",
+                rest: "https://sentry.lcd.injective.network",
+                rpc: "https://sentry.tm.injective.network"
+            }
+        })
+
+        this.dojoAssetInfo = {
+            token: {
+                contract_addr: 'inj1zdj9kqnknztl2xclm5ssv25yre09f8908d4923'
+            }
+        }
+
+        this.injAssetInfo = {
+            native_token: {
+                denom: 'inj'
+            }
+        }
+
+        this.baseAssets = [
+            this.injAssetInfo,
+            this.dojoAssetInfo
+
+        ]
+        this.factories = [
+            {
+                name: "DojoSwap",
+                address: "inj1pc2vxcmnyzawnwkf03n2ggvt997avtuwagqngk"
+            },
+            {
+                name: "Astroport",
+                address: "inj19aenkaj6qhymmt746av8ck4r8euthq3zmxr2r6"
+            }
+
+        ]
     }
 
-    async updateBaseAssetPrice() {
+    async getINJPrice() {
         const baseAssetPair = await this.getPairInfo(INJ_USD_DOJO_ADDRESS)
         const quote = await this.getQuote(baseAssetPair.contract_addr, 1)
         if (!quote) return
         return Number(quote['return_amount']) / Math.pow(10, 6)
+    }
+
+    async getDOJOPrice() {
+        const baseAssetPair = await this.getPairInfo(DOJO_USD_DOJO_ADDRESS)
+        const quote = await this.getQuoteWithOfferAsset(baseAssetPair.contract_addr, this.dojoAssetInfo, 1)
+        console.log("dojo quote", quote)
+        if (!quote) return
+        return Number(quote['return_amount']) / Math.pow(10, 6)
+    }
+
+    async getQuoteWithOfferAsset(pair: string, offerAsset: any, amount: number) {
+        if (!pair) return
+        const offerAmount = amount * Math.pow(10, 18);
+        const simulationQuery = {
+            simulation: {
+                offer_asset: {
+                    info: offerAsset,
+                    amount: offerAmount.toString()
+                }
+            }
+        };
+        try {
+            const query = Buffer.from(JSON.stringify(simulationQuery)).toString('base64');
+            const sim = await this.chainGrpcWasmApi.fetchSmartContractState(pair, query);
+            const decodedData = JSON.parse(new TextDecoder().decode(sim.data));
+            return decodedData;
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     async getQuote(pair: string, amount: number) {
@@ -177,7 +254,7 @@ class TokenUtils {
         const tokens = await this.chainGrpcTokenFactoryApi.fetchDenomsFromCreator(address);
 
         const tokensWithMetadata = await Promise.all(tokens.map(async (token) => {
-            const metadata = await this.getDenomMetadata(token);
+            const metadata = await this.getDenomExtraMetadata(token);
             return { token, metadata };
         }));
 
@@ -239,7 +316,17 @@ class TokenUtils {
         }
     }
 
-    async getDenomMetadata(denom: string) {
+    async getDenomMetadata(denom) {
+        try {
+            const token = await this.denomClient.getDenomToken(denom)
+            return token;
+        } catch (error) {
+            console.error('Error fetching token info:', error);
+            return {}
+        }
+    }
+
+    async getDenomExtraMetadata(denom: string) {
         const data = await this.chainGrpcBankApi.fetchDenomMetadata(denom);
         const matchingDenomUnit = data.denomUnits.find(
             (unit) => unit.denom === data.display
@@ -378,7 +465,7 @@ class TokenUtils {
     async getTokenFactoryTokenHolders(denom: string, setProgress: React.Dispatch<React.SetStateAction<string>>) {
         try {
 
-            const info = await this.getDenomMetadata(denom)
+            const info = await this.getDenomExtraMetadata(denom)
             const decimals = info.decimals
 
             let allBalances: {
@@ -987,20 +1074,39 @@ class TokenUtils {
             pairQuery
         );
         const infoDecoded = JSON.parse(new TextDecoder().decode(pairInfo.data));
+        console.log(infoDecoded)
 
         const assetInfos = infoDecoded["asset_infos"];
         const tokenInfos = [];
         for (const assetInfo of assetInfos) {
-            const denom = assetInfo["native_token"]
-                ? assetInfo["native_token"]["denom"]
-                : assetInfo["token"]["contract_addr"];
+            const denom = assetInfo['native_token']
+                ? assetInfo['native_token']['denom']
+                : assetInfo['token']['contract_addr'];
 
+            console.log(denom)
+
+            let tokenInfo = undefined
+            let marketing = undefined
+            if (
+                denom === 'inj'
+                || denom.includes("factory")
+                || denom.includes("peggy")
+                || denom.includes("ibc")
+            ) {
+                tokenInfo = await this.getDenomMetadata(denom)
+            }
+            else {
+                tokenInfo = await this.getTokenInfo(denom);
+                marketing = await this.getTokenMarketing(denom)
+            }
             tokenInfos.push({
                 denom: denom,
+                tokenType: denom.includes("factory") ? "tokenFactory" : "cw20",
+                ...marketing,
+                ...tokenInfo,
             });
         }
-
-        if (tokenInfos.length !== 2) return null;
+        if (tokenInfos.length !== 2) return null
         const [token0Info, token1Info] = tokenInfos;
 
         return {
@@ -1237,11 +1343,137 @@ class TokenUtils {
         return infoDecoded
     }
 
-    // async getAllStakers(generatorAddress: string, lpToken: string) {
 
-    // }
+    async checkForLiquidity(assetInfo: any) {
+        for (const factoryAddress of this.factories) {
+            for (const baseAsset of this.baseAssets) {
+                console.log({
+                    pair: {
+                        asset_infos: [
+                            assetInfo,
+                            baseAsset
+                        ]
+                    }
+                })
+                const query = Buffer.from(JSON.stringify({
+                    pair: {
+                        asset_infos: [
+                            assetInfo,
+                            baseAsset
+                        ]
+                    }
+                })).toString(
+                    "base64"
+                );
+                try {
+                    const result = await this.chainGrpcWasmApi.fetchSmartContractState(
+                        factoryAddress.address,
+                        query
+                    );
+                    const infoDecoded = JSON.parse(new TextDecoder().decode(result.data));
+                    if (infoDecoded) {
+                        console.log(`FOUND ON ${factoryAddress.name}`)
+                    }
+                    const pool = await this.getPairInfo(infoDecoded.contract_addr)
+                    const price = await this.getPrice(pool)
+                    if (!price) continue
+                    const marketCap = await this.getMarketCap(pool)
 
+                    return { infoDecoded, factory: factoryAddress, price, marketCap }
+                }
+                catch (e) {
+                    console.log(e)
+                }
+            }
+        }
+        return null
+    }
 
+    async getPoolAmounts(pair) {
+        const poolQuery = Buffer.from(JSON.stringify({ pool: {} })).toString('base64');
+        const poolInfo = await this.chainGrpcWasmApi.fetchSmartContractState(pair.contract_addr, poolQuery)
+        const poolDecoded = JSON.parse(new TextDecoder().decode(poolInfo.data))
+        return poolDecoded
+    }
+
+    async getPrice(pair) {
+        const { token0Meta, token1Meta } = pair;
+        const baseAsset = this.baseAssets.find(baseAsset =>
+            (token0Meta.denom === baseAsset.native_token?.denom || token0Meta.denom === baseAsset.token?.contract_addr) ||
+            (token1Meta.denom === baseAsset.native_token?.denom || token1Meta.denom === baseAsset.token?.contract_addr)
+        );
+
+        // Determine base and meme token meta
+        const baseTokenMeta = (token0Meta.denom === baseAsset?.native_token?.denom || token0Meta.denom === baseAsset?.token?.contract_addr) ? token0Meta : token1Meta;
+        const memeTokenMeta = (baseTokenMeta === token0Meta) ? token1Meta : token0Meta;
+
+        console.log("base asset meta", baseTokenMeta)
+        console.log("meme token meta", memeTokenMeta)
+
+        const poolDecoded = await this.getPoolAmounts(pair);
+        const baseAssetPriceUsd = await this.getBaseAssetPrice(baseTokenMeta);
+        console.log("base asset price", baseAssetPriceUsd)
+
+        const baseAssetAmount = poolDecoded.assets.find(asset => {
+            if (asset.info.native_token) {
+                return asset.info.native_token.denom === baseTokenMeta.denom;
+            } else if (asset.info.token) {
+                return asset.info.token.contract_addr === baseTokenMeta.denom;
+            }
+            return false;
+        })?.amount || 0;
+
+        const tokenAmount = poolDecoded.assets.find(asset => {
+            if (asset.info.native_token) {
+                return asset.info.native_token.denom === memeTokenMeta.denom;
+            } else if (asset.info.token) {
+                return asset.info.token.contract_addr === memeTokenMeta.denom;
+            }
+            return false;
+        })?.amount || 0;
+
+        if (baseAssetAmount == 0 && tokenAmount == 0) {
+            return null
+        }
+
+        const ratio = (Number(baseAssetAmount) / Math.pow(10, baseTokenMeta.decimals)) / (Number(tokenAmount) / Math.pow(10, memeTokenMeta.decimals));
+
+        return ratio * baseAssetPriceUsd;
+    }
+
+    async getBaseAssetPrice(baseAsset) {
+        if (baseAsset.denom === 'inj') {
+            return await this.getINJPrice();
+        } else if (baseAsset.denom === 'inj1zdj9kqnknztl2xclm5ssv25yre09f8908d4923') { // dojo address
+            return await this.getDOJOPrice();
+        }
+        return 1;
+    }
+
+    async getMarketCap(pair) {
+        const { token0Meta, token1Meta } = pair;
+
+        const baseAsset = this.baseAssets.find(baseAsset =>
+            (token0Meta.denom === baseAsset.native_token?.denom || token0Meta.denom === baseAsset.token?.contract_addr) ||
+            (token1Meta.denom === baseAsset.native_token?.denom || token1Meta.denom === baseAsset.token?.contract_addr)
+        );
+
+        const baseTokenMeta = (token0Meta.denom === baseAsset?.native_token?.denom || token0Meta.denom === baseAsset?.token?.contract_addr) ? token0Meta : token1Meta;
+        const memeTokenMeta = (baseTokenMeta === token0Meta) ? token1Meta : token0Meta;
+
+        const price = await this.getPrice(pair);
+        let supply = 0;
+
+        if (!memeTokenMeta.total_supply) {
+            supply = await this.chainGrpcBankApi.fetchSupplyOf(memeTokenMeta.denom);
+            supply = supply.amount;
+        } else {
+            supply = memeTokenMeta.total_supply;
+        }
+
+        const marketCap = (Number(supply) / Math.pow(10, memeTokenMeta.decimals)) * price;
+        return marketCap;
+    }
 
 }
 
