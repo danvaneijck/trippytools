@@ -112,7 +112,6 @@ const AirdropConfirmModal = (props: {
     }, [broadcastTx, networkConfig])
 
     const sendAirdrops = useCallback(async (denom: any, decimals: number | undefined, airdropDetails: any[]) => {
-
         const { key, offlineSigner } = await getKeplr();
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
@@ -122,76 +121,104 @@ const AirdropConfirmModal = (props: {
                 address: record.address,
                 amount: Number(record.amountToAirdrop).toFixed(props.tokenDecimals)
             }
-        })
-
-        const totalToSend = records.reduce((acc, record) => {
-            return acc.plus(new BigNumberInBase(record.amount).toWei(decimals));
-        }, new BigNumberInWei(0));
-
-        console.log(totalToSend.toString())
-
-        let msg = MsgMultiSend.fromJSON({
-            inputs: [
-                {
-                    address: injectiveAddress,
-                    coins: [
-                        {
-                            denom,
-                            amount: totalToSend.toFixed(),
-                        },
-                    ],
-                },
-            ],
-            outputs: records.map((record: { address: any; amount: BigNumber.Value; }) => {
-                return {
-                    address: record.address,
-                    coins: [
-                        {
-                            amount: new BigNumberInBase(record.amount)
-                                .toWei(decimals)
-                                .toFixed(),
-                            denom,
-                        },
-                    ],
-                };
-            }),
         });
 
-        if (!denom.includes("factory")) {
-            const msgs = []
-            records.map((record) => {
-                return msgs.push(
-                    MsgExecuteContractCompat.fromJSON({
-                        contractAddress: denom,
-                        sender: injectiveAddress,
-                        msg: {
-                            transfer: {
-                                recipient: record.address,
-                                amount: new BigNumberInBase(record.amount)
-                                    .toWei(decimals)
-                                    .toFixed()
-                            },
-                        },
-                    })
-                )
-            })
-            msg = msgs
+        const chunkSize = denom.includes("factory") ? 2000 : 500;
+        const gasPerRecord = denom.includes("factory") ? 20000 : 80000;
+        const chunks = [];
+        for (let i = 0; i < records.length; i += chunkSize) {
+            chunks.push(records.slice(i, i + chunkSize));
         }
 
-        console.log("send airdrops", msg)
-        const gas = {
-            "amount": [
-                {
-                    "denom": "inj",
-                    "amount": "60000000000000"
+        const successfullyProcessed = new Set();
+
+        for (const chunk of chunks) {
+            let retries = 3;
+            let success = false;
+
+            while (retries > 0 && !success) {
+                try {
+                    const filteredChunk = chunk.filter(record => !successfullyProcessed.has(record.address));
+
+                    if (filteredChunk.length === 0) {
+                        break;
+                    }
+
+                    let msg;
+                    if (!denom.includes("factory")) {
+                        msg = filteredChunk.map((record) => {
+                            return MsgExecuteContractCompat.fromJSON({
+                                contractAddress: denom,
+                                sender: injectiveAddress,
+                                msg: {
+                                    transfer: {
+                                        recipient: record.address,
+                                        amount: new BigNumberInBase(record.amount)
+                                            .toWei(decimals)
+                                            .toFixed()
+                                    },
+                                },
+                            });
+                        });
+                    } else {
+                        const totalChunkToSend = filteredChunk.reduce((acc, record) => {
+                            return acc.plus(new BigNumberInBase(record.amount).toWei(decimals));
+                        }, new BigNumberInWei(0));
+
+                        msg = MsgMultiSend.fromJSON({
+                            inputs: [
+                                {
+                                    address: injectiveAddress,
+                                    coins: [
+                                        {
+                                            denom,
+                                            amount: totalChunkToSend.toFixed(),
+                                        },
+                                    ],
+                                },
+                            ],
+                            outputs: filteredChunk.map((record: { address: any; amount: BigNumber.Value; }) => {
+                                return {
+                                    address: record.address,
+                                    coins: [
+                                        {
+                                            amount: new BigNumberInBase(record.amount)
+                                                .toWei(decimals)
+                                                .toFixed(),
+                                            denom,
+                                        },
+                                    ],
+                                };
+                            }),
+                        });
+                    }
+
+                    const gas = {
+                        amount: [
+                            {
+                                denom: "inj",
+                                amount: (filteredChunk.length * gasPerRecord).toString()
+                            }
+                        ],
+                        gas: (filteredChunk.length * gasPerRecord).toString()
+                    };
+
+                    await handleSendTx(pubKey, msg, injectiveAddress, offlineSigner, gas);
+                    filteredChunk.forEach(record => successfullyProcessed.add(record.address));
+                    success = true;
+                } catch (error) {
+                    console.error("Transaction failed, retrying...", error);
+                    retries -= 1;
                 }
-            ],
-            "gas": "5000000"
+            }
+
+            if (!success) {
+                console.error("Failed to send airdrop after multiple retries");
+                throw new Error("Failed to send airdrop after multiple retries");
+            }
         }
+    }, [getKeplr, handleSendTx, props.tokenDecimals]);
 
-        await handleSendTx(pubKey, msg, injectiveAddress, offlineSigner, gas)
-
-    }, [getKeplr, handleSendTx, props.tokenDecimals])
 
     const payFee = useCallback(async () => {
         const { key, offlineSigner } = await getKeplr();
