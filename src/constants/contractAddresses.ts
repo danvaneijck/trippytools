@@ -62,6 +62,21 @@ export const LIQUIDITY_POOLS = [
         img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFd8vSLrDUKI--y4A1BmmyPu1y8M_7oNSBWWNx78RNng&s"
     },
     {
+        value: "inj13zzz2k22wapk2d2g962tx2ag786jz7jq9put9z",
+        label: "MINJ / INJ DojoSwap",
+        img: "https://cdn.icon-icons.com/icons2/2248/PNG/512/ninja_icon_137361.png"
+    },
+    {
+        value: "inj1k3tlksr2sfqyhj7qg0n8hkw0d7h2lxgxx6myt3",
+        label: "MINJ / USDC DojoSwap",
+        img: "https://cdn.icon-icons.com/icons2/2248/PNG/512/ninja_icon_137361.png"
+    },
+    {
+        value: "inj1dut5ta59g2wlgpl4ehcarn7cu0ezekyjg3rkfl",
+        label: "MINJ / DOJO DojoSwap",
+        img: "https://cdn.icon-icons.com/icons2/2248/PNG/512/ninja_icon_137361.png"
+    },
+    {
         value: "inj1y9fz2p2tpaz5p7th64njjmx6atfzm946gvszrq",
         label: "KOGA / INJ",
         img: "https://i.imgur.com/aeMe3q7.jpeg"
@@ -166,6 +181,11 @@ export const TOKENS = [
         value: "inj1npvknmdjsk7s35gmemwalxlq4dd38p68mywgvv",
         label: "KOGA",
         img: "https://i.imgur.com/aeMe3q7.jpeg"
+    },
+    {
+        value: "inj1dypt8q7gc97vfqe37snleawaz2gp7hquxkvh34",
+        label: "MINJ",
+        img: "https://cdn.icon-icons.com/icons2/2248/PNG/512/ninja_icon_137361.png"
     },
     {
         value: "inj1zdj9kqnknztl2xclm5ssv25yre09f8908d4923",
