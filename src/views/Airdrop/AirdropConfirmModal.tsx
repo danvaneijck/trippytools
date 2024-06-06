@@ -193,14 +193,19 @@ const AirdropConfirmModal = (props: {
                         });
                     }
 
+                    let calculatedGas = filteredChunk.length * gasPerRecord;
+                    if (calculatedGas < 500000) {
+                        calculatedGas = 500000;
+                    }
+
                     const gas = {
                         amount: [
                             {
                                 denom: "inj",
-                                amount: (filteredChunk.length * gasPerRecord).toString()
+                                amount: calculatedGas.toString()
                             }
                         ],
-                        gas: (filteredChunk.length * gasPerRecord).toString()
+                        gas: calculatedGas.toString()
                     };
 
                     await handleSendTx(pubKey, msg, injectiveAddress, offlineSigner, gas);

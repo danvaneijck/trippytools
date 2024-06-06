@@ -187,7 +187,10 @@ const Airdrop = () => {
                 console.log(e)
                 setLoading(false);
                 if (e && e.message) {
-                    setError(e.message)
+                    const errorMessage = e.message ? e.message.toString() : "";
+                    if (!errorMessage.startsWith("codespace wasm code 9: query wasm contract failed: Error parsing into type cw404::msg::QueryMsg: unknown variant `marketing_info`")) {
+                        setError(errorMessage);
+                    }
                 }
             })
         }
@@ -355,7 +358,6 @@ const Airdrop = () => {
             setLoading(false)
         }
         catch (e) {
-            console.log(e)
             setError(e.message)
             setLoading(false)
         }
@@ -426,7 +428,17 @@ const Airdrop = () => {
                                             Token to airdrop
                                         </label>
                                         <TokenSelect
-                                            options={TOKENS}
+                                            options={[
+                                                {
+                                                    label: "CW404",
+                                                    options: CW404_TOKENS
+                                                },
+                                                {
+                                                    label: "TOKENS",
+                                                    options: TOKENS
+                                                }
+
+                                            ]}
                                             selectedOption={tokenAddress}
                                             setSelectedOption={setTokenAddress}
                                         />
