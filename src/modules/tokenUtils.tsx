@@ -1096,8 +1096,22 @@ class TokenUtils {
                 tokenInfo = await this.getDenomMetadata(denom)
             }
             else {
-                tokenInfo = await this.getTokenInfo(denom);
-                marketing = await this.getTokenMarketing(denom)
+                try {
+                    tokenInfo = await this.getTokenInfo(denom);
+                    marketing = await this.getTokenMarketing(denom);
+                }
+                catch (error) {
+                    if (error.message.includes("Error parsing into type cw404")) {
+                        try {
+                            tokenInfo = await this.getCW404TokenInfo(denom);
+                        } catch (innerError) {
+                            console.error("Error with CW404 token info retrieval:", innerError);
+                        }
+                    }
+                    else {
+                        console.error("Error with token info retrieval:", error);
+                    }
+                }
             }
             tokenInfos.push({
                 denom: denom,
