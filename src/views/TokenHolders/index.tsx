@@ -134,14 +134,36 @@ const TokenHolders = () => {
                 if (tokenHolders) setHolders(tokenHolders);
             }
             else {
-                const tokenInfo = await module.getTokenInfo(address);
-                setTokenInfo({ ...tokenInfo, denom: address });
+                try {
+                    const tokenInfo = await module.getTokenInfo(address);
+                    setTokenInfo({ ...tokenInfo, denom: address });
 
-                const marketingInfo = await module.getTokenMarketing(address);
-                setPairMarketing(marketingInfo);
+                    const marketingInfo = await module.getTokenMarketing(address);
+                    setPairMarketing(marketingInfo);
 
-                const tokenHolders = await module.getCW20TokenHolders(address, setProgress);
-                if (tokenHolders) setHolders(tokenHolders);
+                    const tokenHolders = await module.getCW20TokenHolders(address, setProgress);
+                    if (tokenHolders) setHolders(tokenHolders);
+                } catch (error) {
+                    if (error.message.includes("Error parsing into type cw404")) {
+                        try {
+                            const tokenInfo = await module.getCW404TokenInfo(address);
+                            setTokenInfo({ ...tokenInfo, denom: address });
+                            const holders = await module.getCW404Holders(address, setProgress)
+                            if (holders) setHolders(holders);
+                        } catch (innerError) {
+                            console.error("Error with CW404 token info retrieval:", innerError);
+                        }
+                    }
+                    else if (error.message.includes("Error parsing into type talis_nft")) {
+                        const tokenInfo = await module.getNFTCollectionInfo(address)
+                        const holders = await module.getNFTHolders(address, setProgress)
+                        setTokenInfo({ ...tokenInfo, denom: address });
+                        if (holders) setHolders(holders);
+                    }
+                    else {
+                        console.error("Error with token info retrieval:", error);
+                    }
+                }
             }
 
             setLastLoadedAddress(address);

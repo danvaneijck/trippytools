@@ -594,7 +594,7 @@ const Airdrop = () => {
                                                     <TokenSelect
                                                         options={[
                                                             {
-                                                                label: "CW404 (SOON)",
+                                                                label: "CW404",
                                                                 options: CW404_TOKENS
                                                             },
                                                             {
