@@ -194,8 +194,8 @@ const AirdropConfirmModal = (props: {
                     }
 
                     let calculatedGas = filteredChunk.length * gasPerRecord;
-                    if (calculatedGas < 500000) {
-                        calculatedGas = 500000;
+                    if (calculatedGas < 5000000) {
+                        calculatedGas = 5000000;
                     }
 
                     const gas = {

@@ -65,7 +65,6 @@ const TokenHolders = () => {
                 }
             }
         }
-        console.log(assetInfo)
         const module = new TokenUtils(networkConfig);
         setFindingLiq(true)
         try {
@@ -432,6 +431,12 @@ const TokenHolders = () => {
                                                                         token contract 🔥
                                                                     </span>
                                                                 )}
+                                                            {liquidity.length > 0 && holder.address == liquidity[0].infoDecoded.contract_addr &&
+                                                                <span className="text-blue-500 ml-2">
+                                                                    {" "}
+                                                                    liquidity pool
+                                                                </span>
+                                                            }
                                                         </td>
                                                         <td className="px-6 py-1">
                                                             {holder.balance}{" "}
