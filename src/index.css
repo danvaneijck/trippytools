@@ -21,3 +21,30 @@ body {
   background-size: 200% 200%;
   animation: rainbow 10s linear infinite;
 }
+
+.token-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 16px;
+  padding: 16px;
+}
+
+@keyframes borderColorChange {
+  0% { border-color: #f00; }
+  25% { border-color: rgb(0, 143, 0); }
+  50% { border-color: rgb(0, 0, 143); }
+  75% { border-color: rgb(196, 196, 0); }
+  100% { border-color: #f00; }
+}
+
+.token-card {
+  animation: borderColorChange 10s infinite;
+  border: 3px solid; 
+  border-radius: 12px;
+  box-shadow: 0 12px 4px rgba(0, 0, 0, 0.1);
+}
+
+
+.token-card h2 {
+  margin-top: 0;
+}
