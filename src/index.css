@@ -48,3 +48,28 @@ body {
 .token-card h2 {
   margin-top: 0;
 }
+
+.money-value {
+  font-size: 2em;
+  transition: color 1s ease-in-out;
+}
+
+.money-value.up {
+  color: green;
+  animation: flash-green 1s;
+}
+
+.money-value.down {
+  color: red;
+  animation: flash-red 1s;
+}
+
+@keyframes flash-green {
+  0% { background-color: green; }
+  100% { background-color: transparent; }
+}
+
+@keyframes flash-red {
+  0% { background-color: red; }
+  100% { background-color: transparent; }
+}
