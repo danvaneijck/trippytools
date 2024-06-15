@@ -12,6 +12,8 @@ import { Buffer } from "buffer";
 import { TransactionException } from "@injectivelabs/exceptions";
 import ShroomBalance from "../../components/App/ShroomBalance";
 import TokenMetadataModal from "./TokenMetadataModal";
+import CreateSpotMarketModal from "./CreateSpotMarketModal";
+import MintModal from "./MintModal";
 
 
 const MyTokens = () => {
@@ -21,6 +23,8 @@ const MyTokens = () => {
     const currentNetwork = useSelector(state => state.network.currentNetwork);
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
     const [showMetaDataModel, setShowMetadataModal] = useState(null);
+    const [showSpotMarketModal, setShowSpotMarketModal] = useState(null);
+    const [showMint, setShowMint] = useState(null);
 
     const [loading, setLoading] = useState(false);
     const [txLoading, setTxLoading] = useState(false)
@@ -170,6 +174,9 @@ const MyTokens = () => {
     return (
         <>
             {showMetaDataModel !== null && <TokenMetadataModal setShowModal={setShowMetadataModal} token={showMetaDataModel} />}
+            {showSpotMarketModal !== null && <CreateSpotMarketModal setShowModal={setShowSpotMarketModal} token={showSpotMarketModal} />}
+            {showMint !== null && <MintModal setShowModal={setShowMint} token={showMint} />}
+
             <div className="flex flex-col min-h-screen pb-10">
                 <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
                     <div className="container mx-auto flex items-center p-2 text-sm md:text-sm">
@@ -282,12 +289,17 @@ const MyTokens = () => {
                                                                     </td>
                                                                     <td className="px-4 py-2 text-xs">
                                                                         {token.metadata.admin == connectedAddress &&
-                                                                            <>
-                                                                                <button onClick={() => { burnAdmin(token.metadata.symbol) }} className="my-2 bg-slate-800 shadow-lg p-2 rounded-lg text-xs">
+                                                                            <> <button onClick={() => { setShowMint(token) }} className="my-2 bg-slate-800 shadow-lg p-2 rounded-lg text-xs">
+                                                                                Mint
+                                                                            </button>
+                                                                                <button onClick={() => { burnAdmin(token.metadata.symbol) }} className="my-2 ml-2 bg-slate-800 shadow-lg p-2 rounded-lg text-xs">
                                                                                     Burn admin
                                                                                 </button>
                                                                                 <button onClick={() => { setShowMetadataModal(token) }} className="my-2 ml-2 bg-slate-800 shadow-lg p-2 rounded-lg text-xs">
                                                                                     Update metadata
+                                                                                </button>
+                                                                                <button onClick={() => { setShowSpotMarketModal(token) }} className="my-2 ml-2 bg-slate-800 shadow-lg p-2 rounded-lg text-xs">
+                                                                                    Create helix market
                                                                                 </button>
                                                                             </>
                                                                         }
