@@ -13,6 +13,10 @@ import {
     Message,
     ChainGrpcTokenFactoryApi,
     ContractAccountBalance,
+    IndexerGrpcSpotApi,
+    IndexerGrpcMitoApi,
+    IndexerGrpcOracleApi,
+    IndexerGrpcDerivativesApi
 } from "@injectivelabs/sdk-ts";
 import { Buffer } from "buffer";
 import moment from "moment";
@@ -86,6 +90,8 @@ class TokenUtils {
     dojoAssetInfo: { token: { contract_addr: string; }; };
     injAssetInfo: { native_token: { denom: string; }; };
     denomClient: DenomClientAsync;
+    indexerGrpcSpotApi: IndexerGrpcSpotApi;
+    mitoApi: IndexerGrpcMitoApi;
 
     constructor(endpoints: EndpointConfig) {
         this.endpoints = endpoints;
@@ -100,6 +106,8 @@ class TokenUtils {
 
         this.indexerGrpcAccountPortfolioApi =
             new IndexerGrpcAccountPortfolioApi(endpoints.indexer);
+
+        this.indexerGrpcSpotApi = new IndexerGrpcSpotApi(endpoints.indexer)
 
         this.preSaleAmounts = new Map();
 
@@ -1488,6 +1496,84 @@ class TokenUtils {
         const marketCap = (Number(supply) / Math.pow(10, memeTokenMeta.decimals)) * price;
         return marketCap;
     }
+
+    async fetchSpotMarkets() {
+        const markets = await this.indexerGrpcSpotApi.fetchMarkets()
+        return markets
+    }
+
+    async fetchMitoVaults() {
+        let endpoint = "";
+        if (this.endpoints.chainId.includes("888")) {
+            endpoint = 'https://k8s.testnet.mito.grpc-web.injective.network';
+        } else {
+            endpoint = 'https://k8s.mainnet.mito.grpc-web.injective.network';
+        }
+        this.mitoApi = new IndexerGrpcMitoApi(endpoint);
+
+        const limit = 100;
+        let pageIndex = 0;
+        let totalVaults = [];
+        let total = 0;
+
+        do {
+            const response = await this.mitoApi.fetchVaults({
+                limit: limit,
+                pageIndex: pageIndex
+            });
+
+            if (!response.vaults || response.vaults.length === 0) {
+                break;
+            }
+
+            totalVaults = totalVaults.concat(response.vaults);
+            total = response.pagination.total;
+            pageIndex += 1;
+
+        } while (totalVaults.length < total);
+        return totalVaults;
+    }
+
+    async fetchMitoVaultCreationFee() {
+        const { denomCreationFee } = await this.chainGrpcTokenFactoryApi.fetchModuleParams();
+        const [fee] = denomCreationFee;
+
+        let mitoMasterContract = ""
+        if (this.endpoints.chainId.includes("888")) {
+            mitoMasterContract = "inj174efvalr8d9muguudh9uyd7ah7zdukqs9w4adq"
+        } else {
+            mitoMasterContract = 'inj1vcqkkvqs7prqu70dpddfj7kqeqfdz5gg662qs3';
+        }
+        const query = Buffer.from(JSON.stringify({ config: {} })).toString('base64');
+        const info = await this.chainGrpcWasmApi.fetchSmartContractState(mitoMasterContract, query)
+        const config = JSON.parse(new TextDecoder().decode(info.data))
+
+        const permissionlessVaultRegistrationFee = config.permissionless_vault_registration_fee.find(
+            ({ denom }) => denom === 'inj'
+        );
+
+        return ((Number(permissionlessVaultRegistrationFee?.amount) || 0) + (Number(fee?.amount) || 0)) / Math.pow(10, 18);
+    }
+
+    async getINJDerivativesPrice() {
+        const marketsAPI = new IndexerGrpcDerivativesApi(this.endpoints.indexer)
+        const indexerGrpcOracleApi = new IndexerGrpcOracleApi(this.endpoints.indexer)
+        const markets = await marketsAPI.fetchMarkets()
+
+        const market = markets.reverse().find((market) => market.ticker === 'INJ/USDT PERP')
+        const baseSymbol = market.oracleBase
+        const quoteSymbol = market.oracleQuote
+        const oracleType = market.oracleType
+
+        const oraclePrice = await indexerGrpcOracleApi.fetchOraclePriceNoThrow({
+            baseSymbol,
+            quoteSymbol,
+            oracleType,
+        })
+
+        return oraclePrice['price']
+    }
+
 
 }
 

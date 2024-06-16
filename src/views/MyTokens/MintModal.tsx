@@ -6,7 +6,7 @@ import {
     CosmosTxV1Beta1Tx,
     createTransaction,
     getTxRawFromTxRawOrDirectSignResponse,
-    MsgSetDenomMetadata,
+    MsgMint,
     TxRaw,
     TxRestClient,
 } from "@injectivelabs/sdk-ts";
@@ -15,13 +15,11 @@ import { BigNumberInBase, DEFAULT_BLOCK_TIMEOUT_HEIGHT, getStdFee } from "@injec
 import { Buffer } from "buffer";
 import { useCallback, useState } from "react";
 import { useSelector } from "react-redux";
-import { MdImageNotSupported } from "react-icons/md";
 import { useNavigate } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
-import IPFSImage from "../../components/App/IpfsImage";
 
 
-const TokenMetadataModal = (props: {
+const MintModal = (props: {
     token: any
 }) => {
 
@@ -31,12 +29,7 @@ const TokenMetadataModal = (props: {
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
     const navigate = useNavigate();
 
-    const [tokenName, setTokenName] = useState("token-name");
-    const [tokenSymbol, setTokenSymbol] = useState("token-symbol");
-    const [tokenSupply, setTokenSupply] = useState(1000000);
-    const [tokenDecimals, setTokenDecimals] = useState(6);
-    const [tokenImage, setTokenImageUrl] = useState("https://");
-    const [tokenDescription, setTokenDescription] = useState("new token description!");
+    const [amount, setAmount] = useState('100');
 
     const [progress, setProgress] = useState("")
     const [txLoading, setTxLoading] = useState(false)
@@ -109,48 +102,39 @@ const TokenMetadataModal = (props: {
         return response
     }, [broadcastTx, networkConfig])
 
-    const updateMetadata = useCallback(async () => {
+    const mint = useCallback(async () => {
         console.log(props.token)
         setError(null)
         const { key, offlineSigner } = await getKeplr(networkConfig.chainId);
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
 
-        const msgSetDenomMetadata = MsgSetDenomMetadata.fromJSON({
+        if (connectedAddress !== injectiveAddress) {
+            setError("Wrong wallet connected")
+            return
+        }
+        else {
+            setError(null)
+        }
+
+        const msgMint = MsgMint.fromJSON({
             sender: injectiveAddress,
-            metadata: {
-                base: props.token.metadata.denom, /** the base denom */
-                description: tokenDescription, /** description of your token */
-                display: props.token.metadata.symbol, /** the displayed name of your token on UIs */
-                name: props.token.metadata.name, /** the name of your token */
-                symbol: props.token.metadata.symbol, /** the symbol of your token */
-                uri: tokenImage,
-                denomUnits: [
-                    {
-                        denom: props.token.metadata.denom,
-                        exponent: 0,
-                        aliases: [props.token.metadata.symbol]
-                    },
-                    {
-                        denom: props.token.metadata.symbol,
-                        exponent: props.token.metadata.decimals,
-                        aliases: [props.token.metadata.symbol]
-                    },
-                ],
-                uriHash: ""
+            amount: {
+                amount: (Number(amount) * Math.pow(10, props.token.metadata.decimals)).toLocaleString('fullwide', { useGrouping: false }),
+                denom: props.token.token
             }
         });
 
-        // set metadata
-        console.log("metadata", msgSetDenomMetadata)
-        setProgress("Upload denom metadata")
-        await handleSendTx(pubKey, msgSetDenomMetadata, injectiveAddress, offlineSigner)
+        console.log("mint", msgMint)
+        setProgress(`Mint tokens`)
+
+        await handleSendTx(pubKey, msgMint, injectiveAddress, offlineSigner)
 
         setProgress("Done...")
 
         props.setLoaded(false)
         props.setShowModal(null)
-    }, [props, getKeplr, networkConfig.chainId, tokenDescription, tokenImage, handleSendTx])
+    }, [props, getKeplr, networkConfig.chainId, connectedAddress, amount, handleSendTx])
 
     return (
         <>
@@ -161,7 +145,7 @@ const TokenMetadataModal = (props: {
                     <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-slate-800 outline-none focus:outline-none">
                         <div className="flex items-start justify-between p-4 border-b border-solid border-blueGray-900 rounded-t">
                             <h3 className="text-xl font-semibold">
-                                Update token metadata
+                                Mint tokens
                             </h3>
                         </div>
                         <div className="relative p-6 flex-auto">
@@ -174,49 +158,23 @@ const TokenMetadataModal = (props: {
                                         <label
                                             className="font-bold text-white "
                                         >
-                                            Token description
+                                            Amount
                                         </label>
                                         <input
                                             type="text"
                                             className="text-black w-full rounded p-1 text-sm"
                                             onChange={(e) =>
-                                                setTokenDescription(e.target.value)
+                                                setAmount(e.target.value)
                                             }
-                                            value={tokenDescription}
+                                            value={amount}
                                         />
                                     </div>
-                                    <div className="mt-2">
-                                        <label
-                                            className="block font-bold text-white"
-                                        >
-                                            Token image URL
-                                        </label>
-                                        <span className="text-xs">the logo of your token, should be hosted on IPFS and should be a small webp image</span>
-                                        <input
-                                            type="text"
-                                            className="text-black w-full rounded p-1 text-sm"
-                                            onChange={(e) =>
-                                                setTokenImageUrl(e.target.value)
-                                            }
-                                            value={tokenImage}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="ml-0 mt-5 md:ml-10 md:mt-0">
-                                    token image
-                                    {tokenImage ?
-                                        <IPFSImage
-                                            width={100}
-                                            className={'rounded'}
-                                            ipfsPath={tokenImage}
 
-                                        />
-                                        :
-                                        <MdImageNotSupported className="text-5xl text-slate-500" />
-                                    }
                                 </div>
+
                             </div>
-                            {progress && <div className="mt-5">progress: {progress}</div>}
+
+                            {progress && <div className="mt-5 whitespace-pre">progress: {progress}</div>}
                             {txLoading && <CircleLoader color="#36d7b7" className="mt-2 m-auto" />}
                             {error && <div className="text-red-500 mt-5">{error}</div>}
                         </div>
@@ -231,14 +189,14 @@ const TokenMetadataModal = (props: {
                             <button
                                 className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
-                                onClick={() => updateMetadata().then(() => console.log("done")).catch(e => {
+                                onClick={() => mint().then(() => console.log("done")).catch(e => {
                                     console.log(e)
                                     setError(e.message)
                                     setProgress("")
                                     setTxLoading(false)
                                 })}
                             >
-                                Update
+                                Mint
                             </button>
                         </div>
                     </div>
@@ -249,4 +207,4 @@ const TokenMetadataModal = (props: {
     )
 }
 
-export default TokenMetadataModal
+export default MintModal

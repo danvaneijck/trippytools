@@ -6,7 +6,7 @@ import {
     CosmosTxV1Beta1Tx,
     createTransaction,
     getTxRawFromTxRawOrDirectSignResponse,
-    MsgSetDenomMetadata,
+    MsgInstantSpotMarketLaunch,
     TxRaw,
     TxRestClient,
 } from "@injectivelabs/sdk-ts";
@@ -15,13 +15,12 @@ import { BigNumberInBase, DEFAULT_BLOCK_TIMEOUT_HEIGHT, getStdFee } from "@injec
 import { Buffer } from "buffer";
 import { useCallback, useState } from "react";
 import { useSelector } from "react-redux";
-import { MdImageNotSupported } from "react-icons/md";
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
-import IPFSImage from "../../components/App/IpfsImage";
+import SpotMarketConfigDropdownTable from "../../components/App/SpotMarketOptionsTable";
 
 
-const TokenMetadataModal = (props: {
+const CreateSpotMarketModal = (props: {
     token: any
 }) => {
 
@@ -29,14 +28,11 @@ const TokenMetadataModal = (props: {
 
     const currentNetwork = useSelector(state => state.network.currentNetwork);
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
-    const navigate = useNavigate();
 
-    const [tokenName, setTokenName] = useState("token-name");
-    const [tokenSymbol, setTokenSymbol] = useState("token-symbol");
-    const [tokenSupply, setTokenSupply] = useState(1000000);
-    const [tokenDecimals, setTokenDecimals] = useState(6);
-    const [tokenImage, setTokenImageUrl] = useState("https://");
-    const [tokenDescription, setTokenDescription] = useState("new token description!");
+    const [priceTickSize, setPriceTickSize] = useState('0.0000001');
+    const [quantityTickSize, setQuantityTickSize] = useState(100);
+
+    const [marketLink, setMarketLink] = useState(null)
 
     const [progress, setProgress] = useState("")
     const [txLoading, setTxLoading] = useState(false)
@@ -45,6 +41,7 @@ const TokenMetadataModal = (props: {
 
     const getKeplr = useCallback(async () => {
         await window.keplr.enable(networkConfig.chainId);
+        console.log("get offline signer for ", networkConfig.chainId)
         const offlineSigner = window.keplr.getOfflineSigner(networkConfig.chainId);
         const accounts = await offlineSigner.getAccounts();
         const key = await window.keplr.getKey(networkConfig.chainId);
@@ -109,48 +106,61 @@ const TokenMetadataModal = (props: {
         return response
     }, [broadcastTx, networkConfig])
 
-    const updateMetadata = useCallback(async () => {
-        console.log(props.token)
+    const create = useCallback(async () => {
         setError(null)
         const { key, offlineSigner } = await getKeplr(networkConfig.chainId);
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
+        if (connectedAddress !== injectiveAddress) {
+            setError("Wrong wallet connected")
+            return
+        }
+        else {
+            setError(null)
+        }
+        let minPriceTick
+        const priceTickDecimals = (18 - props.token.metadata.decimals)
 
-        const msgSetDenomMetadata = MsgSetDenomMetadata.fromJSON({
-            sender: injectiveAddress,
-            metadata: {
-                base: props.token.metadata.denom, /** the base denom */
-                description: tokenDescription, /** description of your token */
-                display: props.token.metadata.symbol, /** the displayed name of your token on UIs */
-                name: props.token.metadata.name, /** the name of your token */
-                symbol: props.token.metadata.symbol, /** the symbol of your token */
-                uri: tokenImage,
-                denomUnits: [
-                    {
-                        denom: props.token.metadata.denom,
-                        exponent: 0,
-                        aliases: [props.token.metadata.symbol]
-                    },
-                    {
-                        denom: props.token.metadata.symbol,
-                        exponent: props.token.metadata.decimals,
-                        aliases: [props.token.metadata.symbol]
-                    },
-                ],
-                uriHash: ""
+        if (priceTickDecimals == 0) {
+            minPriceTick = priceTickSize
+        }
+        else {
+            minPriceTick = (Number(priceTickSize) * Math.pow(10, priceTickDecimals)).toLocaleString('fullwide', { useGrouping: false })
+        }
+        const minQuantityTick = (Number(quantityTickSize) * Math.pow(10, props.token.metadata.decimals)).toLocaleString('fullwide', { useGrouping: false })
+
+        console.log(minPriceTick, minQuantityTick)
+
+        const msgCreateSpotMarket = MsgInstantSpotMarketLaunch.fromJSON({
+            proposer: injectiveAddress,
+            market: {
+                sender: injectiveAddress,
+                ticker: `${props.token.metadata.symbol}/INJ`,
+                baseDenom: props.token.token,
+                quoteDenom: 'inj',
+                minPriceTickSize: minPriceTick.toString(),
+                minQuantityTickSize: minQuantityTick.toString()
             }
         });
 
-        // set metadata
-        console.log("metadata", msgSetDenomMetadata)
-        setProgress("Upload denom metadata")
-        await handleSendTx(pubKey, msgSetDenomMetadata, injectiveAddress, offlineSigner)
+        console.log("spot market msg", msgCreateSpotMarket)
+        setProgress(`Create instant spot market`)
 
-        setProgress("Done...")
+        const response = await handleSendTx(pubKey, msgCreateSpotMarket, injectiveAddress, offlineSigner)
+        console.log(response)
+        let market = null
+        const contract = response['events']?.find(x => x.type === 'injective.exchange.v1beta1.EventSpotMarketUpdate')
+        if (contract) {
+            market = contract['attributes'].find(x => x.key === "market").value
+        }
+        if (market) {
+            const decoded = JSON.parse(market)
+            console.log(decoded['market_id'])
+            setMarketLink(`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}helixapp.com/spot/?marketId=${decoded['market_id']}`)
+        }
+        setProgress("Spot market created! Go back and refresh")
 
-        props.setLoaded(false)
-        props.setShowModal(null)
-    }, [props, getKeplr, networkConfig.chainId, tokenDescription, tokenImage, handleSendTx])
+    }, [getKeplr, networkConfig.chainId, connectedAddress, props.token.metadata.decimals, props.token.metadata.symbol, props.token.token, quantityTickSize, handleSendTx, priceTickSize, currentNetwork])
 
     return (
         <>
@@ -161,62 +171,74 @@ const TokenMetadataModal = (props: {
                     <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-slate-800 outline-none focus:outline-none">
                         <div className="flex items-start justify-between p-4 border-b border-solid border-blueGray-900 rounded-t">
                             <h3 className="text-xl font-semibold">
-                                Update token metadata
+                                Create instant spot market
                             </h3>
                         </div>
                         <div className="relative p-6 flex-auto">
+                            <p>
+                                Completing this action will instantly launch a spot market on Helix
+                            </p>
+                            <div className="my-2 text-lg">
+                                TICKER: {`${props.token.metadata.symbol}/INJ`}
+                            </div>
                             <div className="flex flex-col md:flex-row">
                                 <div>
                                     <div>Connected address: {connectedAddress && connectedAddress}</div>
-
                                     <div>Token denom: {props.token && props.token.token}</div>
-                                    <div className="mt-2 ">
+                                    <div className="mt-4 ">
                                         <label
-                                            className="font-bold text-white "
+                                            className=" block font-bold text-white "
                                         >
-                                            Token description
+                                            Price Tick Size
                                         </label>
+                                        <span className="text-xs">
+                                            the number of decimals in the quote token (INJ)
+                                        </span>
                                         <input
                                             type="text"
                                             className="text-black w-full rounded p-1 text-sm"
                                             onChange={(e) =>
-                                                setTokenDescription(e.target.value)
+                                                setPriceTickSize(e.target.value)
                                             }
-                                            value={tokenDescription}
+                                            value={priceTickSize}
                                         />
                                     </div>
                                     <div className="mt-2">
                                         <label
                                             className="block font-bold text-white"
                                         >
-                                            Token image URL
+                                            Quantity Tick Size
                                         </label>
-                                        <span className="text-xs">the logo of your token, should be hosted on IPFS and should be a small webp image</span>
+                                        <span className="text-xs">
+                                            the minimum trade amount of your token
+                                        </span>
                                         <input
                                             type="text"
                                             className="text-black w-full rounded p-1 text-sm"
                                             onChange={(e) =>
-                                                setTokenImageUrl(e.target.value)
+                                                setQuantityTickSize(e.target.value)
                                             }
-                                            value={tokenImage}
+                                            value={quantityTickSize}
                                         />
                                     </div>
-                                </div>
-                                <div className="ml-0 mt-5 md:ml-10 md:mt-0">
-                                    token image
-                                    {tokenImage ?
-                                        <IPFSImage
-                                            width={100}
-                                            className={'rounded'}
-                                            ipfsPath={tokenImage}
-
-                                        />
-                                        :
-                                        <MdImageNotSupported className="text-5xl text-slate-500" />
-                                    }
+                                    <SpotMarketConfigDropdownTable />
                                 </div>
                             </div>
-                            {progress && <div className="mt-5">progress: {progress}</div>}
+                            <div className="mt-5 text-base">
+                                Fee for spot market creation: <span className="font-bold text-xl">{currentNetwork == "mainnet" ? 20 : 100} INJ</span>
+                            </div>
+                            {marketLink &&
+                                <div className="mt-4">
+                                    <Link
+                                        className="underline mt-2 text-xl"
+                                        target="_blank"
+                                        to={marketLink}
+                                    >
+                                        Helix Spot Market Link
+                                    </Link>
+                                </div>
+                            }
+                            {progress && <div className="mt-5 whitespace-pre">progress: {progress}</div>}
                             {txLoading && <CircleLoader color="#36d7b7" className="mt-2 m-auto" />}
                             {error && <div className="text-red-500 mt-5">{error}</div>}
                         </div>
@@ -224,22 +246,29 @@ const TokenMetadataModal = (props: {
                             <button
                                 className="text-slate-500 background-transparent font-bold uppercase px-6 py-2 text-sm outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
-                                onClick={() => props.setShowModal(null)}
+                                onClick={() => {
+                                    if (marketLink !== null) {
+                                        props.setLoaded(false)
+                                    }
+                                    props.setShowModal(null)
+                                }}
                             >
                                 Back
                             </button>
-                            <button
-                                className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
-                                type="button"
-                                onClick={() => updateMetadata().then(() => console.log("done")).catch(e => {
-                                    console.log(e)
-                                    setError(e.message)
-                                    setProgress("")
-                                    setTxLoading(false)
-                                })}
-                            >
-                                Update
-                            </button>
+                            {marketLink === null &&
+                                <button
+                                    className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                                    type="button"
+                                    onClick={() => create().then(() => console.log("done")).catch(e => {
+                                        console.log(e)
+                                        setError(e.message)
+                                        setProgress("")
+                                        setTxLoading(false)
+                                    })}
+                                >
+                                    Create
+                                </button>
+                            }
                         </div>
                     </div>
                 </div>
@@ -249,4 +278,4 @@ const TokenMetadataModal = (props: {
     )
 }
 
-export default TokenMetadataModal
+export default CreateSpotMarketModal
