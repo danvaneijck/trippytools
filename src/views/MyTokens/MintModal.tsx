@@ -109,6 +109,14 @@ const MintModal = (props: {
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
 
+        if (connectedAddress !== injectiveAddress) {
+            setError("Wrong wallet connected")
+            return
+        }
+        else {
+            setError(null)
+        }
+
         const msgMint = MsgMint.fromJSON({
             sender: injectiveAddress,
             amount: {
@@ -126,7 +134,7 @@ const MintModal = (props: {
 
         props.setLoaded(false)
         props.setShowModal(null)
-    }, [props, getKeplr, networkConfig.chainId, amount, handleSendTx])
+    }, [props, getKeplr, networkConfig.chainId, connectedAddress, amount, handleSendTx])
 
     return (
         <>

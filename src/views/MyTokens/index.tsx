@@ -39,6 +39,10 @@ const MyTokens = () => {
 
     const [loaded, setLoaded] = useState(false);
 
+    useEffect(() => {
+        setLoaded(false)
+    }, [currentNetwork])
+
     const getTokens = useCallback(async () => {
         console.log("get user tokens")
         const module = new TokenUtils(networkConfig);

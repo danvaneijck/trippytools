@@ -17,6 +17,7 @@ import { useCallback, useState } from "react";
 import { useSelector } from "react-redux";
 import { Link } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
+import SpotMarketConfigDropdownTable from "../../components/App/SpotMarketOptionsTable";
 
 
 const CreateSpotMarketModal = (props: {
@@ -110,7 +111,13 @@ const CreateSpotMarketModal = (props: {
         const { key, offlineSigner } = await getKeplr(networkConfig.chainId);
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
-
+        if (connectedAddress !== injectiveAddress) {
+            setError("Wrong wallet connected")
+            return
+        }
+        else {
+            setError(null)
+        }
         let minPriceTick
         const priceTickDecimals = (18 - props.token.metadata.decimals)
 
@@ -153,7 +160,7 @@ const CreateSpotMarketModal = (props: {
         }
         setProgress("Spot market created! Go back and refresh")
 
-    }, [getKeplr, networkConfig.chainId, props, priceTickSize, quantityTickSize, handleSendTx, currentNetwork])
+    }, [getKeplr, networkConfig.chainId, connectedAddress, props.token.metadata.decimals, props.token.metadata.symbol, props.token.token, quantityTickSize, handleSendTx, priceTickSize, currentNetwork])
 
     return (
         <>
@@ -175,10 +182,8 @@ const CreateSpotMarketModal = (props: {
                                 TICKER: {`${props.token.metadata.symbol}/INJ`}
                             </div>
                             <div className="flex flex-col md:flex-row">
-
                                 <div>
                                     <div>Connected address: {connectedAddress && connectedAddress}</div>
-
                                     <div>Token denom: {props.token && props.token.token}</div>
                                     <div className="mt-4 ">
                                         <label
@@ -216,20 +221,22 @@ const CreateSpotMarketModal = (props: {
                                             value={quantityTickSize}
                                         />
                                     </div>
+                                    <SpotMarketConfigDropdownTable />
                                 </div>
-
                             </div>
                             <div className="mt-5 text-base">
-                                Fee for spot market creation: <span className="font-bold text-xl">20 INJ</span>
+                                Fee for spot market creation: <span className="font-bold text-xl">{currentNetwork == "mainnet" ? 20 : 100} INJ</span>
                             </div>
                             {marketLink &&
-                                <Link
-                                    className="underline mt-2"
-                                    target="_blank"
-                                    to={marketLink}
-                                >
-                                    Helix Spot Market Link
-                                </Link>
+                                <div className="mt-4">
+                                    <Link
+                                        className="underline mt-2 text-xl"
+                                        target="_blank"
+                                        to={marketLink}
+                                    >
+                                        Helix Spot Market Link
+                                    </Link>
+                                </div>
                             }
                             {progress && <div className="mt-5 whitespace-pre">progress: {progress}</div>}
                             {txLoading && <CircleLoader color="#36d7b7" className="mt-2 m-auto" />}
@@ -248,18 +255,20 @@ const CreateSpotMarketModal = (props: {
                             >
                                 Back
                             </button>
-                            <button
-                                className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
-                                type="button"
-                                onClick={() => create().then(() => console.log("done")).catch(e => {
-                                    console.log(e)
-                                    setError(e.message)
-                                    setProgress("")
-                                    setTxLoading(false)
-                                })}
-                            >
-                                Create
-                            </button>
+                            {marketLink === null &&
+                                <button
+                                    className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                                    type="button"
+                                    onClick={() => create().then(() => console.log("done")).catch(e => {
+                                        console.log(e)
+                                        setError(e.message)
+                                        setProgress("")
+                                        setTxLoading(false)
+                                    })}
+                                >
+                                    Create
+                                </button>
+                            }
                         </div>
                     </div>
                 </div>

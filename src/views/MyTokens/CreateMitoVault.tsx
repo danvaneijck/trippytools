@@ -162,6 +162,14 @@ const CreateMitoVault = (props: {
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
 
+        if (connectedAddress !== injectiveAddress) {
+            setError("Wrong wallet connected")
+            return
+        }
+        else {
+            setError(null)
+        }
+
         const baseDecimals = props.token.metadata.decimals
         const quoteDecimals = 18; // INJ
 
@@ -249,7 +257,7 @@ const CreateMitoVault = (props: {
         setProgress(`Done! Go back and refresh`)
         setVaultLink(`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}mito.fi/vault/${address}`)
         // navigate('/manage-tokens');
-    }, [props.token, quoteTokenAmount, getKeplr, networkConfig.chainId, vaultCreationFee, baseTokenAmount, notionalValueCap, handleSendTx, currentNetwork])
+    }, [props.token, quoteTokenAmount, getKeplr, networkConfig.chainId, connectedAddress, vaultCreationFee, baseTokenAmount, notionalValueCap, handleSendTx, currentNetwork])
 
     return (
         <>
