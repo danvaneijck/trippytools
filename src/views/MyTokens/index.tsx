@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { GridLoader } from "react-spinners";
 import { Link } from "react-router-dom";
@@ -14,6 +14,7 @@ import ShroomBalance from "../../components/App/ShroomBalance";
 import TokenMetadataModal from "./TokenMetadataModal";
 import CreateSpotMarketModal from "./CreateSpotMarketModal";
 import MintModal from "./MintModal";
+import CreateMitoVault from "./CreateMitoVault";
 
 
 const MyTokens = () => {
@@ -25,6 +26,13 @@ const MyTokens = () => {
     const [showMetaDataModel, setShowMetadataModal] = useState(null);
     const [showSpotMarketModal, setShowSpotMarketModal] = useState(null);
     const [showMint, setShowMint] = useState(null);
+    const [showMitoVault, setShowMitoVault] = useState(null);
+
+    const [injPrice, setInjPrice] = useState(null)
+    const [injBalance, setINJBalance] = useState(null)
+
+    const [helixSpotMarkets, setHelixSpotMarkets] = useState([])
+    const [mitoVaults, setMitoVaults] = useState([])
 
     const [loading, setLoading] = useState(false);
     const [txLoading, setTxLoading] = useState(false)
@@ -43,53 +51,105 @@ const MyTokens = () => {
         }
     }, [networkConfig, connectedAddress]);
 
+    const getSpotMarkets = useCallback(async () => {
+        console.log("get spot markets")
+        const module = new TokenUtils(networkConfig);
+        try {
+            const markets = await module.fetchSpotMarkets();
+            return markets;
+        } catch (error) {
+            console.error('Failed to fetch spot markets:', error);
+            throw error;
+        }
+    }, [networkConfig]);
+
+    const getMitoVaults = useCallback(async () => {
+        console.log("get mito vaults")
+        const module = new TokenUtils(networkConfig);
+        try {
+            const markets = await module.fetchMitoVaults();
+            return markets;
+        } catch (error) {
+            console.error('Failed to fetch spot markets:', error);
+            throw error;
+        }
+    }, [networkConfig]);
+
+    const getINJPrice = useCallback(async () => {
+        console.log("get INJ price")
+        const module = new TokenUtils(networkConfig);
+        try {
+            const price = await module.getINJDerivativesPrice();
+            const balance = await module.getBalanceOfToken('inj', connectedAddress)
+            console.log(balance)
+            setINJBalance(Number(balance.amount) / Math.pow(10, 18))
+            setInjPrice(price)
+            return price;
+        } catch (error) {
+            console.error('Failed to fetch spot markets:', error);
+            throw error;
+        }
+    }, [connectedAddress, networkConfig]);
+
+
     useEffect(() => {
         setLoaded(false)
     }, [connectedAddress])
 
     useEffect(() => {
-        if (!connectedAddress) return
-        if (loaded) return
-        if (loading) return
+        const fetchData = async () => {
+            if (!connectedAddress) return;
+            if (loaded) return;
+            if (loading) return;
 
-        setLoading(true)
-        getTokens()
-            .then(fetchedTokens => {
-                setTokens(fetchedTokens);
-                setLoaded(true)
-            })
-            .catch(e => {
+            setLoading(true);
+            setShowMint(null)
+            setShowMitoVault(null)
+            setShowSpotMarketModal(null)
+
+            try {
+                const fetchedTokens = await getTokens();
+                try {
+                    const spotMarkets = await getSpotMarkets();
+                    const mitoVaults = await getMitoVaults();
+
+                    const extendedTokens = fetchedTokens.map(token => {
+                        const market = spotMarkets.find(market => market.baseDenom.toString() === token.token.toString());
+                        let vault = null
+                        if (market) {
+                            vault = mitoVaults.find(vault => vault.marketId.toString() === market.marketId.toString());
+                        }
+
+                        return {
+                            ...token,
+                            marketId: market ? market.marketId : null,
+                            mitoVaultContractAddress: vault ? vault.contractAddress : null,
+                            mitoVault: vault
+                        };
+                    });
+
+                    setHelixSpotMarkets(spotMarkets);
+                    setMitoVaults(mitoVaults)
+                    setTokens(extendedTokens);
+
+                    await getINJPrice()
+
+
+                    setLoaded(true);
+                } catch (e) {
+                    console.error("Failed to fetch spot markets:", e);
+                }
+            } catch (e) {
                 if (e.name !== 'AbortError') {
                     console.error("Failed to fetch tokens:", e);
                 }
-            }).finally(() => {
+            } finally {
                 setLoading(false);
-            });
-    }, [getTokens, loaded, loading, connectedAddress]);
+            }
+        };
 
-    const TokenBalance = memo(({ denom, address, decimals }) => {
-        const [balance, setBalance] = useState(null);
-
-        useEffect(() => {
-            if (balance) return;
-
-            const controller = new AbortController();
-            const signal = controller.signal;
-            const module = new TokenUtils(networkConfig);
-
-            module.getBalanceOfToken(denom, address, { signal }).then(balance => {
-                setBalance(Number(balance.amount) / Math.pow(10, decimals));
-            }).catch(e => {
-                if (e.name !== 'AbortError') {
-                    console.error("Failed to fetch balance:", e);
-                }
-            });
-
-            return () => controller.abort(); // Cleanup function to cancel the request
-        }, [denom, address, decimals, balance]);
-
-        return <div>{balance ? balance : "..."}</div>;
-    });
+        fetchData();
+    }, [getTokens, loaded, loading, connectedAddress, getSpotMarkets, getMitoVaults]);
 
     const getKeplr = useCallback(async () => {
         await window.keplr.enable(networkConfig.chainId);
@@ -165,17 +225,18 @@ const MyTokens = () => {
         const msgChangeAdmin = MsgChangeAdmin.fromJSON({
             denom: `factory/${injectiveAddress}/${subdenom}`,
             sender: injectiveAddress,
-            newAdmin: 'inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49' /** SET TO ZERO ADDRESS */
+            newAdmin: 'inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49'
         });
         await handleSendTx(pubKey, msgChangeAdmin, injectiveAddress, offlineSigner)
-        await getTokens()
-    }, [getKeplr, getTokens, handleSendTx])
+        setLoaded(false)
+    }, [getKeplr, handleSendTx])
 
     return (
         <>
-            {showMetaDataModel !== null && <TokenMetadataModal setShowModal={setShowMetadataModal} token={showMetaDataModel} />}
-            {showSpotMarketModal !== null && <CreateSpotMarketModal setShowModal={setShowSpotMarketModal} token={showSpotMarketModal} />}
-            {showMint !== null && <MintModal setShowModal={setShowMint} token={showMint} />}
+            {showMetaDataModel !== null && <TokenMetadataModal setShowModal={setShowMetadataModal} token={showMetaDataModel} setLoaded={setLoaded} />}
+            {showSpotMarketModal !== null && <CreateSpotMarketModal setShowModal={setShowSpotMarketModal} token={showSpotMarketModal} setLoaded={setLoaded} />}
+            {showMint !== null && <MintModal setShowModal={setShowMint} token={showMint} setLoaded={setLoaded} />}
+            {showMitoVault !== null && <CreateMitoVault setShowModal={setShowMitoVault} token={showMitoVault} setLoaded={setLoaded} />}
 
             <div className="flex flex-col min-h-screen pb-10">
                 <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
@@ -209,28 +270,45 @@ const MyTokens = () => {
                                 <div>
                                     <div className="text-center text-white mb-5">
                                         <div className="text-xl">
-                                            Mange tokens
+                                            Mange token factory tokens
                                         </div>
                                         <div className="text-xs">on Injective {currentNetwork}</div>
                                     </div>
+                                    {injPrice &&
+                                        <div>INJ  price: ${Number(injPrice).toFixed(2)}</div>
+                                    }
+                                    {injPrice && injBalance &&
+                                        <div>INJ  balance: {injBalance.toFixed(2)} (${(injBalance * injPrice).toFixed(2)})</div>
+                                    }
                                     {!loading &&
-                                        <div>
-                                            <Link
-                                                to="/token-launch"
+                                        <div className="mt-2">
+                                            <div className="flex flex-row justify-between">
+                                                <div>
+                                                    <Link
+                                                        to="/token-launch"
 
-                                            >
-                                                <button className="my-2 bg-slate-700 shadow-lg p-2 rounded-lg text-sm  hover:font-bold">
-                                                    Create New Token
+                                                    >
+                                                        <button className="my-2 bg-slate-700 shadow-lg p-2 rounded-lg text-sm  hover:font-bold">
+                                                            Create New Token
+                                                        </button>
+                                                    </Link>
+                                                    <Link
+                                                        to="/airdrop"
+                                                    >
+                                                        <button className="my-2 bg-slate-700 shadow-lg p-2 rounded-lg text-sm ml-2 hover:font-bold">
+                                                            New Airdrop
+                                                        </button>
+                                                    </Link>
+                                                </div>
+                                                <button
+                                                    className="my-2 bg-slate-700 shadow-lg p-2 rounded-lg text-sm ml-2 hover:font-bold"
+                                                    onClick={() => {
+                                                        setLoaded(false)
+                                                    }}
+                                                >
+                                                    Refresh
                                                 </button>
-
-                                            </Link>
-                                            <Link
-                                                to="/airdrop"
-                                            >
-                                                <button className="my-2 bg-slate-700 shadow-lg p-2 rounded-lg text-sm ml-2 hover:font-bold">
-                                                    New Airdrop
-                                                </button>
-                                            </Link>
+                                            </div>
                                             <div className="flex flex-col">
                                                 {tokens && tokens.length > 0 ? (
                                                     <table className="table-auto w-full">
@@ -244,8 +322,9 @@ const MyTokens = () => {
                                                                 <th className="px-4 py-2">Total Supply</th>
                                                                 <th className="px-4 py-2">Decimals</th>
                                                                 <th className="px-4 py-2">Admin</th>
-                                                                {/* <th className="px-4 py-2">Balance</th> */}
                                                                 <th className="px-4 py-2">Holders</th>
+                                                                <th className="px-4 py-2">Spot Market</th>
+                                                                <th className="px-4 py-2">Mito Vault</th>
                                                                 <th className="px-4 py-2">Actions</th>
                                                             </tr>
                                                         </thead>
@@ -262,8 +341,12 @@ const MyTokens = () => {
                                                                     <td className="px-4 py-2 text-xs">{token.metadata.name || "-"}</td>
                                                                     <td className="px-4 py-2 text-xs">{token.metadata.symbol || "-"}</td>
                                                                     <td className="px-4 py-2 text-xs">{token.metadata.description || "-"}</td>
-                                                                    <td className="px-4 py-2 text-xs">
-                                                                        <a href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}explorer.injective.network/asset/?denom=${token.token}&tokenType=tokenFactory`}>{token.token.slice(0, 10)}...</a>
+                                                                    <td className="px-4 py-2 text-xs underline">
+                                                                        <a
+                                                                            target="_blank"
+                                                                            href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}explorer.injective.network/asset/?denom=${token.token}&tokenType=tokenFactory`}>
+                                                                            {token.token.slice(0, 5)}...{token.token.slice(-5)}
+                                                                        </a>
                                                                     </td>
                                                                     <td className="px-4 py-2 text-xs">{(token.metadata.total_supply / Math.pow(10, token.metadata.decimals)).toLocaleString()}</td>
                                                                     <td className="px-4 py-2 text-xs">{token.metadata.decimals}</td>
@@ -277,14 +360,28 @@ const MyTokens = () => {
                                                                             </div>
                                                                         }
                                                                     </td>
-                                                                    {/* <td className="px-4 py-2 text-xs">
-                                                                        <TokenBalance denom={token.token} address={connectedAddress} decimals={token.metadata.decimals} />
-                                                                    </td> */}
-                                                                    <td className="px-4 py-2 text-xs">
+                                                                    <td className="px-4 py-2 text-xs ">
                                                                         <Link
+                                                                            target="_blank"
                                                                             to={`/token-holders?address=${token.token}`}
                                                                         >
-                                                                            {/* <TokenHolders denom={token.token} /> */} view holders
+                                                                            view holders
+                                                                        </Link>
+                                                                    </td>
+                                                                    <td className="px-4 py-2 text-xs underline">
+                                                                        <Link
+                                                                            target="_blank"
+                                                                            to={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}helixapp.com/spot/?marketId=${token.marketId}`}
+                                                                        >
+                                                                            {token.marketId ? token.marketId.slice(0, 5) + "..." : "none"}
+                                                                        </Link>
+                                                                    </td>
+                                                                    <td className="px-4 py-2 text-xs underline">
+                                                                        <Link
+                                                                            target="_blank"
+                                                                            to={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}mito.fi/vault/${token.mitoVaultContractAddress}`}
+                                                                        >
+                                                                            {token.mitoVaultContractAddress ? token.mitoVaultContractAddress.slice(0, 5) + "..." : "none"}
                                                                         </Link>
                                                                     </td>
                                                                     <td className="px-4 py-2 text-xs">
@@ -298,9 +395,16 @@ const MyTokens = () => {
                                                                                 <button onClick={() => { setShowMetadataModal(token) }} className="my-2 ml-2 bg-slate-800 shadow-lg p-2 rounded-lg text-xs">
                                                                                     Update metadata
                                                                                 </button>
-                                                                                <button onClick={() => { setShowSpotMarketModal(token) }} className="my-2 ml-2 bg-slate-800 shadow-lg p-2 rounded-lg text-xs">
-                                                                                    Create helix market
-                                                                                </button>
+                                                                                {token.marketId == null &&
+                                                                                    <button onClick={() => { setShowSpotMarketModal(token) }} className="my-2 ml-2 bg-slate-800 shadow-lg p-2 rounded-lg text-xs">
+                                                                                        Create helix market
+                                                                                    </button>
+                                                                                }
+                                                                                {token.mitoVaultContractAddress == null && token.marketId !== null &&
+                                                                                    <button onClick={() => { setShowMitoVault(token) }} className="my-2 ml-2 bg-slate-800 shadow-lg p-2 rounded-lg text-xs">
+                                                                                        Create mito vault
+                                                                                    </button>
+                                                                                }
                                                                             </>
                                                                         }
                                                                     </td>
@@ -316,7 +420,6 @@ const MyTokens = () => {
                                             </div>
                                         </div>
                                     }
-
                                 </div> :
                                 <div className="text-center">
                                     Please connect wallet to view your tokens
@@ -330,7 +433,6 @@ const MyTokens = () => {
                         </div>
                     </div>
                 </div>
-
                 <footer className="bg-gray-800 text-white text-xs p-4 fixed bottom-0 left-0 right-0">
                     buy me a coffee: inj1q2m26a7jdzjyfdn545vqsude3zwwtfrdap5jgz
                 </footer>

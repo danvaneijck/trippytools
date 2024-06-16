@@ -6,7 +6,6 @@ import {
     CosmosTxV1Beta1Tx,
     createTransaction,
     getTxRawFromTxRawOrDirectSignResponse,
-    MsgSetDenomMetadata,
     MsgInstantSpotMarketLaunch,
     TxRaw,
     TxRestClient,
@@ -16,7 +15,7 @@ import { BigNumberInBase, DEFAULT_BLOCK_TIMEOUT_HEIGHT, getStdFee } from "@injec
 import { Buffer } from "buffer";
 import { useCallback, useState } from "react";
 import { useSelector } from "react-redux";
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
 
 
@@ -28,10 +27,11 @@ const CreateSpotMarketModal = (props: {
 
     const currentNetwork = useSelector(state => state.network.currentNetwork);
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
-    const navigate = useNavigate();
 
     const [priceTickSize, setPriceTickSize] = useState('0.0000001');
     const [quantityTickSize, setQuantityTickSize] = useState(100);
+
+    const [marketLink, setMarketLink] = useState(null)
 
     const [progress, setProgress] = useState("")
     const [txLoading, setTxLoading] = useState(false)
@@ -40,6 +40,7 @@ const CreateSpotMarketModal = (props: {
 
     const getKeplr = useCallback(async () => {
         await window.keplr.enable(networkConfig.chainId);
+        console.log("get offline signer for ", networkConfig.chainId)
         const offlineSigner = window.keplr.getOfflineSigner(networkConfig.chainId);
         const accounts = await offlineSigner.getAccounts();
         const key = await window.keplr.getKey(networkConfig.chainId);
@@ -105,19 +106,26 @@ const CreateSpotMarketModal = (props: {
     }, [broadcastTx, networkConfig])
 
     const create = useCallback(async () => {
-        console.log(props.token)
         setError(null)
         const { key, offlineSigner } = await getKeplr(networkConfig.chainId);
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
 
-        const minPriceTick = priceTickSize.toString() + "0".repeat((18 - props.token.metadata.decimals))
-        const minQuantityTick = Math.round(quantityTickSize).toString() + "0".repeat(props.token.metadata.decimals)
+        let minPriceTick
+        const priceTickDecimals = (18 - props.token.metadata.decimals)
+
+        if (priceTickDecimals == 0) {
+            minPriceTick = priceTickSize
+        }
+        else {
+            minPriceTick = (Number(priceTickSize) * Math.pow(10, priceTickDecimals)).toLocaleString('fullwide', { useGrouping: false })
+        }
+        const minQuantityTick = (Number(quantityTickSize) * Math.pow(10, props.token.metadata.decimals)).toLocaleString('fullwide', { useGrouping: false })
 
         console.log(minPriceTick, minQuantityTick)
 
         const msgCreateSpotMarket = MsgInstantSpotMarketLaunch.fromJSON({
-            proposer: "inj18q7dkdajtydljze4tgemgplupxuaxks6q4ctrr",
+            proposer: injectiveAddress,
             market: {
                 sender: injectiveAddress,
                 ticker: `${props.token.metadata.symbol}/INJ`,
@@ -128,16 +136,24 @@ const CreateSpotMarketModal = (props: {
             }
         });
 
-        // set metadata
-        console.log("metadata", msgCreateSpotMarket)
+        console.log("spot market msg", msgCreateSpotMarket)
         setProgress(`Create instant spot market`)
 
-        await handleSendTx(pubKey, msgCreateSpotMarket, injectiveAddress, offlineSigner)
+        const response = await handleSendTx(pubKey, msgCreateSpotMarket, injectiveAddress, offlineSigner)
+        console.log(response)
+        let market = null
+        const contract = response['events']?.find(x => x.type === 'injective.exchange.v1beta1.EventSpotMarketUpdate')
+        if (contract) {
+            market = contract['attributes'].find(x => x.key === "market").value
+        }
+        if (market) {
+            const decoded = JSON.parse(market)
+            console.log(decoded['market_id'])
+            setMarketLink(`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}helixapp.com/spot/?marketId=${decoded['market_id']}`)
+        }
+        setProgress("Spot market created! Go back and refresh")
 
-        setProgress("Done...")
-        navigate('/manage-tokens');
-        props.setShowModal(null)
-    }, [getKeplr, networkConfig.chainId, quantityTickSize, priceTickSize, handleSendTx, navigate, props.token])
+    }, [getKeplr, networkConfig.chainId, props, priceTickSize, quantityTickSize, handleSendTx, currentNetwork])
 
     return (
         <>
@@ -152,7 +168,10 @@ const CreateSpotMarketModal = (props: {
                             </h3>
                         </div>
                         <div className="relative p-6 flex-auto">
-                            <div className="mb-2 text-lg">
+                            <p>
+                                Completing this action will instantly launch a spot market on Helix
+                            </p>
+                            <div className="my-2 text-lg">
                                 TICKER: {`${props.token.metadata.symbol}/INJ`}
                             </div>
                             <div className="flex flex-col md:flex-row">
@@ -163,10 +182,13 @@ const CreateSpotMarketModal = (props: {
                                     <div>Token denom: {props.token && props.token.token}</div>
                                     <div className="mt-4 ">
                                         <label
-                                            className="font-bold text-white "
+                                            className=" block font-bold text-white "
                                         >
                                             Price Tick Size
                                         </label>
+                                        <span className="text-xs">
+                                            the number of decimals in the quote token (INJ)
+                                        </span>
                                         <input
                                             type="text"
                                             className="text-black w-full rounded p-1 text-sm"
@@ -182,7 +204,9 @@ const CreateSpotMarketModal = (props: {
                                         >
                                             Quantity Tick Size
                                         </label>
-                                        {/* <span className="text-xs">the logo of your token, should be hosted on IPFS and should be a small webp image</span> */}
+                                        <span className="text-xs">
+                                            the minimum trade amount of your token
+                                        </span>
                                         <input
                                             type="text"
                                             className="text-black w-full rounded p-1 text-sm"
@@ -194,13 +218,19 @@ const CreateSpotMarketModal = (props: {
                                     </div>
                                 </div>
 
-
-
                             </div>
                             <div className="mt-5 text-base">
-                                Fee for spot market creation: 20 INJ
+                                Fee for spot market creation: <span className="font-bold text-xl">20 INJ</span>
                             </div>
-
+                            {marketLink &&
+                                <Link
+                                    className="underline mt-2"
+                                    target="_blank"
+                                    to={marketLink}
+                                >
+                                    Helix Spot Market Link
+                                </Link>
+                            }
                             {progress && <div className="mt-5 whitespace-pre">progress: {progress}</div>}
                             {txLoading && <CircleLoader color="#36d7b7" className="mt-2 m-auto" />}
                             {error && <div className="text-red-500 mt-5">{error}</div>}
@@ -209,7 +239,12 @@ const CreateSpotMarketModal = (props: {
                             <button
                                 className="text-slate-500 background-transparent font-bold uppercase px-6 py-2 text-sm outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
-                                onClick={() => props.setShowModal(null)}
+                                onClick={() => {
+                                    if (marketLink !== null) {
+                                        props.setLoaded(false)
+                                    }
+                                    props.setShowModal(null)
+                                }}
                             >
                                 Back
                             </button>

@@ -7,7 +7,6 @@ import {
     createTransaction,
     getTxRawFromTxRawOrDirectSignResponse,
     MsgMint,
-    MsgInstantSpotMarketLaunch,
     TxRaw,
     TxRestClient,
 } from "@injectivelabs/sdk-ts";
@@ -110,26 +109,24 @@ const MintModal = (props: {
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
 
-
-
         const msgMint = MsgMint.fromJSON({
             sender: injectiveAddress,
             amount: {
-                amount: Math.round(Number(amount), 0).toString() + "0".repeat(props.token.metadata.decimals),
+                amount: (Number(amount) * Math.pow(10, props.token.metadata.decimals)).toLocaleString('fullwide', { useGrouping: false }),
                 denom: props.token.token
             }
         });
 
-        // set metadata
         console.log("mint", msgMint)
         setProgress(`Mint tokens`)
 
         await handleSendTx(pubKey, msgMint, injectiveAddress, offlineSigner)
 
         setProgress("Done...")
-        navigate('/manage-tokens');
+
+        props.setLoaded(false)
         props.setShowModal(null)
-    }, [getKeplr, networkConfig.chainId, amount, handleSendTx, navigate, props.token])
+    }, [props, getKeplr, networkConfig.chainId, amount, handleSendTx])
 
     return (
         <>

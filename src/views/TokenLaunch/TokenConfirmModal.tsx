@@ -149,12 +149,12 @@ const TokenConfirmModal = (props: {
                     {
                         denom: denom,
                         exponent: 0,
-                        aliases: [subdenom]
+                        aliases: [`u${subdenom.toLowerCase()}`]
                     },
                     {
                         denom: subdenom,
                         exponent: props.tokenDecimals,
-                        aliases: [subdenom]
+                        aliases: []
                     },
                 ],
                 uriHash: ""

@@ -147,9 +147,10 @@ const TokenMetadataModal = (props: {
         await handleSendTx(pubKey, msgSetDenomMetadata, injectiveAddress, offlineSigner)
 
         setProgress("Done...")
-        navigate('/manage-tokens');
+
+        props.setLoaded(false)
         props.setShowModal(null)
-    }, [getKeplr, networkConfig.chainId, tokenDescription, tokenImage, handleSendTx, navigate, props.token])
+    }, [props, getKeplr, networkConfig.chainId, tokenDescription, tokenImage, handleSendTx])
 
     return (
         <>
