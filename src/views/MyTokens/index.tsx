@@ -302,14 +302,32 @@ const MyTokens = () => {
                     {currentNetwork == "mainnet" && <div className=""><ShroomBalance /></div>}
                     <div className="flex justify-center items-center min-h-full">
                         <div className="w-full px-2 ">
+                            <div className="text-center text-white mb-5">
+                                <div className="text-xl">
+                                    Mange token factory tokens
+                                </div>
+                                <div className="text-xs">on Injective {currentNetwork}</div>
+                            </div>
+                            <div className="mt-2">
+                                <Link
+                                    to="/token-launch"
+
+                                >
+                                    <button className="my-2 bg-slate-700 shadow-lg p-2 rounded-lg text-sm  hover:font-bold">
+                                        Create New Token
+                                    </button>
+                                </Link>
+                                <Link
+                                    to="/airdrop"
+                                >
+                                    <button className="my-2 bg-slate-700 shadow-lg p-2 rounded-lg text-sm ml-2 hover:font-bold">
+                                        New Airdrop
+                                    </button>
+                                </Link>
+                            </div>
                             {connectedAddress ?
                                 <div>
-                                    <div className="text-center text-white mb-5">
-                                        <div className="text-xl">
-                                            Mange token factory tokens
-                                        </div>
-                                        <div className="text-xs">on Injective {currentNetwork}</div>
-                                    </div>
+
                                     {injPrice &&
                                         <div>INJ  price: ${Number(injPrice).toFixed(2)}</div>
                                     }
@@ -320,21 +338,7 @@ const MyTokens = () => {
                                         <div className="mt-2">
                                             <div className="flex flex-row justify-between">
                                                 <div>
-                                                    <Link
-                                                        to="/token-launch"
 
-                                                    >
-                                                        <button className="my-2 bg-slate-700 shadow-lg p-2 rounded-lg text-sm  hover:font-bold">
-                                                            Create New Token
-                                                        </button>
-                                                    </Link>
-                                                    <Link
-                                                        to="/airdrop"
-                                                    >
-                                                        <button className="my-2 bg-slate-700 shadow-lg p-2 rounded-lg text-sm ml-2 hover:font-bold">
-                                                            New Airdrop
-                                                        </button>
-                                                    </Link>
                                                 </div>
                                                 <button
                                                     className="my-2 bg-slate-700 shadow-lg p-2 rounded-lg text-sm ml-2 hover:font-bold"
