@@ -8,6 +8,7 @@ const shroomMarketingWallet = "inj1pr5lyuez8ak94tpuz9fs7dkpst7pkc9uuhfhvm"
 const talisMarketPlace = "inj1l9nh9wv24fktjvclc4zgrgyzees7rwdtx45f54"
 const stakedSporeLP = "inj164pyppndppdmazfjrvecajnwcs3hmq06agn4ka"
 const benanceDev = "inj12j0xu6yxufrphl3av5ksjygtpg204h534yxc70"
+const injCw20Adapter = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
 
 export const WALLET_LABELS = {
     ...LIQUIDITY_POOLS.reduce((acc, pool) => {
@@ -57,5 +58,10 @@ export const WALLET_LABELS = {
         label: "BENANCE dev",
         bgColor: "",
         textColor: "text-yellow-500"
+    },
+    [injCw20Adapter]: {
+        label: "INJ cw20 adapter",
+        bgColor: "",
+        textColor: "text-green-500"
     }
 }
