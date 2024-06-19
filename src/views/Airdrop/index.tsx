@@ -581,7 +581,7 @@ const Airdrop = () => {
                                                 >
                                                     Drop Mode
                                                 </label>
-                                                <div className="flex flex-row  justify-around ">
+                                                <div className="flex flex-row  justify-between">
                                                     <div className="flex flex-row" onClick={() => {
                                                         setDropMode("NFT")
                                                         setShroomCost(100000)
