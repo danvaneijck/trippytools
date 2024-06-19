@@ -118,6 +118,7 @@ const CreateSpotMarketModal = (props: {
         else {
             setError(null)
         }
+        if (!props.token) return
         let minPriceTick
         const priceTickDecimals = (18 - props.token.metadata.decimals)
 
@@ -160,7 +161,7 @@ const CreateSpotMarketModal = (props: {
         }
         setProgress("Spot market created! Go back and refresh")
 
-    }, [getKeplr, networkConfig.chainId, connectedAddress, props.token.metadata.decimals, props.token.metadata.symbol, props.token.token, quantityTickSize, handleSendTx, priceTickSize, currentNetwork])
+    }, [getKeplr, networkConfig.chainId, connectedAddress, props.token, quantityTickSize, handleSendTx, priceTickSize, currentNetwork])
 
     return (
         <>

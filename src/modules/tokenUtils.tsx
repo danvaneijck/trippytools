@@ -1082,7 +1082,6 @@ class TokenUtils {
             pairQuery
         );
         const infoDecoded = JSON.parse(new TextDecoder().decode(pairInfo.data));
-        console.log(infoDecoded)
 
         const assetInfos = infoDecoded["asset_infos"];
         const tokenInfos = [];
@@ -1091,7 +1090,6 @@ class TokenUtils {
                 ? assetInfo['native_token']['denom']
                 : assetInfo['token']['contract_addr'];
 
-            console.log(denom)
 
             let tokenInfo = undefined
             let marketing = undefined
@@ -1574,6 +1572,34 @@ class TokenUtils {
         return oraclePrice['price']
     }
 
+    async getBalances(wallet) {
+        const balances = await this.indexerGrpcAccountPortfolioApi.fetchAccountPortfolioBalances(wallet);
+        console.log(balances)
+        const balancesWithMetadata = [];
+
+        for (const token of balances.bankBalancesList) {
+            if (Number(token.amount) == 0 || token.denom.includes("ibc") || token.denom.includes("peggy") || token.denom == "inj") continue
+            try {
+                if (token.denom.includes("inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk")) {
+                    const cw20Address = token.denom.split("/")[2]
+                    console.log("CW 20 ADDRESS", cw20Address)
+                    const info = await this.getTokenInfo(cw20Address);
+                    const marketing = await this.getTokenMarketing(cw20Address);
+                    const metadata = { ...info, ...marketing }
+                    balancesWithMetadata.push({ token, metadata });
+                }
+                else {
+                    const metadata = await this.getDenomExtraMetadata(token.denom);
+                    balancesWithMetadata.push({ token, metadata });
+                }
+            } catch (e) {
+                console.log("failed to get token metadata", token, e);
+                balancesWithMetadata.push(token);
+            }
+        }
+
+        return balancesWithMetadata;
+    }
 
 }
 
