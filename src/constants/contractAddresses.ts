@@ -22,6 +22,11 @@ export const LIQUIDITY_POOLS = [
         img: "https://cloudflare-ipfs.com/ipfs/QmcWQeL2podyWSZFEpGLUfgPgeGopM49pV8c97vHbwswkH/myceliumlogo.JPG"
     },
     {
+        value: "inj1k76ty6znvrcnawl5zpcpjc9my9984nntfchmaj",
+        label: "COKE / INJ DojoSwap",
+        img: "https://imagedelivery.net/DYKOWp0iCc0sIkF-2e4dNw/9567494c-30d5-41bd-f8b2-35d17709b100/public"
+    },
+    {
         value: "inj1tpt9u0lvz2njw6a7m8pufdamd6mt8ymh8cw4nc",
         label: "SMELLY / INJ DojoSwap",
         img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
@@ -149,6 +154,11 @@ export const LIQUIDITY_TOKENS = [
         label: "SMELLY / SHROOM ASTRO LP",
         img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
     },
+    {
+        value: "inj1p04kqva5zztwxhmjptncva00z2hs7qnjhv6uth",
+        label: "COKE / INJ DOJO LP",
+        img: "https://imagedelivery.net/DYKOWp0iCc0sIkF-2e4dNw/9567494c-30d5-41bd-f8b2-35d17709b100/public"
+    },
 ]
 
 export const TOKENS = [
@@ -156,6 +166,11 @@ export const TOKENS = [
         value: "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8",
         label: "SHROOM",
         img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg"
+    },
+    {
+        value: "inj14eaxewvy7a3fk948c3g3qham98mcqpm8v5y0dp",
+        label: "COKE",
+        img: "https://imagedelivery.net/DYKOWp0iCc0sIkF-2e4dNw/9567494c-30d5-41bd-f8b2-35d17709b100/public"
     },
     {
         value: "factory/inj1lq9wn94d49tt7gc834cxkm0j5kwlwu4gm65lhe/spore",
