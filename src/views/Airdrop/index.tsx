@@ -11,8 +11,24 @@ import AirdropConfirmModal from "./AirdropConfirmModal";
 import { Holder, MarketingInfo } from "../../types";
 import { CW404_TOKENS, LIQUIDITY_TOKENS, NFT_COLLECTIONS, TOKENS } from "../../constants/contractAddresses";
 import TokenSelect from "../../components/Inputs/TokenSelect";
+import Papa from 'papaparse';
 
 const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
+
+function humanReadableAmount(number) {
+    if (!number) {
+        return 0
+    }
+    const units = ["", "k", "m", "b", "t"];
+    let unitIndex = 0;
+
+    while (number >= 1000 && unitIndex < units.length - 1) {
+        number /= 1000;
+        unitIndex++;
+    }
+
+    return `${number.toFixed(number >= 10 ? 0 : 2)}${units[unitIndex]}`;
+}
 
 const Airdrop = () => {
 
@@ -30,7 +46,7 @@ const Airdrop = () => {
     const [limitSwitch, setLimitSwitch] = useState(false)
     const [walletLimit, setWalletLimit] = useState(0)
 
-    const [shroomCost] = useState(100000)
+    const [shroomCost, setShroomCost] = useState(100000)
     const [shroomPrice, setShroomPrice] = useState(null)
 
     const [dropMode, setDropMode] = useState("TOKEN");
@@ -363,6 +379,30 @@ const Airdrop = () => {
         }
     }, [airdropTokenAddress, distMode, balanceToDrop, networkConfig]);
 
+    const handleFileUpload = useCallback((event) => {
+        const file = event.target.files[0];
+        if (file) {
+            Papa.parse(file, {
+                header: true,
+                complete: (results) => {
+                    console.log(results)
+                    let totalToDrop = 0
+                    results.data.map((holder) => {
+                        totalToDrop += Number(holder.amount)
+                    })
+                    const airdropData = results.data.map(holder => ({
+                        address: holder.address,
+                        amountToAirdrop: holder.amount,
+                        percentToAirdrop: (Number(holder.amount) / totalToDrop) * 100,
+                        includeInDrop: true
+                    }));
+
+                    setAirdropDetails(airdropData)
+                },
+            });
+        }
+    }, []);
+
 
     return (
         <>
@@ -544,6 +584,7 @@ const Airdrop = () => {
                                                 <div className="flex flex-row  justify-around ">
                                                     <div className="flex flex-row" onClick={() => {
                                                         setDropMode("NFT")
+                                                        setShroomCost(100000)
                                                         setAirdropDetails([])
                                                         setNftCollectionInfo(null)
                                                     }}>
@@ -554,6 +595,7 @@ const Airdrop = () => {
                                                                 setDropMode("NFT")
                                                                 setAirdropDetails([])
                                                                 setNftCollectionInfo(null)
+                                                                setShroomCost(100000)
                                                             }}
                                                             checked={dropMode == "NFT"}
                                                         />
@@ -565,6 +607,7 @@ const Airdrop = () => {
                                                     </div>
                                                     <div className="flex flex-row" onClick={() => {
                                                         setDropMode("TOKEN")
+                                                        setShroomCost(100000)
                                                         setAirdropDetails([])
                                                     }}>
                                                         <input
@@ -573,6 +616,7 @@ const Airdrop = () => {
                                                             onChange={() => {
                                                                 setDropMode("TOKEN")
                                                                 setAirdropDetails([])
+                                                                setShroomCost(100000)
                                                             }}
                                                             checked={dropMode == "TOKEN"}
                                                         />
@@ -580,6 +624,27 @@ const Airdrop = () => {
                                                             className="block text-white ml-5"
                                                         >
                                                             Token Holders
+                                                        </label>
+                                                    </div>
+                                                    <div className="flex flex-row" onClick={() => {
+                                                        setDropMode("CSV")
+                                                        setAirdropDetails([])
+                                                        setShroomCost(420000)
+                                                    }}>
+                                                        <input
+                                                            type="checkbox"
+                                                            className="text-black w-full rounded p-1 text-sm"
+                                                            onChange={() => {
+                                                                setDropMode("CSV")
+                                                                setAirdropDetails([])
+                                                                setShroomCost(420000)
+                                                            }}
+                                                            checked={dropMode == "CSV"}
+                                                        />
+                                                        <label
+                                                            className="block text-white ml-5"
+                                                        >
+                                                            CSV File
                                                         </label>
                                                     </div>
                                                 </div>
@@ -1005,7 +1070,123 @@ const Airdrop = () => {
                                                 </div>
 
                                             </div>
-
+                                            }
+                                            {dropMode == "CSV" && <div>
+                                                {airdropDetails.length == 0 && <div className="text-sm my-2">
+                                                    CSV file like:
+                                                    <br />
+                                                    address,amount
+                                                    <br />
+                                                    inj...,10.1
+                                                    <br />
+                                                    inj...,20.2
+                                                </div>}
+                                                <input type="file" accept=".csv" onChange={handleFileUpload} />
+                                                {airdropDetails.length > 0 &&
+                                                    <div className="mt-5">
+                                                        <div className="max-h-80 overflow-y-scroll overflow-x-auto">
+                                                            <div>Total participants: {airdropDetails.filter(x => x.includeInDrop).length}</div>
+                                                            <div className="text-xs">You should exclude addresses such as burn addresses, astro generator, the pair contract etc..</div>
+                                                            <div className="my-1">
+                                                                <div className="items-center mt-2">
+                                                                    <label
+                                                                        className="text-white"
+                                                                    >
+                                                                        Limit to top # wallets
+                                                                    </label>
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        className="text-black rounded p-1 text-sm ml-2"
+                                                                        onChange={() => {
+                                                                            setLimitSwitch(limit => !limit)
+                                                                        }}
+                                                                        checked={limitSwitch}
+                                                                    />
+                                                                </div>
+                                                                {limitSwitch &&
+                                                                    <div className="mt-2 mb-1">
+                                                                        <input
+                                                                            type="number"
+                                                                            className="text-black w-full rounded p-1 text-sm w-14"
+                                                                            onChange={(e) => {
+                                                                                setWalletLimit(e.target.value)
+                                                                            }}
+                                                                            value={walletLimit}
+                                                                        />
+                                                                        <button
+                                                                            className="bg-slate-700 p-1 mt-2 rounded ml-2 text-sm"
+                                                                            onClick={() => {
+                                                                                const d = [...airdropDetails]
+                                                                                updateAirdropAmounts(d, distMode, walletLimit, balanceToDrop)
+                                                                                setAirdropDetails(d)
+                                                                            }}
+                                                                        >
+                                                                            apply
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                const d = [...airdropDetails]
+                                                                                d.forEach((holder, index) => {
+                                                                                    holder.includeInDrop = true
+                                                                                });
+                                                                                updateAirdropAmounts(d, distMode, null, balanceToDrop)
+                                                                                setAirdropDetails(d)
+                                                                            }}
+                                                                            className="bg-slate-700 p-1 mt-2 rounded ml-2 text-sm"
+                                                                        >
+                                                                            reset
+                                                                        </button>
+                                                                    </div>
+                                                                }
+                                                            </div>
+                                                            <div className="mt-2">
+                                                                <table className="table-auto w-full">
+                                                                    <thead className="text-white text-left">
+                                                                        <tr>
+                                                                            <th className="px-4 py-2">
+                                                                                Address
+                                                                            </th>
+                                                                            <th className="px-4 py-2">
+                                                                                Airdrop
+                                                                            </th>
+                                                                            <th className="px-4 py-2">
+                                                                                %
+                                                                            </th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        {airdropDetails.map((holder, index) => (
+                                                                            <tr key={index} className="text-white border-b text-xs">
+                                                                                <td className="px-6 py-1 whitespace-nowrap">
+                                                                                    <a
+                                                                                        className="hover:text-indigo-900"
+                                                                                        href={`https://explorer.injective.network/account/${holder.address}`}
+                                                                                    >
+                                                                                        {holder.address.slice(0, 5) + '...' + holder.address.slice(-5)}
+                                                                                        {
+                                                                                            WALLET_LABELS[holder.address] ? (
+                                                                                                <span className={`${WALLET_LABELS[holder.address].bgColor} ${WALLET_LABELS[holder.address].textColor} ml-2`}>
+                                                                                                    {WALLET_LABELS[holder.address].label}
+                                                                                                </span>
+                                                                                            ) : null
+                                                                                        }
+                                                                                    </a>
+                                                                                </td>
+                                                                                <td className="px-6 py-1">
+                                                                                    {Number(holder.amountToAirdrop).toFixed(tokenInfo.decimals)}{" "} {tokenInfo.symbol}
+                                                                                </td>
+                                                                                <td className="px-6 py-1">
+                                                                                    {Number(holder.percentToAirdrop).toFixed(2)}%
+                                                                                </td>
+                                                                            </tr>
+                                                                        ))}
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
                                             }
                                         </div>
                                     }
@@ -1023,7 +1204,7 @@ const Airdrop = () => {
                             {(airdropDetails.length > 0) && connectedAddress &&
                                 <div className="my-10">
                                     {currentNetwork == "mainnet" && (airdropDetails.length > 0) && <div className="mt-2">
-                                        Fee: {shroomCost} shroom (${shroomPrice ? shroomPrice : '0'}) <br />
+                                        Fee: {humanReadableAmount(shroomCost)} shroom (${shroomPrice ? shroomPrice : '0'}) <br />
                                         <a href="https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl" className="underline text-sm">buy here</a>
                                     </div>
                                     }
