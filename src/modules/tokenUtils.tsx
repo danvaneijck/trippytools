@@ -527,6 +527,7 @@ class TokenUtils {
 
         } catch (error) {
             console.error("Error fetching token holders:", error);
+            return []
         }
     }
 
