@@ -1365,6 +1365,7 @@ class TokenUtils {
 
 
     async checkForLiquidity(assetInfo: any) {
+        const allPools = []
         for (const factoryAddress of this.factories) {
             for (const baseAsset of this.baseAssets) {
                 console.log({
@@ -1397,16 +1398,18 @@ class TokenUtils {
                     const pool = await this.getPairInfo(infoDecoded.contract_addr)
                     const price = await this.getPrice(pool)
                     if (!price) continue
-                    const marketCap = await this.getMarketCap(pool)
 
-                    return { infoDecoded, factory: factoryAddress, price, marketCap }
+                    const marketCap = await this.getMarketCap(pool)
+                    const liquidity = await this.getPoolLiquidity(pool)
+
+                    allPools.push({ infoDecoded, factory: factoryAddress, price, marketCap, liquidity })
                 }
                 catch (e) {
                     console.log(e)
                 }
             }
         }
-        return null
+        return allPools
     }
 
     async getPoolAmounts(pair) {
@@ -1459,6 +1462,49 @@ class TokenUtils {
         const ratio = (Number(baseAssetAmount) / Math.pow(10, baseTokenMeta.decimals)) / (Number(tokenAmount) / Math.pow(10, memeTokenMeta.decimals));
 
         return ratio * baseAssetPriceUsd;
+    }
+
+    async getPoolLiquidity(pair) {
+        const { token0Meta, token1Meta } = pair;
+        const baseAsset = this.baseAssets.find(baseAsset =>
+            (token0Meta.denom === baseAsset.native_token?.denom || token0Meta.denom === baseAsset.token?.contract_addr) ||
+            (token1Meta.denom === baseAsset.native_token?.denom || token1Meta.denom === baseAsset.token?.contract_addr)
+        );
+
+        // Determine base and meme token meta
+        const baseTokenMeta = (token0Meta.denom === baseAsset?.native_token?.denom || token0Meta.denom === baseAsset?.token?.contract_addr) ? token0Meta : token1Meta;
+        const memeTokenMeta = (baseTokenMeta === token0Meta) ? token1Meta : token0Meta;
+
+        console.log("base asset meta", baseTokenMeta)
+        console.log("meme token meta", memeTokenMeta)
+
+        const poolDecoded = await this.getPoolAmounts(pair);
+        const baseAssetPriceUsd = await this.getBaseAssetPrice(baseTokenMeta);
+        console.log("base asset price", baseAssetPriceUsd)
+
+        const baseAssetAmount = poolDecoded.assets.find(asset => {
+            if (asset.info.native_token) {
+                return asset.info.native_token.denom === baseTokenMeta.denom;
+            } else if (asset.info.token) {
+                return asset.info.token.contract_addr === baseTokenMeta.denom;
+            }
+            return false;
+        })?.amount || 0;
+
+        const tokenAmount = poolDecoded.assets.find(asset => {
+            if (asset.info.native_token) {
+                return asset.info.native_token.denom === memeTokenMeta.denom;
+            } else if (asset.info.token) {
+                return asset.info.token.contract_addr === memeTokenMeta.denom;
+            }
+            return false;
+        })?.amount || 0;
+
+        if (baseAssetAmount == 0 && tokenAmount == 0) {
+            return null
+        }
+
+        return (Number(baseAssetAmount) / Math.pow(10, baseTokenMeta.decimals)) * baseAssetPriceUsd * 2;
     }
 
     async getBaseAssetPrice(baseAsset) {
