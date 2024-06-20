@@ -13,6 +13,8 @@ import { CW404_TOKENS, NFT_COLLECTIONS, TOKENS } from "../../constants/contractA
 import { CSVLink } from 'react-csv';
 import HoldersChart from "../../components/App/HoldersChart";
 
+const INJ_CW20_ADAPTER = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
+
 const TokenHolders = () => {
     const [searchParams, setSearchParams] = useSearchParams();
 
@@ -28,6 +30,8 @@ const TokenHolders = () => {
 
     const [holders, setHolders] = useState<Holder[]>([]);
 
+    const [hasSplitBalances, setHasSplitBalances] = useState(false)
+
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState("");
     const [error, setError] = useState(null)
@@ -38,6 +42,7 @@ const TokenHolders = () => {
     const [findingLiq, setFindingLiq] = useState(false)
     const [liqError, setLiqError] = useState(false)
 
+    const [mitoVault, setMitoVault] = useState(null)
 
     const setAddress = useCallback(() => {
         setSearchParams({
@@ -48,6 +53,30 @@ const TokenHolders = () => {
     useEffect(() => {
         setLastLoadedAddress("")
     }, [networkConfig])
+
+    const getSpotMarkets = useCallback(async () => {
+        console.log("get spot markets")
+        const module = new TokenUtils(networkConfig);
+        try {
+            const markets = await module.fetchSpotMarkets();
+            return markets;
+        } catch (error) {
+            console.error('Failed to fetch spot markets:', error);
+            throw error;
+        }
+    }, [networkConfig]);
+
+    const getMitoVaults = useCallback(async () => {
+        console.log("get mito vaults")
+        const module = new TokenUtils(networkConfig);
+        try {
+            const markets = await module.fetchMitoVaults();
+            return markets;
+        } catch (error) {
+            console.error('Failed to fetch mito vaults:', error);
+            throw error;
+        }
+    }, [networkConfig]);
 
     const findLiquidity = useCallback(async () => {
         let assetInfo = {}
@@ -68,16 +97,29 @@ const TokenHolders = () => {
         const module = new TokenUtils(networkConfig);
         setFindingLiq(true)
         try {
+            const denom = `factory/${INJ_CW20_ADAPTER}/${tokenInfo.denom}`
             const liquidity = await module.checkForLiquidity(assetInfo)
-            if (!liquidity) {
+            const spotMarkets = await getSpotMarkets();
+            const mitoVaults = await getMitoVaults();
+
+            const market = spotMarkets.find(market => market.baseDenom.toString() === denom.toString());
+            let vault = null
+            if (market) {
+                vault = mitoVaults.find(vault => vault.marketId.toString() === market.marketId.toString());
+            }
+            console.log(vault)
+
+            if (liquidity.length == 0) {
                 setFindingLiq(false)
                 setLiqError(true)
                 return
             }
-            setLiquidity([liquidity])
+
+            setLiquidity(liquidity)
+            setMitoVault(vault)
             setHolders(prevHolders => prevHolders.map(holder => ({
                 ...holder,
-                usdValue: Number(holder.balance) * liquidity?.price
+                usdValue: Number(holder.balance) * liquidity[0]?.price
             })));
             setFindingLiq(false)
         }
@@ -86,11 +128,15 @@ const TokenHolders = () => {
             setLiqError(true)
         }
 
-    }, [tokenInfo, networkConfig])
+    }, [tokenInfo, networkConfig, getSpotMarkets, getMitoVaults])
 
     useEffect(() => {
         if (tokenInfo && holders.length > 0 && liquidity.length == 0 && !findingLiq && !liqError) {
-            findLiquidity();
+            findLiquidity().then(r => {
+                console.log("finished getting liq")
+            }).catch(e => {
+                console.log("error getting liq:", e)
+            });
         }
     }, [tokenInfo, holders, findLiquidity, liquidity, findingLiq, liqError]);
 
@@ -107,8 +153,10 @@ const TokenHolders = () => {
         setProgress("");
         setHolders([]);
         setLiquidity([])
+        setMitoVault(null)
         setFindingLiq(false)
         setLiqError(false)
+        setHasSplitBalances(false)
 
         try {
             const is404 = CW404_TOKENS.find(x => x.value == address) !== undefined
@@ -141,7 +189,42 @@ const TokenHolders = () => {
                     setPairMarketing(marketingInfo);
 
                     const tokenHolders = await module.getCW20TokenHolders(address, setProgress);
-                    if (tokenHolders) setHolders(tokenHolders);
+                    const bankTokenHolders = await module.getTokenFactoryTokenHolders(`factory/${INJ_CW20_ADAPTER}/${address}`, setProgress)
+                    console.log(tokenHolders)
+                    console.log(bankTokenHolders)
+
+                    const mergedHolders = {};
+
+                    for (const holder of tokenHolders) {
+                        const { address, balance } = holder;
+                        if (!mergedHolders[address]) {
+                            mergedHolders[address] = { address, cw20Balance: 0, bankBalance: 0, combinedBalance: 0 };
+                        }
+                        mergedHolders[address].cw20Balance = balance;
+                    }
+                    for (const holder of bankTokenHolders) {
+                        const { address, balance } = holder;
+                        if (!mergedHolders[address]) {
+                            mergedHolders[address] = { address, cw20Balance: 0, bankBalance: 0, combinedBalance: 0 };
+                        }
+                        mergedHolders[address].bankBalance = balance / Math.pow(10, tokenInfo.decimals);
+                    }
+                    for (const address in mergedHolders) {
+                        const holder = mergedHolders[address];
+                        holder.balance = holder.cw20Balance + holder.bankBalance;
+                        holder.percentageHeld = (holder.balance / ((tokenInfo.total_supply / Math.pow(10, tokenInfo.decimals)))) * 100;
+                    }
+
+                    const mergedList = Object.values(mergedHolders);
+
+                    if (bankTokenHolders?.length > 0) {
+                        setHasSplitBalances(true)
+                        setHolders(mergedList);
+                    }
+                    else {
+                        setHolders(tokenHolders);
+                    }
+
                 } catch (error) {
                     if (error.message.includes("Error parsing into type cw404")) {
                         try {
@@ -335,24 +418,59 @@ const TokenHolders = () => {
                             </button>
                         }
 
-                        {liquidity.length > 0 && liquidity.map(({ infoDecoded, marketCap, price, factory }, index) => {
-                            return <div key={index} className="text-sm">
-                                <a href={"https://coinhall.org/injective/" + infoDecoded.contract_addr}
-                                    className="text-white hover:cursor-pointer font-bold"
-                                >
-                                    pool found on {factory.name}
-                                </a>
-                                <br />
-                                price: ${price.toFixed(10)}
-                                <br />
-                                market cap: ${marketCap.toFixed(2)}
-                                <br />
-                                <Link to={`/token-liquidity?address=${infoDecoded.contract_addr}`} className="font-bold hover:underline mr-5">
-                                    view liquidity holders
-                                </Link>
+                        <div className="flex flex-row justify-center mt-5">
+                            {liquidity.length > 0 && liquidity.map(({ infoDecoded, marketCap, price, factory, liquidity }, index) => {
+                                return <div key={index} className="text-sm mx-2 bg-slate-800 p-2 rounded-lg shadow-lg">
+                                    <a href={"https://coinhall.org/injective/" + infoDecoded.contract_addr}
+                                        className="text-white hover:cursor-pointer font-bold"
+                                    >
+                                        pool found on {factory.name}
+                                    </a>
+                                    <br />
+                                    price: ${price.toFixed(10)}
+                                    <br />
+                                    liquidity: ${liquidity.toFixed(2)}
+                                    <br />
+                                    market cap: {marketCap.toFixed(2)}
+                                    <br />
+                                    <Link to={`/token-liquidity?address=${infoDecoded.contract_addr}`} className="font-bold hover:underline mr-5">
+                                        view liquidity holders
+                                    </Link>
 
-                            </div>
-                        })}
+                                </div>
+                            })}
+                            {mitoVault !== null && tokenInfo &&
+                                <div className="text-sm mx-2 bg-slate-800 p-2 rounded-lg shadow-lg">
+                                    <a href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}mito.fi/vault/${mitoVault.contractAddress}`}
+                                        className="text-white hover:cursor-pointer font-bold"
+                                    >
+                                        Mito vault found
+                                    </a>
+                                    <br />
+                                    APY: {mitoVault.apy.toFixed(2)}%
+                                    <br />
+                                    liquidity: ${mitoVault.currentTvl.toFixed(2)}
+                                    <br />
+                                    {/* lp token price: ${(mitoVault.lpTokenPrice * Math.pow(10, tokenInfo.decimals)).toFixed(4)}
+                                    <br /> */}
+                                    <Link
+                                        className="underline"
+                                        target="_blank"
+                                        to={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}mito.fi/vault/${mitoVault.contractAddress}`}
+                                    >
+                                        mito vault url
+                                    </Link>
+                                    <br />
+                                    <Link
+                                        className="underline"
+                                        target="_blank"
+                                        to={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}helixapp.com/spot/?marketId=${mitoVault.marketId}`}
+                                    >
+                                        helix market url
+                                    </Link>
+                                </div>
+                            }
+                        </div>
 
                         {loading && (
                             <div className="flex flex-col items-center justify-center pt-5">
@@ -374,7 +492,7 @@ const TokenHolders = () => {
                                 <div>Total token holders: {holders.length}</div>
                                 <div className="overflow-x-auto mt-2">
                                     <table className="table-auto w-full">
-                                        <thead className="text-white">
+                                        <thead className="text-white text-left">
                                             <tr>
                                                 <th className="px-4 py-2">
                                                     Position
@@ -383,8 +501,13 @@ const TokenHolders = () => {
                                                     Address
                                                 </th>
                                                 <th className="px-4 py-2">
-                                                    Balance
+                                                    {hasSplitBalances ? "CW20 Balance" : "Balance"}
                                                 </th>
+                                                {hasSplitBalances &&
+                                                    <th className="px-4 py-2">
+                                                        Bank Balance
+                                                    </th>
+                                                }
                                                 <th className="px-4 py-2">
                                                     Percentage
                                                 </th>
@@ -401,10 +524,11 @@ const TokenHolders = () => {
                                                             holder.balance
                                                         ) !== 0
                                                 )
+                                                .sort((a, b) => { return b.balance - a.balance })
                                                 .map((holder, index) => (
                                                     <tr
                                                         key={index}
-                                                        className="text-white border-b"
+                                                        className="text-white border-b text-left"
                                                     >
                                                         <td className="px-6 py-1">
                                                             {index + 1}
@@ -416,7 +540,6 @@ const TokenHolders = () => {
                                                             >
                                                                 {holder.address.slice(0, 5) + '...' + holder.address.slice(-5)}
                                                             </a>
-
                                                             {
                                                                 WALLET_LABELS[holder.address] ? (
                                                                     <span className={`${WALLET_LABELS[holder.address].bgColor} ${WALLET_LABELS[holder.address].textColor} ml-2`}>
@@ -439,9 +562,13 @@ const TokenHolders = () => {
                                                             }
                                                         </td>
                                                         <td className="px-6 py-1">
-                                                            {holder.balance}{" "}
-                                                            {tokenInfo?.symbol}
+                                                            {hasSplitBalances ? holder.cw20Balance.toFixed(2) : holder.balance.toFixed(2)}
                                                         </td>
+                                                        {hasSplitBalances &&
+                                                            <td className="px-6 py-1">
+                                                                {holder.bankBalance.toFixed(2)}
+                                                            </td>
+                                                        }
                                                         <td className="px-6 py-1">
                                                             {
                                                                 holder.percentageHeld.toFixed(2)
@@ -452,7 +579,6 @@ const TokenHolders = () => {
                                                             {
                                                                 holder.usdValue?.toFixed(2)
                                                             }
-
                                                         </td>
                                                     </tr>
                                                 ))}
