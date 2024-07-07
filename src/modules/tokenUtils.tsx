@@ -16,7 +16,8 @@ import {
     IndexerGrpcSpotApi,
     IndexerGrpcMitoApi,
     IndexerGrpcOracleApi,
-    IndexerGrpcDerivativesApi
+    IndexerGrpcDerivativesApi,
+    MsgInstantBinaryOptionsMarketLaunch
 } from "@injectivelabs/sdk-ts";
 import { Buffer } from "buffer";
 import moment from "moment";
@@ -1645,7 +1646,64 @@ class TokenUtils {
             }
         }
 
+
+
         return balancesWithMetadata;
+    }
+
+    async fetchBinaryOptionMarkets(status) {
+        const marketsAPI = new IndexerGrpcDerivativesApi(this.endpoints.indexer)
+        const key = ''
+        const markets = await marketsAPI.fetchBinaryOptionsMarkets({
+            marketStatus: status,
+            pagination: { fromNumber: 0, countTotal: true }
+        })
+        console.log(markets.pagination)
+        return markets.markets
+    }
+
+    async fetchBinaryOptionMarket(marketId) {
+        const marketsAPI = new IndexerGrpcDerivativesApi(this.endpoints.indexer)
+        const markets = await marketsAPI.fetchBinaryOptionsMarket(marketId)
+        return markets
+    }
+
+    async getDerivativeMarketOrders(marketId) {
+        const marketsAPI = new IndexerGrpcDerivativesApi(this.endpoints.indexer)
+        const orders = await marketsAPI.fetchOrderHistory({
+            marketId: marketId
+        })
+        console.log(orders)
+        return orders.orderHistory
+    }
+
+    async fetchOraclePrice(ticker) {
+        const indexerGrpcOracleApi = new IndexerGrpcOracleApi(this.endpoints.indexer)
+
+        const oracleList = await indexerGrpcOracleApi.fetchOracleList()
+
+        console.log(oracleList)
+        return
+        const marketsAPI = new IndexerGrpcDerivativesApi(this.endpoints.indexer)
+        const markets = await marketsAPI.fetchMarkets()
+
+        const market = markets.reverse().find((market) => market.ticker === ticker)
+        if (!market) {
+            console.log("cannot find market with ticker", ticker)
+            return
+        }
+        const baseSymbol = market.oracleBase
+        const quoteSymbol = market.oracleQuote
+        const oracleType = market.oracleType
+
+        const oraclePrice = await indexerGrpcOracleApi.fetchOraclePriceNoThrow({
+            baseSymbol,
+            quoteSymbol,
+            oracleType,
+        })
+        console.log(oraclePrice)
+
+        return oraclePrice['price']
     }
 
 }
