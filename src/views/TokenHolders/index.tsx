@@ -96,6 +96,7 @@ const TokenHolders = () => {
         }
         const module = new TokenUtils(networkConfig);
         setFindingLiq(true)
+
         try {
             const denom = `factory/${INJ_CW20_ADAPTER}/${tokenInfo.denom}`
             const liquidity = await module.checkForLiquidity(assetInfo)
