@@ -15,6 +15,7 @@ import Papa from 'papaparse';
 import { ChainGrpcGovApi } from '@injectivelabs/sdk-ts'
 import moment from "moment";
 const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
+import parachute from "../../assets/parachute.webp"
 
 
 function humanReadableAmount(number) {
@@ -822,7 +823,7 @@ const Airdrop = () => {
                                                         <label
                                                             className="block text-white ml-5"
                                                         >
-                                                            Governance Prop Voters
+                                                            Proposal Voters
                                                         </label>
                                                     </div>
                                                 </div>
@@ -1418,7 +1419,7 @@ const Airdrop = () => {
                                                 </div>
                                                 <button
                                                     onClick={getPropVoters}
-                                                    className="bg-slate-700 p-1 mt-2 rounded text-sm">
+                                                    className="bg-gray-800 rounded-lg p-2 w-full text-white mt-6 shadow-lg">
                                                     Get voters
                                                 </button>
                                                 {airdropDetails.length > 0 &&
@@ -1638,7 +1639,14 @@ const Airdrop = () => {
                                 </div>
                                 :
                                 <div className="text-center">
-                                    Please connect wallet to plan a new airdrop
+                                    <div className="text-xl mb-5">Airdrop Tool</div>
+                                    <img
+                                        src={parachute}
+                                        style={{ width: 140 }}
+                                        className="m-auto rounded-xl mb-4"
+                                        alt="airdrop"
+                                    />
+                                    <div>Please connect wallet to plan a new airdrop</div>
                                 </div>
                             }
                             {error && <div className="text-red-500 mt-2">
