@@ -98,6 +98,8 @@ const ViewMarketModal = (props: {
                                 <div className="flex flex-row justify-between">
                                     <div className="pr-4">
                                         <div>Market ID: {market.marketId.slice(0, 5)}...{market.marketId.slice(-5)}</div>
+                                        <div>Market ID: {market.marketId}</div>
+
                                         <div>Status: {market.marketStatus}</div>
                                         <div>Oracle Symbol: {market.oracleSymbol}</div>
                                         <div>Oracle Provider: {market.oracleProvider}</div>
