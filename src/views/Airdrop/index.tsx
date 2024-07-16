@@ -595,9 +595,7 @@ const Airdrop = () => {
                             manage tokens
                         </Link>
 
-                        <Link to="/sushi-tool" className="font-bold hover:underline mx-5">
-                            sushi tool
-                        </Link>
+
                     </div>
                     <div className="m-2">
                         <ConnectKeplr />
@@ -623,7 +621,7 @@ const Airdrop = () => {
                                         <label
                                             className="font-bold text-sm text-white mb-1"
                                         >
-                                            Token to airdrop
+                                            Token to airdrop (contract address / denom)
                                         </label>
                                         <TokenSelect
                                             options={[

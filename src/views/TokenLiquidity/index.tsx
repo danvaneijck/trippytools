@@ -133,9 +133,7 @@ const TokenLiquidity = () => {
                         manage tokens
                     </Link>
 
-                    <Link to="/sushi-tool" className="font-bold hover:underline mx-5">
-                        sushi tool
-                    </Link>
+
                 </div>
                 <div className="m-2">
                     <ConnectKeplr />
