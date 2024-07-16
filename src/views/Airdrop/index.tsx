@@ -12,8 +12,11 @@ import { Holder, MarketingInfo } from "../../types";
 import { CW404_TOKENS, LIQUIDITY_TOKENS, NFT_COLLECTIONS, TOKENS } from "../../constants/contractAddresses";
 import TokenSelect from "../../components/Inputs/TokenSelect";
 import Papa from 'papaparse';
-
+import { ChainGrpcGovApi } from '@injectivelabs/sdk-ts'
+import moment from "moment";
 const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
+import parachute from "../../assets/parachute.webp"
+
 
 function humanReadableAmount(number) {
     if (!number) {
@@ -59,6 +62,20 @@ const Airdrop = () => {
 
     const [showConfirm, setShowConfirm] = useState(false);
 
+    const [proposalNumber, setProposalNumber] = useState(417)
+    const [blockHeight, setBlockHeight] = useState(76938079)
+    const [attemptFindBlock, setAttemptFindBlock] = useState(true)
+
+    const [proposalVoters, setProposalVoters] = useState()
+    const [filterByVote, setFilterByVote] = useState(false)
+
+    const [voteFilters, setVoteFilters] = useState({
+        "VOTE_OPTION_YES": true,
+        "VOTE_OPTION_ABSTAIN": true,
+        "VOTE_OPTION_NO": true,
+        "VOTE_OPTION_NO_WITH_VETO": true,
+    })
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null)
     const [distMode, setDistMode] = useState("fair");
@@ -76,6 +93,90 @@ const Airdrop = () => {
         updateAirdropAmounts(newDetails, dist, walletLimit, balance);
         setAirdropDetails(newDetails);
     }
+
+    async function fetchBlock(height) {
+        const baseUrl = 'https://sentry.lcd.injective.network/cosmos/base/tendermint/v1beta1/blocks';
+        let attempts = 0;
+        const maxAttempts = 50;
+
+        while (attempts < maxAttempts) {
+            try {
+                const response = await fetch(`${baseUrl}/${height}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch block at height ${height}`);
+                }
+                return response.json();
+            } catch (error) {
+                attempts += 1;
+                await new Promise(res => setTimeout(res, 2000));
+                if (attempts >= maxAttempts) {
+                    throw new Error(`Failed to fetch block after ${maxAttempts} attempts: ${error.message}`);
+                }
+            }
+        }
+    }
+
+    const getProposalAndBlockHeight = useCallback(async (proposalNumber) => {
+        async function findBlockBeforeTime(targetTime) {
+            const targetDate = new Date(targetTime);
+
+            const latestBlock = await fetchBlock('latest');
+            const latestHeight = parseInt(latestBlock.block.header.height);
+
+            const latestBlockTime = new Date(latestBlock.block.header.time);
+            const timeDifference = targetDate - latestBlockTime;
+            let estimatedHeight = latestHeight + Math.floor(timeDifference / 690);
+
+            let low = estimatedHeight - 50000;
+            let high = estimatedHeight + 50000;
+
+            if (estimatedHeight < 1) {
+                estimatedHeight = 1;
+            } else if (estimatedHeight > latestHeight) {
+                estimatedHeight = latestHeight;
+            }
+
+            let lastValidBlock = null;
+            low = Math.max(1, estimatedHeight - Math.floor(Math.abs(timeDifference) / 1000));
+            high = Math.min(latestHeight, estimatedHeight + Math.floor(Math.abs(timeDifference) / 1000));
+
+            // Binary search for the block just before the targetTime
+            while (low < high - 1) {
+                const mid = Math.floor((low + high) / 2);
+                const midBlock = await fetchBlock(mid);
+
+                const midBlockTime = new Date(midBlock.block.header.time);
+
+                console.log(midBlockTime.toISOString(), targetDate.toISOString())
+
+                if (midBlockTime < targetDate) {
+                    lastValidBlock = midBlock;
+                    low = mid + 1;
+                } else {
+                    high = mid - 1;
+                }
+                console.log(low, high)
+
+                if ((high - low < 100) && midBlockTime < targetDate) {
+                    break
+                }
+            }
+
+            return lastValidBlock;
+        }
+
+        const api = new ChainGrpcGovApi(networkConfig.grpc)
+
+        const proposal = await api.fetchProposal(proposalNumber)
+        console.log(proposal)
+        const endVoteTime = moment.unix(proposal.votingEndTime)
+        console.log(endVoteTime)
+
+        const closestBlock = await findBlockBeforeTime(endVoteTime);
+        console.log("closest block: ", closestBlock)
+
+        return Number(closestBlock.block.header.height)
+    }, [networkConfig.explorer, networkConfig.grpc])
 
     useEffect(() => {
         if (!loading) {
@@ -213,18 +314,23 @@ const Airdrop = () => {
     }, [networkConfig, tokenAddress, connectedAddress])
 
 
-    const updateAirdropAmounts = (details: any[], dist: string, walletLimit = null, balanceToDrop: number) => {
+    const updateAirdropAmounts = (details: any[], dist: string, walletLimit = null, balanceToDrop: number, voteFilter = null) => {
         const supplyToAirdrop = (balanceToDrop - (balanceToDrop * 0.001))
-        let includedHolders = details.filter(holder => holder.includeInDrop);
 
-        if (walletLimit && walletLimit > 0) {
-            includedHolders.sort((a, b) => b.balance - a.balance);
+        if (voteFilter !== null) {
+            details.forEach((holder) => {
+                holder.includeInDrop = voteFilter[holder.vote_option] == true;
+            });
+        }
+        else if (walletLimit && walletLimit > 0) {
+            details.sort((a, b) => b.balance - a.balance);
 
-            includedHolders.forEach((holder, index) => {
+            details.forEach((holder, index) => {
                 holder.includeInDrop = index < walletLimit;
             });
-            includedHolders = includedHolders.filter(holder => holder.includeInDrop);
         }
+        const includedHolders = details.filter((holder: { includeInDrop: any; }) => holder.includeInDrop);
+
         if (dist === "fair") {
             const amountPerHolder = supplyToAirdrop / includedHolders.length;
             details.forEach((holder: { includeInDrop: any; amountToAirdrop: number; percentToAirdrop: number; }) => {
@@ -236,8 +342,8 @@ const Airdrop = () => {
                     holder.percentToAirdrop = 0;
                 }
             });
-        } else if (dist === "proportionate") {
-            const includedHolders = details.filter((holder: { includeInDrop: any; }) => holder.includeInDrop);
+        }
+        else if (dist === "proportionate") {
             const totalAmountHeldByIncluded = includedHolders.reduce((total: number, holder: { balance: any; }) => total + Number(holder.balance), 0);
             details.forEach((holder: { includeInDrop: any; balance: number; }) => {
                 if (holder.includeInDrop) {
@@ -403,6 +509,58 @@ const Airdrop = () => {
         }
     }, []);
 
+    const getPropVoters = useCallback(async () => {
+        setAirdropDetails([])
+        const supplyToAirdrop = (balanceToDrop - (balanceToDrop * 0.001))
+        setLoading(true)
+        if (attemptFindBlock) {
+            setProgress(`Fetching closest block`)
+            getProposalAndBlockHeight(proposalNumber).then(async (r) => {
+                setBlockHeight(r)
+                const module = new TokenUtils(networkConfig)
+                const voters = await module.fetchProposalVoters(proposalNumber, r, setProgress)
+                console.log(voters)
+                setProposalVoters(voters)
+
+                const amountToAirdrop = supplyToAirdrop / voters.length;
+                if (voters.length > 0) {
+                    setAirdropDetails(voters.map(holder => ({
+                        address: holder.address,
+                        balance: holder.weight,
+                        vote_option: holder.vote_option,
+                        amountToAirdrop: amountToAirdrop,
+                        percentToAirdrop: (amountToAirdrop / balanceToDrop) * 100,
+                        includeInDrop: true
+                    })))
+                }
+                setLoading(false)
+            }).catch(e => {
+                console.log(e)
+                setLoading(false)
+            })
+        }
+        else {
+            const module = new TokenUtils(networkConfig)
+            const voters = await module.fetchProposalVoters(proposalNumber, blockHeight, setProgress)
+            console.log(voters)
+
+            const amountToAirdrop = supplyToAirdrop / voters.length;
+
+            if (voters.length > 0) {
+                setAirdropDetails(voters.map(holder => ({
+                    address: holder.address,
+                    balance: holder.weight,
+                    vote_option: holder.vote_option,
+                    amountToAirdrop: amountToAirdrop,
+                    percentToAirdrop: (amountToAirdrop / balanceToDrop) * 100,
+                    includeInDrop: true
+                })))
+            }
+            setLoading(false)
+        }
+
+    }, [getProposalAndBlockHeight, proposalNumber, networkConfig, balanceToDrop, attemptFindBlock, blockHeight])
+
 
     return (
         <>
@@ -437,9 +595,7 @@ const Airdrop = () => {
                             manage tokens
                         </Link>
 
-                        <Link to="/sushi-tool" className="font-bold hover:underline mx-5">
-                            sushi tool
-                        </Link>
+
                     </div>
                     <div className="m-2">
                         <ConnectKeplr />
@@ -465,7 +621,7 @@ const Airdrop = () => {
                                         <label
                                             className="font-bold text-sm text-white mb-1"
                                         >
-                                            Token to airdrop
+                                            Token to airdrop (contract address / denom)
                                         </label>
                                         <TokenSelect
                                             options={[
@@ -645,6 +801,27 @@ const Airdrop = () => {
                                                             className="block text-white ml-5"
                                                         >
                                                             CSV File
+                                                        </label>
+                                                    </div>
+                                                    <div className="flex flex-row" onClick={() => {
+                                                        setDropMode("GOV")
+                                                        setAirdropDetails([])
+                                                        setShroomCost(100000)
+                                                    }}>
+                                                        <input
+                                                            type="checkbox"
+                                                            className="text-black w-full rounded p-1 text-sm"
+                                                            onChange={() => {
+                                                                setDropMode("GOV")
+                                                                setAirdropDetails([])
+                                                                setShroomCost(100000)
+                                                            }}
+                                                            checked={dropMode == "GOV"}
+                                                        />
+                                                        <label
+                                                            className="block text-white ml-5"
+                                                        >
+                                                            Proposal Voters
                                                         </label>
                                                     </div>
                                                 </div>
@@ -1050,9 +1227,10 @@ const Airdrop = () => {
                                                                                             }
                                                                                         </a>
                                                                                     </td>
-                                                                                    <td className="px-6 py-1">
+                                                                                    {airdropTokenInfo ? <td className="px-6 py-1">
                                                                                         {Number(holder.balance).toFixed(airdropTokenInfo.decimals)}{" "} {airdropTokenInfo.symbol}
-                                                                                    </td>
+                                                                                    </td> : <></>
+                                                                                    }
                                                                                     <td className="px-6 py-1">
                                                                                         {Number(holder.amountToAirdrop).toFixed(tokenInfo.decimals)}{" "} {tokenInfo.symbol}
                                                                                     </td>
@@ -1188,13 +1366,285 @@ const Airdrop = () => {
                                                 }
                                             </div>
                                             }
+                                            {dropMode == "GOV" && <div>
+                                                <div className="space-y-2">
+                                                    <label
+                                                        className="text-base font-bold text-white mr-2"
+                                                    >
+                                                        Governance Proposal #
+                                                    </label>
+                                                    <input
+                                                        className="text-black"
+                                                        value={proposalNumber}
+                                                        onChange={(e) => {
+                                                            setProposalNumber(e.target.value)
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label
+                                                        className="text-base font-bold text-white mr-2"
+                                                    >
+                                                        Block height
+                                                    </label>
+                                                    <input
+                                                        disabled={attemptFindBlock == true}
+                                                        className="text-black"
+                                                        value={blockHeight}
+                                                        onChange={(e) => {
+                                                            setBlockHeight(e.target.value)
+                                                        }}
+                                                    />
+                                                    <label
+                                                        className="text-base font-bold text-white mx-2"
+                                                    >
+                                                        OR
+                                                    </label>
+                                                    <input
+                                                        type="checkbox"
+                                                        className="text-black"
+                                                        value={attemptFindBlock == true}
+                                                        checked={attemptFindBlock == true}
+                                                        onChange={(e) => {
+                                                            setAttemptFindBlock(!attemptFindBlock)
+                                                        }}
+                                                    />
+                                                    <label
+                                                        className="text-base font-bold text-white mx-2"
+                                                    >
+                                                        attempt to auto find block
+                                                    </label>
+                                                </div>
+                                                <button
+                                                    onClick={getPropVoters}
+                                                    className="bg-gray-800 rounded-lg p-2 w-full text-white mt-6 shadow-lg">
+                                                    Get voters
+                                                </button>
+                                                {airdropDetails.length > 0 &&
+                                                    <div className="mt-5">
+                                                        <div className="max-h-80 overflow-y-scroll overflow-x-auto">
+                                                            <div>Total participants: {airdropDetails.filter(x => x.includeInDrop).length}</div>
+                                                            <div className="text-xs">You should exclude addresses such as burn addresses, astro generator, the pair contract etc..</div>
+                                                            <div className="my-1">
+                                                                <div className="items-center mt-2">
+                                                                    <label
+                                                                        className="text-white"
+                                                                    >
+                                                                        Filter vote options
+                                                                    </label>
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        className="text-black rounded p-1 text-sm ml-2"
+                                                                        onChange={() => {
+                                                                            setFilterByVote(filter => !filter)
+                                                                        }}
+                                                                        checked={filterByVote}
+                                                                    />
+                                                                </div>
+                                                                {filterByVote &&
+                                                                    <div className="mt-2 mb-1">
+                                                                        <div className="flex flex-row">
+                                                                            <div>
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    className="text-black"
+                                                                                    checked={voteFilters['VOTE_OPTION_YES'] == true}
+                                                                                    onChange={(e) => {
+                                                                                        setVoteFilters((filters) => {
+                                                                                            return {
+                                                                                                ...filters,
+                                                                                                'VOTE_OPTION_YES': !filters['VOTE_OPTION_YES']
+                                                                                            }
+                                                                                        })
+                                                                                    }}
+                                                                                />
+                                                                                <label
+                                                                                    className="text-base font-bold text-white mx-2"
+                                                                                >
+                                                                                    YES
+                                                                                </label>
+                                                                            </div>
+                                                                            <div>
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    className="text-black"
+                                                                                    checked={voteFilters['VOTE_OPTION_ABSTAIN'] == true}
+                                                                                    onChange={(e) => {
+                                                                                        setVoteFilters((filters) => {
+                                                                                            return {
+                                                                                                ...filters,
+                                                                                                'VOTE_OPTION_ABSTAIN': !filters['VOTE_OPTION_ABSTAIN']
+                                                                                            }
+                                                                                        })
+                                                                                    }}
+                                                                                />
+                                                                                <label
+                                                                                    className="text-base font-bold text-white mx-2"
+                                                                                >
+                                                                                    ABSTAIN
+                                                                                </label>
+                                                                            </div>
+                                                                            <div>
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    className="text-black"
+                                                                                    checked={voteFilters['VOTE_OPTION_NO'] == true}
+                                                                                    onChange={(e) => {
+                                                                                        setVoteFilters((filters) => {
+                                                                                            return {
+                                                                                                ...filters,
+                                                                                                'VOTE_OPTION_NO': !filters['VOTE_OPTION_NO']
+                                                                                            }
+                                                                                        })
+                                                                                    }}
+                                                                                />
+                                                                                <label
+                                                                                    className="text-base font-bold text-white mx-2"
+                                                                                >
+                                                                                    NO
+                                                                                </label>
+                                                                            </div>
+                                                                            <div>
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    className="text-black"
+                                                                                    checked={voteFilters['VOTE_OPTION_NO_WITH_VETO'] == true}
+                                                                                    onChange={(e) => {
+                                                                                        setVoteFilters((filters) => {
+                                                                                            return {
+                                                                                                ...filters,
+                                                                                                'VOTE_OPTION_NO_WITH_VETO': !filters['VOTE_OPTION_NO_WITH_VETO']
+                                                                                            }
+                                                                                        })
+                                                                                    }}
+                                                                                />
+                                                                                <label
+                                                                                    className="text-base font-bold text-white mx-2"
+                                                                                >
+                                                                                    NO WITH VETO
+                                                                                </label>
+                                                                            </div>
+                                                                        </div>
+                                                                        <button
+                                                                            className="bg-slate-700 p-1 mt-2 rounded ml-2 text-sm"
+                                                                            onClick={() => {
+                                                                                const d = [...airdropDetails]
+                                                                                updateAirdropAmounts(d, distMode, walletLimit, balanceToDrop, voteFilters)
+                                                                                setAirdropDetails(d)
+                                                                            }}
+                                                                        >
+                                                                            apply
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                const d = [...airdropDetails]
+                                                                                d.forEach((holder, index) => {
+                                                                                    holder.includeInDrop = true
+                                                                                });
+                                                                                setVoteFilters({
+                                                                                    "VOTE_OPTION_YES": true,
+                                                                                    "VOTE_OPTION_ABSTAIN": true,
+                                                                                    "VOTE_OPTION_NO": true,
+                                                                                    "VOTE_OPTION_NO_WITH_VETO": true,
+                                                                                })
+                                                                                updateAirdropAmounts(d, distMode, null, balanceToDrop)
+                                                                                setAirdropDetails(d)
+                                                                            }}
+                                                                            className="bg-slate-700 p-1 mt-2 rounded ml-2 text-sm"
+                                                                        >
+                                                                            reset
+                                                                        </button>
+                                                                    </div>
+                                                                }
+                                                            </div>
+                                                            <div className="mt-2">
+                                                                <table className="table-auto w-full">
+                                                                    <thead className="text-white text-left">
+                                                                        <tr>
+                                                                            <th className="px-4 py-2">
+                                                                                Position
+                                                                            </th>
+                                                                            <th className="px-4 py-2">
+                                                                                Include
+                                                                            </th>
+                                                                            <th className="px-4 py-2">
+                                                                                Address
+                                                                            </th>
+                                                                            <th className="px-4 py-2">
+                                                                                Vote option
+                                                                            </th>
+                                                                            <th className="px-4 py-2">
+                                                                                Airdrop
+                                                                            </th>
+                                                                            <th className="px-4 py-2">
+                                                                                %
+                                                                            </th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        {airdropDetails.map((holder, index) => (
+                                                                            <tr key={index} className="text-white border-b text-xs">
+                                                                                <td className="px-6 py-1">
+                                                                                    {index + 1}
+                                                                                </td>
+                                                                                <td className="px-6 py-1">
+                                                                                    <input
+                                                                                        type="checkbox"
+                                                                                        checked={holder.includeInDrop || false}
+                                                                                        onChange={() => handleCheckboxChange(index, distMode, balanceToDrop)}
+
+                                                                                    />
+                                                                                </td>
+                                                                                <td className="px-6 py-1 whitespace-nowrap">
+                                                                                    {holder.address &&
+                                                                                        <a
+                                                                                            className="hover:text-indigo-900"
+                                                                                            href={`https://explorer.injective.network/account/${holder.address}`}
+                                                                                        >
+                                                                                            {holder.address.slice(0, 5) + '...' + holder.address.slice(-5)}
+                                                                                            {
+                                                                                                WALLET_LABELS[holder.address] ? (
+                                                                                                    <span className={`${WALLET_LABELS[holder.address].bgColor} ${WALLET_LABELS[holder.address].textColor} ml-2`}>
+                                                                                                        {WALLET_LABELS[holder.address].label}
+                                                                                                    </span>
+                                                                                                ) : null
+                                                                                            }
+                                                                                        </a>
+                                                                                    }
+
+                                                                                </td>
+                                                                                <td className="px-6 py-1">
+                                                                                    {holder.vote_option && holder.vote_option.replace("VOTE_OPTION_", "")}
+                                                                                </td>
+                                                                                <td className="px-6 py-1">
+                                                                                    {Number(holder.amountToAirdrop).toFixed(tokenInfo.decimals)}{" "} {tokenInfo.symbol}
+                                                                                </td>
+                                                                                <td className="px-6 py-1">
+                                                                                    {Number(holder.percentToAirdrop).toFixed(2)}%
+                                                                                </td>
+                                                                            </tr>
+                                                                        ))}
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                            }
                                         </div>
                                     }
-
                                 </div>
                                 :
                                 <div className="text-center">
-                                    Please connect wallet to plan a new airdrop
+                                    <div className="text-xl mb-5">Airdrop Tool</div>
+                                    <img
+                                        src={parachute}
+                                        style={{ width: 140 }}
+                                        className="m-auto rounded-xl mb-4"
+                                        alt="airdrop"
+                                    />
+                                    <div>Please connect wallet to plan a new airdrop</div>
                                 </div>
                             }
                             {error && <div className="text-red-500 mt-2">

@@ -17,7 +17,10 @@ import {
     IndexerGrpcMitoApi,
     IndexerGrpcOracleApi,
     IndexerGrpcDerivativesApi,
-    MsgInstantBinaryOptionsMarketLaunch
+    MsgInstantBinaryOptionsMarketLaunch,
+    MsgCreateBinaryOptionsLimitOrder,
+    ChainGrpcGovApi,
+    IndexerGrpcAccountApi
 } from "@injectivelabs/sdk-ts";
 import { Buffer } from "buffer";
 import moment from "moment";
@@ -1656,7 +1659,7 @@ class TokenUtils {
         const key = ''
         const markets = await marketsAPI.fetchBinaryOptionsMarkets({
             marketStatus: status,
-            pagination: { fromNumber: 0, countTotal: true }
+            pagination: { limit: 20 }
         })
         console.log(markets.pagination)
         return markets.markets
@@ -1677,13 +1680,22 @@ class TokenUtils {
         return orders.orderHistory
     }
 
-    async fetchOraclePrice(ticker) {
+    async createBinaryOptionsLimitOrder(marketId) {
+
+    }
+
+    async fetchOracleList() {
         const indexerGrpcOracleApi = new IndexerGrpcOracleApi(this.endpoints.indexer)
 
         const oracleList = await indexerGrpcOracleApi.fetchOracleList()
-
         console.log(oracleList)
-        return
+
+        return oracleList
+    }
+
+    async fetchOraclePrice(ticker) {
+        const indexerGrpcOracleApi = new IndexerGrpcOracleApi(this.endpoints.indexer)
+
         const marketsAPI = new IndexerGrpcDerivativesApi(this.endpoints.indexer)
         const markets = await marketsAPI.fetchMarkets()
 
@@ -1706,6 +1718,84 @@ class TokenUtils {
         return oraclePrice['price']
     }
 
+    async fetchWithRetry(url, options, maxRetries = 10, retryDelay = 1000) {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                if (attempt < maxRetries) {
+                    // console.warn(`Attempt ${attempt} failed. Retrying in ${retryDelay}ms...`, error);
+                    await new Promise(res => setTimeout(res, retryDelay));
+                } else {
+                    throw error;
+                }
+            }
+        }
+    }
+
+    async fetchProposalVoters(proposalId, blockNumber, setProgress) {
+        const lcdBase = `https://sentry.lcd.injective.network/cosmos/gov/v1/proposals/${proposalId}/votes`;
+        let voters = [];
+        let nextKey = null;
+        const maxRetries = 100; // Set the maximum number of retries
+
+        let total = 0
+
+        try {
+            do {
+                const encodedNextKey = nextKey ? encodeURIComponent(nextKey) : null;
+                const lcd = encodedNextKey ? `${lcdBase}?pagination.key=${encodedNextKey}` : lcdBase;
+                console.log(lcd);
+
+                const data = await this.fetchWithRetry(lcd, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-cosmos-block-height': blockNumber
+                    }
+                }, maxRetries);
+
+                voters = voters.concat(data.votes);
+                console.log(data);
+
+                nextKey = data.pagination ? data.pagination.next_key : null;
+                if (data.pagination.total && data.pagination.total != "0") total = data.pagination.total
+                console.log(nextKey);
+                setProgress(`${voters.length} / ${total}`)
+            } while (nextKey);
+
+            return voters.map(item => {
+                return {
+                    address: item.voter,
+                    vote_option: item.options[0].option,
+                    weight: parseFloat(item.options[0].weight)
+                };
+            });
+        } catch (error) {
+            // console.error('Error:', error);
+        }
+        return voters.map(item => {
+            return {
+                address: item.voter,
+                vote_option: item.options[0].option,
+                weight: parseFloat(item.options[0].weight)
+            };
+        })
+    }
+
+    async getSubAccount(injectiveAddress: string) {
+        const indexerGrpcAccountApi = new IndexerGrpcAccountApi(this.endpoints.indexer)
+        const subaccountsList = await indexerGrpcAccountApi.fetchSubaccountsList(
+            injectiveAddress,
+        )
+
+        console.log(subaccountsList)
+        return subaccountsList
+    }
 }
 
 export default TokenUtils;

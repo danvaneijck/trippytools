@@ -276,11 +276,6 @@ export const TOKENS = [
 
 export const NFT_COLLECTIONS = [
     {
-        value: "inj1648ta60d4hk8pmmhvh25cte869tzwlg0n6uemd",
-        label: "TheMorcs",
-        img: "https://talis-protocol.mo.cloudinary.net/inj/families/6632a4855ea764ca9c858ba0/miniaturePicture"
-    },
-    {
         value: "inj1047jye6gwds2xu7f9qzuwqfjduvjnqt3daf5cy",
         label: "Cheebee",
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/65d28a8fd2929a9d57a2cb36/miniaturePicture"

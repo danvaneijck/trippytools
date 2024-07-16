@@ -56,9 +56,9 @@ const Home = () => {
                     manage tokens
                 </Link>
 
-                <Link to="/sushi-tool" className="font-bold hover:underline mx-5">
+                {/* <Link to="/sushi-tool" className="font-bold hover:underline mx-5">
                     sushi tool
-                </Link>
+                </Link> */}
             </div>
             <div className="m-2">
                 <ConnectKeplr />
@@ -75,7 +75,7 @@ const Home = () => {
             <div className='flex-grow'>
                 <div className='flex justify-center'>
                     <div className='mt-2 text-center py-4  md:w-1/2 rounded-xl p-2 mb-2 bg-gradient-to-br from-transparent to-black mx-2'>
-                        <div className='text-xl md:text-2xl'>Building tools for the community</div>
+                        <div className='text-xl md:text-2xl'>Community token tools</div>
 
                         <a href='https://discord.gg/Nnz34jzA5T' >
                             <div className='flex flex-row mt-2 text-sm items-center justify-center  w-auto rounded-lg hover:font-bold'>
@@ -101,29 +101,45 @@ const Home = () => {
                         </Link>
                         <Link to="/manage-tokens">
                             <div className='mt-2 text-sm hover:font-bold'>
-                                Create and airdrop token factory tokens
+                                Create and manage token factory tokens
                             </div>
                         </Link>
-                        <Link to="/mycelium-farm" className='flex flex-row justify-center items-center mt-5'>
+                        <Link to="/airdrop">
+                            <div className='mt-2 text-lg hover:font-bold'>
+                                Do Airdrops !
+                            </div>
+                        </Link>
+                        {/* <Link to="/mycelium-farm" className='flex flex-row justify-center items-center mt-5'>
                             <GiFarmer className='text-2xl' />
                             <div className='mt-2 text-sm hover:font-bold ml-2'>
                                 Farm mycelium
                             </div>
                             <img src={myceliumLogo} style={{ borderRadius: '50%', width: 30 }} className="animate-3dspin ml-2" alt="Spinning Image" />
 
-                        </Link>
+                        </Link> */}
                         <a href='https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl' >
-                            <div className='flex flex-row mt-5 text-sm items-center justify-center p-2 w-auto rounded-lg hover:font-bold'>
+                            <div className='flex flex-row mt-5 text-sm items-center justify-center px-2 w-auto rounded-lg hover:font-bold'>
                                 <img src={shroom} style={{ borderRadius: '50%', width: 40, height: 40 }} className="animate-3dspin mr-2" alt="Spinning Image" />
                                 Trade shroom on Coinhall
                             </div>
                         </a>
-                        <a href='https://coinhall.org/injective/inj1rusfnzgtcvkn8z92h9hyvzuna60tc0x0yy74tf' >
+                        <a href='https://helixapp.com/spot/?marketId=0xc6b6d6627aeed8b9c29810163bed47d25c695d51a2aa8599fc5e39b2d88ef934' >
+                            <div className='flex flex-row mt-5 text-sm items-center justify-center px-2 w-auto rounded-lg hover:font-bold'>
+                                <img src={shroom} style={{ borderRadius: '50%', width: 40, height: 40 }} className="animate-3dspin mr-2" alt="Spinning Image" />
+                                Trade shroom on Helix
+                            </div>
+                        </a>
+                        <a href='https://helixapp.com/spot/?marketId=0xc6b6d6627aeed8b9c29810163bed47d25c695d51a2aa8599fc5e39b2d88ef934' >
+                            <div className='flex flex-row mt-5 text-sm items-center justify-center px-2 w-auto rounded-lg hover:font-bold'>
+                                View Mito vault
+                            </div>
+                        </a>
+                        {/* <a href='https://coinhall.org/injective/inj1rusfnzgtcvkn8z92h9hyvzuna60tc0x0yy74tf' >
                             <div className='flex flex-row text-sm items-center justify-center p-2 w-auto rounded-lg  hover:font-bold'>
                                 <img src={spore} style={{ borderRadius: '50%', width: 40, height: 40 }} className="animate-3dspin mr-2" alt="Spinning Image" />
                                 Trade spore on Coinhall
                             </div>
-                        </a>
+                        </a> */}
 
                     </div>
                 </div>
