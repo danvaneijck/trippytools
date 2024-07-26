@@ -129,7 +129,7 @@ const Home = () => {
                                 Trade shroom on Helix
                             </div>
                         </a>
-                        <a href='https://helixapp.com/spot/?marketId=0xc6b6d6627aeed8b9c29810163bed47d25c695d51a2aa8599fc5e39b2d88ef934' >
+                        <a href='https://mito.fi/vault/inj1g89dl74lyre9q6rjua9l37pcc7psnw66capurp/' >
                             <div className='flex flex-row mt-5 text-sm items-center justify-center px-2 w-auto rounded-lg hover:font-bold'>
                                 View Mito vault
                             </div>

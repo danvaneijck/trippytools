@@ -339,26 +339,35 @@ class TokenUtils {
     }
 
     async getDenomExtraMetadata(denom: string) {
-        const data = await this.chainGrpcBankApi.fetchDenomMetadata(denom);
-        const matchingDenomUnit = data.denomUnits.find(
-            (unit) => unit.denom === data.display
-        );
+        console.log("get extra meta")
+        try {
+            const data = await this.chainGrpcBankApi.fetchDenomMetadata(denom);
+            const matchingDenomUnit = data.denomUnits.find(
+                (unit) => unit.denom === data.display
+            );
 
-        const supply = await this.chainGrpcBankApi.fetchSupplyOf(denom);
-        const admin = await this.chainGrpcTokenFactoryApi.fetchDenomAuthorityMetadata(denom.split("/")[1], denom.split("/")[2])
+            const supply = await this.chainGrpcBankApi.fetchSupplyOf(denom);
+            const admin = await this.chainGrpcTokenFactoryApi.fetchDenomAuthorityMetadata(denom.split("/")[1], denom.split("/")[2])
 
-        const tokenInfo: TokenInfo = {
-            name: data.name,
-            denom: denom,
-            symbol: data.symbol,
-            decimals: matchingDenomUnit ? matchingDenomUnit.exponent : 0,
-            total_supply: Number(supply.amount),
-            description: data.description,
-            logo: data.uri,
-            admin: admin.admin
-        };
+            const tokenInfo: TokenInfo = {
+                name: data.name,
+                denom: denom,
+                symbol: data.symbol,
+                decimals: matchingDenomUnit ? matchingDenomUnit.exponent : 0,
+                total_supply: Number(supply.amount),
+                description: data.description,
+                logo: data.uri,
+                admin: admin.admin
+            };
 
-        return tokenInfo;
+            console.log(tokenInfo)
+
+            return tokenInfo;
+        } catch (error) {
+            console.error('Error fetching denom extra metadata:', error);
+            return {}
+        }
+
     }
 
     async getCW20Balances(tokenAddress: string) {

@@ -12,8 +12,11 @@ import TokenSelect from "../../components/Inputs/TokenSelect";
 import { CW404_TOKENS, NFT_COLLECTIONS, TOKENS } from "../../constants/contractAddresses";
 import { CSVLink } from 'react-csv';
 import HoldersChart from "../../components/App/HoldersChart";
+import { MdWarning } from "react-icons/md";
 
 const INJ_CW20_ADAPTER = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
+const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
+const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
 
 const TokenHolders = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -356,8 +359,8 @@ const TokenHolders = () => {
                                     <div className="font-bold">address: {tokenInfo.denom}</div>
                                     <div>name: {tokenInfo.name}</div>
                                     <div>symbol: {tokenInfo.symbol}</div>
-                                    {tokenInfo.decimals && <div>decimals: {tokenInfo.decimals}</div>}
-                                    {tokenInfo.description && <div>description: {tokenInfo.description}</div>}
+                                    {tokenInfo.decimals !== null && <div>decimals: {tokenInfo.decimals}</div>}
+                                    {tokenInfo.description && tokenInfo.description.length > 0 && <div>description: {tokenInfo.description}</div>}
                                     {tokenInfo.total_supply && (
                                         <div>
                                             total supply:{" "}
@@ -367,23 +370,32 @@ const TokenHolders = () => {
                                     )}
                                 </div>
                             )}
-                            {!pairMarketing && tokenInfo && tokenInfo.logo && (
+                            {!pairMarketing && tokenInfo && (
                                 <div className="mt-5 text-sm text-white">
-                                    <IPFSImage
-                                        width={100}
-                                        className={'mb-2 rounded-lg'}
-                                        ipfsPath={tokenInfo.logo}
-                                    />
-                                    <a href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}explorer.injective.network/account/${tokenInfo.admin}`}>
-                                        admin: {tokenInfo.admin.slice(0, 5) + '...' + tokenInfo.admin.slice(-5)}
-                                        {
-                                            WALLET_LABELS[tokenInfo.admin] ? (
-                                                <span className={`${WALLET_LABELS[tokenInfo.admin].bgColor} ${WALLET_LABELS[tokenInfo.admin].textColor} ml-2`}>
-                                                    {WALLET_LABELS[tokenInfo.admin].label}
-                                                </span>
-                                            ) : null
-                                        }
-                                    </a>
+                                    {tokenInfo.logo &&
+                                        <IPFSImage
+                                            width={100}
+                                            className={'mb-2 rounded-lg'}
+                                            ipfsPath={tokenInfo.logo}
+                                        />
+                                    }
+                                    {tokenInfo.admin &&
+                                        <a href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}explorer.injective.network/account/${tokenInfo.admin}`}>
+                                            admin: {tokenInfo.admin.slice(0, 5) + '...' + tokenInfo.admin.slice(-5)}
+                                            {
+                                                WALLET_LABELS[tokenInfo.admin] ? (
+                                                    <span className={`${WALLET_LABELS[tokenInfo.admin].bgColor} ${WALLET_LABELS[tokenInfo.admin].textColor} ml-2`}>
+                                                        {WALLET_LABELS[tokenInfo.admin].label}
+                                                    </span>
+                                                ) : null
+                                            }
+
+                                        </a>
+                                    }
+
+                                    {tokenInfo.admin !== dojoBurnAddress && tokenInfo.admin !== injBurnAddress &&
+                                        <div className="text-red-500 flex flex-row items-center">admin can mint more supply <MdWarning className="ml-2" /></div>
+                                    }
                                 </div>
                             )}
                             {pairMarketing && pairMarketing.logo && (
@@ -397,7 +409,9 @@ const TokenHolders = () => {
                                     <div>project: {pairMarketing.project}</div>
                                     <div>description: {pairMarketing.description}</div>
                                     <div>
-                                        marketing: {pairMarketing.marketing}
+                                        marketing: <a href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}explorer.injective.network/account/${pairMarketing.marketing}`}>
+                                            {pairMarketing.marketing.slice(0, 5) + '...' + pairMarketing.marketing.slice(-5)}
+                                        </a>
                                         {
                                             WALLET_LABELS[pairMarketing.marketing] ? (
                                                 <span className={`${WALLET_LABELS[pairMarketing.marketing].bgColor} ${WALLET_LABELS[pairMarketing.marketing].textColor} ml-2`}>
