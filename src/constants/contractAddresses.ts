@@ -183,6 +183,21 @@ export const TOKENS = [
         img: "https://cloudflare-ipfs.com/ipfs/QmcWQeL2podyWSZFEpGLUfgPgeGopM49pV8c97vHbwswkH/myceliumlogo.JPG"
     },
     {
+        value: "factory/inj1a6xdezq7a94qwamec6n6cnup02nvewvjtz6h6e/SYN",
+        label: "SYN",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcosmos%2Fchain-registry%2Fmaster%2Finjective%2Fimages%2Fsyn.png&n=-1&w=64&h=64"
+    },
+    {
+        value: "inj1mgts7d5c32w6aqr8h9f5th08x0p4jaya2tp4zp",
+        label: "SUPERMARIO",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fwww.smariotoken.com%2Fsmario_logo.png&n=-1&w=64&h=64"
+    },
+    {
+        value: "inj1h8yjr8ely8q8r8rlvs2zx0pmty70ajy4ud6l0y",
+        label: "LUIGI",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fwww.smariotoken.com%2FSM_Luigi.png&n=-1&w=64&h=64"
+    },
+    {
         value: "factory/inj10pz3xq7zf8xudqxaqealgyrnfk66u3c99ud5m2/SMELLY",
         label: "SMELLY",
         img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
@@ -270,7 +285,7 @@ export const TOKENS = [
     {
         value: "factory/inj1q4z7jjxdk7whwmkt39x7krc49xaqapuswhjhkn/boys",
         label: "BOYS",
-        img: "https://emerald-total-gamefowl-966.mypinata.cloud/ipfs/QmcboHz22kYJB5N2i9my9NjMUJzH3Zf1UyXb4APs5kx2Vh"
+        img: "https://wsrv.nl/?url=https%3A%2F%2Femerald-total-gamefowl-966.mypinata.cloud%2Fipfs%2FQmcboHz22kYJB5N2i9my9NjMUJzH3Zf1UyXb4APs5kx2Vh&n=-1&w=64&h=64"
     }
 ]
 

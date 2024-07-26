@@ -49,7 +49,7 @@ const Airdrop = () => {
     const [limitSwitch, setLimitSwitch] = useState(false)
     const [walletLimit, setWalletLimit] = useState(0)
 
-    const [shroomCost, setShroomCost] = useState(100000)
+    const [shroomCost, setShroomCost] = useState(200000)
     const [shroomPrice, setShroomPrice] = useState(null)
 
     const [dropMode, setDropMode] = useState("TOKEN");
@@ -740,7 +740,7 @@ const Airdrop = () => {
                                                 <div className="flex flex-row  justify-between">
                                                     <div className="flex flex-row" onClick={() => {
                                                         setDropMode("NFT")
-                                                        setShroomCost(100000)
+                                                        setShroomCost(200000)
                                                         setAirdropDetails([])
                                                         setNftCollectionInfo(null)
                                                     }}>
@@ -751,7 +751,7 @@ const Airdrop = () => {
                                                                 setDropMode("NFT")
                                                                 setAirdropDetails([])
                                                                 setNftCollectionInfo(null)
-                                                                setShroomCost(100000)
+                                                                setShroomCost(200000)
                                                             }}
                                                             checked={dropMode == "NFT"}
                                                         />
@@ -763,7 +763,7 @@ const Airdrop = () => {
                                                     </div>
                                                     <div className="flex flex-row" onClick={() => {
                                                         setDropMode("TOKEN")
-                                                        setShroomCost(100000)
+                                                        setShroomCost(200000)
                                                         setAirdropDetails([])
                                                     }}>
                                                         <input
@@ -772,7 +772,7 @@ const Airdrop = () => {
                                                             onChange={() => {
                                                                 setDropMode("TOKEN")
                                                                 setAirdropDetails([])
-                                                                setShroomCost(100000)
+                                                                setShroomCost(200000)
                                                             }}
                                                             checked={dropMode == "TOKEN"}
                                                         />
@@ -806,7 +806,7 @@ const Airdrop = () => {
                                                     <div className="flex flex-row" onClick={() => {
                                                         setDropMode("GOV")
                                                         setAirdropDetails([])
-                                                        setShroomCost(100000)
+                                                        setShroomCost(200000)
                                                     }}>
                                                         <input
                                                             type="checkbox"
@@ -814,7 +814,7 @@ const Airdrop = () => {
                                                             onChange={() => {
                                                                 setDropMode("GOV")
                                                                 setAirdropDetails([])
-                                                                setShroomCost(100000)
+                                                                setShroomCost(200000)
                                                             }}
                                                             checked={dropMode == "GOV"}
                                                         />
