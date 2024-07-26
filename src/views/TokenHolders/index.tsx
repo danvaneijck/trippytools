@@ -321,12 +321,12 @@ const TokenHolders = () => {
                             <TokenSelect
                                 options={[
                                     {
-                                        label: "CW404",
-                                        options: CW404_TOKENS
-                                    },
-                                    {
                                         label: "TOKENS",
                                         options: TOKENS
+                                    },
+                                    {
+                                        label: "CW404",
+                                        options: CW404_TOKENS
                                     },
                                     {
                                         label: "NFT",
