@@ -54,7 +54,9 @@ const AirdropHistory = () => {
                     <Link to="/" className="ml-5 font-bold hover:underline mr-5">
                         home
                     </Link>
-
+                    <Link to="/airdrop" className="font-bold hover:underline">
+                        do airdrop
+                    </Link>
                 </div>
                 <div className="m-2">
                     <ConnectKeplr />
@@ -62,23 +64,37 @@ const AirdropHistory = () => {
             </header>
             <div className="pt-14 mx-2 pb-20">
                 {currentNetwork == "mainnet" && <div className="mt-2 md:mt-0"><ShroomBalance /></div>}
+
                 <div className="flex justify-center items-center min-h-full mt-2 md:mt-0">
                     <div className="px-2 text-white">
+
                         <div className="text-white text-lg">Airdrop History</div>
+                        <div className="flex flex-row justify-end">
+                            <Link to="/airdrop" className="bg-slate-800 p-2 mt-2 rounded  text-sm">
+                                Do airdrop
+                            </Link>
+                        </div>
+
                         {airdropData.length > 0 && airdropData.map((value, index) => {
                             return <div className="my-2 bg-slate-800 p-2 rounded-lg" key={index}>
 
                                 <div className="flex flex-row items-center">
                                     <PiParachute className="mr-2 text-2xl" />
+                                    {moment(value.time).fromNow()}
 
-                                    {moment(value.time).fromNow()} by {value.wallet.address.slice(-5)}
                                 </div>
+                                <a
+                                    className="hover:text-indigo-900"
+                                    href={`https://explorer.injective.network/account/${value.wallet.address}`}
+                                >
+                                    performed by wallet: {value.wallet.address.slice(-5)}
+                                </a>
                                 <div><b>token dropped:</b> {value.token.symbol}</div>
-                                <div><b>participants</b> {value.total_participants}</div>
+                                <div><b>participants:</b> {value.total_participants}</div>
 
-                                <b>criteria:</b> {value.criteria}
+                                {value.criteria}
                                 <br />
-                                <b>description:</b> {value.description}
+                                {value.description}
 
                             </div>
                         })}

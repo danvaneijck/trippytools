@@ -296,9 +296,9 @@ export const NFT_COLLECTIONS = [
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/65d28a8fd2929a9d57a2cb36/miniaturePicture"
     },
     {
-        value: "inj1a9up8fter50nrfpsdn7epdmdk2kjlhlk0fj9m5",
-        label: "Wizard DAO",
-        img: "https://talis-protocol.mo.cloudinary.net/inj/families/65b3b3d1e6b67bb48e29fbf2/miniaturePicture"
+        value: "inj1mp8r8jy4cefgw4l0wtw9ahdnu9yv7nl6mqqkju",
+        label: "Cult of Anons",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/66a3b86115d80bec72a7ff32/miniaturePicture"
     },
     {
         value: "inj19ly43dgrr2vce8h02a8nw0qujwhrzm9yv8d75c",
@@ -359,7 +359,12 @@ export const NFT_COLLECTIONS = [
         value: "inj1al52xc734m23xxjlee28m9mjjcpfuen38che4q",
         label: "NAPEJAS",
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/65e75806add77a2a935e81e2/miniaturePicture"
-    }
+    },
+    {
+        value: "inj1a9up8fter50nrfpsdn7epdmdk2kjlhlk0fj9m5",
+        label: "Wizard DAO",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/65b3b3d1e6b67bb48e29fbf2/miniaturePicture"
+    },
 ]
 
 export const CW404_TOKENS = [
