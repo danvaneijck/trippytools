@@ -115,9 +115,12 @@ const Airdrop = () => {
             descriptionUpdate = `Drop of ${totalToDrop} ${tokenInfo.symbol} to custom list of participants`
         }
         else if (dropMode == "GOV") {
-            criteriaUpdate = filterByVote ? `${Object.keys(voteFilters).filter(key => obj[key])} voters on proposal ${proposalNumber}` : `All voters on proposal ${proposalNumber}`
+            criteriaUpdate = filterByVote ? `${Object.keys(voteFilters).filter(key => voteFilters[key])} voters on proposal ${proposalNumber}` : `All voters on proposal ${proposalNumber}`
             descriptionUpdate = `Drop of ${totalToDrop} ${tokenInfo.symbol} to voters on proposal ${proposalNumber}`
         }
+
+        console.log(criteriaUpdate)
+        console.log(descriptionUpdate)
 
         setCriteria(criteriaUpdate)
         setDescription(descriptionUpdate)
@@ -522,15 +525,17 @@ const Airdrop = () => {
                 complete: (results) => {
                     console.log(results)
                     let totalToDrop = 0
-                    results.data.map((holder) => {
+                    results.data.filter(a => a.address && a.amount).map((holder) => {
                         totalToDrop += Number(holder.amount)
                     })
-                    const airdropData = results.data.map(holder => ({
-                        address: holder.address,
-                        amountToAirdrop: holder.amount.trim(),
-                        percentToAirdrop: (Number(holder.amount) / totalToDrop) * 100,
-                        includeInDrop: true
-                    }));
+                    const airdropData = results.data.filter(a => a.address && a.amount).map(holder => {
+                        return {
+                            address: holder.address,
+                            amountToAirdrop: holder.amount.trim(),
+                            percentToAirdrop: (Number(holder.amount) / totalToDrop) * 100,
+                            includeInDrop: true
+                        }
+                    });
 
                     setAirdropDetails(airdropData)
                 },
