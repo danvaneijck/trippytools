@@ -36,7 +36,9 @@ mutation insertAirdropLog (
     $participants: [airdrop_tracker_airdroplog_participants_insert_input!]!, 
     $criteria: String, 
     $description: String, 
-    $total_participants: Int!
+    $total_participants: Int!,
+    $tx_hashes: String,
+    $fee: float8
     ) {
   insert_airdrop_tracker_airdroplog_one(object: {
     time: $time, 
@@ -46,7 +48,9 @@ mutation insertAirdropLog (
     criteria: $criteria, 
     description: $description, 
     total_participants: $total_participants, 
-    participants: {data: $participants}
+    participants: {data: $participants},
+    tx_hashes: $tx_hashes,
+    fee: $fee
     }) {
     id
   }
@@ -176,6 +180,8 @@ const AirdropConfirmModal = (props: {
 
         const successfullyProcessed = new Set();
 
+        const transactions = []
+
         for (const chunk of chunks) {
             let retries = 3;
             let success = false;
@@ -252,9 +258,10 @@ const AirdropConfirmModal = (props: {
                         gas: calculatedGas.toString()
                     };
 
-                    await handleSendTx(pubKey, msg, injectiveAddress, offlineSigner, gas);
+                    const response = await handleSendTx(pubKey, msg, injectiveAddress, offlineSigner, gas);
                     filteredChunk.forEach(record => successfullyProcessed.add(record.address));
                     success = true;
+                    transactions.push(response.txHash)
                 } catch (error) {
                     console.error("Transaction failed, retrying...", error);
                     retries -= 1;
@@ -266,6 +273,7 @@ const AirdropConfirmModal = (props: {
                 throw new Error("Failed to send airdrop after multiple retries");
             }
         }
+        return transactions
     }, [getKeplr, handleSendTx, props.tokenDecimals]);
 
 
@@ -299,49 +307,54 @@ const AirdropConfirmModal = (props: {
             }
             console.log("airdrop")
             setProgress("Send airdrops")
-            await sendAirdrops(props.tokenAddress, props.tokenDecimals, props.airdropDetails)
+            const txHashes = await sendAirdrops(props.tokenAddress, props.tokenDecimals, props.airdropDetails)
             setProgress("Done...")
+            console.log(txHashes)
 
             if (currentNetwork == "mainnet") await sendTelegramMessage(
                 `wallet ${connectedAddress} performed an airdrop on trippyinj!\ntoken dropped: ${props.tokenAddress}\n` +
                 `num participants: ${props.airdropDetails ? props.airdropDetails.filter(record => (Number(Number(record.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0)).length : "n/a"}`)
 
-            try {
-                await insertWallets({
-                    variables: {
-                        objects: props.airdropDetails.map(wallet => ({
-                            address: wallet.address,
-                            burn_address: false
-                        }))
-                    }
-                })
+            if (currentNetwork == "mainnet") {
+                try {
+                    await insertWallets({
+                        variables: {
+                            objects: props.airdropDetails.map(wallet => ({
+                                address: wallet.address,
+                                burn_address: false
+                            }))
+                        }
+                    })
 
-                insertAirdropLog({
-                    variables: {
-                        "time": moment(),
-                        "token_dropped_id": props.tokenAddress,
-                        "wallet_id": connectedAddress,
-                        "amount_dropped": props.airdropDetails.reduce((sum, airdrop) => sum + Number(airdrop.amountToAirdrop), 0),
-                        "total_participants": props.airdropDetails.filter(record => (Number(Number(record.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0)).length,
-                        "participants": props.airdropDetails.filter(record => (Number(Number(record.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0)).map((wallet) => {
-                            return {
-                                "wallet_id": wallet.address
-                            }
-                        }),
-                        "criteria": props.criteria,
-                        "description": props.description
-                    }
-                }).then(r => {
-                    console.log(r)
-                }).catch(e => {
-                    console.log("failed to insert airdrop log", e)
-                })
-            }
-            catch (e) {
-                console.log(e)
+                    insertAirdropLog({
+                        variables: {
+                            "time": moment(),
+                            "token_dropped_id": props.tokenAddress,
+                            "wallet_id": connectedAddress,
+                            "amount_dropped": props.airdropDetails.reduce((sum, airdrop) => sum + Number(airdrop.amountToAirdrop), 0),
+                            "total_participants": props.airdropDetails.filter(record => (Number(Number(record.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0)).length,
+                            "participants": props.airdropDetails.filter(record => (Number(Number(record.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0)).map((wallet) => {
+                                return {
+                                    "wallet_id": wallet.address
+                                }
+                            }),
+                            "criteria": props.criteria,
+                            "description": props.description,
+                            "tx_hashes": txHashes.join(","),
+                            "fee": props.shroomCost.toString()
+                        }
+                    }).then(r => {
+                        console.log(r)
+                    }).catch(e => {
+                        console.log("failed to insert airdrop log", e)
+                    })
+                }
+                catch (e) {
+                    console.log(e)
+                }
             }
 
-            navigate('/token-holders?address=' + props.tokenAddress);
+            navigate('/airdrop-history');
         }
     }, [props.airdropDetails, props.shroomCost, props.tokenAddress, props.tokenDecimals, feePayed, currentNetwork, sendAirdrops, connectedAddress, navigate, payFee, insertAirdropLog, props.criteria, props.description, insertWallets])
 

@@ -39,7 +39,7 @@ const Airdrop = () => {
     const currentNetwork = useSelector(state => state.network.currentNetwork);
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
 
-    const [tokenAddress, setTokenAddress] = useState(TOKENS[0]);
+    const [tokenAddress, setTokenAddress] = useState(null);
     const [tokenInfo, setTokenInfo] = useState(null);
     const [pairMarketing, setPairMarketing] = useState<MarketingInfo | null>(null);
 
@@ -55,7 +55,7 @@ const Airdrop = () => {
     const [dropMode, setDropMode] = useState("TOKEN");
     const [nftCollection, setNftCollection] = useState(NFT_COLLECTIONS[0]);
     const [nftCollectionInfo, setNftCollectionInfo] = useState(null);
-    const [airdropTokenAddress, setAirdropTokenAddress] = useState(LIQUIDITY_TOKENS[0]);
+    const [airdropTokenAddress, setAirdropTokenAddress] = useState(TOKENS[0]);
     const [airdropTokenInfo, setAirdropTokenInfo] = useState(null);
 
     const [airdropDetails, setAirdropDetails] = useState([]);
@@ -642,12 +642,18 @@ const Airdrop = () => {
                                 <div>
 
                                     <div className="text-center text-white mb-2">
-                                        <div className="text-base font-bold">
+                                        <div className="text-lg font-bold">
                                             New Airdrop
                                         </div>
                                         <div className="text-xs">on Injective {currentNetwork}</div>
                                     </div>
+
                                     <div className="">
+                                        <Link to="/airdrop-history" >
+                                            <div className="mt-2 bg-slate-800 p-2 my-4 rounded text-center text-sm w-1/2 mx-auto">
+                                                View airdrop history
+                                            </div>
+                                        </Link>
 
                                         <label
                                             className="font-bold text-sm text-white mb-1"
@@ -1080,13 +1086,14 @@ const Airdrop = () => {
                                                         <TokenSelect
                                                             options={[
                                                                 {
+                                                                    label: "Tokens",
+                                                                    options: TOKENS
+                                                                },
+                                                                {
                                                                     label: "LIQUIDITY tokens",
                                                                     options: LIQUIDITY_TOKENS
                                                                 },
-                                                                {
-                                                                    label: "Tokens",
-                                                                    options: TOKENS
-                                                                }
+
                                                             ]}
                                                             selectedOption={airdropTokenAddress}
                                                             setSelectedOption={setAirdropTokenAddress}
@@ -1676,6 +1683,7 @@ const Airdrop = () => {
                                         alt="airdrop"
                                     />
                                     <div>Please connect wallet to plan a new airdrop</div>
+                                    <Link to="/airdrop-history" ><div className="mt-2 bg-slate-800 p-2 mt-2 rounded  text-sm">View airdrop history</div></Link>
                                 </div>
                             }
                             {error && <div className="text-red-500 mt-2">
