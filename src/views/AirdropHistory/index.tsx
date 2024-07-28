@@ -16,6 +16,8 @@ query getAirdropHistory {
     criteria
     description
     time
+    fee
+    tx_hashes
     token {
       address
       name
@@ -29,13 +31,31 @@ query getAirdropHistory {
 }
 `
 
+function humanReadableAmount(number) {
+    if (!number) {
+        return 0
+    }
+    const units = ["", "k", "m", "b", "t"];
+    let unitIndex = 0;
+
+    while (number >= 1000 && unitIndex < units.length - 1) {
+        number /= 1000;
+        unitIndex++;
+    }
+
+    return `${number.toFixed(number >= 10 ? 0 : 2)}${units[unitIndex]}`;
+}
+
 const AirdropHistory = () => {
     const connectedAddress = useSelector(state => state.network.connectedAddress);
 
     const currentNetwork = useSelector(state => state.network.currentNetwork);
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
 
-    const { data, loading } = useQuery(AIRDROP_HISTORY_QUERY)
+    const { data, loading } = useQuery(AIRDROP_HISTORY_QUERY, {
+        fetchPolicy: "network-only",
+        pollInterval: 5000
+    })
 
     const [airdropData, setAirdropData] = useState([])
 
@@ -76,7 +96,7 @@ const AirdropHistory = () => {
                         </div>
 
                         {airdropData.length > 0 && airdropData.map((value, index) => {
-                            return <div className="my-2 bg-slate-800 p-2 rounded-lg" key={index}>
+                            return <div className="my-2 bg-slate-800 p-4 rounded-lg text-sm" key={index}>
 
                                 <div className="flex flex-row items-center">
                                     <PiParachute className="mr-2 text-2xl" />
@@ -84,18 +104,30 @@ const AirdropHistory = () => {
 
                                 </div>
                                 <a
-                                    className="hover:text-indigo-900"
                                     href={`https://explorer.injective.network/account/${value.wallet.address}`}
                                 >
-                                    performed by wallet: {value.wallet.address.slice(-5)}
+                                    performed by wallet: <span className="text-indigo-300 hover:text-indigo-900">{value.wallet.address.slice(0, 8)}...{value.wallet.address.slice(-8)}</span>
                                 </a>
-                                <div><b>token dropped:</b> {value.token.symbol}</div>
-                                <div><b>participants:</b> {value.total_participants}</div>
+                                <div className="text-lg"><b>token dropped:</b> {value.token.symbol}</div>
+                                <div className="text-lg"><b>participants:</b> {value.total_participants}</div>
 
-                                {value.criteria}
-                                <br />
-                                {value.description}
+                                <div className="text-lg">{value.criteria}
+                                    <br />
+                                    {value.description}
+                                </div>
+                                TX hashes:
+                                {value.tx_hashes.split(",").map((value, index) => {
+                                    return <a
+                                        className="hover:text-indigo-900 text-indigo-300"
+                                        href={`https://explorer.injective.network/transaction/${value}`}
+                                    >
+                                        <div className="text-sm" key={index}>
+                                            explorer.injective.network/transaction/{value.slice(0, 10)}...
+                                        </div>
+                                    </a>
 
+                                })}
+                                <div className="text-sm flex flex-row justify-end mt-2">fee: {humanReadableAmount(value.fee)} SHROOM</div>
                             </div>
                         })}
                     </div>
