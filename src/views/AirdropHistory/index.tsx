@@ -85,7 +85,7 @@ const AirdropHistory = () => {
             <div className="pt-14 mx-2 pb-20">
                 {currentNetwork == "mainnet" && <div className="mt-2 md:mt-0"><ShroomBalance /></div>}
 
-                <div className="flex justify-center items-center min-h-full mt-2 md:mt-0">
+                <div className="min-h-full mt-2 md:mt-0 md:w-1/2 mx-auto">
                     <div className="px-2 text-white">
 
                         <div className="text-white text-lg">Airdrop History</div>
@@ -122,7 +122,7 @@ const AirdropHistory = () => {
                                         href={`https://explorer.injective.network/transaction/${value}`}
                                     >
                                         <div className="text-sm" key={index}>
-                                            explorer.injective.network/transaction/{value.slice(0, 10)}...
+                                            explorer.injective.network/transaction/{value.slice(0, 5)}...
                                         </div>
                                     </a>
 

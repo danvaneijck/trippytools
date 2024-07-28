@@ -115,7 +115,7 @@ const Airdrop = () => {
             descriptionUpdate = `Drop of ${totalToDrop} ${tokenInfo.symbol} to custom list of participants`
         }
         else if (dropMode == "GOV") {
-            criteriaUpdate = filterByVote ? `${Object.keys(voteFilters).filter(key => voteFilters[key])} voters on proposal ${proposalNumber}` : `All voters on proposal ${proposalNumber}`
+            criteriaUpdate = filterByVote ? `${Object.keys(voteFilters).filter(key => voteFilters[key])} voters on proposal ${proposalNumber} at ${moment().toISOString()}` : `All voters on proposal ${proposalNumber} at ${moment().toISOString()}`
             descriptionUpdate = `Drop of ${totalToDrop} ${tokenInfo.symbol} to voters on proposal ${proposalNumber}`
         }
 
