@@ -26,7 +26,7 @@ query GetTokens($orderBy: [token_tracker_token_order_by!], $minLiquidity: float8
     circulating_supply
     fdv
     market_cap
-    holder_count:holders_aggregate(where: {wallet: {burn_address: {_eq: false}}}){
+    holder_count: balances_aggregate(where: {wallet: {burn_address: {_eq: false}}}){
       aggregate{
         count
       }
@@ -241,6 +241,7 @@ const TokenScanner = () => {
           <img src={serverDownImg} width={200} />
 
           <p className='text-center mt-2'>dev is devvin'</p>
+          <p>{error.message}</p>
         </div>
 
       </div> : <div className="flex justify-center">

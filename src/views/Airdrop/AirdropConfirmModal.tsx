@@ -21,9 +21,48 @@ import { useNavigate } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
 import { WALLET_LABELS } from "../../constants/walletLabels";
 import { sendTelegramMessage } from "../../modules/telegram";
+import { gql, useMutation } from '@apollo/client';
+import moment from "moment";
 
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
+
+const INSERT_AIRDROP_MUTATION = gql`
+mutation insertAirdropLog (
+    $time: timestamptz!, 
+    $token_dropped_id: String!, 
+    $wallet_id: String!, 
+    $amount_dropped: float8, 
+    $participants: [airdrop_tracker_airdroplog_participants_insert_input!]!, 
+    $criteria: String, 
+    $description: String, 
+    $total_participants: Int!
+    ) {
+  insert_airdrop_tracker_airdroplog_one(object: {
+    time: $time, 
+    token_dropped_id: $token_dropped_id, 
+    wallet_id: $wallet_id, 
+    amount_dropped: $amount_dropped, 
+    criteria: $criteria, 
+    description: $description, 
+    total_participants: $total_participants, 
+    participants: {data: $participants}
+    }) {
+    id
+  }
+}
+
+`
+
+const INSERT_WALLETS_MUTATION = gql`
+mutation insertWallet($objects: [wallet_tracker_wallet_insert_input!]!) {
+  insert_wallet_tracker_wallet(objects: $objects, on_conflict: {constraint:wallet_tracker_wallet_pkey, update_columns: []}){
+    returning{
+      address
+    }
+  }
+}
+`
 
 const AirdropConfirmModal = (props: {
     airdropDetails: unknown;
@@ -31,6 +70,8 @@ const AirdropConfirmModal = (props: {
     tokenDecimals: number;
     shroomCost: number
     setShowModal: (arg0: boolean) => void;
+    criteria: string;
+    description: string;
 }) => {
 
     const connectedAddress = useSelector(state => state.network.connectedAddress);
@@ -44,6 +85,9 @@ const AirdropConfirmModal = (props: {
     const [error, setError] = useState(null)
 
     const [feePayed, setFeePayed] = useState(false)
+
+    const [insertAirdropLog] = useMutation(INSERT_AIRDROP_MUTATION)
+    const [insertWallets] = useMutation(INSERT_WALLETS_MUTATION)
 
     const getKeplr = useCallback(async () => {
         await window.keplr.enable(networkConfig.chainId);
@@ -262,9 +306,44 @@ const AirdropConfirmModal = (props: {
                 `wallet ${connectedAddress} performed an airdrop on trippyinj!\ntoken dropped: ${props.tokenAddress}\n` +
                 `num participants: ${props.airdropDetails ? props.airdropDetails.filter(record => (Number(Number(record.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0)).length : "n/a"}`)
 
+            try {
+                await insertWallets({
+                    variables: {
+                        objects: props.airdropDetails.map(wallet => ({
+                            address: wallet.address,
+                            burn_address: false
+                        }))
+                    }
+                })
+
+                insertAirdropLog({
+                    variables: {
+                        "time": moment(),
+                        "token_dropped_id": props.tokenAddress,
+                        "wallet_id": connectedAddress,
+                        "amount_dropped": props.airdropDetails.reduce((sum, airdrop) => sum + Number(airdrop.amountToAirdrop), 0),
+                        "total_participants": props.airdropDetails.filter(record => (Number(Number(record.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0)).length,
+                        "participants": props.airdropDetails.filter(record => (Number(Number(record.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0)).map((wallet) => {
+                            return {
+                                "wallet_id": wallet.address
+                            }
+                        }),
+                        "criteria": props.criteria,
+                        "description": props.description
+                    }
+                }).then(r => {
+                    console.log(r)
+                }).catch(e => {
+                    console.log("failed to insert airdrop log", e)
+                })
+            }
+            catch (e) {
+                console.log(e)
+            }
+
             navigate('/token-holders?address=' + props.tokenAddress);
         }
-    }, [props.airdropDetails, props.shroomCost, props.tokenAddress, props.tokenDecimals, feePayed, currentNetwork, sendAirdrops, connectedAddress, navigate, payFee])
+    }, [props.airdropDetails, props.shroomCost, props.tokenAddress, props.tokenDecimals, feePayed, currentNetwork, sendAirdrops, connectedAddress, navigate, payFee, insertAirdropLog, props.criteria, props.description, insertWallets])
 
     return (
         <>
