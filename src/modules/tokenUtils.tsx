@@ -341,6 +341,8 @@ class TokenUtils {
     async getDenomExtraMetadata(denom: string) {
         console.log("get extra meta")
         try {
+            const test = await this.getDenomMetadata(denom)
+            console.log(test)
             const data = await this.chainGrpcBankApi.fetchDenomMetadata(denom);
             const matchingDenomUnit = data.denomUnits.find(
                 (unit) => unit.denom === data.display

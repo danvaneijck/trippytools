@@ -69,6 +69,9 @@ const Airdrop = () => {
     const [proposalVoters, setProposalVoters] = useState()
     const [filterByVote, setFilterByVote] = useState(false)
 
+    const [criteria, setCriteria] = useState("")
+    const [description, setDescription] = useState("")
+
     const [voteFilters, setVoteFilters] = useState({
         "VOTE_OPTION_YES": true,
         "VOTE_OPTION_ABSTAIN": true,
@@ -93,6 +96,32 @@ const Airdrop = () => {
         updateAirdropAmounts(newDetails, dist, walletLimit, balance);
         setAirdropDetails(newDetails);
     }
+
+    const updateDescription = useCallback(() => {
+        let criteriaUpdate = ""
+        let descriptionUpdate = ""
+        const totalToDrop = airdropDetails.reduce((sum, airdrop) => sum + Number(airdrop.amountToAirdrop), 0).toFixed(2)
+
+        if (dropMode == "TOKEN") {
+            criteriaUpdate = `Holders of ${airdropTokenInfo.symbol} token at ${moment().toISOString()}`
+            descriptionUpdate = `${distMode} drop of ${totalToDrop} ${tokenInfo.symbol} to holders of ${airdropTokenInfo.symbol} token`
+        }
+        else if (dropMode == "NFT") {
+            criteriaUpdate = `Holders of ${nftCollectionInfo.symbol} NFTs at ${moment().toISOString()}`
+            descriptionUpdate = `${distMode} drop of ${totalToDrop} ${tokenInfo.symbol} to holders of ${nftCollectionInfo.symbol} NFTs`
+        }
+        else if (dropMode == "CSV") {
+            criteriaUpdate = `Custom CSV airdrop file upload`
+            descriptionUpdate = `Drop of ${totalToDrop} ${tokenInfo.symbol} to custom list of participants`
+        }
+        else if (dropMode == "GOV") {
+            criteriaUpdate = filterByVote ? `${Object.keys(voteFilters).filter(key => obj[key])} voters on proposal ${proposalNumber}` : `All voters on proposal ${proposalNumber}`
+            descriptionUpdate = `Drop of ${totalToDrop} ${tokenInfo.symbol} to voters on proposal ${proposalNumber}`
+        }
+
+        setCriteria(criteriaUpdate)
+        setDescription(descriptionUpdate)
+    }, [dropMode, distMode, voteFilters, filterByVote, airdropDetails, tokenInfo, airdropTokenInfo, nftCollectionInfo, proposalNumber])
 
     async function fetchBlock(height) {
         const baseUrl = 'https://sentry.lcd.injective.network/cosmos/base/tendermint/v1beta1/blocks';
@@ -498,7 +527,7 @@ const Airdrop = () => {
                     })
                     const airdropData = results.data.map(holder => ({
                         address: holder.address,
-                        amountToAirdrop: holder.amount,
+                        amountToAirdrop: holder.amount.trim(),
                         percentToAirdrop: (Number(holder.amount) / totalToDrop) * 100,
                         includeInDrop: true
                     }));
@@ -571,6 +600,8 @@ const Airdrop = () => {
                     tokenDecimals={tokenInfo.decimals}
                     airdropDetails={airdropDetails}
                     shroomCost={shroomCost}
+                    description={description}
+                    criteria={criteria}
                 />
             }
             <div className="flex flex-col min-h-screen pb-10">
@@ -1660,7 +1691,10 @@ const Airdrop = () => {
                                     }
                                     <button
                                         disabled={loading || (error && error.length > 0)}
-                                        onClick={() => setShowConfirm(true)}
+                                        onClick={() => {
+                                            updateDescription()
+                                            setShowConfirm(true)
+                                        }}
                                         className="bg-gray-800 rounded-lg p-2 w-full text-white mt-6 shadow-lg"
                                     >
                                         Confirm details
