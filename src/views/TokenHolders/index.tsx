@@ -353,9 +353,9 @@ const TokenHolders = () => {
                         </div>
                         }
 
-                        <div className="flex flex-col md:flex-row justify-between text-sm">
+                        <div className="flex flex-col md:flex-row justify-between text-sm ">
                             {tokenInfo && (
-                                <div className="mt-5 text-white">
+                                <div className="mt-5 text-white mr-20">
                                     <div className="font-bold">address: {tokenInfo.denom}</div>
                                     <div>name: {tokenInfo.name}</div>
                                     <div>symbol: {tokenInfo.symbol}</div>
