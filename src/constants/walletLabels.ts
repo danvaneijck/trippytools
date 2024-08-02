@@ -9,6 +9,8 @@ const talisMarketPlace = "inj1l9nh9wv24fktjvclc4zgrgyzees7rwdtx45f54"
 const stakedSporeLP = "inj164pyppndppdmazfjrvecajnwcs3hmq06agn4ka"
 const benanceDev = "inj12j0xu6yxufrphl3av5ksjygtpg204h534yxc70"
 const injCw20Adapter = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
+const mirza = "inj1pem9tjvql4zjy32hlp30epz77x5sjuy6qcrck2"
+const eric = "inj1mf54qzss29pyk450lkdpa2rqpn38hzcexfpyac"
 
 export const WALLET_LABELS = {
     ...LIQUIDITY_POOLS.reduce((acc, pool) => {
@@ -61,6 +63,16 @@ export const WALLET_LABELS = {
     },
     [injCw20Adapter]: {
         label: "INJ cw20 adapter",
+        bgColor: "",
+        textColor: "text-green-500"
+    },
+    [mirza]: {
+        label: "@TheMirza",
+        bgColor: "",
+        textColor: "text-green-500"
+    },
+    [eric]: {
+        label: "@ericinjective",
         bgColor: "",
         textColor: "text-green-500"
     }

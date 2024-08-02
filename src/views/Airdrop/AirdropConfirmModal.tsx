@@ -171,9 +171,10 @@ const AirdropConfirmModal = (props: {
             }
         });
 
-        const chunkSize = denom.includes("factory") ? 2000 : 500;
-        const gasPerRecord = denom.includes("factory") ? 20000 : 80000;
+        const chunkSize = denom.includes("factory") ? 500 : 500;
+        const gasPerRecord = denom.includes("factory") ? 40000 : 80000;
         const chunks = [];
+
         for (let i = 0; i < records.length; i += chunkSize) {
             chunks.push(records.slice(i, i + chunkSize));
         }

@@ -168,6 +168,11 @@ export const TOKENS = [
         img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg"
     },
     {
+        value: "factory/inj1l2gcrfr6aenjyt5jddk79j7w5v0twskw6n70y8/PROP420",
+        label: "PROP420",
+        img: "https://bafkreie3eoejlhintbzgo6dk4axgh3jdc7pvbzrbxfg6tj3cb2b5r744xu.ipfs.w3s.link/"
+    },
+    {
         value: "inj14eaxewvy7a3fk948c3g3qham98mcqpm8v5y0dp",
         label: "COKE",
         img: "https://imagedelivery.net/DYKOWp0iCc0sIkF-2e4dNw/9567494c-30d5-41bd-f8b2-35d17709b100/public"
