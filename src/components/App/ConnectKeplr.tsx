@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { useDispatch, useSelector } from 'react-redux';
 import { switchNetwork, setConnectedAddress, clearConnectedAddress } from '../../store/features/network';
 
-const ConnectKeplr = () => {
+const ConnectKeplr = (props: { hideNetwork?: boolean, button?: boolean }) => {
 
     const dispatch = useDispatch();
     const currentNetwork = useSelector(state => state.network.currentNetwork);
@@ -49,10 +49,13 @@ const ConnectKeplr = () => {
                 </div>
             ) : (
                 <div className="text-xs flex flex-row">
-                    <button onClick={() => dispatch(switchNetwork())}>
-                        {currentNetwork}
-                    </button>
-                    <button className="ml-5" onClick={loadKeplr}>
+                    {!props.hideNetwork &&
+                        <button onClick={() => dispatch(switchNetwork())}>
+                            {currentNetwork}
+                        </button>
+                    }
+
+                    <button className={props.button ? "bg-slate-800 items-center justify-center flex p-2 rounded-lg w-full text-base" : "ml-5"} onClick={loadKeplr}>
                         Connect Wallet
                     </button>
                 </div>

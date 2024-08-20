@@ -6,6 +6,7 @@ import ShroomBalance from "../../components/App/ShroomBalance";
 import { gql, useQuery } from '@apollo/client';
 import moment from "moment";
 import { PiParachute } from "react-icons/pi";
+import Footer from "../../components/App/Footer";
 
 
 const AIRDROP_HISTORY_QUERY = gql`
@@ -118,6 +119,7 @@ const AirdropHistory = () => {
                                 TX hashes:
                                 {value.tx_hashes.split(",").map((value, index) => {
                                     return <a
+                                        key={index}
                                         className="hover:text-indigo-900 text-indigo-300"
                                         href={`https://explorer.injective.network/transaction/${value}`}
                                     >
@@ -134,9 +136,7 @@ const AirdropHistory = () => {
                 </div>
             </div>
 
-            <footer className="bg-gray-800 text-white text-xs p-4 fixed bottom-0 left-0 right-0">
-                buy me a coffee: inj1q2m26a7jdzjyfdn545vqsude3zwwtfrdap5jgz
-            </footer>
+            <Footer />
         </div>
     );
 }

@@ -8,6 +8,7 @@ import ViewMarketModal from "./ViewMarketModal";
 import NewMarketModal from "./NewMarketModal";
 import { useSearchParams } from 'react-router-dom';
 import MarketDetails from "./MarketDetails";
+import Footer from "../../components/App/Footer";
 
 
 const BinaryOptionMarkets = () => {
@@ -261,9 +262,7 @@ const BinaryOptionMarkets = () => {
                             </div>
                         </div>
 
-                        <footer className="bg-gray-800 text-white text-xs p-4 fixed bottom-0 left-0 right-0">
-                            buy me a coffee: inj1q2m26a7jdzjyfdn545vqsude3zwwtfrdap5jgz
-                        </footer>
+                        <Footer />
                     </div>
                 </>
             }

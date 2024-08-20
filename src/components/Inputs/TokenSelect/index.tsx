@@ -30,7 +30,7 @@ const TokenSelect = ({ options, selectedOption, setSelectedOption }) => {
     }, [selectedOption]);
 
     return (
-        <div className='token-select-container'>
+        <div className='token-select-container mt-1'>
             {showPasteButton && (
                 <button onClick={handlePaste} className="text-xs bg-slate-700 p-1 rounded shadow-lg mb-1 mt-1">
                     Paste from clipboard

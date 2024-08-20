@@ -12,7 +12,7 @@ import { WALLET_LABELS } from "../../constants/walletLabels";
 import TokenSelect from "../../components/Inputs/TokenSelect";
 import { LIQUIDITY_POOLS } from "../../constants/contractAddresses";
 import { CSVLink } from 'react-csv';
-
+import Footer from "../../components/App/Footer";
 
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
 const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
@@ -341,9 +341,7 @@ const TokenLiquidity = () => {
                 </div>
             </div>
 
-            <footer className="bg-gray-800 text-white text-xs p-4 fixed bottom-0 left-0 right-0">
-                buy me a coffee: inj1q2m26a7jdzjyfdn545vqsude3zwwtfrdap5jgz
-            </footer>
+            <Footer />
         </div>
     );
 };

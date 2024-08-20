@@ -13,6 +13,7 @@ import { CW404_TOKENS, NFT_COLLECTIONS, TOKENS } from "../../constants/contractA
 import { CSVLink } from 'react-csv';
 import HoldersChart from "../../components/App/HoldersChart";
 import { MdWarning } from "react-icons/md";
+import Footer from "../../components/App/Footer";
 
 const INJ_CW20_ADAPTER = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
@@ -606,9 +607,7 @@ const TokenHolders = () => {
                 </div>
             </div>
 
-            <footer className="bg-gray-800 text-white text-xs p-4 fixed bottom-0 left-0 right-0">
-                buy me a coffee: inj1q2m26a7jdzjyfdn545vqsude3zwwtfrdap5jgz
-            </footer>
+            <Footer />
         </div>
     );
 };

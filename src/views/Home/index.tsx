@@ -8,6 +8,7 @@ import { GiFarmer } from 'react-icons/gi';
 import myceliumLogo from "../../assets/mycelium.jpeg"
 import spore from "../../assets/spore.webp"
 import { PiParachute } from 'react-icons/pi';
+import Footer from '../../components/App/Footer';
 
 const Home = () => {
 
@@ -158,9 +159,7 @@ const Home = () => {
                 ></iframe>
             </div>
         </div>
-        <footer className="bg-gray-800 text-white text-xs p-4 fixed bottom-0 left-0 right-0 z-10">
-            buy me a coffee: inj1q2m26a7jdzjyfdn545vqsude3zwwtfrdap5jgz
-        </footer>
+        <Footer />
     </div>
 };
 

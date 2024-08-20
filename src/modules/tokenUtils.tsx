@@ -1580,6 +1580,7 @@ class TokenUtils {
                 limit: limit,
                 pageIndex: pageIndex
             });
+            console.log(response)
 
             if (!response.vaults || response.vaults.length === 0) {
                 break;
@@ -1591,6 +1592,44 @@ class TokenUtils {
 
         } while (totalVaults.length < total);
         return totalVaults;
+    }
+
+    async fetchMitoVaultHolders(vaultAddress: string, stakingContractAddress: string, setProgress) {
+        let endpoint = "";
+        if (this.endpoints.chainId.includes("888")) {
+            endpoint = 'https://k8s.testnet.mito.grpc-web.injective.network';
+        } else {
+            endpoint = 'https://k8s.mainnet.mito.grpc-web.injective.network';
+        }
+        this.mitoApi = new IndexerGrpcMitoApi(endpoint);
+
+        const limit = 100;
+        let pageIndex = 0;
+        let totalHolders = [];
+        let total = 0;
+
+        do {
+            const response = await this.mitoApi.fetchLPHolders({
+                limit: limit,
+                skip: pageIndex,
+                vaultAddress,
+                stakingContractAddress
+            });
+
+            if (!response.holders || response.holders.length === 0) {
+                break;
+            }
+
+
+            totalHolders = totalHolders.concat(response.holders);
+            total = response.pagination.total;
+            pageIndex += response.holders.length;
+
+            setProgress(`${totalHolders.length} / ${total}`)
+
+
+        } while (totalHolders.length < total);
+        return totalHolders;
     }
 
     async fetchMitoVaultCreationFee() {

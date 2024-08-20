@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import ConnectKeplr from "../../components/App/ConnectKeplr";
 import { processSushiData, getAllNfts, getMetaData, getSushiStats } from "./SushiUtils";
 import { GridLoader } from "react-spinners";
+import Footer from "../../components/App/Footer";
 
 
 const SushiTool = () => {
@@ -176,9 +177,7 @@ const SushiTool = () => {
                 </div>
             </div>
 
-            <footer className="bg-gray-800 text-white text-xs p-4 fixed bottom-0 left-0 right-0">
-                buy me a coffee: inj1q2m26a7jdzjyfdn545vqsude3zwwtfrdap5jgz
-            </footer>
+            <Footer />
         </div>
     );
 };
