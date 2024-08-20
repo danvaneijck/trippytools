@@ -11,6 +11,7 @@ import { Buffer } from "buffer";
 import { TransactionException } from "@injectivelabs/exceptions";
 import myceliumLogo from "../../assets/mycelium.jpeg"
 import farmBackground from "../../assets/farmBackground.webp"
+import Footer from "../../components/App/Footer";
 
 const ASTRO_GENERATOR = "inj164pyppndppdmazfjrvecajnwcs3hmq06agn4ka"
 const SPORE_SHROOM_LP = "inj16qksf53k0n07cvpgzqs4q6kvpzh5aw2c6f9589"
@@ -264,9 +265,7 @@ const MyceliumFarm = () => {
                 </div>
             </div>
 
-            <footer className="bg-gray-800 text-white text-xs p-4 fixed bottom-0 left-0 right-0">
-                buy me a coffee: inj1q2m26a7jdzjyfdn545vqsude3zwwtfrdap5jgz
-            </footer>
+            <Footer />
         </div>
     );
 }

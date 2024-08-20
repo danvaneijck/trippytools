@@ -16,6 +16,7 @@ import CreateSpotMarketModal from "./CreateSpotMarketModal";
 import MintModal from "./MintModal";
 import CreateMitoVault from "./CreateMitoVault";
 import IPFSImage from "../../components/App/IpfsImage";
+import Footer from "../../components/App/Footer";
 
 
 const MyTokens = () => {
@@ -564,9 +565,7 @@ const MyTokens = () => {
                         </div>
                     </div>
                 </div>
-                <footer className="bg-gray-800 text-white text-xs p-4 fixed bottom-0 left-0 right-0">
-                    buy me a coffee: inj1q2m26a7jdzjyfdn545vqsude3zwwtfrdap5jgz
-                </footer>
+                <Footer />
             </div>
         </>
 
