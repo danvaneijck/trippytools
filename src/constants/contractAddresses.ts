@@ -291,7 +291,12 @@ export const TOKENS = [
         value: "factory/inj1q4z7jjxdk7whwmkt39x7krc49xaqapuswhjhkn/boys",
         label: "BOYS",
         img: "https://wsrv.nl/?url=https%3A%2F%2Femerald-total-gamefowl-966.mypinata.cloud%2Fipfs%2FQmcboHz22kYJB5N2i9my9NjMUJzH3Zf1UyXb4APs5kx2Vh&n=-1&w=64&h=64"
-    }
+    },
+    {
+        value: "factory/inj1u6j86hy6a2z0ksuhuh54x6kh532e7esdfjd2k7/PAIN",
+        label: "PAIN",
+        img: ""
+    },
 ]
 
 export const NFT_COLLECTIONS = [
