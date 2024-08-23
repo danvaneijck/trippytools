@@ -244,7 +244,7 @@ const Airdrop = () => {
             if (market.matchingVault !== null) {
                 options.push({
                     value: market,
-                    label: `${market.baseToken.name} vault (${market.baseDenom ?? market.baseToken.address})`
+                    label: `${market.baseToken ? market.baseToken.name : market.marketId} vault (${market.baseDenom ?? market.baseToken.address})`
                 })
             }
         })
