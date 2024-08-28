@@ -168,6 +168,11 @@ export const TOKENS = [
         img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg"
     },
     {
+        value: "factory/inj127l5a2wmkyvucxdlupqyac3y0v6wqfhq03ka64/qunt",
+        label: "qunt",
+        img: "https://i.imgur.com/72vp72b.png"
+    },
+    {
         value: "factory/inj1l2gcrfr6aenjyt5jddk79j7w5v0twskw6n70y8/PROP420",
         label: "PROP420",
         img: "https://bafkreie3eoejlhintbzgo6dk4axgh3jdc7pvbzrbxfg6tj3cb2b5r744xu.ipfs.w3s.link/"
@@ -261,11 +266,6 @@ export const TOKENS = [
         value: "factory/inj172ccd0gddgz203e4pf86ype7zjx573tn8g0df9/GINGER",
         label: "GINGER",
         img: "https://raw.githubusercontent.com/SHITcoinsonINJ/injective-ts/c8034284085e1340f8c4eb7e8a7bc3adfc94c1ec/packages/token-metadata/src/images/ginger.png"
-    },
-    {
-        value: "factory/inj127l5a2wmkyvucxdlupqyac3y0v6wqfhq03ka64/qunt",
-        label: "qunt",
-        img: "https://i.imgur.com/72vp72b.png"
     },
     {
         value: "factory/inj1xy3kvlr4q4wdd6lrelsrw2fk2ged0any44hhwq/KIRA",
