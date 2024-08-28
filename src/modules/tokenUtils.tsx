@@ -1729,10 +1729,6 @@ class TokenUtils {
         return orders.orderHistory
     }
 
-    async createBinaryOptionsLimitOrder(marketId) {
-
-    }
-
     async fetchOracleList() {
         const indexerGrpcOracleApi = new IndexerGrpcOracleApi(this.endpoints.indexer)
 
@@ -1841,9 +1837,15 @@ class TokenUtils {
         const subaccountsList = await indexerGrpcAccountApi.fetchSubaccountsList(
             injectiveAddress,
         )
-
-        console.log(subaccountsList)
         return subaccountsList
+    }
+
+    async getHelixMarketQuote(marketId: string, decimals: number) {
+        const orders = await this.indexerGrpcSpotApi.fetchOrders({ marketId });
+        const buyOrders = orders.orders.filter(order => order.orderSide === 'buy').sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+        // const sellOrders = orders.orders.filter(order => order.orderSide === 'sell').sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+        const injPrice = await this.getINJDerivativesPrice()
+        return (Number(buyOrders[0].price) / Math.pow(10, decimals)) * Number(injPrice)
     }
 }
 

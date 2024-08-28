@@ -1,7 +1,7 @@
 
 
 const IPFSImage = ({ ipfsPath, className, width }) => {
-    const baseUrl = "https://cloudflare-ipfs.com/ipfs/";
+    const baseUrl = "https://ipfs.io/ipfs/";
 
     const getImageUrl = (path) => {
         if (path.startsWith("https://")) {

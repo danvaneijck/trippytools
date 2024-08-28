@@ -33,7 +33,6 @@ const App = () => {
             <Route path="/mycelium-farm" element={<MyceliumFarm />} />
             <Route path="/token-scanner" element={<TokenScanner />} />
             <Route path="/binary-option-markets" element={<BinaryOptionMarkets />} />
-
             <Route path="/" element={<Home />} />
           </Routes>
         </Router>

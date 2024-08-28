@@ -14,10 +14,12 @@ import { CSVLink } from 'react-csv';
 import HoldersChart from "../../components/App/HoldersChart";
 import { MdWarning } from "react-icons/md";
 import Footer from "../../components/App/Footer";
+import { humanReadableAmount } from "../../utils";
 
 const INJ_CW20_ADAPTER = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
 const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
+
 
 const TokenHolders = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -46,7 +48,10 @@ const TokenHolders = () => {
     const [findingLiq, setFindingLiq] = useState(false)
     const [liqError, setLiqError] = useState(false)
 
+    const [totalBurned, setTotalBurned] = useState(null)
+
     const [mitoVault, setMitoVault] = useState(null)
+    const [mitoPrice, setMitoPrice] = useState(null)
 
     const setAddress = useCallback(() => {
         setSearchParams({
@@ -102,18 +107,34 @@ const TokenHolders = () => {
         setFindingLiq(true)
 
         try {
-            const denom = `factory/${INJ_CW20_ADAPTER}/${tokenInfo.denom}`
-            const liquidity = await module.checkForLiquidity(assetInfo)
+            let denom = tokenInfo.denom
+            if (!denom.includes("factory")) {
+                denom = `factory/${INJ_CW20_ADAPTER}/${tokenInfo.denom}`
+            }
             const spotMarkets = await getSpotMarkets();
             const mitoVaults = await getMitoVaults();
 
-            const market = spotMarkets.find(market => market.baseDenom.toString() === denom.toString());
+            const market = spotMarkets.slice().reverse().find(market => market.baseDenom.toString() === denom.toString());
             let vault = null
             if (market) {
-                vault = mitoVaults.find(vault => vault.marketId.toString() === market.marketId.toString());
+                vault = mitoVaults.slice().reverse().find(vault => vault.marketId.toString() === market.marketId.toString());
             }
-            console.log(vault)
+            let currentMitoPrice = null
 
+            if (vault) {
+                setMitoVault(vault)
+                currentMitoPrice = await module.getHelixMarketQuote(vault.marketId, 18 - tokenInfo?.decimals)
+                console.log(currentMitoPrice)
+                setMitoPrice(currentMitoPrice)
+            }
+
+            if (currentMitoPrice) {
+                setHolders(prevHolders => prevHolders.map(holder => ({
+                    ...holder,
+                    usdValue: Number(holder.balance) * currentMitoPrice
+                })));
+            }
+            const liquidity = await module.checkForLiquidity(assetInfo)
             if (liquidity.length == 0) {
                 setFindingLiq(false)
                 setLiqError(true)
@@ -121,11 +142,12 @@ const TokenHolders = () => {
             }
 
             setLiquidity(liquidity)
-            setMitoVault(vault)
-            setHolders(prevHolders => prevHolders.map(holder => ({
-                ...holder,
-                usdValue: Number(holder.balance) * liquidity[0]?.price
-            })));
+            if (!currentMitoPrice) {
+                setHolders(prevHolders => prevHolders.map(holder => ({
+                    ...holder,
+                    usdValue: Number(holder.balance) * liquidity[0]?.price
+                })));
+            }
             setFindingLiq(false)
         }
         catch (e) {
@@ -159,9 +181,17 @@ const TokenHolders = () => {
         setHolders([]);
         setLiquidity([])
         setMitoVault(null)
+        setMitoPrice(null)
         setFindingLiq(false)
         setLiqError(false)
         setHasSplitBalances(false)
+        setTotalBurned(null)
+
+        const BURN_ADDRESSES = [
+            dojoBurnAddress,
+            injBurnAddress,
+            "inj1fj6syxy0wmvqhr3n57hwrljxwsng3k55t3yxgj"
+        ]
 
         try {
             const is404 = CW404_TOKENS.find(x => x.value == address) !== undefined
@@ -184,6 +214,14 @@ const TokenHolders = () => {
                 setTokenInfo(metadata);
                 const tokenHolders = await module.getTokenFactoryTokenHolders(address, setProgress);
                 if (tokenHolders) setHolders(tokenHolders);
+
+                const totalBurnedBalance = tokenHolders
+                    .filter(addressObj => BURN_ADDRESSES.includes(addressObj.address))
+                    .reduce((total, addressObj) => {
+                        return total + addressObj.balance;
+                    }, 0);
+
+                setTotalBurned(totalBurnedBalance)
             }
             else {
                 try {
@@ -195,10 +233,9 @@ const TokenHolders = () => {
 
                     const tokenHolders = await module.getCW20TokenHolders(address, setProgress);
                     const bankTokenHolders = await module.getTokenFactoryTokenHolders(`factory/${INJ_CW20_ADAPTER}/${address}`, setProgress)
-                    console.log(tokenHolders)
-                    console.log(bankTokenHolders)
-
                     const mergedHolders = {};
+
+                    BURN_ADDRESSES.push(address)
 
                     for (const holder of tokenHolders) {
                         const { address, balance } = holder;
@@ -229,6 +266,14 @@ const TokenHolders = () => {
                     else {
                         setHolders(tokenHolders);
                     }
+
+                    const totalBurnedBalance = mergedList
+                        .filter(addressObj => BURN_ADDRESSES.includes(addressObj.address))
+                        .reduce((total, addressObj) => {
+                            return total + addressObj.balance;
+                        }, 0);
+
+                    setTotalBurned(totalBurnedBalance)
 
                 } catch (error) {
                     if (error.message.includes("Error parsing into type cw404")) {
@@ -365,8 +410,8 @@ const TokenHolders = () => {
                                     {tokenInfo.total_supply && (
                                         <div>
                                             total supply:{" "}
-                                            {tokenInfo.total_supply /
-                                                Math.pow(10, tokenInfo.decimals)}
+                                            {humanReadableAmount(tokenInfo.total_supply /
+                                                Math.pow(10, tokenInfo.decimals))}
                                         </div>
                                     )}
                                 </div>
@@ -404,7 +449,7 @@ const TokenHolders = () => {
                                     <img
                                         src={pairMarketing.logo.url}
                                         style={{ width: 50, height: 50 }}
-                                        className="mb-2"
+                                        className="mb-2 rounded-lg"
                                         alt="logo"
                                     />
                                     <div>project: {pairMarketing.project}</div>
@@ -424,6 +469,17 @@ const TokenHolders = () => {
                                 </div>
                             )}
                         </div>
+                        {totalBurned !== null && totalBurned !== 0 && tokenInfo !== null && (
+                            <div>
+                                Total burned tokens: {humanReadableAmount(totalBurned)} 🔥{" "}
+                                {(liquidity.length > 0 || mitoPrice) && `$${humanReadableAmount(totalBurned * (mitoPrice !== null ? mitoPrice : liquidity[0].price))}`}
+                                <br />
+                                Circulating supply: {humanReadableAmount((tokenInfo.total_supply /
+                                    Math.pow(10, tokenInfo.decimals)) - totalBurned)}{" "}
+                                {(liquidity.length > 0 || mitoPrice) && `$${humanReadableAmount(((tokenInfo.total_supply /
+                                    Math.pow(10, tokenInfo.decimals)) - totalBurned) * (mitoPrice !== null ? mitoPrice : liquidity[0].price))}`}
+                            </div>
+                        )}
 
                         {holders.length > 0 &&
                             <button onClick={findLiquidity} className="p-1 bg-slate-800 rounded mb-2 px-2 mt-2">
@@ -469,6 +525,11 @@ const TokenHolders = () => {
                                     <br />
                                     {/* lp token price: ${(mitoVault.lpTokenPrice * Math.pow(10, tokenInfo.decimals)).toFixed(4)}
                                     <br /> */}
+                                    {mitoPrice && <div>
+                                        price: ${mitoPrice.toFixed(6)}
+                                        <br />
+                                    </div>
+                                    }
                                     <Link
                                         className="underline"
                                         target="_blank"
