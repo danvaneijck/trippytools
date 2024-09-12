@@ -170,7 +170,7 @@ export const TOKENS = [
     {
         value: "factory/inj127l5a2wmkyvucxdlupqyac3y0v6wqfhq03ka64/qunt",
         label: "qunt",
-        img: "https://i.imgur.com/72vp72b.png"
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fi.ibb.co%2FRBHCm14%2Fbennypfp.png&n=-1&w=64&h=64"
     },
     {
         value: "factory/inj1l2gcrfr6aenjyt5jddk79j7w5v0twskw6n70y8/PROP420",
@@ -183,6 +183,57 @@ export const TOKENS = [
         img: "https://imagedelivery.net/DYKOWp0iCc0sIkF-2e4dNw/9567494c-30d5-41bd-f8b2-35d17709b100/public"
     },
     {
+        value: "inj1fu5u29slsg2xtsj7v5la22vl4mr4ywl7wlqeck",
+        label: "NONJA",
+        img: "https://www.nonja.xyz/pfp.png"
+    },
+    {
+        value: "factory/inj1a6xdezq7a94qwamec6n6cnup02nvewvjtz6h6e/SYN",
+        label: "SYN",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcosmos%2Fchain-registry%2Fmaster%2Finjective%2Fimages%2Fsyn.png&n=-1&w=64&h=64"
+    },
+    {
+        value: "factory/inj1flkktfvf8nxvk300f2z3vxglpllpw59c563pk7/SPUUN",
+        label: "SPUUN",
+        img: "https://www.spuun.xyz/logob.png"
+    },
+    {
+        value: "factory/inj18flmwwaxxqj8m8l5zl8xhjrnah98fcjp3gcy3e/XIII",
+        label: "XIII",
+        img: "https://cloudflare-ipfs.com/ipfs/bafybeihpussgsgvdw2rbbr6txr5xpidrjeyusiezgxh4tsud7q2ftbbsjq"
+    },
+    {
+        value: "factory/inj172ccd0gddgz203e4pf86ype7zjx573tn8g0df9/GINGER",
+        label: "GINGER",
+        img: "https://raw.githubusercontent.com/SHITcoinsonINJ/injective-ts/c8034284085e1340f8c4eb7e8a7bc3adfc94c1ec/packages/token-metadata/src/images/ginger.png"
+    },
+    {
+        value: "factory/inj1xy3kvlr4q4wdd6lrelsrw2fk2ged0any44hhwq/KIRA",
+        label: "KIRA",
+        img: "https://raw.githubusercontent.com/kdelia12/injective-ts/dev/packages/token-metadata/src/images/kira.jpeg"
+    },
+    {
+        value: "factory/inj1xtel2knkt8hmc9dnzpjz6kdmacgcfmlv5f308w/ninja",
+        label: "ninja",
+        img: "https://i.ibb.co/qJwYW3X/NINJA.png"
+    },
+
+    {
+        value: "inj19vy83ne9tzta2yqynj8yg7dq9ghca6yqn9hyej",
+        label: "Drugs",
+        img: "https://i.imgur.com/8f9uHTN.png"
+    },
+    {
+        value: "factory/inj1q4z7jjxdk7whwmkt39x7krc49xaqapuswhjhkn/boys",
+        label: "BOYS",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Femerald-total-gamefowl-966.mypinata.cloud%2Fipfs%2FQmcboHz22kYJB5N2i9my9NjMUJzH3Zf1UyXb4APs5kx2Vh&n=-1&w=64&h=64"
+    },
+    {
+        value: "factory/inj1u6j86hy6a2z0ksuhuh54x6kh532e7esdfjd2k7/PAIN",
+        label: "PAIN",
+        img: "https://imagedelivery.net/DYKOWp0iCc0sIkF-2e4dNw/17d28efd-a9ad-4c84-ee78-822a1bf58c00/public"
+    },
+    {
         value: "factory/inj1lq9wn94d49tt7gc834cxkm0j5kwlwu4gm65lhe/spore",
         label: "spore",
         img: "https://bafybeia6kaiznad75mbzr2uwswfxw6qymt7ws3egcui6tzquomzh2w3cu4.ipfs.w3s.link/spore.webp"
@@ -191,11 +242,6 @@ export const TOKENS = [
         value: "factory/inj14cpnzf4mxyxel7le3wp2zxyvwr8g0wukch9865/mycelium",
         label: "mycelium",
         img: "https://cloudflare-ipfs.com/ipfs/QmcWQeL2podyWSZFEpGLUfgPgeGopM49pV8c97vHbwswkH/myceliumlogo.JPG"
-    },
-    {
-        value: "factory/inj1a6xdezq7a94qwamec6n6cnup02nvewvjtz6h6e/SYN",
-        label: "SYN",
-        img: "https://wsrv.nl/?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcosmos%2Fchain-registry%2Fmaster%2Finjective%2Fimages%2Fsyn.png&n=-1&w=64&h=64"
     },
     {
         value: "inj1mgts7d5c32w6aqr8h9f5th08x0p4jaya2tp4zp",
@@ -251,51 +297,6 @@ export const TOKENS = [
         value: "factory/inj13y5nqf8mymy9tfxkg055th7hdm2uaahs9q6q5w/SNAPPY",
         label: "SNAPPY",
         img: "https://pbs.twimg.com/profile_images/1771472945488998400/1TgqGcdy_400x400.jpg"
-    },
-    {
-        value: "factory/inj1flkktfvf8nxvk300f2z3vxglpllpw59c563pk7/SPUUN",
-        label: "SPUUN",
-        img: "https://www.spuun.xyz/logob.png"
-    },
-    {
-        value: "factory/inj18flmwwaxxqj8m8l5zl8xhjrnah98fcjp3gcy3e/XIII",
-        label: "XIII",
-        img: "https://cloudflare-ipfs.com/ipfs/bafybeihpussgsgvdw2rbbr6txr5xpidrjeyusiezgxh4tsud7q2ftbbsjq"
-    },
-    {
-        value: "factory/inj172ccd0gddgz203e4pf86ype7zjx573tn8g0df9/GINGER",
-        label: "GINGER",
-        img: "https://raw.githubusercontent.com/SHITcoinsonINJ/injective-ts/c8034284085e1340f8c4eb7e8a7bc3adfc94c1ec/packages/token-metadata/src/images/ginger.png"
-    },
-    {
-        value: "factory/inj1xy3kvlr4q4wdd6lrelsrw2fk2ged0any44hhwq/KIRA",
-        label: "KIRA",
-        img: "https://raw.githubusercontent.com/kdelia12/injective-ts/dev/packages/token-metadata/src/images/kira.jpeg"
-    },
-    {
-        value: "factory/inj1xtel2knkt8hmc9dnzpjz6kdmacgcfmlv5f308w/ninja",
-        label: "ninja",
-        img: "https://i.ibb.co/qJwYW3X/NINJA.png"
-    },
-    {
-        value: "inj1fu5u29slsg2xtsj7v5la22vl4mr4ywl7wlqeck",
-        label: "NONJA",
-        img: "https://www.nonja.xyz/pfp.png"
-    },
-    {
-        value: "inj19vy83ne9tzta2yqynj8yg7dq9ghca6yqn9hyej",
-        label: "Drugs",
-        img: "https://i.imgur.com/8f9uHTN.png"
-    },
-    {
-        value: "factory/inj1q4z7jjxdk7whwmkt39x7krc49xaqapuswhjhkn/boys",
-        label: "BOYS",
-        img: "https://wsrv.nl/?url=https%3A%2F%2Femerald-total-gamefowl-966.mypinata.cloud%2Fipfs%2FQmcboHz22kYJB5N2i9my9NjMUJzH3Zf1UyXb4APs5kx2Vh&n=-1&w=64&h=64"
-    },
-    {
-        value: "factory/inj1u6j86hy6a2z0ksuhuh54x6kh532e7esdfjd2k7/PAIN",
-        label: "PAIN",
-        img: ""
     },
 ]
 

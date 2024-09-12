@@ -189,8 +189,7 @@ const TokenHolders = () => {
 
         const BURN_ADDRESSES = [
             dojoBurnAddress,
-            injBurnAddress,
-            "inj1fj6syxy0wmvqhr3n57hwrljxwsng3k55t3yxgj"
+            injBurnAddress
         ]
 
         try {
