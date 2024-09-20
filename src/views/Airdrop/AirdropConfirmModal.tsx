@@ -310,12 +310,12 @@ const AirdropConfirmModal = (props: {
     const startAirdrop = useCallback(async () => {
         setError(null)
         if (props.airdropDetails !== null && props.airdropDetails.length > 0) {
-            // if (currentNetwork == "mainnet" && props.shroomCost !== 0 && !feePayed) {
-            //     console.log("pay shroom fee")
-            //     setProgress("Pay shroom fee for airdrop")
-            //     const result = await payFee()
-            //     if (result) setFeePayed(true)
-            // }
+            if (currentNetwork == "mainnet" && props.shroomCost !== 0 && !feePayed) {
+                console.log("pay shroom fee")
+                setProgress("Pay shroom fee for airdrop")
+                const result = await payFee()
+                if (result) setFeePayed(true)
+            }
             console.log("airdrop")
             setProgress("Send airdrops")
             const txHashes = await sendAirdrops(props.tokenAddress, props.tokenDecimals, props.airdropDetails)
