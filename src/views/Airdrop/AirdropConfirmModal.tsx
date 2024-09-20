@@ -55,13 +55,22 @@ mutation insertAirdropLog (
     id
   }
 }
-
 `
 
 const INSERT_WALLETS_MUTATION = gql`
 mutation insertWallet($objects: [wallet_tracker_wallet_insert_input!]!) {
   insert_wallet_tracker_wallet(objects: $objects, on_conflict: {constraint:wallet_tracker_wallet_pkey, update_columns: []}){
     returning{
+      address
+    }
+  }
+}
+`
+
+const INSERT_TOKEN_MUTATION = gql`
+mutation insertToken($objects: [token_tracker_token_insert_input!]!) {
+  insert_token_tracker_token(objects: $objects, on_conflict: {constraint: token_tracker_token_pkey, update_columns: []}) {
+    returning {
       address
     }
   }
@@ -92,6 +101,7 @@ const AirdropConfirmModal = (props: {
 
     const [insertAirdropLog] = useMutation(INSERT_AIRDROP_MUTATION)
     const [insertWallets] = useMutation(INSERT_WALLETS_MUTATION)
+    const [insertTokenDropped] = useMutation(INSERT_TOKEN_MUTATION)
 
     const getKeplr = useCallback(async () => {
         await window.keplr.enable(networkConfig.chainId);
@@ -318,6 +328,12 @@ const AirdropConfirmModal = (props: {
 
             if (currentNetwork == "mainnet") {
                 try {
+                    await insertTokenDropped({
+                        variables: {
+                            objects: [{ address: props.tokenAddress }]
+                        }
+                    })
+
                     await insertWallets({
                         variables: {
                             objects: props.airdropDetails.map(wallet => ({
@@ -357,7 +373,7 @@ const AirdropConfirmModal = (props: {
 
             navigate('/airdrop-history');
         }
-    }, [props.airdropDetails, props.shroomCost, props.tokenAddress, props.tokenDecimals, feePayed, currentNetwork, sendAirdrops, connectedAddress, navigate, payFee, insertAirdropLog, props.criteria, props.description, insertWallets])
+    }, [props.airdropDetails, props.shroomCost, props.tokenAddress, props.tokenDecimals, feePayed, currentNetwork, sendAirdrops, connectedAddress, navigate, payFee, insertAirdropLog, props.criteria, props.description, insertWallets, insertTokenDropped])
 
     return (
         <>
