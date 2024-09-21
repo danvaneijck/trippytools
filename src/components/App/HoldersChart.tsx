@@ -55,7 +55,7 @@ const HoldersChart: React.FC<HoldersChartProps> = ({ data }) => {
     }
 
     return (
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={200}>
             <BarChart data={categories} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid stroke='white' strokeDasharray="3 3" />
                 <XAxis stroke='white' dataKey="category" />

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
-import { GridLoader, CircleLoader } from "react-spinners";
+import { CircleLoader, ClipLoader, GridLoader } from "react-spinners";
 import { Link } from "react-router-dom";
 import { Holder, MarketingInfo, TokenInfo } from "../../types";
 import { useSearchParams } from 'react-router-dom';
@@ -15,11 +15,44 @@ import HoldersChart from "../../components/App/HoldersChart";
 import { MdWarning } from "react-icons/md";
 import Footer from "../../components/App/Footer";
 import { humanReadableAmount } from "../../utils";
+import { gql, useMutation, useQuery } from "@apollo/client";
+import moment from "moment";
+import { Bounce, ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { GrStatusUnknown } from "react-icons/gr";
 
 const INJ_CW20_ADAPTER = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
 const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
 
+
+const HOLDER_QUERY = gql`
+query getTokenHolders($address: String!, $addresses: [String!]) {
+  token_info:token_tracker_token_by_pk(address: $address){
+    address
+    name
+    symbol
+    total_supply
+    circulating_supply
+    decimals
+    holders_last_updated
+  }
+  holders: wallet_tracker_balance(where: {token_id: {_in: $addresses}}, order_by: {percentage_held:desc}) {
+    wallet_id
+    balance
+    percentage_held
+    token_id
+  }
+}
+`
+
+const UPDATE_TOKEN_HOLDERS_MUTATION = gql`
+mutation updateTokenHolders($address: String!){
+  updateTokenHolders(address: $address){
+    success
+  }
+}
+`
 
 const TokenHolders = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -27,15 +60,32 @@ const TokenHolders = () => {
     const currentNetwork = useSelector(state => state.network.currentNetwork);
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
 
-    const [contractAddress, setContractAddress] = useState(
-        searchParams.get("address") ?? TOKENS[0]
-    );
+    const [contractAddress, setContractAddress] = useState(() => {
+        const address = searchParams.get("address");
+        if (!address) {
+            return TOKENS[0];
+        }
+        return TOKENS.find(x => x.value === address) || { label: address, value: address };
+    });
+
+    const { data, loading: queryLoading } = useQuery(HOLDER_QUERY, {
+        skip: !contractAddress || !contractAddress.value,
+        pollInterval: 10000,
+        variables: {
+            address: contractAddress?.value || "",
+            addresses: contractAddress ? [
+                contractAddress.value,
+                `factory/${INJ_CW20_ADAPTER}/${contractAddress.value}`
+            ] : []
+        }
+    });
+
+    const [updateTokenHolders] = useMutation(UPDATE_TOKEN_HOLDERS_MUTATION)
 
     const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
     const [pairMarketing, setPairMarketing] = useState<MarketingInfo | null>(null);
 
     const [holders, setHolders] = useState<Holder[]>([]);
-
     const [hasSplitBalances, setHasSplitBalances] = useState(false)
 
     const [loading, setLoading] = useState(false);
@@ -43,25 +93,160 @@ const TokenHolders = () => {
     const [error, setError] = useState(null)
 
     const [lastLoadedAddress, setLastLoadedAddress] = useState("")
+    const [holdersLastUpdated, setHoldersLastUpdated] = useState(null)
 
     const [liquidity, setLiquidity] = useState([])
     const [findingLiq, setFindingLiq] = useState(false)
     const [liqError, setLiqError] = useState(false)
-
     const [totalBurned, setTotalBurned] = useState(null)
 
     const [mitoVault, setMitoVault] = useState(null)
-    const [mitoPrice, setMitoPrice] = useState(null)
+    const [tokenPrice, setTokenPrice] = useState(null)
 
-    const setAddress = useCallback(() => {
-        setSearchParams({
-            address: contractAddress.value
-        })
-    }, [setSearchParams, contractAddress])
+    const ITEMS_PER_PAGE = 50;
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageInput, setPageInput] = useState("");
+
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const paginatedHolders = holders
+        .filter((holder) => Number(holder.balance) !== 0)
+        .sort((a, b) => b.balance - a.balance)
+        .slice(startIndex, endIndex);
+
+    const totalPages = Math.ceil(holders.length / ITEMS_PER_PAGE);
+
+
+    const handlePageInput = (e) => {
+        const value = e.target.value;
+        if (value === "" || /^[0-9\b]+$/.test(value)) {
+            setPageInput(value);
+        }
+    };
+
+    const goToPage = (e) => {
+        e.preventDefault();
+        const pageNumber = parseInt(pageInput, 10);
+        if (!isNaN(pageNumber) && pageNumber > 0 && pageNumber <= totalPages) {
+            setCurrentPage(pageNumber);
+        }
+        setPageInput("");
+    };
 
     useEffect(() => {
+        if (contractAddress) {
+            setSearchParams({
+                address: contractAddress.value ? contractAddress.value : contractAddress
+            })
+        }
+    }, [contractAddress, setSearchParams])
+
+    useEffect(() => {
+        console.log("clear last loaded address")
         setLastLoadedAddress("")
     }, [networkConfig])
+
+    const handleUpdateTokenHolders = useCallback(() => {
+        updateTokenHolders({
+            variables: {
+                address: contractAddress.value ? contractAddress.value : contractAddress
+            }
+        }).then(r => {
+            console.log(r)
+            toast.success('Request sent to update holders. May take a few minutes...', {
+                position: "top-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "dark",
+                transition: Bounce,
+            });
+        }).catch(e => {
+            console.log(e)
+        })
+    }, [contractAddress, updateTokenHolders])
+
+    useEffect(() => {
+        if (!data) return;
+
+        const BURN_ADDRESSES = [
+            dojoBurnAddress,
+            injBurnAddress,
+        ]
+
+        if (data.token_info && data.token_info.address) {
+            BURN_ADDRESSES.push(data.token_info.address)
+            setHoldersLastUpdated(data.token_info.holders_last_updated)
+        }
+        else {
+            setHoldersLastUpdated(null)
+        }
+
+        const balances = data.holders;
+        const tokenIds = new Set(balances.map(holder => holder.token_id));
+
+        if (tokenIds.size === 2) {
+            setHasSplitBalances(true);
+        } else {
+            setHasSplitBalances(false);
+        }
+
+        const groupedByWallet = balances.reduce((acc, holder) => {
+            if (!acc[holder.wallet_id]) {
+                acc[holder.wallet_id] = {
+                    cw20Balance: 0,
+                    bankBalance: 0,
+                    totalBalance: 0,
+                    hasBothTokens: false,
+                    wallet_id: holder.wallet_id
+                };
+            }
+            const isFactoryToken = holder.token_id.includes("factory");
+            const balanceValue = parseFloat(holder.balance);
+            if (isFactoryToken) {
+                acc[holder.wallet_id].bankBalance += balanceValue; // Accumulate bankBalance
+            } else {
+                acc[holder.wallet_id].cw20Balance += balanceValue; // Accumulate cw20Balance
+            }
+            if (acc[holder.wallet_id].cw20Balance > 0 && acc[holder.wallet_id].bankBalance > 0) {
+                acc[holder.wallet_id].hasBothTokens = true;
+            }
+            return acc;
+        }, {});
+
+        let totalSupply = Object.values(groupedByWallet).reduce((sum, holder) => {
+            if (holder.wallet_id === INJ_CW20_ADAPTER) {
+                return sum + 0; // Only include cw20Balance, exclude factory token balance
+            }
+            return sum + (holder.cw20Balance + holder.bankBalance);
+
+        }, 0);
+        totalSupply = Math.round(totalSupply)
+
+        const finalHolderList = Object.entries(groupedByWallet).map(([wallet_id, holder]) => {
+            return {
+                address: wallet_id,
+                balance: holder.cw20Balance + holder.bankBalance,  // Total combined balance
+                percentageHeld: (holder.cw20Balance + holder.bankBalance) / totalSupply * 100,
+                cw20Balance: holder.cw20Balance ? holder.cw20Balance : 0,
+                bankBalance: holder.bankBalance ? holder.bankBalance : 0,
+                usdValue: tokenPrice ? Number(holder.cw20Balance + holder.bankBalance) * tokenPrice : null
+            };
+        }).filter(x => x.balance !== 0)
+        setHolders(finalHolderList);
+
+        const totalBurnedBalance = finalHolderList
+            .filter(addressObj => BURN_ADDRESSES.includes(addressObj.address))
+            .reduce((total, addressObj) => {
+                return total + addressObj.balance;
+            }, 0);
+
+        setTotalBurned(totalBurnedBalance)
+    }, [data, tokenPrice]);
 
     const getSpotMarkets = useCallback(async () => {
         console.log("get spot markets")
@@ -87,46 +272,56 @@ const TokenHolders = () => {
         }
     }, [networkConfig]);
 
-    const findLiquidity = useCallback(async () => {
-        let assetInfo = {}
+    const findLiquidity = useCallback(async (signal) => {
+        let assetInfo = {};
         if (tokenInfo?.denom.includes("factory")) {
             assetInfo = {
                 native_token: {
                     denom: tokenInfo.denom
                 }
-            }
-        }
-        else {
+            };
+        } else {
             assetInfo = {
                 token: {
                     contract_addr: tokenInfo.denom
                 }
-            }
+            };
         }
         const module = new TokenUtils(networkConfig);
-        setFindingLiq(true)
+        setFindingLiq(true);
 
         try {
-            let denom = tokenInfo.denom
+            let denom = tokenInfo.denom;
             if (!denom.includes("factory")) {
-                denom = `factory/${INJ_CW20_ADAPTER}/${tokenInfo.denom}`
+                denom = `factory/${INJ_CW20_ADAPTER}/${tokenInfo.denom}`;
             }
-            const spotMarkets = await getSpotMarkets();
-            const mitoVaults = await getMitoVaults();
+
+            console.log("Fetching spot markets and mito vaults...");
+            const [spotMarkets, mitoVaults] = await Promise.all([
+                getSpotMarkets(),
+                getMitoVaults()
+            ]);
+
+            console.log("Matching spot market to vault");
 
             const market = spotMarkets.slice().reverse().find(market => market.baseDenom.toString() === denom.toString());
-            let vault = null
+            let vault = null;
+
             if (market) {
                 vault = mitoVaults.slice().reverse().find(vault => vault.marketId.toString() === market.marketId.toString());
             }
-            let currentMitoPrice = null
+
+            let currentMitoPrice = null;
 
             if (vault) {
-                setMitoVault(vault)
-                currentMitoPrice = await module.getHelixMarketQuote(vault.marketId, 18 - tokenInfo?.decimals)
-                console.log(currentMitoPrice)
-                setMitoPrice(currentMitoPrice)
+                console.log("Found vault:", vault);
+                setMitoVault(vault);
+                currentMitoPrice = await module.getHelixMarketQuote(vault.marketId, 18 - tokenInfo?.decimals);
+
+                setTokenPrice(currentMitoPrice);
             }
+
+            console.log("Got price from mito", currentMitoPrice);
 
             if (currentMitoPrice) {
                 setHolders(prevHolders => prevHolders.map(holder => ({
@@ -134,63 +329,85 @@ const TokenHolders = () => {
                     usdValue: Number(holder.balance) * currentMitoPrice
                 })));
             }
-            const liquidity = await module.checkForLiquidity(assetInfo)
-            if (liquidity.length == 0) {
-                setFindingLiq(false)
-                setLiqError(true)
-                return
+
+            console.log("Checking liquidity...");
+
+            const liquidity = await module.checkForLiquidity(assetInfo);
+
+            if (signal.aborted) {
+                console.log("Aborted after checking liquidity");
+                return;
             }
 
-            setLiquidity(liquidity)
+            console.log("Liquidity fetched:", liquidity);
+
+            if (liquidity.length === 0) {
+                setFindingLiq(false);
+                setLiqError(true);
+                return;
+            }
+
+            setLiquidity(liquidity);
+
             if (!currentMitoPrice) {
                 setHolders(prevHolders => prevHolders.map(holder => ({
                     ...holder,
                     usdValue: Number(holder.balance) * liquidity[0]?.price
                 })));
+                setTokenPrice(liquidity[0]?.price);
             }
-            setFindingLiq(false)
-        }
-        catch (e) {
-            setFindingLiq(false)
-            setLiqError(true)
-        }
 
-    }, [tokenInfo, networkConfig, getSpotMarkets, getMitoVaults])
+            setFindingLiq(false);
+            console.log("Liquidity finding process finished");
+
+        } catch (e) {
+            console.error("Error during liquidity fetch:", e);
+            if (!signal.aborted) {
+                setFindingLiq(false);
+                setLiqError(true);
+            }
+        }
+    }, [tokenInfo, networkConfig, getSpotMarkets, getMitoVaults]);
 
     useEffect(() => {
-        if (tokenInfo && holders.length > 0 && liquidity.length == 0 && !findingLiq && !liqError) {
-            findLiquidity().then(r => {
-                console.log("finished getting liq")
-            }).catch(e => {
-                console.log("error getting liq:", e)
-            });
+        if (tokenInfo && holders.length > 0 && liquidity.length === 0 && !findingLiq && !liqError) {
+            const abortController = new AbortController();
+            const { signal } = abortController;
+
+            console.log("Starting liquidity fetch...");
+            findLiquidity(signal)
+                .then(() => {
+                    console.log("Finished getting liquidity");
+                })
+                .catch(e => {
+                    console.log("Error getting liquidity:", e);
+                });
+            return () => {
+                console.log("Aborting previous fetch...");
+                abortController.abort();
+            };
         }
     }, [tokenInfo, holders, findLiquidity, liquidity, findingLiq, liqError]);
+
 
     const getTokenHolders = useCallback(async (address: string) => {
         if (loading) return
         if (lastLoadedAddress == address) return
-        console.log("get token holders")
-        setLoading(true);
         const module = new TokenUtils(networkConfig);
+
+        console.log("get token holders")
+
+        setLoading(true);
         setError(null);
         setTokenInfo(null);
         setPairMarketing(null);
 
         setProgress("");
-        setHolders([]);
         setLiquidity([])
         setMitoVault(null)
-        setMitoPrice(null)
+        setTokenPrice(null)
         setFindingLiq(false)
         setLiqError(false)
-        setHasSplitBalances(false)
-        setTotalBurned(null)
-
-        const BURN_ADDRESSES = [
-            dojoBurnAddress,
-            injBurnAddress
-        ]
 
         try {
             const is404 = CW404_TOKENS.find(x => x.value == address) !== undefined
@@ -211,69 +428,13 @@ const TokenHolders = () => {
             else if (address.includes("factory") || address.includes("peggy") || address.includes("ibc")) {
                 const metadata = await module.getDenomExtraMetadata(address);
                 setTokenInfo(metadata);
-                const tokenHolders = await module.getTokenFactoryTokenHolders(address, setProgress);
-                if (tokenHolders) setHolders(tokenHolders);
-
-                const totalBurnedBalance = tokenHolders
-                    .filter(addressObj => BURN_ADDRESSES.includes(addressObj.address))
-                    .reduce((total, addressObj) => {
-                        return total + addressObj.balance;
-                    }, 0);
-
-                setTotalBurned(totalBurnedBalance)
             }
             else {
                 try {
                     const tokenInfo = await module.getTokenInfo(address);
                     setTokenInfo({ ...tokenInfo, denom: address });
-
                     const marketingInfo = await module.getTokenMarketing(address);
                     setPairMarketing(marketingInfo);
-
-                    const tokenHolders = await module.getCW20TokenHolders(address, setProgress);
-                    const bankTokenHolders = await module.getTokenFactoryTokenHolders(`factory/${INJ_CW20_ADAPTER}/${address}`, setProgress)
-                    const mergedHolders = {};
-
-                    BURN_ADDRESSES.push(address)
-
-                    for (const holder of tokenHolders) {
-                        const { address, balance } = holder;
-                        if (!mergedHolders[address]) {
-                            mergedHolders[address] = { address, cw20Balance: 0, bankBalance: 0, combinedBalance: 0 };
-                        }
-                        mergedHolders[address].cw20Balance = balance;
-                    }
-                    for (const holder of bankTokenHolders) {
-                        const { address, balance } = holder;
-                        if (!mergedHolders[address]) {
-                            mergedHolders[address] = { address, cw20Balance: 0, bankBalance: 0, combinedBalance: 0 };
-                        }
-                        mergedHolders[address].bankBalance = balance / Math.pow(10, tokenInfo.decimals);
-                    }
-                    for (const address in mergedHolders) {
-                        const holder = mergedHolders[address];
-                        holder.balance = holder.cw20Balance + holder.bankBalance;
-                        holder.percentageHeld = (holder.balance / ((tokenInfo.total_supply / Math.pow(10, tokenInfo.decimals)))) * 100;
-                    }
-
-                    const mergedList = Object.values(mergedHolders);
-
-                    if (bankTokenHolders?.length > 0) {
-                        setHasSplitBalances(true)
-                        setHolders(mergedList);
-                    }
-                    else {
-                        setHolders(tokenHolders);
-                    }
-
-                    const totalBurnedBalance = mergedList
-                        .filter(addressObj => BURN_ADDRESSES.includes(addressObj.address))
-                        .reduce((total, addressObj) => {
-                            return total + addressObj.balance;
-                        }, 0);
-
-                    setTotalBurned(totalBurnedBalance)
-
                 } catch (error) {
                     if (error.message.includes("Error parsing into type cw404")) {
                         try {
@@ -325,6 +486,7 @@ const TokenHolders = () => {
 
     return (
         <div className="flex flex-col min-h-screen pb-10">
+            <ToastContainer />
             <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
                 <div className="container mx-auto flex items-center p-2 text-sm md:text-sm">
                     <Link to="/" className="font-bold hover:underline mx-5">
@@ -354,7 +516,7 @@ const TokenHolders = () => {
                     <div className="w-full max-w-screen-lg px-2 py-10">
                         <div className="text-center text-white">
                             <div className="text-xl">
-                                Get token holders
+                                Token holders
                             </div>
                             <div className="text-xs">on Injective main net</div>
                         </div>
@@ -386,13 +548,37 @@ const TokenHolders = () => {
                             />
                         </div>
 
-                        <button
-                            disabled={loading}
-                            onClick={setAddress}
-                            className="mt-5 bg-gray-800 rounded-lg p-2 w-full text-white border border-slate-800 shadow-lg font-bold"
-                        >
-                            Get token holders
-                        </button>
+                        {!loading && !queryLoading &&
+                            <>
+                                {holdersLastUpdated ?
+                                    <div className="mt-4 flex flex-row items-center">
+                                        <div>
+                                            Holders last updated: {moment(holdersLastUpdated).fromNow()}
+                                        </div>
+                                        <div
+                                            onClick={handleUpdateTokenHolders}
+                                            className="ml-5 p-2 rounded shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-sm hover:cursor-pointer"
+                                        >
+                                            Refresh holders
+                                        </div>
+                                    </div>
+                                    :
+                                    <div className="mt-4 flex flex-row items-center">
+                                        <div className="flex flex-row items-center">
+                                            Unknown last updated <GrStatusUnknown className="ml-4 text-lg" />
+                                        </div>
+                                        <div
+                                            onClick={handleUpdateTokenHolders}
+                                            className="ml-5 p-2 rounded shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-sm hover:cursor-pointer"
+                                        >
+                                            Refresh holders
+                                        </div>
+                                    </div>
+                                }
+                            </>
+                        }
+
+
                         {error && <div className="text-red-500 mt-2">
                             {error}
                         </div>
@@ -417,6 +603,13 @@ const TokenHolders = () => {
                             )}
                             {!pairMarketing && tokenInfo && (
                                 <div className="mt-5 text-sm text-white">
+                                    {tokenInfo.denom == "factory/inj127l5a2wmkyvucxdlupqyac3y0v6wqfhq03ka64/qunt" &&
+                                        <IPFSImage
+                                            width={100}
+                                            className={'mb-2 rounded-lg'}
+                                            ipfsPath={"https://wsrv.nl/?url=https%3A%2F%2Fi.ibb.co%2FRBHCm14%2Fbennypfp.png&n=-1"}
+                                        />
+                                    }
                                     {tokenInfo.logo &&
                                         <IPFSImage
                                             width={100}
@@ -434,10 +627,8 @@ const TokenHolders = () => {
                                                     </span>
                                                 ) : null
                                             }
-
                                         </a>
                                     }
-
                                     {tokenInfo.admin !== dojoBurnAddress && tokenInfo.admin !== injBurnAddress &&
                                         <div className="text-red-500 flex flex-row items-center">admin can mint more supply <MdWarning className="ml-2" /></div>
                                     }
@@ -447,7 +638,7 @@ const TokenHolders = () => {
                                 <div className="mt-5 text-sm text-white">
                                     <img
                                         src={pairMarketing.logo.url}
-                                        style={{ width: 50, height: 50 }}
+                                        style={{ width: 100 }}
                                         className="mb-2 rounded-lg"
                                         alt="logo"
                                     />
@@ -471,25 +662,16 @@ const TokenHolders = () => {
                         {totalBurned !== null && totalBurned !== 0 && tokenInfo !== null && (
                             <div>
                                 Total burned tokens: {humanReadableAmount(totalBurned)} 🔥{" "}
-                                {(liquidity.length > 0 || mitoPrice) && `$${humanReadableAmount(totalBurned * (mitoPrice !== null ? mitoPrice : liquidity[0].price))}`}
+                                {(liquidity.length > 0 || tokenPrice) && `$${humanReadableAmount(totalBurned * (tokenPrice !== null ? tokenPrice : liquidity[0].price))}`}
                                 <br />
                                 Circulating supply: {humanReadableAmount((tokenInfo.total_supply /
                                     Math.pow(10, tokenInfo.decimals)) - totalBurned)}{" "}
-                                {(liquidity.length > 0 || mitoPrice) && `$${humanReadableAmount(((tokenInfo.total_supply /
-                                    Math.pow(10, tokenInfo.decimals)) - totalBurned) * (mitoPrice !== null ? mitoPrice : liquidity[0].price))}`}
+                                {(liquidity.length > 0 || tokenPrice) && `$${humanReadableAmount(((tokenInfo.total_supply /
+                                    Math.pow(10, tokenInfo.decimals)) - totalBurned) * (tokenPrice !== null ? tokenPrice : liquidity[0].price))}`}
                             </div>
                         )}
 
-                        {holders.length > 0 &&
-                            <button onClick={findLiquidity} className="p-1 bg-slate-800 rounded mb-2 px-2 mt-2">
-                                {findingLiq ? <div className="text-sm text-center">
-                                    <CircleLoader color="white" size={20} />
-                                    <div className="mt-1 text-center">Finding liquidity</div>
-                                </div> : "Find Liquidity"}
-                            </button>
-                        }
-
-                        <div className="flex flex-row justify-center mt-5">
+                        <div className="flex flex-row justify-center mt-2">
                             {liquidity.length > 0 && liquidity.map(({ infoDecoded, marketCap, price, factory, liquidity }, index) => {
                                 return <div key={index} className="text-sm mx-2 bg-slate-800 p-2 rounded-lg shadow-lg">
                                     <a href={"https://coinhall.org/injective/" + infoDecoded.contract_addr}
@@ -511,7 +693,7 @@ const TokenHolders = () => {
                                 </div>
                             })}
                             {mitoVault !== null && tokenInfo &&
-                                <div className="text-sm mx-2 bg-slate-800 p-2 rounded-lg shadow-lg">
+                                <div className="text-sm mx-2 bg-slate-800 p-2 rounded-lg shadow-lg ">
                                     <a href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}mito.fi/vault/${mitoVault.contractAddress}`}
                                         className="text-white hover:cursor-pointer font-bold"
                                     >
@@ -520,12 +702,12 @@ const TokenHolders = () => {
                                     <br />
                                     APY: {mitoVault.apy.toFixed(2)}%
                                     <br />
-                                    liquidity: ${mitoVault.currentTvl.toFixed(2)}
+                                    liquidity: ${humanReadableAmount(mitoVault.currentTvl)}
                                     <br />
                                     {/* lp token price: ${(mitoVault.lpTokenPrice * Math.pow(10, tokenInfo.decimals)).toFixed(4)}
                                     <br /> */}
-                                    {mitoPrice && <div>
-                                        price: ${mitoPrice.toFixed(6)}
+                                    {tokenPrice && <div>
+                                        price: ${tokenPrice.toFixed(6)}
                                         <br />
                                     </div>
                                     }
@@ -562,10 +744,37 @@ const TokenHolders = () => {
                         {holders.length > 0 && (
                             <div className="mt-5 text-sm">
                                 <HoldersChart data={holders} />
-                                <CSVLink data={holders} headers={headers} filename={"holders.csv"}>
-                                    <button className="p-1 bg-slate-800 rounded mb-2">Download Holders CSV</button>
-                                </CSVLink>
-                                <div>Total token holders: {holders.length}</div>
+                                <div className="flex flex-col md:flex-row items-center justify-between">
+                                    <div>
+                                        <CSVLink data={holders} headers={headers} filename={"holders.csv"}>
+                                            <button className="p-1 bg-slate-700 hover:bg-slate-800 rounded mb-2">Download Holders CSV</button>
+                                        </CSVLink>
+                                        <div>Total token holders: {holders.length}</div>
+                                    </div>
+                                    <div>
+                                        <form onSubmit={goToPage} className="mt-4">
+                                            <label htmlFor="pageSearch" className="mr-2">Go to page:</label>
+                                            <input
+                                                id="pageSearch"
+                                                type="text"
+                                                value={pageInput}
+                                                onChange={handlePageInput}
+                                                placeholder="Enter page number"
+                                                className="px-4 py-2 border border-gray-300 rounded text-black"
+                                            />
+                                            <button
+                                                type="submit"
+                                                className="ml-2 px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded "
+                                            >
+                                                Go
+                                            </button>
+                                            <span className="px-4">Page {currentPage} of {totalPages}</span>
+                                        </form>
+                                    </div>
+                                </div>
+
+
+
                                 <div className="overflow-x-auto mt-2">
                                     <table className="table-auto w-full">
                                         <thead className="text-white text-left">
@@ -593,73 +802,71 @@ const TokenHolders = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {holders
-                                                .filter(
-                                                    (holder) =>
-                                                        Number(
-                                                            holder.balance
-                                                        ) !== 0
-                                                )
-                                                .sort((a, b) => { return b.balance - a.balance })
-                                                .map((holder, index) => (
-                                                    <tr
-                                                        key={index}
-                                                        className="text-white border-b text-left"
-                                                    >
+                                            {paginatedHolders.map((holder, index) => (
+                                                <tr key={index + startIndex} className="text-white border-b text-left">
+                                                    <td className="px-6 py-1">{startIndex + index + 1}</td>
+                                                    <td className="px-6 py-1 whitespace-nowrap">
+                                                        <a
+                                                            className="hover:text-indigo-900"
+                                                            href={`https://explorer.injective.network/account/${holder.address}`}
+                                                        >
+                                                            {holder.address.slice(0, 5) + '...' + holder.address.slice(-5)}
+                                                        </a>
+                                                        {WALLET_LABELS[holder.address] && (
+                                                            <span className={`${WALLET_LABELS[holder.address].bgColor} ${WALLET_LABELS[holder.address].textColor} ml-2`}>
+                                                                {WALLET_LABELS[holder.address].label}
+                                                            </span>
+                                                        )}
+                                                        {holder.address == lastLoadedAddress && (
+                                                            <span className="text-red-500 ml-2">
+                                                                {" "}token contract 🔥
+                                                            </span>
+                                                        )}
+                                                        {liquidity.length > 0 && holder.address == liquidity[0].infoDecoded.contract_addr && (
+                                                            <span className="text-blue-500 ml-2">
+                                                                {" "}liquidity pool
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-1">
+                                                        {hasSplitBalances ? holder.cw20Balance.toFixed(2) : holder.balance.toFixed(2)}
+                                                    </td>
+                                                    {hasSplitBalances && (
                                                         <td className="px-6 py-1">
-                                                            {index + 1}
+                                                            {holder.bankBalance.toFixed(2)}
                                                         </td>
-                                                        <td className="px-6 py-1 whitespace-nowrap">
-                                                            <a
-                                                                className="hover:text-indigo-900"
-                                                                href={`https://explorer.injective.network/account/${holder.address}`}
-                                                            >
-                                                                {holder.address.slice(0, 5) + '...' + holder.address.slice(-5)}
-                                                            </a>
-                                                            {
-                                                                WALLET_LABELS[holder.address] ? (
-                                                                    <span className={`${WALLET_LABELS[holder.address].bgColor} ${WALLET_LABELS[holder.address].textColor} ml-2`}>
-                                                                        {WALLET_LABELS[holder.address].label}
-                                                                    </span>
-                                                                ) : null
-                                                            }
-                                                            {holder.address ==
-                                                                lastLoadedAddress && (
-                                                                    <span className="text-red-500 ml-2">
-                                                                        {" "}
-                                                                        token contract 🔥
-                                                                    </span>
-                                                                )}
-                                                            {liquidity.length > 0 && holder.address == liquidity[0].infoDecoded.contract_addr &&
-                                                                <span className="text-blue-500 ml-2">
-                                                                    {" "}
-                                                                    liquidity pool
-                                                                </span>
-                                                            }
-                                                        </td>
-                                                        <td className="px-6 py-1">
-                                                            {hasSplitBalances ? holder.cw20Balance.toFixed(2) : holder.balance.toFixed(2)}
-                                                        </td>
-                                                        {hasSplitBalances &&
-                                                            <td className="px-6 py-1">
-                                                                {holder.bankBalance.toFixed(2)}
-                                                            </td>
-                                                        }
-                                                        <td className="px-6 py-1">
-                                                            {
-                                                                holder.percentageHeld.toFixed(2)
-                                                            }
-                                                            %
-                                                        </td>
-                                                        <td className="px-6 py-1">
-                                                            {
-                                                                holder.usdValue?.toFixed(2)
-                                                            }
-                                                        </td>
-                                                    </tr>
-                                                ))}
+                                                    )}
+                                                    <td className="px-6 py-1">
+                                                        {holder.percentageHeld.toFixed(2)}%
+                                                    </td>
+                                                    <td className="px-6 py-1">
+                                                        {holder.usdValue?.toFixed(2) || (
+                                                            !holder.usdValue && findingLiq && (
+                                                                <ClipLoader size={20} color="white" />
+                                                            )
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
                                         </tbody>
                                     </table>
+                                </div>
+                                <div className="pagination-controls mt-4">
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                        disabled={currentPage === 1}
+                                        className="px-4 py-2 mr-2 bg-gray-800 text-white disabled:bg-gray-500"
+                                    >
+                                        Previous
+                                    </button>
+                                    <span className="px-4">Page {currentPage} of {totalPages}</span>
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                        disabled={currentPage === totalPages}
+                                        className="px-4 py-2 ml-2 bg-gray-800 text-white disabled:bg-gray-500"
+                                    >
+                                        Next
+                                    </button>
                                 </div>
                             </div>
                         )}

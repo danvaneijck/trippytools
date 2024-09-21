@@ -1383,14 +1383,7 @@ class TokenUtils {
         const allPools = []
         for (const factoryAddress of this.factories) {
             for (const baseAsset of this.baseAssets) {
-                console.log({
-                    pair: {
-                        asset_infos: [
-                            assetInfo,
-                            baseAsset
-                        ]
-                    }
-                })
+
                 const query = Buffer.from(JSON.stringify({
                     pair: {
                         asset_infos: [
@@ -1420,7 +1413,7 @@ class TokenUtils {
                     allPools.push({ infoDecoded, factory: factoryAddress, price, marketCap, liquidity })
                 }
                 catch (e) {
-                    console.log(e)
+                    // console.log(e)
                 }
             }
         }
@@ -1445,12 +1438,12 @@ class TokenUtils {
         const baseTokenMeta = (token0Meta.denom === baseAsset?.native_token?.denom || token0Meta.denom === baseAsset?.token?.contract_addr) ? token0Meta : token1Meta;
         const memeTokenMeta = (baseTokenMeta === token0Meta) ? token1Meta : token0Meta;
 
-        console.log("base asset meta", baseTokenMeta)
-        console.log("meme token meta", memeTokenMeta)
+        // console.log("base asset meta", baseTokenMeta)
+        // console.log("meme token meta", memeTokenMeta)
 
         const poolDecoded = await this.getPoolAmounts(pair);
         const baseAssetPriceUsd = await this.getBaseAssetPrice(baseTokenMeta);
-        console.log("base asset price", baseAssetPriceUsd)
+        // console.log("base asset price", baseAssetPriceUsd)
 
         const baseAssetAmount = poolDecoded.assets.find(asset => {
             if (asset.info.native_token) {
@@ -1490,12 +1483,12 @@ class TokenUtils {
         const baseTokenMeta = (token0Meta.denom === baseAsset?.native_token?.denom || token0Meta.denom === baseAsset?.token?.contract_addr) ? token0Meta : token1Meta;
         const memeTokenMeta = (baseTokenMeta === token0Meta) ? token1Meta : token0Meta;
 
-        console.log("base asset meta", baseTokenMeta)
-        console.log("meme token meta", memeTokenMeta)
+        // console.log("base asset meta", baseTokenMeta)
+        // console.log("meme token meta", memeTokenMeta)
 
         const poolDecoded = await this.getPoolAmounts(pair);
         const baseAssetPriceUsd = await this.getBaseAssetPrice(baseTokenMeta);
-        console.log("base asset price", baseAssetPriceUsd)
+        // console.log("base asset price", baseAssetPriceUsd)
 
         const baseAssetAmount = poolDecoded.assets.find(asset => {
             if (asset.info.native_token) {

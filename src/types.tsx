@@ -16,6 +16,7 @@ export interface Holder {
     usdValue?: number
 }
 
+
 export interface TokenMeta {
     denom: string;
 }
