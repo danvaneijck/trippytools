@@ -173,11 +173,6 @@ export const TOKENS = [
         img: "https://wsrv.nl/?url=https%3A%2F%2Fi.ibb.co%2FRBHCm14%2Fbennypfp.png&n=-1&w=64&h=64"
     },
     {
-        value: "factory/inj1l2gcrfr6aenjyt5jddk79j7w5v0twskw6n70y8/PROP420",
-        label: "PROP420",
-        img: "https://bafkreie3eoejlhintbzgo6dk4axgh3jdc7pvbzrbxfg6tj3cb2b5r744xu.ipfs.w3s.link/"
-    },
-    {
         value: "inj14eaxewvy7a3fk948c3g3qham98mcqpm8v5y0dp",
         label: "COKE",
         img: "https://imagedelivery.net/DYKOWp0iCc0sIkF-2e4dNw/9567494c-30d5-41bd-f8b2-35d17709b100/public"
@@ -200,7 +195,7 @@ export const TOKENS = [
     {
         value: "factory/inj18flmwwaxxqj8m8l5zl8xhjrnah98fcjp3gcy3e/XIII",
         label: "XIII",
-        img: "https://cloudflare-ipfs.com/ipfs/bafybeihpussgsgvdw2rbbr6txr5xpidrjeyusiezgxh4tsud7q2ftbbsjq"
+        img: "https://ipfs.io/ipfs/bafybeihpussgsgvdw2rbbr6txr5xpidrjeyusiezgxh4tsud7q2ftbbsjq"
     },
     {
         value: "factory/inj172ccd0gddgz203e4pf86ype7zjx573tn8g0df9/GINGER",
@@ -217,11 +212,40 @@ export const TOKENS = [
         label: "ninja",
         img: "https://i.ibb.co/qJwYW3X/NINJA.png"
     },
-
+    {
+        value: "factory/inj1l2gcrfr6aenjyt5jddk79j7w5v0twskw6n70y8/PROP420",
+        label: "PROP420",
+        img: "https://bafkreie3eoejlhintbzgo6dk4axgh3jdc7pvbzrbxfg6tj3cb2b5r744xu.ipfs.w3s.link/"
+    },
     {
         value: "inj19vy83ne9tzta2yqynj8yg7dq9ghca6yqn9hyej",
         label: "Drugs",
         img: "https://i.imgur.com/8f9uHTN.png"
+    },
+    {
+        value: "inj1fy4hd7gqtdzp6j84v9phacm3f998382yz37rjd",
+        label: "MONKS",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fipfs-gw.stargaze-apis.com%2Fipfs%2FQmQJMfHXWuFhxiAk6oC3TbkD8ZqkzVMSruF5AJhVLZSJfp&n=-1&w=64&h=64"
+    },
+    {
+        value: "inj1l49685vnk88zfw2egf6v65se7trw2497wsqk65",
+        label: "KAGE",
+        img: "https://i.imgur.com/wvNCSB3.png"
+    },
+    {
+        value: "factory/inj14lf8xm6fcvlggpa7guxzjqwjmtr24gnvf56hvz/autism",
+        label: "AUTISM",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjlee1997%2Fautism%2Fmain%2Fautism.jpg&n=-1&w=64&h=64"
+    },
+    {
+        value: "inj1s4srnj2cdjf3cgun57swe2je8u7n3tkm6kz257",
+        label: "DIB",
+        img: "https://i.imgur.com/3bBM1Jd.jpeg"
+    },
+    {
+        value: "factory/inj1vwn4x08hlactxj3y3kuqddafs2hhqzapruwt87/katana",
+        label: "KATANA",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fi.ibb.co%2FyYVqfXF%2Ftoken-icon.webp&n=-1&w=64&h=64"
     },
     {
         value: "factory/inj1q4z7jjxdk7whwmkt39x7krc49xaqapuswhjhkn/boys",
@@ -241,7 +265,7 @@ export const TOKENS = [
     {
         value: "factory/inj14cpnzf4mxyxel7le3wp2zxyvwr8g0wukch9865/mycelium",
         label: "mycelium",
-        img: "https://cloudflare-ipfs.com/ipfs/QmcWQeL2podyWSZFEpGLUfgPgeGopM49pV8c97vHbwswkH/myceliumlogo.JPG"
+        img: "https://bafybeihupq52og4abc5hxefoojaa3di5nrthjsdgz6xjf3jl7trdg5cgdm.ipfs.w3s.link/bafkreia6ybrap3qg2bqcm7efxrkg7rsbxvntmrnuohfcmhq6ubwmaeyady[1].jpg"
     },
     {
         value: "inj1mgts7d5c32w6aqr8h9f5th08x0p4jaya2tp4zp",
@@ -256,7 +280,7 @@ export const TOKENS = [
     {
         value: "factory/inj10pz3xq7zf8xudqxaqealgyrnfk66u3c99ud5m2/SMELLY",
         label: "SMELLY",
-        img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
+        img: "https://ipfs.io/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
     },
     {
         value: "inj1gn8ss00s3htff0gv6flycgdqhc9xdsmvdpzktd",

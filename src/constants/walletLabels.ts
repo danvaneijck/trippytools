@@ -11,6 +11,7 @@ const benanceDev = "inj12j0xu6yxufrphl3av5ksjygtpg204h534yxc70"
 const injCw20Adapter = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
 const mirza = "inj1pem9tjvql4zjy32hlp30epz77x5sjuy6qcrck2"
 const eric = "inj1mf54qzss29pyk450lkdpa2rqpn38hzcexfpyac"
+const mito = "inj14vnmw2wee3xtrsqfvpcqg35jg9v7j2vdpzx0kk"
 
 export const WALLET_LABELS = {
     ...LIQUIDITY_POOLS.reduce((acc, pool) => {
@@ -73,6 +74,11 @@ export const WALLET_LABELS = {
     },
     [eric]: {
         label: "@ericinjective",
+        bgColor: "",
+        textColor: "text-green-500"
+    },
+    [mito]: {
+        label: "Mito Finance",
         bgColor: "",
         textColor: "text-green-500"
     }

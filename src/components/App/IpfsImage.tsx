@@ -15,9 +15,12 @@ const IPFSImage = ({ ipfsPath, className, width }) => {
 
     const imageUrl = getImageUrl(ipfsPath);
 
-    return <img src={imageUrl} style={{ width: width }}
+    return <img
+        src={imageUrl}
+        style={{ width: width }}
         className={className}
-        alt="logo" alt="IPFS Image" />;
+        alt="logo" alt="IPFS Image"
+    />;
 };
 
 export default IPFSImage
