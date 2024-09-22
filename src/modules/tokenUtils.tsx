@@ -85,7 +85,6 @@ class TokenUtils {
     chainGrpcWasmApi: ChainGrpcWasmApi;
     chainGrpcBankApi: ChainGrpcBankApi;
     indexerRestExplorerApi: IndexerRestExplorerApi;
-    preSaleAmounts: Map<string, PresaleAmount>;
     indexerGrpcAccountPortfolioApi: IndexerGrpcAccountPortfolioApi;
     chainGrpcTokenFactoryApi: ChainGrpcTokenFactoryApi;
     baseAssets: ({ native_token: { denom: string; }; token?: undefined; } | { token: { contract_addr: string; }; native_token?: undefined; })[];
@@ -112,8 +111,6 @@ class TokenUtils {
             new IndexerGrpcAccountPortfolioApi(endpoints.indexer);
 
         this.indexerGrpcSpotApi = new IndexerGrpcSpotApi(endpoints.indexer)
-
-        this.preSaleAmounts = new Map();
 
         this.denomClient = new DenomClientAsync(Network.Mainnet, {
             endpoints: {
@@ -655,8 +652,11 @@ class TokenUtils {
         allTransactions: ExplorerTransaction[],
         max: number,
         minPerWallet: number,
-        maxPerWallet: number
+        maxPerWallet: number,
+        denom: string
     ) {
+        const preSaleAmounts = new Map();
+
         const maxCap = max * Math.pow(10, 18);
         const minContribution = minPerWallet * Math.pow(10, 18);
         const maxContribution = maxPerWallet * Math.pow(10, 18);
@@ -703,7 +703,7 @@ class TokenUtils {
                     amount = msg["transfer"]["amount"];
                 } else if (message.type == "/cosmos.bank.v1beta1.MsgSend") {
                     amount = message.message.amount
-                        ? message.message.amount[0].denom == "inj"
+                        ? message.message.amount[0].denom == denom
                             ? message.message.amount[0].amount
                             : null
                         : null;
@@ -734,7 +734,7 @@ class TokenUtils {
                     (Number(amount) < minContribution ||
                         Number(amount) > maxContribution)
                 ) {
-                    const entry = this.preSaleAmounts.get(sender);
+                    const entry = preSaleAmounts.get(sender);
                     const totalSent =
                         Number(amount) +
                         (entry ? Number(entry.amountSent ?? 0) : 0);
@@ -749,7 +749,7 @@ class TokenUtils {
                     toRefund -= entry ? Number(entry.amountRefunded) ?? 0 : 0;
                     if (toRefund < 0) toRefund = 0;
 
-                    this.preSaleAmounts.set(sender, {
+                    preSaleAmounts.set(sender, {
                         ...entry,
                         address: sender,
                         amountSent: totalSent,
@@ -769,7 +769,7 @@ class TokenUtils {
                 ) {
                     let totalSent = Number(amount);
                     let toRefund = Number(amount);
-                    const entry = this.preSaleAmounts.get(sender);
+                    const entry = preSaleAmounts.get(sender);
 
                     if (entry) {
                         totalSent += Number(entry.amountSent ?? 0);
@@ -779,7 +779,7 @@ class TokenUtils {
 
                     if (toRefund < 0) toRefund = 0;
 
-                    this.preSaleAmounts.set(sender, {
+                    preSaleAmounts.set(sender, {
                         ...entry,
                         address: sender,
                         amountSent: totalSent,
@@ -802,11 +802,11 @@ class TokenUtils {
                     if (sender == address) {
                         const participant = recipient;
 
-                        if (this.preSaleAmounts.has(participant)) {
-                            const entry = this.preSaleAmounts.get(participant);
+                        if (preSaleAmounts.has(participant)) {
+                            const entry = preSaleAmounts.get(participant);
                             if (entry) {
                                 const amountRefunded =
-                                    (Number(entry.amountRefunded) ?? 0) +
+                                    (!isNaN(Number(entry.amountRefunded)) ? Number(entry.amountRefunded) : 0) +
                                     Number(amount);
 
                                 let toRefund =
@@ -814,7 +814,7 @@ class TokenUtils {
                                     0 - amountRefunded;
                                 if (toRefund < 0) toRefund = 0;
 
-                                this.preSaleAmounts.set(participant, {
+                                preSaleAmounts.set(participant, {
                                     ...entry,
                                     address: participant,
                                     amountRefunded: amountRefunded,
@@ -824,8 +824,8 @@ class TokenUtils {
                             }
                         }
                     } else {
-                        if (this.preSaleAmounts.has(sender)) {
-                            const entry = this.preSaleAmounts.get(sender);
+                        if (preSaleAmounts.has(sender)) {
+                            const entry = preSaleAmounts.get(sender);
                             if (entry) {
                                 const totalSent =
                                     Number(amount) +
@@ -848,7 +848,7 @@ class TokenUtils {
                                     ? Number(entry.amountRefunded)
                                     : 0;
 
-                                this.preSaleAmounts.set(sender, {
+                                preSaleAmounts.set(sender, {
                                     ...entry,
                                     address: sender,
                                     amountSent: totalSent,
@@ -864,7 +864,7 @@ class TokenUtils {
                         } else {
                             const toRefund = !withinMaxCap ? Number(amount) : 0;
 
-                            this.preSaleAmounts.set(sender, {
+                            preSaleAmounts.set(sender, {
                                 address: sender,
                                 timeSent: blockTimestamp.format(),
                                 amountSent: Number(amount),
@@ -889,18 +889,19 @@ class TokenUtils {
             (totalAmountReceived / Math.pow(10, 18)).toFixed(2),
             "INJ"
         );
+        console.log("max cap hit: ", maxCapHit, "block number: ", maxCapBlock);
 
-        this.preSaleAmounts.forEach((value, key) => {
+        preSaleAmounts.forEach((value, key) => {
             const amountSentFormatted =
-                (Number(value.amountSent) ?? 0) / Math.pow(10, 18);
+                !isNaN(Number(value?.amountSent)) ? Number(value.amountSent) / Math.pow(10, 18) : 0;
             const totalContributionFormatted =
-                (Number(value.contribution) ?? 0) / Math.pow(10, 18);
+                !isNaN(Number(value?.contribution)) ? Number(value.contribution) / Math.pow(10, 18) : 0;
             const toRefundFormatted =
-                (Number(value.toRefund) ?? 0) / Math.pow(10, 18);
+                !isNaN(Number(value?.toRefund)) ? Number(value.toRefund) / Math.pow(10, 18) : 0;
             const amountRefundedFormatted =
-                (Number(value.amountRefunded) ?? 0) / Math.pow(10, 18);
+                !isNaN(Number(value?.amountRefunded)) ? Number(value.amountRefunded) / Math.pow(10, 18) : 0;
 
-            this.preSaleAmounts.set(key, {
+            preSaleAmounts.set(key, {
                 ...value,
                 amountSentFormatted: amountSentFormatted,
                 totalContributionFormatted: totalContributionFormatted,
@@ -909,51 +910,11 @@ class TokenUtils {
             });
         });
 
-        let totalRefunded = 0;
-        let totalContribution = 0;
-        let totalToRefund = 0;
 
-        Array.from(this.preSaleAmounts.values()).forEach((entry) => {
-            if (entry.amountRefunded)
-                totalRefunded += Number(entry.amountRefunded) ?? 0;
-            if (entry.contribution)
-                totalContribution += Number(entry.contribution) ?? 0;
-            if (entry.toRefund) totalToRefund += Number(entry.toRefund) ?? 0;
-
-            // if (entry.totalContributionFormatted && entry.totalContributionFormatted > 0 && !entry.tokensSent) {
-            //     console.log(entry.address);
-            // }
-        });
-
-        console.log(totalToRefund, totalContribution);
-
-        console.log(
-            "to refund: ",
-            (totalToRefund / Math.pow(10, 18)).toFixed(2),
-            "INJ"
-        );
-        console.log(
-            "total contributions: ",
-            (totalContribution / Math.pow(10, 18)).toFixed(2),
-            "INJ"
-        );
-
-        console.log("max cap hit: ", maxCapHit, "block number: ", maxCapBlock);
-
-        const totalR = Number(
-            (totalAmountReceived / Math.pow(10, 18)).toFixed(2)
-        );
-        const totalC = Number(totalContribution) / Math.pow(10, 18);
-        const totalRef = Number(totalToRefund) / Math.pow(10, 18);
-        totalRefunded = Number(totalRefunded / Math.pow(10, 18));
-
-        const leftOver = totalR - totalC - totalRef - totalRefunded;
-
-        console.log(
-            `${totalR} - ${totalC} - ${totalRef} - ${totalRefunded} = ${leftOver}`
-        );
-
-        return totalC;
+        return {
+            preSaleAmounts,
+            totalAmountReceived
+        };
     }
 
     calculatePercentageOfPercentage(x: number) {
@@ -968,7 +929,7 @@ class TokenUtils {
         return percentageOf25;
     }
 
-    async getMultiplier(presaleWallet: string, multiplierToken: string) {
+    async getMultiplier(presaleWallet: string, multiplierToken: string, preSaleAmounts) {
         const allTransactions = await this.getContractTx(multiplierToken);
 
         allTransactions.forEach((tx) => {
@@ -982,11 +943,11 @@ class TokenUtils {
                         if (recipient == presaleWallet) {
                             // console.log(`sender ${sender} sent ${amount / Math.pow(10, 18)} shroom to pre sale wallet`)
 
-                            if (this.preSaleAmounts.has(sender)) {
-                                const entry = this.preSaleAmounts.get(sender);
+                            if (preSaleAmounts.has(sender)) {
+                                const entry = preSaleAmounts.get(sender);
                                 if (entry) {
                                     const a = entry.multiplierTokensSent ?? 0;
-                                    this.preSaleAmounts.set(sender, {
+                                    preSaleAmounts.set(sender, {
                                         ...entry,
                                         multiplierTokensSent:
                                             Number(amount / Math.pow(10, 18)) +
@@ -994,7 +955,7 @@ class TokenUtils {
                                     });
                                 }
                             } else {
-                                this.preSaleAmounts.set(sender, {
+                                preSaleAmounts.set(sender, {
                                     multiplierTokensSent: 0,
                                 });
                             }
@@ -1004,9 +965,9 @@ class TokenUtils {
             });
         });
 
-        this.preSaleAmounts.forEach((entry, address) => {
+        preSaleAmounts.forEach((entry, address) => {
             if (!entry.multiplierTokensSent) {
-                this.preSaleAmounts.set(address, {
+                preSaleAmounts.set(address, {
                     ...entry,
                     multiplierTokensSent: 0,
                     multiplier: 0,
@@ -1019,7 +980,7 @@ class TokenUtils {
             const multi =
                 Number(this.calculatePercentageOfPercentage(tokensSent)) / 100;
 
-            this.preSaleAmounts.set(address, {
+            preSaleAmounts.set(address, {
                 ...entry,
                 multiplier: multi,
                 adjustedContribution:
@@ -1029,7 +990,7 @@ class TokenUtils {
         });
 
         let total = 0;
-        this.preSaleAmounts.forEach((entry) => {
+        preSaleAmounts.forEach((entry) => {
             if (entry.adjustedContribution)
                 total += Number(entry.adjustedContribution);
         });
@@ -1042,7 +1003,8 @@ class TokenUtils {
         totalSupply: number,
         decimals: number,
         percentToAirdrop: number,
-        devAllocation: number
+        devAllocation: number,
+        preSaleAmounts
     ) {
         let amountToDrop =
             totalSupply * Math.pow(10, decimals) * percentToAirdrop;
@@ -1052,7 +1014,7 @@ class TokenUtils {
 
         const dropAmounts = new Map();
 
-        Array.from(this.preSaleAmounts.values()).forEach((entry) => {
+        Array.from(preSaleAmounts.values()).forEach((entry) => {
             if (entry.address) {
                 if (!entry.contribution || entry.contribution <= 0) return;
 
@@ -1062,7 +1024,7 @@ class TokenUtils {
                     Number(totalAdjustedContribution);
                 const numberForUser = amountToDrop * percentOfSupply;
 
-                this.preSaleAmounts.set(entry.address, {
+                preSaleAmounts.set(entry.address, {
                     ...entry,
                     tokensToSend: numberForUser
                         ? (numberForUser / Math.pow(10, 18)).toFixed(0) +
@@ -1080,12 +1042,12 @@ class TokenUtils {
         });
 
         let total = 0;
-        this.preSaleAmounts.forEach((entry) => {
+        preSaleAmounts.forEach((entry) => {
             if (entry.adjustedContribution)
                 total += Number(entry.adjustedContribution);
         });
         console.log("total adjusted contribution", total);
-        return this.preSaleAmounts;
+        return preSaleAmounts;
     }
 
     async getPairInfo(pairAddress: string) {
