@@ -257,8 +257,6 @@ const PreSaleTool = () => {
                                     </table>
                                 </div>
 
-
-
                                 <button
                                     onClick={handleCollectWallets}
                                     className="p-2 rounded-lg text-center bg-slate-700 hover:bg-slate-800 mt-5"
