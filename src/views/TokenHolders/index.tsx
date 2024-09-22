@@ -334,11 +334,6 @@ const TokenHolders = () => {
 
             const liquidity = await module.checkForLiquidity(assetInfo);
 
-            if (signal.aborted) {
-                console.log("Aborted after checking liquidity");
-                return;
-            }
-
             console.log("Liquidity fetched:", liquidity);
 
             if (liquidity.length === 0) {

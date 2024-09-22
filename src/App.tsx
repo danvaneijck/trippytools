@@ -16,6 +16,7 @@ import client from './apolloClient';
 import BinaryOptionMarkets from './views/BinaryOptionMarkets';
 import AirdropHistory from './views/AirdropHistory';
 import MitoMarketMake from './views/MitoMarketMake';
+import PreSaleTool from './views/PresaleTool';
 
 const App = () => {
   return (
@@ -35,6 +36,7 @@ const App = () => {
             <Route path="/token-scanner" element={<TokenScanner />} />
             <Route path="/binary-option-markets" element={<BinaryOptionMarkets />} />
             <Route path="/market-make" element={<MitoMarketMake />} />
+            <Route path="/pre-sale-tool" element={<PreSaleTool />} />
 
             <Route path="/" element={<Home />} />
           </Routes>
