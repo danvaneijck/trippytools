@@ -76,7 +76,7 @@ const Airdrop = () => {
     const [limitSwitch, setLimitSwitch] = useState(false)
     const [walletLimit, setWalletLimit] = useState(0)
 
-    const [shroomCost, setShroomCost] = useState(200000)
+    const [shroomCost, setShroomCost] = useState(100000)
     const [shroomPrice, setShroomPrice] = useState(null)
 
     const [dropMode, setDropMode] = useState({

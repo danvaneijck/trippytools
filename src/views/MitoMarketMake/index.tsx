@@ -26,7 +26,7 @@ const MitoMarketMake = () => {
 
     const [selectedVault, setSelectedVault] = useState(null)
 
-    const shroomCost = 10000
+    const shroomCost = 5000
     const [shroomPrice, setShroomPrice] = useState(null)
 
 

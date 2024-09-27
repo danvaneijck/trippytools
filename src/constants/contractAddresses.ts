@@ -7,39 +7,144 @@ export const LIQUIDITY_POOLS = [
         img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg"
     },
     {
-        value: "inj1ylcr85kkksgkqnpzmmrmg5tmfnqmq7trjpe4vs",
-        label: "SHROOM / INJ Astroport",
-        img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg"
-    },
-    {
-        value: "inj1rusfnzgtcvkn8z92h9hyvzuna60tc0x0yy74tf",
-        label: "spore / SHROOM",
-        img: "https://bafybeia6kaiznad75mbzr2uwswfxw6qymt7ws3egcui6tzquomzh2w3cu4.ipfs.w3s.link/spore.webp"
-    },
-    {
-        value: "inj1e35460gusk3f0lagmul6vzt9vjh6fp3zknl665",
-        label: "mycelium / spore",
-        img: "https://cloudflare-ipfs.com/ipfs/QmcWQeL2podyWSZFEpGLUfgPgeGopM49pV8c97vHbwswkH/myceliumlogo.JPG"
-    },
-    {
         value: "inj1k76ty6znvrcnawl5zpcpjc9my9984nntfchmaj",
         label: "COKE / INJ DojoSwap",
         img: "https://imagedelivery.net/DYKOWp0iCc0sIkF-2e4dNw/9567494c-30d5-41bd-f8b2-35d17709b100/public"
     },
     {
+        value: "inj1ylcr85kkksgkqnpzmmrmg5tmfnqmq7trjpe4vs",
+        label: "SHROOM / INJ Astroport",
+        img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg"
+    },
+    {
+        value: "inj1efdrt4s78gffnntlqlhcctu3h0ndsd0nr86edc",
+        label: "NINJA / INJ DojoSwap",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fi.ibb.co%2FqJwYW3X%2FNINJA.png&n=-1&w=64&h=64"
+    },
+    {
+        value: "inj1967xd6krmzm0hllgddmf55vtmtck5l7ur79gsx",
+        label: "WIZZ / INJ Astroport",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fipfs.io%2Fipfs%2Fbafybeigapmehpvlqmyyrifq2bvngdquxuqf6tdpqja2sehgsxwwkctkimm&n=-1&w=64&h=64"
+    },
+    {
+        value: "inj1cgrd3sdn7f6w2jnnpgr55yh0j2w5htz0he2hsw",
+        label: "INJUSSY / INJ Astroport",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fi.ibb.co%2FLh2xJ2w%2FTOKENINJUSSY.jpg&n=-1&w=64&h=64"
+    },
+    {
+        value: "inj102qaywu5pqu2ec30ltevxwmp3yn3lfahlvswyh",
+        label: "DRUGS / INJ Astroport",
+        img: "https://i.imgur.com/8f9uHTN.png"
+    },
+    {
+        value: "inj1gyzvcy2u3euq2wzl9hr0pn54xme8dh50l4wq3f",
+        label: "PORTAL / INJ DojoSwap",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fbafybeig44jy7e4fg6dl4s5tvcznqtoupzmi345yj4jxehb2iidnmn7b2ky.ipfs.w3s.link%2Fportalstonelogo.webp&n=-1&w=64&h=64"
+    },
+    {
+        value: "inj1rl2fyqrxyg02xvt934pvnpr5szx0nzrwktyk8y",
+        label: "PING / INJ DojoSwap",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fipfs.io%2Fipfs%2FQmV8rVG3NXZUSHU3v2gvrMcnRYiF195FdrLShs6wSnS24c&n=-1&w=64&h=64"
+    },
+    {
+        value: "inj1wn3f6n4mn0qnv2q79jhn9h8eh5nztk8asv93z2",
+        label: "ONE / INJ DojoSwap",
+        img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrSXuTOOrtuSQCLWjA7REz8uPix9ss51WOxXcY9IN9iuRoA1TDKfSAtJk&s=10"
+    },
+    {
+        value: "inj1e7rtn33fw430e56849qzeklmn0sjl9w75hm7rt",
+        label: "IPEPE / INJ Astroport",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fraw.githubusercontent.com%2FMarinovs%2Fastroport-token-lists%2Fmain%2Fimg%2Finjpepe.png&n=-1&w=64&h=64"
+    },
+    {
+        value: "inj1kh6ugg3ek9rhjwuphm7kty6nerss8q09609uef",
+        label: "IDOGE / INJ DojoSwap",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fipfs.io%2Fipfs%2FQmeVUGL9DqzWYGMdWEBzLfSewxeMSSjVZ3pHoKCNw986na&n=-1&w=64&h=64"
+    },
+    {
+        value: "inj1y9fz2p2tpaz5p7th64njjmx6atfzm946gvszrq",
+        label: "KOGA / INJ DojoSwap",
+        img: "https://i.imgur.com/aeMe3q7.jpeg"
+    },
+    {
+        value: "inj1r7ahhyfe35l04ffa5gnzsxjkgmnn9jkd5ds0vg",
+        label: "NONJA / INJ DojoSwap",
+        img: "https://www.nonja.xyz/pfp.png"
+    },
+    {
+        value: "inj1eswdzx773we5zu2mz0zcmm7l5msr8wcss8ek0f",
+        label: "KIRA / INJ DojoSwap",
+        img: "https://raw.githubusercontent.com/kdelia12/injective-ts/dev/packages/token-metadata/src/images/kira.jpeg"
+    },
+    {
+        value: "inj1j6lxp4e68tfu96xs95h72rna3jl7ffngs08g47",
+        label: "MONKS / INJ DojoSwap",
+        img: "https://ipfs-gw.stargaze-apis.com/ipfs/QmQJMfHXWuFhxiAk6oC3TbkD8ZqkzVMSruF5AJhVLZSJfp"
+    },
+    {
+        value: "inj1uugfny4cqxq0jg9vd6svyunhmdlk2s6wjdftj8",
+        label: "GINGER / INJ DojoSwap",
+        img: "https://raw.githubusercontent.com/SHITcoinsonINJ/injective-ts/c8034284085e1340f8c4eb7e8a7bc3adfc94c1ec/packages/token-metadata/src/images/ginger.png"
+    },
+    {
+        value: "inj14z0hjhtwq7v6hep3dek9df8wl93zww7erhuhfg",
+        label: "SPUUN / DOJO DojoSwap",
+        img: "https://www.spuun.xyz/logob.png"
+    },
+    {
+        value: "inj1rusfnzgtcvkn8z92h9hyvzuna60tc0x0yy74tf",
+        label: "spore / SHROOM Astroport",
+        img: "https://bafybeia6kaiznad75mbzr2uwswfxw6qymt7ws3egcui6tzquomzh2w3cu4.ipfs.w3s.link/spore.webp"
+    },
+    {
+        value: "inj1e35460gusk3f0lagmul6vzt9vjh6fp3zknl665",
+        label: "mycelium / spore Astroport",
+        img: "https://bafybeihupq52og4abc5hxefoojaa3di5nrthjsdgz6xjf3jl7trdg5cgdm.ipfs.w3s.link/bafkreia6ybrap3qg2bqcm7efxrkg7rsbxvntmrnuohfcmhq6ubwmaeyady[1].jpg"
+    },
+    {
+        value: "inj1m0dmu5y04fzmzq434qlxfq8jhaf2s6rpsdam2p",
+        label: "HACH / INJ Astroport",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fi.ibb.co%2FYddhZbB%2Flogo.jpg&n=-1&w=64&h=64"
+    },
+    {
+        value: "inj1fd075wnd0ksm5x7c5q83xkajpxqycs7ch08ly6",
+        label: "ERIC / INJ Astroport",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fipfs.io%2Fipfs%2FQmUpMPqBxn7AGCDkasnX6kwxTg4YiH3fmLmizk6CMkZMJt&n=-1&w=64&h=64"
+    },
+    {
+        value: "inj1dkfpt70kq48tm4emtj6l92gddq0z70jn8cn03g",
+        label: "AUTISM / INJ Astroport",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjlee1997%2Fautism%2Fmain%2Fautism.jpg&n=-1&w=64&h=64"
+    },
+    {
+        value: "inj1ueyyd8uqvkw7he0ma59kp2436hvekz4pndjwj3",
+        label: "MAX / INJ Astroport",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fi.ibb.co%2FFbVHYVx%2Flogo.jpg&n=-1&w=64&h=64"
+    },
+    {
+        value: "inj1er0535pz8k3l6wpzm263vv9gmkghwct7he85pl",
+        label: "KAGE / INJ DojoSwap",
+        img: "https://i.imgur.com/wvNCSB3.png"
+    },
+    {
+        value: "inj1tggklhscqrd005waadqr76hwj8qgwjaua53r2d",
+        label: "DIB / INJ DojoSwap",
+        img: "https://i.imgur.com/3bBM1Jd.jpeg"
+    },
+    {
         value: "inj1tpt9u0lvz2njw6a7m8pufdamd6mt8ymh8cw4nc",
         label: "SMELLY / INJ DojoSwap",
-        img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
+        img: "https://ipfs.io/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
     },
     {
         value: "inj1uhkcvq3pw879t4mttdm9hjjxwjczvs8c5330ty",
         label: "SMELLY / INJ Astroport",
-        img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
+        img: "https://ipfs.io/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
     },
     {
         value: "inj15v9dqklamssewc8sqwkwrs2cjve0r4xu5jfee4",
         label: "SMELLY / SHROOM Astroport",
-        img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
+        img: "https://ipfs.io/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
     },
     {
         value: "inj1tsgxdgywu9ftyfr5gg6223tkaxxgxsevhnayxg",
@@ -82,40 +187,11 @@ export const LIQUIDITY_POOLS = [
         img: "https://cdn.icon-icons.com/icons2/2248/PNG/512/ninja_icon_137361.png"
     },
     {
-        value: "inj1y9fz2p2tpaz5p7th64njjmx6atfzm946gvszrq",
-        label: "KOGA / INJ",
-        img: "https://i.imgur.com/aeMe3q7.jpeg"
-    },
-    {
-        value: "inj1r7ahhyfe35l04ffa5gnzsxjkgmnn9jkd5ds0vg",
-        label: "NONJA / INJ",
-        img: "https://www.nonja.xyz/pfp.png"
-    },
-    {
-        value: "inj1eswdzx773we5zu2mz0zcmm7l5msr8wcss8ek0f",
-        label: "KIRA / INJ",
-        img: "https://raw.githubusercontent.com/kdelia12/injective-ts/dev/packages/token-metadata/src/images/kira.jpeg"
-    },
-    {
-        value: "inj1j6lxp4e68tfu96xs95h72rna3jl7ffngs08g47",
-        label: "MONKS / INJ",
-        img: "https://ipfs-gw.stargaze-apis.com/ipfs/QmQJMfHXWuFhxiAk6oC3TbkD8ZqkzVMSruF5AJhVLZSJfp"
-    },
-    {
-        value: "inj1uugfny4cqxq0jg9vd6svyunhmdlk2s6wjdftj8",
-        label: "GINGER / INJ",
-        img: "https://raw.githubusercontent.com/SHITcoinsonINJ/injective-ts/c8034284085e1340f8c4eb7e8a7bc3adfc94c1ec/packages/token-metadata/src/images/ginger.png"
-    },
-    {
-        value: "inj14z0hjhtwq7v6hep3dek9df8wl93zww7erhuhfg",
-        label: "SPUUN / DOJO",
-        img: "https://www.spuun.xyz/logob.png"
-    },
-    {
         value: "inj1ah574rxey65a9uu6umn8g8whazvgj3sql55cu6",
-        label: "DAOJO / DOJO",
+        label: "DAOJO / DOJO DojoSwap",
         img: "https://i.imgur.com/Huc1Kcd.png"
-    }
+    },
+    
 ]
 
 export const LIQUIDITY_TOKENS = [
@@ -137,22 +213,22 @@ export const LIQUIDITY_TOKENS = [
     {
         value: "inj1v53kddphdgpcdrvgrze773wnj8dlcmpdnlcygq",
         label: "mycelium / spore LP",
-        img: "https://cloudflare-ipfs.com/ipfs/QmcWQeL2podyWSZFEpGLUfgPgeGopM49pV8c97vHbwswkH/myceliumlogo.JPG"
+        img: "https://bafybeihupq52og4abc5hxefoojaa3di5nrthjsdgz6xjf3jl7trdg5cgdm.ipfs.w3s.link/bafkreia6ybrap3qg2bqcm7efxrkg7rsbxvntmrnuohfcmhq6ubwmaeyady[1].jpg"
     },
     {
         value: "inj1prnfc8d8famgvla4zcmsd4xsxcwvjjzpauv75q",
         label: "SMELLY / INJ DOJO LP",
-        img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
+        img: "https://ipfs.io/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
     },
     {
         value: "inj15gt5d8nkx8gmwglx2wze9tjxjd8ydrsht6zlx5",
         label: "SMELLY / INJ ASTRO LP",
-        img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
+        img: "https://ipfs.io/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
     },
     {
         value: "inj1sd3ep9x5rqeg76smy45hgw9rk9c9nl6d7gdwpd",
         label: "SMELLY / SHROOM ASTRO LP",
-        img: "https://cloudflare-ipfs.com/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
+        img: "https://ipfs.io/ipfs/bafybeibwy6ntfpifjq2rpq47ttwnjeygwykr7nb3ruyneyszas7hjjdtw4"
     },
     {
         value: "inj1p04kqva5zztwxhmjptncva00z2hs7qnjhv6uth",
@@ -168,6 +244,11 @@ export const TOKENS = [
         img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg"
     },
     {
+        value: "factory/inj18xsczx27lanjt40y9v79q0v57d76j2s8ctj85x/POOR",
+        label: "POOR",
+        img: "https://bafkreieqyhb4sjr24vpbqlglq77bumvkh2xf5ikkqauyfrzwfb7xpby3ia.ipfs.dweb.link/"
+    },
+    {
         value: "factory/inj127l5a2wmkyvucxdlupqyac3y0v6wqfhq03ka64/qunt",
         label: "qunt",
         img: "https://wsrv.nl/?url=https%3A%2F%2Fi.ibb.co%2FRBHCm14%2Fbennypfp.png&n=-1&w=64&h=64"
@@ -181,6 +262,61 @@ export const TOKENS = [
         value: "inj1fu5u29slsg2xtsj7v5la22vl4mr4ywl7wlqeck",
         label: "NONJA",
         img: "https://www.nonja.xyz/pfp.png"
+    },
+    {
+        value: "factory/inj1s9smy53dtqq087usaf02sz984uddndwuj2f0wt/injussy",
+        label: "INJUSSY",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fi.ibb.co%2FLh2xJ2w%2FTOKENINJUSSY.jpg&n=-1&w=64&h=64"
+    },
+    {
+        value: "factory/inj163072g64wsn8a9n2mydwlx7c0aqt4l7pjseeuu/PORTAL",
+        label: "PORTAL",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fbafybeig44jy7e4fg6dl4s5tvcznqtoupzmi345yj4jxehb2iidnmn7b2ky.ipfs.w3s.link%2Fportalstonelogo.webp&n=-1&w=64&h=64"
+    },
+    {
+        value: "factory/inj13ze65lwstqrz4qy6vvxx3lglnkkuan436aw45e/HACHI",
+        label: "HACHI",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fi.ibb.co%2FYddhZbB%2Flogo.jpg&n=-1&w=64&h=64"
+    },
+    {
+        value: "inj18nuas38jw742ezmk942j4l935lenc6nxd4ypga",
+        label: "IDOGE",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fipfs.io%2Fipfs%2FQmeVUGL9DqzWYGMdWEBzLfSewxeMSSjVZ3pHoKCNw986na&n=-1&w=64&h=64"
+    },
+    {
+        value: "factory/inj1w7cw5tltax6dx7znehul98gel6yutwuvh44j77/TheJanitor",
+        label: "ERIC",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fipfs.io%2Fipfs%2FQmUpMPqBxn7AGCDkasnX6kwxTg4YiH3fmLmizk6CMkZMJt&n=-1&w=64&h=64"
+    },
+    {
+        value: "inj1d6wle0ugcg2u3hcl9unkuz7usdvhv6tx44l9qn",
+        label: "MBERB",
+        img: "https://bafkreif2v3ixf6cdzlmxxmiufpnknvdnpccd4hizu22gw5zxjnomys43be.ipfs.nftstorage.link/"
+    },
+    {
+        value: "factory/inj1uvfpvnmuqhx8jwg4786y59tkagmph827h38mst/WIZZ",
+        label: "WIZZ",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fipfs.io%2Fipfs%2Fbafybeigapmehpvlqmyyrifq2bvngdquxuqf6tdpqja2sehgsxwwkctkimm&n=-1&w=64&h=64"
+    },
+    {
+        value: "factory/inj1td7t8spd4k6uev6uunu40qvrrcwhr756d5qw59/ipepe",
+        label: "IPEPE",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fraw.githubusercontent.com%2FMarinovs%2Fastroport-token-lists%2Fmain%2Fimg%2Finjpepe.png&n=-1&w=64&h=64"
+    },
+    {
+        value: "factory/inj164jk46xjwsn6x4rzu6sfuvtlzy2nza0nxfj0nz/MAX",
+        label: "MAX",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fi.ibb.co%2FFbVHYVx%2Flogo.jpg&n=-1&w=64&h=64"
+    },
+    {
+        value: "inj1z647rvv0cfv5xx3tgsdx77qclkwu2ng7tg2zq5",
+        label: "PING",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fipfs.io%2Fipfs%2FQmV8rVG3NXZUSHU3v2gvrMcnRYiF195FdrLShs6wSnS24c&n=-1&w=64&h=64"
+    },
+    {
+        value: "inj1ju8j0xtaavmzwlvp3pkjhw04mkasgln2smqfed",
+        label: "ONE",
+        img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrSXuTOOrtuSQCLWjA7REz8uPix9ss51WOxXcY9IN9iuRoA1TDKfSAtJk&s=10"
     },
     {
         value: "factory/inj1a6xdezq7a94qwamec6n6cnup02nvewvjtz6h6e/SYN",
