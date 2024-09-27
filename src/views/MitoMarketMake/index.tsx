@@ -26,7 +26,7 @@ const MitoMarketMake = () => {
 
     const [selectedVault, setSelectedVault] = useState(null)
 
-    const shroomCost = 10000
+    const shroomCost = 5000
     const [shroomPrice, setShroomPrice] = useState(null)
 
 
@@ -223,7 +223,7 @@ const MitoMarketMake = () => {
             gas: '3500000'
         };
 
-        await handleSendTx(pubKey, [msgMarketMake], injectiveAddress, offlineSigner, gas)
+        await handleSendTx(pubKey, [feeMsg, msgMarketMake], injectiveAddress, offlineSigner, gas)
     }, [getKeplr, handleSendTx, selectedVault])
 
     return (
