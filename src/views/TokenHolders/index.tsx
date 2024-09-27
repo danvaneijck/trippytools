@@ -639,18 +639,21 @@ const TokenHolders = () => {
                                     />
                                     <div>project: {pairMarketing.project}</div>
                                     <div>description: {pairMarketing.description}</div>
-                                    <div>
-                                        marketing: <a href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}explorer.injective.network/account/${pairMarketing.marketing}`}>
-                                            {pairMarketing.marketing.slice(0, 5) + '...' + pairMarketing.marketing.slice(-5)}
-                                        </a>
-                                        {
-                                            WALLET_LABELS[pairMarketing.marketing] ? (
-                                                <span className={`${WALLET_LABELS[pairMarketing.marketing].bgColor} ${WALLET_LABELS[pairMarketing.marketing].textColor} ml-2`}>
-                                                    {WALLET_LABELS[pairMarketing.marketing].label}
-                                                </span>
-                                            ) : null
-                                        }
-                                    </div>
+                                    {pairMarketing.marketing &&
+                                        <div>
+                                            marketing: <a href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}explorer.injective.network/account/${pairMarketing.marketing}`}>
+                                                {pairMarketing.marketing.slice(0, 5) + '...' + pairMarketing.marketing.slice(-5)}
+                                            </a>
+                                            {
+                                                WALLET_LABELS[pairMarketing.marketing] ? (
+                                                    <span className={`${WALLET_LABELS[pairMarketing.marketing].bgColor} ${WALLET_LABELS[pairMarketing.marketing].textColor} ml-2`}>
+                                                        {WALLET_LABELS[pairMarketing.marketing].label}
+                                                    </span>
+                                                ) : null
+                                            }
+                                        </div>
+                                    }
+
                                 </div>
                             )}
                         </div>

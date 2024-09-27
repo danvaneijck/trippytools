@@ -223,7 +223,7 @@ const MitoMarketMake = () => {
             gas: '3500000'
         };
 
-        await handleSendTx(pubKey, [feeMsg, msgMarketMake], injectiveAddress, offlineSigner, gas)
+        await handleSendTx(pubKey, [msgMarketMake], injectiveAddress, offlineSigner, gas)
     }, [getKeplr, handleSendTx, selectedVault])
 
     return (
