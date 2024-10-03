@@ -243,6 +243,11 @@ export const TOKENS = [
         label: "SHROOM",
         img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg"
     },
+    // {
+    //     value: "inj",
+    //     label: "INJ",
+    //     img: "https://wsrv.nl/?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcosmos%2Fchain-registry%2Fmaster%2Finjective%2Fimages%2Finj.svg&n=-1&w=64&h=64"
+    // },
     {
         value: "factory/inj18xsczx27lanjt40y9v79q0v57d76j2s8ctj85x/POOR",
         label: "POOR",
@@ -256,7 +261,7 @@ export const TOKENS = [
     {
         value: "inj14eaxewvy7a3fk948c3g3qham98mcqpm8v5y0dp",
         label: "COKE",
-        img: "https://imagedelivery.net/DYKOWp0iCc0sIkF-2e4dNw/9567494c-30d5-41bd-f8b2-35d17709b100/public"
+        img: "https://i.seadn.io/s/raw/files/d5bd3d6c64ad1c67f70a3ae332e1f80e.jpg?auto=format&dpr=1&w=1000"
     },
     {
         value: "inj1fu5u29slsg2xtsj7v5la22vl4mr4ywl7wlqeck",

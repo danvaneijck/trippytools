@@ -17,10 +17,7 @@ import {
     IndexerGrpcMitoApi,
     IndexerGrpcOracleApi,
     IndexerGrpcDerivativesApi,
-    MsgInstantBinaryOptionsMarketLaunch,
-    MsgCreateBinaryOptionsLimitOrder,
-    ChainGrpcGovApi,
-    IndexerGrpcAccountApi
+    IndexerGrpcAccountApi,
 } from "@injectivelabs/sdk-ts";
 import { Buffer } from "buffer";
 import moment from "moment";
@@ -29,7 +26,6 @@ import { Coin } from "@injectivelabs/ts-types";
 /* global BigInt */
 import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { CW404_BALANCE_STARTING_KEYS } from "../constants/cw404BalanceKeys";
-import { DenomClientAsync } from "@injectivelabs/sdk-ui-ts";
 import { Network } from "@injectivelabs/networks";
 
 const DOJO_ROUTER = "inj1t6g03pmc0qcgr7z44qjzaen804f924xke6menl"
@@ -111,15 +107,6 @@ class TokenUtils {
             new IndexerGrpcAccountPortfolioApi(endpoints.indexer);
 
         this.indexerGrpcSpotApi = new IndexerGrpcSpotApi(endpoints.indexer)
-
-        this.denomClient = new DenomClientAsync(Network.Mainnet, {
-            endpoints: {
-                grpc: this.RPC,
-                indexer: "https://sentry.exchange.grpc-web.injective.network",
-                rest: "https://sentry.lcd.injective.network",
-                rpc: "https://sentry.tm.injective.network"
-            }
-        })
 
         this.dojoAssetInfo = {
             token: {
@@ -327,7 +314,7 @@ class TokenUtils {
 
     async getDenomMetadata(denom) {
         try {
-            const token = await this.denomClient.getDenomToken(denom)
+            const token = await this.chainGrpcBankApi.fetchDenomMetadata(denom)
             return token;
         } catch (error) {
             console.error('Error fetching token info:', error);

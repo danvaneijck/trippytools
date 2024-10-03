@@ -120,6 +120,10 @@ const TokenConfirmModal = (props: {
         const subdenom = props.tokenSymbol
         const denom = `factory/${injectiveAddress}/${subdenom}`;
         const amount = props.tokenSupply
+        const description = props.tokenDescription
+        const image = props.tokenImage
+        const name = props.tokenName
+        const decimals = props.tokenDecimals
 
         const msgCreateDenom = MsgCreateDenom.fromJSON({
             subdenom,
@@ -139,12 +143,13 @@ const TokenConfirmModal = (props: {
         const msgSetDenomMetadata = MsgSetDenomMetadata.fromJSON({
             sender: injectiveAddress,
             metadata: {
-                base: denom, /** the base denom */
-                description: props.tokenDescription, /** description of your token */
-                display: props.tokenSymbol, /** the displayed name of your token on UIs */
-                name: props.tokenName, /** the name of your token */
-                symbol: props.tokenSymbol, /** the symbol of your token */
-                uri: props.tokenImage /** the logo of your token, should be hosted on IPFS and should be a small webp image */,
+                base: denom,
+                description: description,
+                display: subdenom,
+                name: name,
+                symbol: subdenom,
+                uri: image,
+                decimals: decimals,
                 denomUnits: [
                     {
                         denom: denom,
@@ -153,7 +158,7 @@ const TokenConfirmModal = (props: {
                     },
                     {
                         denom: subdenom,
-                        exponent: props.tokenDecimals,
+                        exponent: decimals,
                         aliases: []
                     },
                 ],
