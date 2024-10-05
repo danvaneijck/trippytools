@@ -359,8 +359,13 @@ export const TOKENS = [
         img: "https://bafkreie3eoejlhintbzgo6dk4axgh3jdc7pvbzrbxfg6tj3cb2b5r744xu.ipfs.w3s.link/"
     },
     {
+        value: "factory/inj178zy7myyxewek7ka7v9hru8ycpvfnen6xeps89/DRUGS",
+        label: "DRUGS",
+        img: "https://bafkreiba422adveub2xbhklqj6etrhuhctra2rtjqc6ytedjumcastbsiy.ipfs.w3s.link/"
+    },
+    {
         value: "inj19vy83ne9tzta2yqynj8yg7dq9ghca6yqn9hyej",
-        label: "Drugs",
+        label: "DRUGS CW20 (old)",
         img: "https://i.imgur.com/8f9uHTN.png"
     },
     {
@@ -396,7 +401,7 @@ export const TOKENS = [
     {
         value: "factory/inj1u6j86hy6a2z0ksuhuh54x6kh532e7esdfjd2k7/PAIN",
         label: "PAIN",
-        img: "https://imagedelivery.net/DYKOWp0iCc0sIkF-2e4dNw/17d28efd-a9ad-4c84-ee78-822a1bf58c00/public"
+        img: "https://ipfs.io/ipfs/QmQAwq11aCGSKvujbfdSb6nY15VagkT9yxC3oCy63FPFRt"
     },
     {
         value: "factory/inj1lq9wn94d49tt7gc834cxkm0j5kwlwu4gm65lhe/spore",
@@ -467,16 +472,6 @@ export const TOKENS = [
 
 export const NFT_COLLECTIONS = [
     {
-        value: "inj1047jye6gwds2xu7f9qzuwqfjduvjnqt3daf5cy",
-        label: "Cheebee",
-        img: "https://talis-protocol.mo.cloudinary.net/inj/families/65d28a8fd2929a9d57a2cb36/miniaturePicture"
-    },
-    {
-        value: "inj1mp8r8jy4cefgw4l0wtw9ahdnu9yv7nl6mqqkju",
-        label: "Cult of Anons",
-        img: "https://talis-protocol.mo.cloudinary.net/inj/families/66a3b86115d80bec72a7ff32/miniaturePicture"
-    },
-    {
         value: "inj19ly43dgrr2vce8h02a8nw0qujwhrzm9yv8d75c",
         label: "The Ninjas",
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/648de728463a4965932b2bb0/miniaturePicture"
@@ -487,11 +482,6 @@ export const NFT_COLLECTIONS = [
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/654e6a8374ace78b4c211065/miniaturePicture"
     },
     {
-        value: "inj1w65ejtfu9n5kdalckjphgvqagunvzckejv8eua",
-        label: "The RugBerbs",
-        img: "https://talis-protocol.mo.cloudinary.net/inj/families/64d429494a8a2f15a9352c3f/miniaturePicture"
-    },
-    {
         value: "inj1nxn08znpqrf7xqafg6m473hf0um26gjjp0ptz4",
         label: "The Munchers",
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/65bfc28b6437ca1ba252f7b9/miniaturePicture"
@@ -500,6 +490,41 @@ export const NFT_COLLECTIONS = [
         value: "inj1qdqppmfm364k39g6z6p0l4h3emd08grjgegr72",
         label: "Hobos",
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/65589f7f7b27406ae50023ac/miniaturePicture"
+    },
+    {
+        value: "inj1mp8r8jy4cefgw4l0wtw9ahdnu9yv7nl6mqqkju",
+        label: "Cult of Anons",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/66a3b86115d80bec72a7ff32/miniaturePicture"
+    },
+    {
+        value: "inj1w65ejtfu9n5kdalckjphgvqagunvzckejv8eua",
+        label: "The RugBerbs",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/64d429494a8a2f15a9352c3f/miniaturePicture"
+    },
+    {
+        value: "inj1047jye6gwds2xu7f9qzuwqfjduvjnqt3daf5cy",
+        label: "Cheebee",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/65d28a8fd2929a9d57a2cb36/miniaturePicture"
+    },
+    {
+        value: "inj1l0mwr9k3u0ngwxcwkgjhlkszkq5plfwv222225",
+        label: "Paradyze Vaults",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/66fb9c6fe38fe01909613b57/miniaturePicture"
+    },
+    {
+        value: "inj1988dpy2r8trxkufa3h6klzwn9xrgsqqswrgwnc",
+        label: "Panda Warrior",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/66ff6115a55c4e6ee2f2279b/miniaturePicture"
+    },
+    {
+        value: "inj1n4hl0m9daxr5ehzl3kcklp7ez6c4ndu77ptxek",
+        label: "Monkis",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/66d42578b03f27078eb08373/miniaturePicture"
+    },
+    {
+        value: "inj18p94d9gnrhqu7mrfpcvh6tvja2d207y6qd224s",
+        label: "B Side",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/66a8b0b747666180f66b7274/miniaturePicture"
     },
     {
         value: "inj15asw6wvtgtcvfdmlfce8mmvva5adrfe9nz3hkr",
