@@ -119,8 +119,6 @@ const TokenHolders = () => {
 
     const paginatedHolders = useMemo(() => {
         return holders
-            .filter((holder) => Number(holder.balance) !== 0)
-            .sort((a, b) => b.balance - a.balance)
             .slice(startIndex, endIndex);
     }, [holders, startIndex, endIndex]);
 
@@ -247,7 +245,8 @@ const TokenHolders = () => {
                 bankBalance: holder.bankBalance ? holder.bankBalance : 0,
                 usdValue: tokenPrice ? Number(holder.cw20Balance + holder.bankBalance) * tokenPrice : null
             };
-        }).filter(x => x.balance !== 0)
+        }).filter(x => x.balance !== 0).sort((a, b) => b.balance - a.balance)
+
         setHolders(finalHolderList);
         console.log("set holders list")
 
