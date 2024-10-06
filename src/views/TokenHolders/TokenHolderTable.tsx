@@ -8,19 +8,19 @@ const TokenHoldersTable = ({ holders, startIndex, hasSplitBalances, WALLET_LABEL
     const totalHolders = holders.length;
 
     return (
-        <div className="mt-2 overflow-x-auto">
+        <div className="overflow-x-auto mt-5">
             <div
-                className={`grid grid-cols-${hasSplitBalances ? 7 : 6} items-center gap-x-4 `}
+                className={`grid ${hasSplitBalances ? 'grid-cols-7' : 'grid-cols-6'} gap-4 items-center text-left`}
             >
-                <div className="col-span-1">Position</div>
-                <div className="col-span-2">Address</div>
-                <div className="col-span-1">{hasSplitBalances ? "CW20 Balance" : "Balance"}</div>
-                {hasSplitBalances && <div className="col-span-1">Bank Balance</div>}
-                <div className="col-span-1">Percentage</div>
-                <div className="col-span-1">USD</div>
+                <div className="col-span-1 overflow-hidden text-ellipsis font-bold">Position</div>
+                <div className="col-span-2 overflow-hidden text-ellipsis font-bold">Address</div>
+                <div className="col-span-1 overflow-hidden text-ellipsis font-bold">{hasSplitBalances ? "CW20 Balance" : "Balance"}</div>
+                {hasSplitBalances && <div className="col-span-1 overflow-hidden text-ellipsis font-bold">Bank Balance</div>}
+                <div className="col-span-1 overflow-hidden text-ellipsis font-bold">Percentage</div>
+                <div className="col-span-1 overflow-hidden text-ellipsis font-bold">USD</div>
             </div>
             <List
-                height={500}
+                height={400}
                 itemCount={totalHolders}
                 itemSize={ROW_HEIGHT}
                 width="100%"

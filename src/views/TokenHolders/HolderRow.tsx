@@ -8,9 +8,9 @@ const HolderRow = ({ index, style, data }) => {
         <div
             key={index + startIndex}
             style={style}
-            className={`text-white border-b grid grid-cols-${hasSplitBalances ? 7 : 6} gap-4 items-center text-left `}
+            className={`text-white border-b grid grid-cols-${hasSplitBalances ? 7 : 6} gap-4 items-center text-left min-w-[700px]`}
         >
-            <div className="col-span-1">{startIndex + index + 1}</div>
+            <div className="col-span-1 overflow-hidden text-ellipsis">{startIndex + index + 1}</div>
             <div className="col-span-2 whitespace-nowrap overflow-hidden text-ellipsis">
                 <a
                     className="hover:text-indigo-900"
@@ -34,18 +34,18 @@ const HolderRow = ({ index, style, data }) => {
                     </span>
                 )}
             </div>
-            <div className="col-span-1">
+            <div className="col-span-1 overflow-hidden text-ellipsis">
                 {hasSplitBalances ? holder.cw20Balance.toFixed(2) : holder.balance.toFixed(2)}
             </div>
             {hasSplitBalances && (
-                <div className="col-span-1">
+                <div className="col-span-1 overflow-hidden text-ellipsis">
                     {holder.bankBalance.toFixed(2)}
                 </div>
             )}
-            <div className="col-span-1">
+            <div className="col-span-1 overflow-hidden text-ellipsis">
                 {holder.percentageHeld.toFixed(2)}%
             </div>
-            <div className="col-span-1">
+            <div className="col-span-1 overflow-hidden text-ellipsis">
                 {holder.usdValue?.toFixed(2) || (
                     !holder.usdValue && findingLiq && (
                         <ClipLoader size={20} color="white" />
