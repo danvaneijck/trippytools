@@ -21,7 +21,7 @@ import {
 } from "@injectivelabs/sdk-ts";
 import { Buffer } from "buffer";
 import moment from "moment";
-import { TokenInfo } from "../types";
+import { TokenInfo } from "../constants/types";
 import { Coin } from "@injectivelabs/ts-types";
 /* global BigInt */
 import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
@@ -741,7 +741,7 @@ class TokenUtils {
                         toRefund = Number(amount);
                     }
 
-                    toRefund -= entry ? Number(entry.amountRefunded) ?? 0 : 0;
+                    toRefund -= entry && !isNaN(Number(entry.amountRefunded)) ? Number(entry.amountRefunded) : 0;
                     if (toRefund < 0) toRefund = 0;
 
                     preSaleAmounts.set(sender, {
@@ -904,7 +904,6 @@ class TokenUtils {
                 amountRefundedFormatted: amountRefundedFormatted,
             });
         });
-
 
         return {
             preSaleAmounts,

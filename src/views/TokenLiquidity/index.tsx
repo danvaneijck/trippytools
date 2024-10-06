@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { GridLoader } from "react-spinners";
 import { Link } from "react-router-dom";
-import { Holder, MarketingInfo, PairInfo, TokenInfo } from "../../types";
+import { Holder, MarketingInfo, PairInfo, TokenInfo } from "../../constants/types";
 import { useSearchParams } from 'react-router-dom';
 import { IoIosWarning } from "react-icons/io";
 import { useSelector } from "react-redux";
@@ -115,7 +115,7 @@ const TokenLiquidity = () => {
     return (
         <div className="flex flex-col min-h-screen">
             <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
-                <div className="container mx-auto flex items-center p-2 text-sm md:text-sm">
+                <div className="container mx-auto flex items-center p-2 text-xs md:text-sm">
                     <Link to="/" className="font-bold hover:underline mx-5">
                         home
                     </Link>
@@ -143,11 +143,11 @@ const TokenLiquidity = () => {
             <div className="pt-14 flex-grow mx-2 pb-20">
                 <div className="flex justify-center items-center w-full py-10">
                     <div className="w-full max-w-screen-lg px-2">
-                        <div className="text-center text-white">
-                            <div className="text-xl">
-                                Get cw20 liquidity token holders
+                        <div className="text-center text-white font-magic">
+                            <div className="text-3xl">
+                                Liquidity holders
                             </div>
-                            <div className="text-xs">on Injective main net</div>
+                            <div className="text-lg">on Injective main net</div>
                         </div>
 
                         <div className="mt-4 space-y-2">

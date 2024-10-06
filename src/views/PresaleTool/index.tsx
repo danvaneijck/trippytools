@@ -8,8 +8,9 @@ import ShroomBalance from "../../components/App/ShroomBalance"
 import { useSelector } from "react-redux"
 import TokenUtils from "../../modules/tokenUtils"
 import RefundModal from "./RefundModal"
-import { humanReadableAmount } from "../../utils"
+import { humanReadableAmount } from "../../utils/helpers"
 import AirdropModal from "./AirdropModal"
+import DisclaimerModal from "./DisclaimerModal"
 
 
 const INJECTIVE_TOKEN = {
@@ -25,12 +26,15 @@ const PreSaleTool = () => {
     const currentNetwork = useSelector(state => state.network.currentNetwork);
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
 
-    const [presaleToken, setPresaleToken] = useState(INJECTIVE_TOKEN)
-    const [walletAddress, setWalletAddress] = useState("inj1yegzy0u8z8k0mzcq6532nzk8eg2z9yyuppqxgk")
+    const [injPrice, setInjPrice] = useState(null)
+    const [injBalance, setINJBalance] = useState(null)
 
-    const [maxCap, setMaxCap] = useState(1000)
+    const [presaleToken, setPresaleToken] = useState(INJECTIVE_TOKEN)
+    const [walletAddress, setWalletAddress] = useState(connectedAddress ?? "")
+
+    const [maxCap, setMaxCap] = useState(500)
     const [minPerWallet, setMinPerWallet] = useState(0.1)
-    const [maxPerWallet, setMaxPerWallet] = useState(50)
+    const [maxPerWallet, setMaxPerWallet] = useState(20)
 
     const [amountList, setAmountList] = useState(null)
 
@@ -57,10 +61,50 @@ const PreSaleTool = () => {
         setAirdropList(null)
     }, [percentToAirdrop])
 
+    const getINJBalance = useCallback(async () => {
+        console.log("get INJ price")
+        const module = new TokenUtils(networkConfig);
+        try {
+            const price = await module.getINJDerivativesPrice();
+            const balance = await module.getBalanceOfToken('inj', connectedAddress)
+            console.log(balance)
+            setINJBalance(Number(balance.amount) / Math.pow(10, 18))
+            setInjPrice(price)
+            return price;
+        } catch (error) {
+            console.error('Failed to fetch INJ price:', error);
+            throw error;
+        }
+    }, [connectedAddress, networkConfig]);
+
+    useEffect(() => {
+        setAmountList(null)
+        setTokenInfo(null)
+        setAirdropList(null)
+        if (connectedAddress) {
+            getINJBalance().then(r => {
+                console.log(r)
+            }).catch(e => {
+                console.log(e)
+            })
+            if (!walletAddress) {
+                setWalletAddress(connectedAddress)
+            }
+        }
+    }, [connectedAddress, getINJBalance, networkConfig, walletAddress])
+
 
     const handleCollectWallets = useCallback(async () => {
         setAmountList(null)
         const module = new TokenUtils(networkConfig);
+
+        if (!walletAddress) {
+            setError("Please enter a pre sale wallet address")
+            return
+        }
+        else {
+            setError(null)
+        }
 
         const allTransactions = await module.getAccountTx(walletAddress);
 
@@ -167,7 +211,6 @@ const PreSaleTool = () => {
 
         const totalContributions = amountList.reduce((acc, curr) => acc + curr.contribution, 0);
 
-
         const airdropList = amountList.map((amount) => {
             const percentContribution = (amount.contribution / totalContributions) * 100;
             const amountToSend = Math.round(totalToSend * (percentContribution / 100))
@@ -190,6 +233,7 @@ const PreSaleTool = () => {
 
     return (
         <>
+            <DisclaimerModal />
             {refundModal &&
                 <RefundModal
                     refundDetails={refundAmounts}
@@ -209,7 +253,7 @@ const PreSaleTool = () => {
             <div className="flex flex-col min-h-screen pb-10">
                 <ToastContainer />
                 <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
-                    <div className="container mx-auto flex items-center p-2 text-sm md:text-sm">
+                    <div className="container mx-auto flex items-center p-2 text-xs md:text-sm">
                         <Link to="/" className="font-bold hover:underline mx-5">
                             home
                         </Link>
@@ -232,12 +276,25 @@ const PreSaleTool = () => {
                     </div>
                 </header>
 
-                <div className="pt-14 flex-grow mx-2 pb-20">
-                    {currentNetwork == "mainnet" && <div className=""><ShroomBalance /></div>}
+                <div className="pt-14 md:pt-14 flex-grow mx-2 pb-20">
+                    {currentNetwork == "mainnet" &&
+                        <div className="mb-2 flex flex-row justify-between">
+                            <ShroomBalance />
+                            <div className="text-sm">
+                                {injPrice &&
+                                    <div>INJ  price: ${Number(injPrice).toFixed(2)}</div>
+                                }
+                                {injPrice && injBalance &&
+                                    <div>INJ  balance: {injBalance.toFixed(2)} (${(injBalance * injPrice).toFixed(2)})</div>
+                                }
+                            </div>
+                        </div>
+                    }
+
                     <div className="flex justify-center items-center min-h-full">
-                        <div className="w-full max-w-screen-lg px-2 py-10">
+                        <div className="w-full max-w-screen-lg px-2 ">
                             <div className="text-center text-white">
-                                <div className="text-xl">
+                                <div className="text-3xl font-magic">
                                     Trippy Pre sale tool
                                 </div>
                             </div>

@@ -12,7 +12,7 @@ import Airdrop from './views/Airdrop';
 import MyceliumFarm from './views/MyceliumFarm';
 import TokenScanner from './views/TokenScanner';
 import { ApolloProvider } from '@apollo/client';
-import client from './apolloClient';
+import client from './utils/apolloClient';
 import BinaryOptionMarkets from './views/BinaryOptionMarkets';
 import AirdropHistory from './views/AirdropHistory';
 import MitoMarketMake from './views/MitoMarketMake';

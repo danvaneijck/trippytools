@@ -10,7 +10,7 @@ import { Buffer } from "buffer";
 import { TransactionException } from "@injectivelabs/exceptions";
 import Footer from "../../components/App/Footer";
 import Select from "react-select"
-import { humanReadableAmount } from "../../utils";
+import { humanReadableAmount } from "../../utils/helpers";
 
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
@@ -229,7 +229,7 @@ const MitoMarketMake = () => {
     return (
         <div className="flex flex-col min-h-screen pb-10">
             <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
-                <div className="container mx-auto flex items-center p-2 text-sm md:text-sm">
+                <div className="container mx-auto flex items-center p-2 text-xs md:text-sm">
                     <Link to="/" className="ml-5 font-bold hover:underline mr-5">
                         home
                     </Link>

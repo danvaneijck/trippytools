@@ -2,20 +2,172 @@ import { useCallback, useState } from "react";
 import { useSelector } from "react-redux";
 import { CircleLoader } from "react-spinners";
 import { WALLET_LABELS } from "../../constants/walletLabels";
+import { getKeplr, handleSendTx, humanReadableAmount } from "../../utils/helpers";
+import { Buffer } from "buffer";
+import { BigNumberInBase, BigNumberInWei } from "@injectivelabs/utils";
+import { MsgExecuteContract, MsgMultiSend } from "@injectivelabs/sdk-ts";
+import { useNavigate } from 'react-router-dom';
+
+const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
+const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
 
 const AirdropModal = (props) => {
     const connectedAddress = useSelector(state => state.network.connectedAddress);
     const currentNetwork = useSelector(state => state.network.currentNetwork);
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
 
+    const navigate = useNavigate()
+
+    const [shroomFee] = useState(1000000)
+    const [feePayed, setFeePayed] = useState(false)
+
     const [progress, setProgress] = useState("")
     const [txLoading, setTxLoading] = useState(false)
+    const [msgPreview, setMsgPreview] = useState(null)
 
     const [error, setError] = useState(null)
 
-    const sendAirdrops = useCallback(async () => {
+    const payFee = useCallback(async () => {
+        const { key, offlineSigner } = await getKeplr(networkConfig.chainId);
+        const pubKey = Buffer.from(key.pubKey).toString("base64");
+        const injectiveAddress = key.bech32Address;
 
-    }, [])
+        if (injectiveAddress !== connectedAddress) {
+            throw new Error("You are connected to the wrong wallet address")
+        }
+        else {
+            setError(null)
+        }
+
+        const msg = MsgExecuteContract.fromJSON({
+            contractAddress: SHROOM_TOKEN_ADDRESS,
+            sender: injectiveAddress,
+            msg: {
+                transfer: {
+                    recipient: FEE_COLLECTION_ADDRESS,
+                    amount: (shroomFee).toFixed(0) + "0".repeat(18),
+                },
+            },
+        });
+
+        console.log("send shroom fee", msg)
+        return await handleSendTx(networkConfig, pubKey, msg, injectiveAddress, offlineSigner)
+    }, [shroomFee, networkConfig, connectedAddress])
+
+    const sendAirdrops = useCallback(async (denom: any) => {
+        const { key, offlineSigner } = await getKeplr(networkConfig.chainId);
+        const pubKey = Buffer.from(key.pubKey).toString("base64");
+        const injectiveAddress = key.bech32Address;
+
+        if (injectiveAddress !== connectedAddress) {
+            throw new Error("You are connected to the wrong wallet address")
+        }
+        else {
+            setError(null)
+        }
+
+        const records = props.airdropDetails.map((record) => {
+            return {
+                address: record.address,
+                amount: record.amount
+            }
+        });
+
+        const chunkSize = 1200
+        const gasPerRecord = 40000
+        const chunks = [];
+
+        for (let i = 0; i < records.length; i += chunkSize) {
+            chunks.push(records.slice(i, i + chunkSize));
+        }
+
+        const successfullyProcessed = new Set();
+        const transactions = []
+
+        for (const chunk of chunks) {
+            try {
+                const filteredChunk = chunk.filter(record => !successfullyProcessed.has(record.address));
+
+                if (filteredChunk.length === 0) {
+                    break;
+                }
+
+                const totalChunkToSend = filteredChunk.reduce((acc, record) => {
+                    return acc.plus(new BigNumberInBase(record.amount));
+                }, new BigNumberInWei(0));
+
+                const msg = MsgMultiSend.fromJSON({
+                    inputs: [
+                        {
+                            address: injectiveAddress,
+                            coins: [
+                                {
+                                    denom,
+                                    amount: totalChunkToSend.toFixed(),
+                                },
+                            ],
+                        },
+                    ],
+                    outputs: filteredChunk.map((record: { address: any; amount: BigNumber.Value; }) => {
+                        return {
+                            address: record.address,
+                            coins: [
+                                {
+                                    amount: new BigNumberInBase(record.amount).toFixed(),
+                                    denom,
+                                },
+                            ],
+                        };
+                    }),
+                });
+
+                let calculatedGas = filteredChunk.length * gasPerRecord;
+                if (calculatedGas < 5000000) {
+                    calculatedGas = 5000000;
+                }
+
+                const gas = {
+                    amount: [
+                        {
+                            denom: "inj",
+                            amount: calculatedGas.toString()
+                        }
+                    ],
+                    gas: "800000"
+                };
+
+                console.log(msg)
+                setMsgPreview(msg)
+
+                const response = await handleSendTx(networkConfig, pubKey, msg, injectiveAddress, offlineSigner, gas);
+                filteredChunk.forEach(record => successfullyProcessed.add(record.address));
+                transactions.push(response.txHash)
+
+            } catch (error) {
+                console.error("Transaction failed, retrying...", error);
+            }
+        }
+
+        return transactions
+    }, [connectedAddress, networkConfig, props.airdropDetails]);
+
+    const handleSendAirdrops = useCallback(async () => {
+        if (currentNetwork == "mainnet" && !feePayed) {
+            console.log("pay shroom fee")
+            setProgress("Pay shroom fee for airdrop")
+            const result = await payFee()
+            if (result) setFeePayed(true)
+        }
+        sendAirdrops(props.tokenInfo.denom).then((r) => {
+            console.log("done", r)
+            navigate(`/token-holders?address=${props.tokenInfo.denom}`);
+        }).catch(e => {
+            console.log(e)
+            setError(e.message)
+            setProgress("")
+            setTxLoading(false)
+        })
+    }, [currentNetwork, feePayed, navigate, payFee, props.tokenInfo.denom, sendAirdrops])
 
     return (
         <>
@@ -31,7 +183,7 @@ const AirdropModal = (props) => {
 
                         </div>
 
-                        <div className="relative p-6 flex-auto mx-5">
+                        <div className="relative p-6 flex-auto 25">
                             <div>
                                 <p>
                                     Airdropping token: {props.tokenInfo.symbol}
@@ -95,11 +247,41 @@ const AirdropModal = (props) => {
                                     </div>
                                 }
                             </div>
-                            {progress && <div className="mt-5">progress: {progress}</div>}
-                            {txLoading && <CircleLoader color="#36d7b7" className="mt-2 m-auto" />}
-                            {error && <div className="text-red-500 mt-5">{error}</div>}
+
                         </div>
                         <div className="pl-6 mb-5">If the airdrop TX fails, up the gas !</div>
+
+                        <div
+                            className="mx-5"
+                        >
+                            {progress && <div className="">progress: {progress}</div>}
+                            {txLoading && <CircleLoader color="#36d7b7" className="mt-2 m-auto" />}
+                            {error && <div className="text-rose-600 mt-2">{error}</div>}
+                        </div>
+
+
+                        {!connectedAddress &&
+                            <div
+                                className="m-5 text-rose-600 text-lg"
+                            >
+                                Please connect your wallet to continue
+                            </div>
+                        }
+
+                        {msgPreview !== null &&
+                            <div className="text-xs m-5 max-h-40 overflow-y-scroll whitespace-pre">
+                                message preview:{"\n\n"}
+                                {JSON.stringify(msgPreview.toData(), null, 2)}
+                            </div>
+                        }
+
+                        {currentNetwork == "mainnet" && (props.airdropDetails.length > 0) && <div className="m-5">
+                            Fee for airdrop: {humanReadableAmount(shroomFee)} shroom <br />
+                            <a href="https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl" className="underline text-sm">buy here</a>
+                            <br />
+                            <div className="mt-2">Fee payed: {feePayed ? "True" : "False"}</div>
+                        </div>
+                        }
 
                         <div className="flex items-center justify-end p-4 border-t border-solid border-blueGray-200 rounded-b">
                             <button
@@ -112,7 +294,7 @@ const AirdropModal = (props) => {
                             <button
                                 className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
-                                onClick={() => sendAirdrops().then(() => console.log("done")).catch(e => {
+                                onClick={() => handleSendAirdrops().then(() => console.log("done")).catch(e => {
                                     console.log(e)
                                     setError(e.message)
                                     setProgress("")

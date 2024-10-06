@@ -1,7 +1,7 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { quantile } from 'd3-array';
-import { Holder } from '../../types';
+import { Holder } from '../../constants/types';
 
 interface HoldersChartProps {
     data: Holder[];

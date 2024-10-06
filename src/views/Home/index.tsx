@@ -4,12 +4,11 @@ import { Link } from 'react-router-dom';
 import ConnectKeplr from '../../components/App/ConnectKeplr';
 import shroom from "../../assets/shroom.jpg"
 import { FaDiscord, FaTelegram } from 'react-icons/fa';
-import { GiFarmer } from 'react-icons/gi';
-import myceliumLogo from "../../assets/mycelium.jpeg"
-import spore from "../../assets/spore.webp"
+import { FaVault } from "react-icons/fa6";
 import { PiParachute } from 'react-icons/pi';
 import Footer from '../../components/App/Footer';
 import { GiPayMoney } from "react-icons/gi";
+import { FaArrowRight } from "react-icons/fa";
 
 const Home = () => {
 
@@ -46,9 +45,9 @@ const Home = () => {
         border: 0,
     };
 
-    return <div ref={myRef} className='overflow-hidden min-h-screen pb-20'>
+    return <div ref={myRef} className='overflow-hidden min-h-screen pb-20 text-stone-100'>
         <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
-            <div className="container mx-auto flex items-center p-2 text-sm md:text-sm">
+            <div className="container mx-auto flex items-center p-2 text-xs md:text-sm">
                 <Link to="/token-holders" className="font-bold hover:underline mx-5">
                     holder tool
                 </Link>
@@ -58,97 +57,82 @@ const Home = () => {
                 <Link to="/manage-tokens" className="font-bold hover:underline ">
                     manage tokens
                 </Link>
-
-                {/* <Link to="/sushi-tool" className="font-bold hover:underline mx-5">
-                    sushi tool
-                </Link> */}
             </div>
             <div className="m-2">
                 <ConnectKeplr />
             </div>
         </header>
-        <div className=''>
-            <div className='text-center pt-20 text-2xl md:text-3xl font-bold '>
+        <div className='font-magic'>
+            <div className='text-center pt-16 text-3xl md:text-4xl font-magic'>
                 TRIPPY token tools
             </div>
-            <div className='text-center text-base md:text-xl '>
-                on injective
+            <div className='text-center text-base md:text-2xl '>
+                on Injective
             </div>
 
             <div className='flex-grow'>
                 <div className='flex justify-center'>
                     <div className='mt-2 text-center py-4  md:w-1/2 rounded-xl p-2 mb-2 bg-gradient-to-br from-transparent to-black mx-2'>
-                        <div className='text-xl md:text-2xl'>Community token tools</div>
+                        {/* <div className='text-xl md:text-2xl'>built for the community</div> */}
 
                         <a href='https://discord.gg/Nnz34jzA5T' >
-                            <div className='flex flex-row mt-2 text-sm items-center justify-center  w-auto rounded-lg hover:font-bold'>
+                            <div className='flex flex-row mt-2 text-xl items-center justify-center  w-auto rounded-lg hover:font-bold'>
                                 <FaDiscord className='mr-2 text-3xl' />
                                 Join the discord
                             </div>
                         </a>
                         <a href='https://t.me/trippinj' >
-                            <div className='flex flex-row mt-2 text-sm items-center justify-center  w-auto rounded-lg hover:font-bold'>
+                            <div className='flex flex-row mt-2 text-xl items-center justify-center  w-auto rounded-lg hover:font-bold'>
                                 <FaTelegram className='mr-2 text-3xl' />
                                 Join the telegram
                             </div>
                         </a>
                         <Link to="/token-holders">
-                            <div className='mt-5 text-sm hover:font-bold'>
+                            <div className='mt-5 text-xl hover:font-bold flex flex-row justify-center items-center'>
                                 Query token holders
+                                <FaArrowRight className='ml-2 text-xl' />
                             </div>
                         </Link>
                         <Link to="/token-liquidity">
-                            <div className='mt-2 text-sm hover:font-bold'>
+                            <div className='mt-2 text-xl hover:font-bold flex flex-row justify-center items-center'>
                                 Query Astroport and DojoSwap liquidity holders
+                                <FaArrowRight className='ml-2 text-xl' />
                             </div>
                         </Link>
                         <Link to="/manage-tokens">
-                            <div className='mt-2 text-sm hover:font-bold'>
+                            <div className='mt-2 text-xl hover:font-bold flex flex-row justify-center items-center'>
                                 Create and manage token factory tokens
+                                <FaArrowRight className='ml-2 text-xl' />
                             </div>
                         </Link>
                         <Link to="/airdrop">
-                            <div className='mt-4 text-lg hover:font-bold bg-slate-800 p-2 w-1/2 mx-auto rounded-lg flex flex-row items-center justify-center'>
+                            <div className='mt-4 text-xl hover:font-bold bg-slate-800 p-2 md:w-1/2 mx-auto rounded-lg flex flex-row items-center justify-center'>
                                 <PiParachute className="mr-2 text-2xl" />  Plan Airdrop <PiParachute className="ml-2 text-2xl" />
                             </div>
                         </Link>
                         <Link to="/pre-sale-tool">
-                            <div className='mt-4 text-lg hover:font-bold bg-slate-800 p-2 w-1/2 mx-auto rounded-lg flex flex-row items-center justify-center'>
+                            <div className='mt-4 text-xl hover:font-bold bg-slate-800 p-2 md:w-1/2 mx-auto rounded-lg flex flex-row items-center justify-center'>
                                 <GiPayMoney className="mr-2 text-2xl" />  Plan Pre Sale <GiPayMoney className="ml-2 text-2xl" />
                             </div>
                         </Link>
-                        {/* <Link to="/mycelium-farm" className='flex flex-row justify-center items-center mt-5'>
-                            <GiFarmer className='text-2xl' />
-                            <div className='mt-2 text-sm hover:font-bold ml-2'>
-                                Farm mycelium
-                            </div>
-                            <img src={myceliumLogo} style={{ borderRadius: '50%', width: 30 }} className="animate-3dspin ml-2" alt="Spinning Image" />
-
-                        </Link> */}
                         <a href='https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl' >
-                            <div className='flex flex-row mt-5 text-sm items-center justify-center px-2 w-auto rounded-lg hover:font-bold'>
+                            <div className='flex flex-row mt-5 text-lg items-center justify-center px-2 w-auto rounded-lg hover:font-bold'>
                                 <img src={shroom} style={{ borderRadius: '50%', width: 40, height: 40 }} className="animate-3dspin mr-2" alt="Spinning Image" />
-                                Trade shroom on Coinhall
+                                Trade SHROOM on Coinhall
                             </div>
                         </a>
                         <a href='https://helixapp.com/spot/?marketId=0xc6b6d6627aeed8b9c29810163bed47d25c695d51a2aa8599fc5e39b2d88ef934' >
-                            <div className='flex flex-row mt-5 text-sm items-center justify-center px-2 w-auto rounded-lg hover:font-bold'>
+                            <div className='flex flex-row mt-5 text-lg items-center justify-center px-2 w-auto rounded-lg hover:font-bold'>
                                 <img src={shroom} style={{ borderRadius: '50%', width: 40, height: 40 }} className="animate-3dspin mr-2" alt="Spinning Image" />
-                                Trade shroom on Helix
+                                Trade SHROOM on Helix
                             </div>
                         </a>
                         <a href='https://mito.fi/vault/inj1g89dl74lyre9q6rjua9l37pcc7psnw66capurp/' >
-                            <div className='flex flex-row mt-5 text-sm items-center justify-center px-2 w-auto rounded-lg hover:font-bold'>
-                                View Mito vault
+                            <div className='flex flex-row mt-5 text-lg items-center justify-center px-2 w-auto rounded-lg hover:font-bold'>
+                                <FaVault className='mr-2' />
+                                View SHROOM Mito finance vault
                             </div>
                         </a>
-                        {/* <a href='https://coinhall.org/injective/inj1rusfnzgtcvkn8z92h9hyvzuna60tc0x0yy74tf' >
-                            <div className='flex flex-row text-sm items-center justify-center p-2 w-auto rounded-lg  hover:font-bold'>
-                                <img src={spore} style={{ borderRadius: '50%', width: 40, height: 40 }} className="animate-3dspin mr-2" alt="Spinning Image" />
-                                Trade spore on Coinhall
-                            </div>
-                        </a> */}
-
                     </div>
                 </div>
             </div>

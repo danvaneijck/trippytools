@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { useSelector } from "react-redux";
 import { CircleLoader } from "react-spinners";
 import { WALLET_LABELS } from "../../constants/walletLabels";
-import { getKeplr, handleSendTx } from "../../utils";
+import { getKeplr, handleSendTx } from "../../utils/helpers";
 import { MsgMultiSend } from "@injectivelabs/sdk-ts";
 import { BigNumberInBase, BigNumberInWei } from "@injectivelabs/utils";
 import { Buffer } from "buffer";

@@ -58,7 +58,7 @@ const ShroomBalance = () => {
     return (
         <div className="flex self-end items-center text-sm w-full hover:cursor-pointer max-w-screen-sm" onClick={getBalance}>
             <div>
-                <img src={shroom} style={{ borderRadius: '50%', width: 30 }} className="mr-2" alt="Spinning Image" />
+                <img src={shroom} style={{ borderRadius: '50%', width: 32 }} className="mr-2" alt="Spinning Image" />
             </div>
             {balance ? balance : "0"}
             <br />

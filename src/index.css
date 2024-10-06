@@ -73,3 +73,10 @@ body {
   0% { background-color: red; }
   100% { background-color: transparent; }
 }
+
+@font-face {
+  font-family: 'MagicMushroom';
+  src: url('./assets/fonts/MagicMushroom.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
