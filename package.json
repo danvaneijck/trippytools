@@ -35,6 +35,7 @@
     "react-select": "^5.8.0",
     "react-spinners": "^0.13.8",
     "react-toastify": "^10.0.5",
+    "react-window": "^1.8.10",
     "recharts": "^2.12.7",
     "redux": "^5.0.1",
     "vanta": "^0.5.24",

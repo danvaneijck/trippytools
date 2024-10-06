@@ -313,6 +313,14 @@ class TokenUtils {
     }
 
     async getDenomMetadata(denom) {
+        if (denom == "inj") {
+            return {
+                decimals: 18
+            }
+        }
+        if (denom.includes("peggy") || denom.includes("ibc")) {
+            return {}
+        }
         try {
             const token = await this.chainGrpcBankApi.fetchDenomMetadata(denom)
             return token;

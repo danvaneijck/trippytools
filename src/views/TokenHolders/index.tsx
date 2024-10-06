@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
-import { CircleLoader, ClipLoader, GridLoader } from "react-spinners";
+import { GridLoader } from "react-spinners";
 import { Link } from "react-router-dom";
 import { Holder, MarketingInfo, TokenInfo } from "../../types";
 import { useSearchParams } from 'react-router-dom';
@@ -20,6 +20,7 @@ import moment from "moment";
 import { Bounce, ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { GrStatusUnknown } from "react-icons/gr";
+import TokenHoldersTable from "./TokenHolderTable";
 
 const INJ_CW20_ADAPTER = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
@@ -54,6 +55,8 @@ mutation updateTokenHolders($address: String!){
 }
 `
 
+const ITEMS_PER_PAGE = 50;
+
 const TokenHolders = () => {
     const [searchParams, setSearchParams] = useSearchParams();
 
@@ -70,7 +73,7 @@ const TokenHolders = () => {
 
     const { data, loading: queryLoading } = useQuery(HOLDER_QUERY, {
         skip: !contractAddress || !contractAddress.value,
-        pollInterval: 10000,
+        pollInterval: 60000,
         variables: {
             address: contractAddress?.value || "",
             addresses: contractAddress ? [
@@ -103,19 +106,27 @@ const TokenHolders = () => {
     const [mitoVault, setMitoVault] = useState(null)
     const [tokenPrice, setTokenPrice] = useState(null)
 
-    const ITEMS_PER_PAGE = 50;
-
     const [currentPage, setCurrentPage] = useState(1);
     const [pageInput, setPageInput] = useState("");
 
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-    const paginatedHolders = holders
-        .filter((holder) => Number(holder.balance) !== 0)
-        .sort((a, b) => b.balance - a.balance)
-        .slice(startIndex, endIndex);
+    const startIndex = useMemo(() => {
+        return (currentPage - 1) * ITEMS_PER_PAGE;
+    }, [currentPage]);
 
-    const totalPages = Math.ceil(holders.length / ITEMS_PER_PAGE);
+    const endIndex = useMemo(() => {
+        return startIndex + ITEMS_PER_PAGE;
+    }, [startIndex]);
+
+    const paginatedHolders = useMemo(() => {
+        return holders
+            .filter((holder) => Number(holder.balance) !== 0)
+            .sort((a, b) => b.balance - a.balance)
+            .slice(startIndex, endIndex);
+    }, [holders, startIndex, endIndex]);
+
+    const totalPages = useMemo(() => {
+        return Math.ceil(holders.length / ITEMS_PER_PAGE);
+    }, [holders.length]);
 
 
     const handlePageInput = (e) => {
@@ -238,6 +249,7 @@ const TokenHolders = () => {
             };
         }).filter(x => x.balance !== 0)
         setHolders(finalHolderList);
+        console.log("set holders list")
 
         const totalBurnedBalance = finalHolderList
             .filter(addressObj => BURN_ADDRESSES.includes(addressObj.address))
@@ -552,7 +564,7 @@ const TokenHolders = () => {
                                         </div>
                                         <div
                                             onClick={handleUpdateTokenHolders}
-                                            className="ml-5 p-2 rounded shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-sm hover:cursor-pointer"
+                                            className="ml-5 p-2 rounded shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-sm hover:cursor-pointer text-center"
                                         >
                                             Refresh holders
                                         </div>
@@ -564,7 +576,7 @@ const TokenHolders = () => {
                                         </div>
                                         <div
                                             onClick={handleUpdateTokenHolders}
-                                            className="ml-5 p-2 rounded shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-sm hover:cursor-pointer"
+                                            className="ml-5 p-2 rounded shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-sm hover:cursor-pointer text-center"
                                         >
                                             Refresh holders
                                         </div>
@@ -572,7 +584,6 @@ const TokenHolders = () => {
                                 }
                             </>
                         }
-
 
                         {error && <div className="text-red-500 mt-2">
                             {error}
@@ -657,6 +668,7 @@ const TokenHolders = () => {
                                 </div>
                             )}
                         </div>
+
                         {totalBurned !== null && totalBurned !== 0 && tokenInfo !== null && (
                             <div>
                                 Total burned tokens: {humanReadableAmount(totalBurned)} 🔥{" "}
@@ -690,6 +702,7 @@ const TokenHolders = () => {
 
                                 </div>
                             })}
+
                             {mitoVault !== null && tokenInfo &&
                                 <div className="text-sm mx-2 bg-slate-800 p-2 rounded-lg shadow-lg ">
                                     <a href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}mito.fi/vault/${mitoVault.contractAddress}`}
@@ -702,8 +715,6 @@ const TokenHolders = () => {
                                     <br />
                                     liquidity: ${humanReadableAmount(mitoVault.currentTvl)}
                                     <br />
-                                    {/* lp token price: ${(mitoVault.lpTokenPrice * Math.pow(10, tokenInfo.decimals)).toFixed(4)}
-                                    <br /> */}
                                     {tokenPrice && <div>
                                         price: ${tokenPrice.toFixed(6)}
                                         <br />
@@ -762,7 +773,7 @@ const TokenHolders = () => {
                                             />
                                             <button
                                                 type="submit"
-                                                className="ml-2 px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded "
+                                                className="ml-2 px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded"
                                             >
                                                 Go
                                             </button>
@@ -771,84 +782,18 @@ const TokenHolders = () => {
                                     </div>
                                 </div>
 
+                                {/* Virtualized table */}
+                                <TokenHoldersTable
+                                    holders={paginatedHolders}
+                                    startIndex={startIndex}
+                                    hasSplitBalances={hasSplitBalances}
+                                    WALLET_LABELS={WALLET_LABELS}
+                                    lastLoadedAddress={lastLoadedAddress}
+                                    liquidity={liquidity}
+                                    findingLiq={findingLiq}
+                                />
 
-
-                                <div className="overflow-x-auto mt-2">
-                                    <table className="table-auto w-full">
-                                        <thead className="text-white text-left">
-                                            <tr>
-                                                <th className="px-4 py-2">
-                                                    Position
-                                                </th>
-                                                <th className="px-4 py-2">
-                                                    Address
-                                                </th>
-                                                <th className="px-4 py-2">
-                                                    {hasSplitBalances ? "CW20 Balance" : "Balance"}
-                                                </th>
-                                                {hasSplitBalances &&
-                                                    <th className="px-4 py-2">
-                                                        Bank Balance
-                                                    </th>
-                                                }
-                                                <th className="px-4 py-2">
-                                                    Percentage
-                                                </th>
-                                                <th className="px-4 py-2">
-                                                    USD
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {paginatedHolders.map((holder, index) => (
-                                                <tr key={index + startIndex} className="text-white border-b text-left">
-                                                    <td className="px-6 py-1">{startIndex + index + 1}</td>
-                                                    <td className="px-6 py-1 whitespace-nowrap">
-                                                        <a
-                                                            className="hover:text-indigo-900"
-                                                            href={`https://explorer.injective.network/account/${holder.address}`}
-                                                        >
-                                                            {holder.address.slice(0, 5) + '...' + holder.address.slice(-5)}
-                                                        </a>
-                                                        {WALLET_LABELS[holder.address] && (
-                                                            <span className={`${WALLET_LABELS[holder.address].bgColor} ${WALLET_LABELS[holder.address].textColor} ml-2`}>
-                                                                {WALLET_LABELS[holder.address].label}
-                                                            </span>
-                                                        )}
-                                                        {holder.address == lastLoadedAddress && (
-                                                            <span className="text-red-500 ml-2">
-                                                                {" "}token contract 🔥
-                                                            </span>
-                                                        )}
-                                                        {liquidity.length > 0 && holder.address == liquidity[0].infoDecoded.contract_addr && (
-                                                            <span className="text-blue-500 ml-2">
-                                                                {" "}liquidity pool
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-6 py-1">
-                                                        {hasSplitBalances ? holder.cw20Balance.toFixed(2) : holder.balance.toFixed(2)}
-                                                    </td>
-                                                    {hasSplitBalances && (
-                                                        <td className="px-6 py-1">
-                                                            {holder.bankBalance.toFixed(2)}
-                                                        </td>
-                                                    )}
-                                                    <td className="px-6 py-1">
-                                                        {holder.percentageHeld.toFixed(2)}%
-                                                    </td>
-                                                    <td className="px-6 py-1">
-                                                        {holder.usdValue?.toFixed(2) || (
-                                                            !holder.usdValue && findingLiq && (
-                                                                <ClipLoader size={20} color="white" />
-                                                            )
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                {/* Pagination controls */}
                                 <div className="pagination-controls mt-4">
                                     <button
                                         onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
@@ -871,7 +816,6 @@ const TokenHolders = () => {
                     </div>
                 </div>
             </div>
-
             <Footer />
         </div>
     );
