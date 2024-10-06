@@ -9,6 +9,7 @@ import myceliumLogo from "../../assets/mycelium.jpeg"
 import spore from "../../assets/spore.webp"
 import { PiParachute } from 'react-icons/pi';
 import Footer from '../../components/App/Footer';
+import { GiPayMoney } from "react-icons/gi";
 
 const Home = () => {
 
@@ -109,6 +110,11 @@ const Home = () => {
                         <Link to="/airdrop">
                             <div className='mt-4 text-lg hover:font-bold bg-slate-800 p-2 w-1/2 mx-auto rounded-lg flex flex-row items-center justify-center'>
                                 <PiParachute className="mr-2 text-2xl" />  Plan Airdrop <PiParachute className="ml-2 text-2xl" />
+                            </div>
+                        </Link>
+                        <Link to="/pre-sale-tool">
+                            <div className='mt-4 text-lg hover:font-bold bg-slate-800 p-2 w-1/2 mx-auto rounded-lg flex flex-row items-center justify-center'>
+                                <GiPayMoney className="mr-2 text-2xl" />  Plan Pre Sale <GiPayMoney className="ml-2 text-2xl" />
                             </div>
                         </Link>
                         {/* <Link to="/mycelium-farm" className='flex flex-row justify-center items-center mt-5'>
