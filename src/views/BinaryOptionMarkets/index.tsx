@@ -78,7 +78,7 @@ const BinaryOptionMarkets = () => {
 
                     <div className="flex flex-col min-h-screen pb-10">
                         <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
-                            <div className="container mx-auto flex items-center p-2 text-sm md:text-sm">
+                            <div className="container mx-auto flex items-center p-2 text-xs md:text-sm">
                                 <Link to="/" className="font-bold hover:underline mx-5">
                                     home
                                 </Link>

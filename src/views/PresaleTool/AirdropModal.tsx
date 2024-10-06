@@ -2,24 +2,32 @@ import { useCallback, useState } from "react";
 import { useSelector } from "react-redux";
 import { CircleLoader } from "react-spinners";
 import { WALLET_LABELS } from "../../constants/walletLabels";
-import { getKeplr, handleSendTx } from "../../utils/helpers";
-import { MsgMultiSend } from "@injectivelabs/sdk-ts";
-import { BigNumberInBase, BigNumberInWei } from "@injectivelabs/utils";
+import { getKeplr, handleSendTx, humanReadableAmount } from "../../utils/helpers";
 import { Buffer } from "buffer";
+import { BigNumberInBase, BigNumberInWei } from "@injectivelabs/utils";
+import { MsgExecuteContract, MsgMultiSend } from "@injectivelabs/sdk-ts";
+import { useNavigate } from 'react-router-dom';
 
-const RefundModal = (props) => {
+const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
+const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
+
+const AirdropModal = (props) => {
     const connectedAddress = useSelector(state => state.network.connectedAddress);
     const currentNetwork = useSelector(state => state.network.currentNetwork);
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
 
+    const navigate = useNavigate()
+
+    const [shroomFee] = useState(1000000)
+    const [feePayed, setFeePayed] = useState(false)
+
     const [progress, setProgress] = useState("")
     const [txLoading, setTxLoading] = useState(false)
-
     const [msgPreview, setMsgPreview] = useState(null)
 
     const [error, setError] = useState(null)
 
-    const sendRefunds = useCallback(async (denom: any) => {
+    const payFee = useCallback(async () => {
         const { key, offlineSigner } = await getKeplr(networkConfig.chainId);
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
@@ -31,14 +39,39 @@ const RefundModal = (props) => {
             setError(null)
         }
 
-        const records = props.refundDetails.map((record) => {
+        const msg = MsgExecuteContract.fromJSON({
+            contractAddress: SHROOM_TOKEN_ADDRESS,
+            sender: injectiveAddress,
+            msg: {
+                transfer: {
+                    recipient: FEE_COLLECTION_ADDRESS,
+                    amount: (shroomFee).toFixed(0) + "0".repeat(18),
+                },
+            },
+        });
+
+        console.log("send shroom fee", msg)
+        return await handleSendTx(networkConfig, pubKey, msg, injectiveAddress, offlineSigner)
+    }, [shroomFee, networkConfig, connectedAddress])
+
+    const sendAirdrops = useCallback(async (denom: any) => {
+        const { key, offlineSigner } = await getKeplr(networkConfig.chainId);
+        const pubKey = Buffer.from(key.pubKey).toString("base64");
+        const injectiveAddress = key.bech32Address;
+
+        if (injectiveAddress !== connectedAddress) {
+            throw new Error("You are connected to the wrong wallet address")
+        }
+        else {
+            setError(null)
+        }
+
+        const records = props.airdropDetails.map((record) => {
             return {
                 address: record.address,
                 amount: record.amount
             }
         });
-
-        console.log(records)
 
         const chunkSize = 1200
         const gasPerRecord = 40000
@@ -116,69 +149,70 @@ const RefundModal = (props) => {
         }
 
         return transactions
-    }, [connectedAddress, networkConfig, props.refundDetails]);
+    }, [connectedAddress, networkConfig, props.airdropDetails]);
 
-
-    const handleSendRefunds = useCallback(() => {
-        sendRefunds("inj").then((r) => {
+    const handleSendAirdrops = useCallback(async () => {
+        if (currentNetwork == "mainnet" && !feePayed) {
+            console.log("pay shroom fee")
+            setProgress("Pay shroom fee for airdrop")
+            const result = await payFee()
+            if (result) setFeePayed(true)
+        }
+        sendAirdrops(props.tokenInfo.denom).then((r) => {
             console.log("done", r)
-            props.collectWallets()
-            props.setShowModal(false)
+            navigate(`/token-holders?address=${props.tokenInfo.denom}`);
         }).catch(e => {
             console.log(e)
             setError(e.message)
             setProgress("")
             setTxLoading(false)
         })
-    }, [props, sendRefunds])
-
+    }, [currentNetwork, feePayed, navigate, payFee, props.tokenInfo.denom, sendAirdrops])
 
     return (
         <>
             <div
                 className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none text-white text-sm"
             >
-                <div className="relative w-auto my-4 mx-auto max-w-4xl min-w-[600px]">
+                <div className="relative w-auto my-4 mx-auto max-w-4xl">
                     <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-slate-800 outline-none focus:outline-none">
                         <div className="flex items-start justify-between p-4 border-b border-solid border-blueGray-900 rounded-t">
                             <h3 className="text-xl font-semibold">
-                                Prepare refund
+                                Perform pre sale airdrop
                             </h3>
 
                         </div>
 
-                        <div className="relative p-6 flex-auto">
+                        <div className="relative p-6 flex-auto 25">
                             <div>
                                 <p>
-                                    Refunding token: {props.tokenAddress}
+                                    Airdropping token: {props.tokenInfo.symbol}
                                 </p>
                                 <p>
-                                    Required {props.tokenAddress}: {props.refundDetails.reduce((accumulator, current) => {
+                                    Required {props.tokenInfo.symbol}: {props.airdropDetails.reduce((accumulator, current) => {
                                         return accumulator + current.amount;
-                                    }, 0) / Math.pow(10, 18)} {props.tokenAddress}
+                                    }, 0) / Math.pow(10, props.tokenInfo.decimals)} {props.tokenInfo.symbol}
                                 </p>
-                                {props.refundDetails !== null && props.refundDetails.length > 0 &&
+                                {props.airdropDetails !== null && props.airdropDetails.length > 0 &&
                                     <div className="mt-5">
                                         <div className="max-h-80 overflow-y-scroll overflow-x-auto">
-                                            <div>Total wallets to refund: {props.refundDetails.length}</div>
+                                            <div>Total wallets to airdrop: {props.airdropDetails.length}</div>
                                             <div className="mt-2">
-                                                <table className="table-auto w-full">
+                                                <table className="table-auto w-full text-left">
                                                     <thead className="text-white">
                                                         <tr>
-
                                                             <th className="px-4 py-2">
                                                                 Address
                                                             </th>
                                                             <th className="px-4 py-2">
-                                                                Refund
+                                                                Airdrop
                                                             </th>
-
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {props.refundDetails.filter(x => Number(Number(x.amount).toFixed(props.tokenDecimals)) !== 0).map((holder, index) => (
+                                                        {props.airdropDetails.filter(x => Number(Number(x.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0).map((holder, index) => (
                                                             <tr key={index} className="text-white border-b text-xs">
-                                                                <td className="px-6 py-1 whitespace-nowrap">
+                                                                <td className="px-4 py-1 whitespace-nowrap">
                                                                     <a
                                                                         className="hover:text-indigo-900"
                                                                         href={`https://explorer.injective.network/account/${holder.address}`}
@@ -193,8 +227,8 @@ const RefundModal = (props) => {
                                                                         }
                                                                     </a>
                                                                 </td>
-                                                                <td className="px-6 py-1">
-                                                                    {(Number(holder.amount) / Math.pow(10, props.decimals)).toFixed(8)}
+                                                                <td className="px-4 py-1">
+                                                                    {(Number(holder.amountFormatted))} {props.tokenInfo.symbol}
                                                                 </td>
                                                             </tr>
                                                         ))}
@@ -205,19 +239,26 @@ const RefundModal = (props) => {
                                     </div>
                                 }
                                 {
-                                    props.refundDetails !== null && props.refundDetails.length == 0 &&
+                                    props.airdropDetails !== null && props.airdropDetails.length == 0 &&
                                     <div
                                         className="my-5 text-lg"
                                     >
-                                        No refunds to send
+                                        No airdrops to send
                                     </div>
                                 }
                             </div>
-                            {progress && <div className="mt-5">progress: {progress}</div>}
-                            {txLoading && <CircleLoader color="#36d7b7" className="mt-2 m-auto" />}
-                            {error && <div className="text-rose-600 mt-5">{error}</div>}
+
                         </div>
-                        <div className="pl-6 mb-5">If the refund TX fails, up the gas !</div>
+                        <div className="pl-6 mb-5">If the airdrop TX fails, up the gas !</div>
+
+                        <div
+                            className="mx-5"
+                        >
+                            {progress && <div className="">progress: {progress}</div>}
+                            {txLoading && <CircleLoader color="#36d7b7" className="mt-2 m-auto" />}
+                            {error && <div className="text-rose-600 mt-2">{error}</div>}
+                        </div>
+
 
                         {!connectedAddress &&
                             <div
@@ -234,6 +275,14 @@ const RefundModal = (props) => {
                             </div>
                         }
 
+                        {currentNetwork == "mainnet" && (props.airdropDetails.length > 0) && <div className="m-5">
+                            Fee for airdrop: {humanReadableAmount(shroomFee)} shroom <br />
+                            <a href="https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl" className="underline text-sm">buy here</a>
+                            <br />
+                            <div className="mt-2">Fee payed: {feePayed ? "True" : "False"}</div>
+                        </div>
+                        }
+
                         <div className="flex items-center justify-end p-4 border-t border-solid border-blueGray-200 rounded-b">
                             <button
                                 className="text-slate-500 background-transparent font-bold uppercase px-6 py-2 text-sm outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
@@ -245,9 +294,14 @@ const RefundModal = (props) => {
                             <button
                                 className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
-                                onClick={handleSendRefunds}
+                                onClick={() => handleSendAirdrops().then(() => console.log("done")).catch(e => {
+                                    console.log(e)
+                                    setError(e.message)
+                                    setProgress("")
+                                    setTxLoading(false)
+                                })}
                             >
-                                Send Refund
+                                Send Airdrops
                             </button>
                         </div>
                     </div>
@@ -255,8 +309,7 @@ const RefundModal = (props) => {
             </div>
             <div className="opacity-25 fixed inset-0 z-40 bg-black"></div>
         </>
-
     )
 }
 
-export default RefundModal
+export default AirdropModal

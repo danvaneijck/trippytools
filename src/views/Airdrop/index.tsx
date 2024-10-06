@@ -8,7 +8,7 @@ import ShroomBalance from "../../components/App/ShroomBalance";
 import { WALLET_LABELS } from "../../constants/walletLabels";
 import IPFSImage from "../../components/App/IpfsImage";
 import AirdropConfirmModal from "./AirdropConfirmModal";
-import { Holder, MarketingInfo } from "../../types";
+import { Holder, MarketingInfo } from "../../constants/types";
 import { CW404_TOKENS, LIQUIDITY_TOKENS, NFT_COLLECTIONS, TOKENS } from "../../constants/contractAddresses";
 import TokenSelect from "../../components/Inputs/TokenSelect";
 import Papa from 'papaparse';
@@ -769,7 +769,7 @@ const Airdrop = () => {
             }
             <div className="flex flex-col min-h-screen pb-10">
                 <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
-                    <div className="container mx-auto flex items-center p-2 text-sm md:text-sm">
+                    <div className="container mx-auto flex items-center p-2 text-xs md:text-sm">
                         <Link to="/" className="ml-5 font-bold hover:underline mr-5">
                             home
                         </Link>

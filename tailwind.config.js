@@ -12,6 +12,9 @@ export default {
       animation: {
         '3dspin': '3dspin 5s linear infinite',
       },
+      fontFamily: {
+        magic: ['MagicMushroom', 'sans-serif'],
+      },
     },
   },
   plugins: [],

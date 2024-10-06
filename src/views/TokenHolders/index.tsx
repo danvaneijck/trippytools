@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { GridLoader } from "react-spinners";
 import { Link } from "react-router-dom";
-import { Holder, MarketingInfo, TokenInfo } from "../../types";
+import { Holder, MarketingInfo, TokenInfo } from "../../constants/types";
 import { useSearchParams } from 'react-router-dom';
 import ConnectKeplr from "../../components/App/ConnectKeplr";
 import { useSelector } from "react-redux";
@@ -14,7 +14,7 @@ import { CSVLink } from 'react-csv';
 import HoldersChart from "../../components/App/HoldersChart";
 import { MdWarning } from "react-icons/md";
 import Footer from "../../components/App/Footer";
-import { humanReadableAmount } from "../../utils";
+import { humanReadableAmount } from "../../utils/helpers";
 import { gql, useMutation, useQuery } from "@apollo/client";
 import moment from "moment";
 import { Bounce, ToastContainer, toast } from 'react-toastify';
@@ -494,7 +494,7 @@ const TokenHolders = () => {
         <div className="flex flex-col min-h-screen pb-10">
             <ToastContainer />
             <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
-                <div className="container mx-auto flex items-center p-2 text-sm md:text-sm">
+                <div className="container mx-auto flex items-center p-2 text-xs md:text-sm">
                     <Link to="/" className="font-bold hover:underline mx-5">
                         home
                     </Link>
@@ -520,11 +520,11 @@ const TokenHolders = () => {
             <div className="pt-14 flex-grow mx-2 pb-20">
                 <div className="flex justify-center items-center min-h-full">
                     <div className="w-full max-w-screen-lg px-2 py-10">
-                        <div className="text-center text-white">
-                            <div className="text-xl">
+                        <div className="text-center text-white font-magic">
+                            <div className="text-3xl">
                                 Token holders
                             </div>
-                            <div className="text-xs">on Injective main net</div>
+                            <div className="text-lg">on Injective main net</div>
                         </div>
 
                         <div className="mt-4 space-y-2">
@@ -563,9 +563,9 @@ const TokenHolders = () => {
                                         </div>
                                         <div
                                             onClick={handleUpdateTokenHolders}
-                                            className="ml-5 p-2 rounded shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-sm hover:cursor-pointer text-center"
+                                            className="ml-5 p-2 rounded shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-lg hover:cursor-pointer text-center font-magic"
                                         >
-                                            Refresh holders
+                                            Refresh
                                         </div>
                                     </div>
                                     :
@@ -575,9 +575,9 @@ const TokenHolders = () => {
                                         </div>
                                         <div
                                             onClick={handleUpdateTokenHolders}
-                                            className="ml-5 p-2 rounded shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-sm hover:cursor-pointer text-center"
+                                            className="ml-5 p-2 rounded shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-lg hover:cursor-pointer text-center font-magic"
                                         >
-                                            Refresh holders
+                                            Refresh
                                         </div>
                                     </div>
                                 }

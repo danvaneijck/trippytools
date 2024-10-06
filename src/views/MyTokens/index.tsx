@@ -277,7 +277,7 @@ const MyTokens = () => {
 
             <div className="flex flex-col min-h-screen pb-10">
                 <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
-                    <div className="container mx-auto flex items-center p-2 text-sm md:text-sm">
+                    <div className="container mx-auto flex items-center p-2 text-xs md:text-sm">
                         <Link to="/" className="ml-5 font-bold hover:underline mr-5">
                             home
                         </Link>
@@ -299,15 +299,15 @@ const MyTokens = () => {
                         <ConnectKeplr />
                     </div>
                 </header>
-                <div className="pt-14 mx-2 pb-20">
-                    {currentNetwork == "mainnet" && <div className=""><ShroomBalance /></div>}
+                <div className="pt-16 md:pt-14 mx-2 pb-20">
+                    {currentNetwork == "mainnet" && <div className="mb-2"><ShroomBalance /></div>}
                     <div className="flex justify-center items-center min-h-full">
                         <div className="w-full px-2 ">
-                            <div className="text-center text-white mb-5">
-                                <div className="text-xl">
+                            <div className="text-center text-white mb-5 font-magic">
+                                <div className="text-3xl">
                                     Mange token factory tokens
                                 </div>
-                                <div className="text-xs">on Injective {currentNetwork}</div>
+                                <div className="text-lg">on Injective {currentNetwork}</div>
                             </div>
                             <div className="mt-2">
                                 <Link
