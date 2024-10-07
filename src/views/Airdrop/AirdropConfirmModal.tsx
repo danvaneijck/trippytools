@@ -266,7 +266,7 @@ const AirdropConfirmModal = (props: {
                                 amount: calculatedGas.toString()
                             }
                         ],
-                        gas: calculatedGas.toString()
+                        gas: denom.includes("factory") ? "800000" : calculatedGas.toString()
                     };
 
                     const response = await handleSendTx(pubKey, msg, injectiveAddress, offlineSigner, gas);
@@ -324,7 +324,9 @@ const AirdropConfirmModal = (props: {
 
             if (currentNetwork == "mainnet") await sendTelegramMessage(
                 `wallet ${connectedAddress} performed an airdrop on trippyinj!\ntoken dropped: ${props.tokenAddress}\n` +
-                `num participants: ${props.airdropDetails ? props.airdropDetails.filter(record => (Number(Number(record.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0)).length : "n/a"}`)
+                `num participants: ${props.airdropDetails ? props.airdropDetails.filter(record => (Number(Number(record.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0)).length : "n/a"}\n` +
+                `${props.criteria}\n${props.description}`
+            )
 
             if (currentNetwork == "mainnet") {
                 try {

@@ -195,13 +195,14 @@ const Airdrop = () => {
     }, [networkConfig, calculateMitoAirdrop, mitoHolderType, distMode]);
 
     useEffect(() => {
-        calculateMitoAirdrop(mitoHolders, mitoHolderType, distMode)
-    }, [mitoHolders, mitoHolderType, distMode, calculateMitoAirdrop])
+        if (dropMode.value == "MITO") {
+            calculateMitoAirdrop(mitoHolders, mitoHolderType, distMode)
+        }
+    }, [mitoHolders, mitoHolderType, distMode, calculateMitoAirdrop, dropMode])
 
     useEffect(() => {
         setAirdropDetails([])
     }, [selectedMitoVault])
-
 
     const getMitoVaults = useCallback(async () => {
         console.log("get mito vaults")
@@ -551,6 +552,7 @@ const Airdrop = () => {
     };
 
     const getNftCollection = useCallback(async () => {
+        console.log("GET NFT COLLECTION")
         const is404 = CW404_TOKENS.find(x => x.value == nftCollection.value) !== undefined
 
         try {
@@ -609,7 +611,7 @@ const Airdrop = () => {
         if (!airdropTokenAddress) return
         const module = new TokenUtils(networkConfig)
 
-        console.log("get airdrop preview")
+        console.log("GET TOKEN HOLDERS")
         setAirdropDetails([])
         setLoading(true)
         setError(null)
@@ -702,6 +704,7 @@ const Airdrop = () => {
     }, []);
 
     const getPropVoters = useCallback(async () => {
+        console.log("GET PROP VOTERS")
         setAirdropDetails([])
         const supplyToAirdrop = (balanceToDrop - (balanceToDrop * 0.00001))
         setLoading(true)
