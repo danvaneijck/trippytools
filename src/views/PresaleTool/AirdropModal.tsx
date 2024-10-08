@@ -133,7 +133,7 @@ const AirdropModal = (props) => {
                             amount: calculatedGas.toString()
                         }
                     ],
-                    gas: "8000000"
+                    gas: calculatedGas.toString()
                 };
 
                 console.log(msg)

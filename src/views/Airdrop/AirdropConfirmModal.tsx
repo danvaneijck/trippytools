@@ -190,6 +190,10 @@ const AirdropConfirmModal = (props: {
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
 
+        if (injectiveAddress !== connectedAddress) {
+            throw new Error("You are connected to the wrong address")
+        }
+
         const records = airdropDetails.filter(record => (Number(Number(record.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0)).map((record: { address: any; amountToAirdrop: any; }) => {
             return {
                 address: record.address,
@@ -197,7 +201,7 @@ const AirdropConfirmModal = (props: {
             }
         });
 
-        const chunkSize = denom.includes("factory") ? 1200 : 500;
+        const chunkSize = denom.includes("factory") ? 500 : 500;
         const gasPerRecord = denom.includes("factory") ? 40000 : 80000;
         const chunks = [];
 
@@ -272,17 +276,9 @@ const AirdropConfirmModal = (props: {
                     }
 
                     let calculatedGas = filteredChunk.length * gasPerRecord;
-                    if (calculatedGas < 500000) {
-                        calculatedGas = 500000;
+                    if (calculatedGas < 5000000) {
+                        calculatedGas = 5000000;
                     }
-
-                    console.log(calculatedGas)
-
-                    const fee = (calculatedGas * Number(160000000)) / Math.pow(10, 18)
-                    console.log("calculated fee", fee)
-                    console.log("fee with buffer", fee * 1.05)
-                    const feeFormatted = Math.round(((fee * 1.05) * Math.pow(10, 9))).toString()
-                    console.log("formatted", feeFormatted)
 
                     const gas = {
                         amount: [
@@ -291,7 +287,7 @@ const AirdropConfirmModal = (props: {
                                 amount: calculatedGas.toString()
                             }
                         ],
-                        gas: denom.includes("factory") ? feeFormatted : calculatedGas.toString()
+                        gas: calculatedGas.toString()
                     };
 
                     console.log(gas)
@@ -314,7 +310,7 @@ const AirdropConfirmModal = (props: {
             }
         }
         return transactions
-    }, [getKeplr, handleSendTx, props.tokenDecimals]);
+    }, [getKeplr, handleSendTx, props.tokenDecimals, connectedAddress]);
 
 
     const payFee = useCallback(async () => {
