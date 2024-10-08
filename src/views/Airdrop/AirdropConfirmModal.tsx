@@ -9,6 +9,7 @@ import {
     MsgExecuteContract,
     MsgExecuteContractCompat,
     MsgMultiSend,
+    TxGrpcClient,
     TxRaw,
     TxRestClient,
 } from "@injectivelabs/sdk-ts";
@@ -99,6 +100,10 @@ const AirdropConfirmModal = (props: {
 
     const [feePayed, setFeePayed] = useState(false)
 
+    const [estimatedTx, setEstimatedTx] = useState(null)
+    const [completedTx, setCompletedTx] = useState(0)
+
+
     const [insertAirdropLog] = useMutation(INSERT_AIRDROP_MUTATION)
     const [insertWallets] = useMutation(INSERT_WALLETS_MUTATION)
     const [insertTokenDropped] = useMutation(INSERT_TOKEN_MUTATION)
@@ -143,6 +148,7 @@ const AirdropConfirmModal = (props: {
         const accountDetailsResponse = await chainRestAuthApi.fetchAccount(
             injectiveAddress
         );
+
         const baseAccount = BaseAccount.fromRestApi(accountDetailsResponse);
 
         const { signDoc } = createTransaction({
@@ -161,11 +167,21 @@ const AirdropConfirmModal = (props: {
         );
 
         const txRaw = getTxRawFromTxRawOrDirectSignResponse(directSignResponse);
+
+        const txService = new TxGrpcClient(networkConfig.grpc);
+        const simulationResponse = await txService.simulate(txRaw);
+        console.log(
+            `Transaction simulation response: ${JSON.stringify(
+                simulationResponse.gasInfo
+            )}`
+        );
+
         const txHash = await broadcastTx(networkConfig.chainId, txRaw);
         const response = await new TxRestClient(networkConfig.rest).fetchTxPoll(txHash);
 
         console.log(response);
         setTxLoading(false)
+
         return response
     }, [broadcastTx, networkConfig])
 
@@ -192,6 +208,7 @@ const AirdropConfirmModal = (props: {
         const successfullyProcessed = new Set();
 
         const transactions = []
+        setEstimatedTx(chunks.length)
 
         for (const chunk of chunks) {
             let retries = 3;
@@ -255,9 +272,17 @@ const AirdropConfirmModal = (props: {
                     }
 
                     let calculatedGas = filteredChunk.length * gasPerRecord;
-                    if (calculatedGas < 5000000) {
-                        calculatedGas = 5000000;
+                    if (calculatedGas < 500000) {
+                        calculatedGas = 500000;
                     }
+
+                    console.log(calculatedGas)
+
+                    const fee = (calculatedGas * Number(160000000)) / Math.pow(10, 18)
+                    console.log("calculated fee", fee)
+                    console.log("fee with buffer", fee * 1.05)
+                    const feeFormatted = Math.round(((fee * 1.05) * Math.pow(10, 9))).toString()
+                    console.log("formatted", feeFormatted)
 
                     const gas = {
                         amount: [
@@ -266,13 +291,17 @@ const AirdropConfirmModal = (props: {
                                 amount: calculatedGas.toString()
                             }
                         ],
-                        gas: denom.includes("factory") ? "800000" : calculatedGas.toString()
+                        gas: denom.includes("factory") ? feeFormatted : calculatedGas.toString()
                     };
+
+                    console.log(gas)
 
                     const response = await handleSendTx(pubKey, msg, injectiveAddress, offlineSigner, gas);
                     filteredChunk.forEach(record => successfullyProcessed.add(record.address));
+
                     success = true;
                     transactions.push(response.txHash)
+                    setCompletedTx(transactions.length)
                 } catch (error) {
                     console.error("Transaction failed, retrying...", error);
                     retries -= 1;
@@ -310,12 +339,15 @@ const AirdropConfirmModal = (props: {
     const startAirdrop = useCallback(async () => {
         setError(null)
         if (props.airdropDetails !== null && props.airdropDetails.length > 0) {
+
+            // pay fee
             if (currentNetwork == "mainnet" && props.shroomCost !== 0 && !feePayed) {
                 console.log("pay shroom fee")
                 setProgress("Pay shroom fee for airdrop")
                 const result = await payFee()
                 if (result) setFeePayed(true)
             }
+
             console.log("airdrop")
             setProgress("Send airdrops")
             const txHashes = await sendAirdrops(props.tokenAddress, props.tokenDecimals, props.airdropDetails)
@@ -452,9 +484,19 @@ const AirdropConfirmModal = (props: {
                             </div>
                             {progress && <div className="mt-5">progress: {progress}</div>}
                             {txLoading && <CircleLoader color="#36d7b7" className="mt-2 m-auto" />}
-                            {error && <div className="text-red-500 mt-5">{error}</div>}
+                            {error && <div className="text-rose-600 mt-5">{error}</div>}
                         </div>
-                        <div className="pl-6">If the airdrop TX fails, up the gas ! DO NOT REFRESH THE PAGE</div>
+                        {estimatedTx !== null &&
+                            <div className="mx-5 mb-2">
+                                <div>
+                                    Total number of tx for airdrop: {estimatedTx}
+                                </div>
+                                <div>
+                                    Completed tx: {completedTx}
+                                </div>
+                            </div>
+                        }
+                        <div className="mx-5">If the airdrop TX fails, try increasing the gas fee in your wallet. Each tx will retry up to 3 times.</div>
                         {currentNetwork == "mainnet" && (props.airdropDetails.length > 0) && <div className="m-5">
                             Fee for airdrop: {props.shroomCost} shroom <br />
                             <a href="https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl" className="underline text-sm">buy here</a>

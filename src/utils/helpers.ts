@@ -25,7 +25,7 @@ export function humanReadableAmount(number: number) {
         unitIndex++;
     }
 
-    return `${number.toFixed(number >= 10 ? 0 : 2)}${units[unitIndex]}`;
+    return `${number.toFixed(2)}${units[unitIndex]}`;
 }
 
 

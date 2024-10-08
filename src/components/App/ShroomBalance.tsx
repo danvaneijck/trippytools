@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import TokenUtils from "../../modules/tokenUtils";
 import { useSelector } from "react-redux";
 import shroom from "../../assets/shroom.jpg"
+import { humanReadableAmount } from "../../utils/helpers";
 
 const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
@@ -60,7 +61,7 @@ const ShroomBalance = () => {
             <div>
                 <img src={shroom} style={{ borderRadius: '50%', width: 32 }} className="mr-2" alt="Spinning Image" />
             </div>
-            {balance ? balance : "0"}
+            {balance ? humanReadableAmount(balance) : "0"}
             <br />
             ${usd ? usd : "0"}
         </div>

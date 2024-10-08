@@ -100,7 +100,7 @@ const RefundModal = (props) => {
                             amount: calculatedGas.toString()
                         }
                     ],
-                    gas: "800000"
+                    gas: "8000000"
                 };
 
                 console.log(msg)
