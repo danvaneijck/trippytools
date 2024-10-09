@@ -26,7 +26,6 @@ import { Coin } from "@injectivelabs/ts-types";
 /* global BigInt */
 import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { CW404_BALANCE_STARTING_KEYS } from "../constants/cw404BalanceKeys";
-import { Network } from "@injectivelabs/networks";
 
 const DOJO_ROUTER = "inj1t6g03pmc0qcgr7z44qjzaen804f924xke6menl"
 
@@ -696,7 +695,8 @@ class TokenUtils {
                     sender = message.message["sender"];
                     recipient = msg["transfer"]["recipient"];
                     amount = msg["transfer"]["amount"];
-                } else if (message.type == "/cosmos.bank.v1beta1.MsgSend") {
+                }
+                else if (message.type == "/cosmos.bank.v1beta1.MsgSend") {
                     amount = message.message.amount
                         ? message.message.amount[0].denom == denom
                             ? message.message.amount[0].amount
@@ -704,7 +704,43 @@ class TokenUtils {
                         : null;
                     sender = message.message["from_address"];
                     recipient = message.message["to_address"];
-                } else {
+                }
+                else if (message.type == "/cosmos.bank.v1beta1.MsgMultiSend") {
+                    if (message.message.inputs.length == 1) {
+                        sender = message.message.inputs[0].address
+                        if (sender === address) {
+                            message.message.outputs.map((output) => {
+                                if (output.coins.length == 1 && output.coins[0].denom == "inj") {
+                                    const recipient = output.address
+                                    const amount = output.coins[0].amount
+                                    const participant = recipient;
+                                    if (preSaleAmounts.has(participant)) {
+                                        const entry = preSaleAmounts.get(participant);
+                                        if (entry) {
+                                            const amountRefunded =
+                                                (!isNaN(Number(entry.amountRefunded)) ? Number(entry.amountRefunded) : 0) +
+                                                Number(amount);
+
+                                            let toRefund =
+                                                Number(entry.toRefund) ??
+                                                0 - amountRefunded;
+                                            if (toRefund < 0) toRefund = 0;
+
+                                            preSaleAmounts.set(participant, {
+                                                ...entry,
+                                                address: participant,
+                                                amountRefunded: amountRefunded,
+                                                contribution: entry.contribution ?? 0,
+                                                toRefund: toRefund,
+                                            });
+                                        }
+                                    }
+                                }
+                            })
+                        }
+                    }
+                }
+                else {
                     // sending out the memes
                     return;
                 }
