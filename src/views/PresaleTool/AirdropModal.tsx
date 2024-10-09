@@ -7,6 +7,7 @@ import { Buffer } from "buffer";
 import { BigNumberInBase, BigNumberInWei } from "@injectivelabs/utils";
 import { MsgExecuteContract, MsgMultiSend } from "@injectivelabs/sdk-ts";
 import { useNavigate } from 'react-router-dom';
+import { humanReadableAmount } from "../../utils/helpers";
 
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
