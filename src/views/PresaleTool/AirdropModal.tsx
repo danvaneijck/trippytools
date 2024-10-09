@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { useSelector } from "react-redux";
 import { CircleLoader } from "react-spinners";
 import { WALLET_LABELS } from "../../constants/walletLabels";
-import { getKeplr, handleSendTx, humanReadableAmount } from "../../utils/helpers";
+import { getKeplrOfflineSigner, handleSendTx } from "../../utils/keplr";
 import { Buffer } from "buffer";
 import { BigNumberInBase, BigNumberInWei } from "@injectivelabs/utils";
 import { MsgExecuteContract, MsgMultiSend } from "@injectivelabs/sdk-ts";
@@ -28,7 +28,7 @@ const AirdropModal = (props) => {
     const [error, setError] = useState(null)
 
     const payFee = useCallback(async () => {
-        const { key, offlineSigner } = await getKeplr(networkConfig.chainId);
+        const { key, offlineSigner } = await getKeplrOfflineSigner(networkConfig.chainId, true);
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
 
@@ -55,7 +55,7 @@ const AirdropModal = (props) => {
     }, [shroomFee, networkConfig, connectedAddress])
 
     const sendAirdrops = useCallback(async (denom: any) => {
-        const { key, offlineSigner } = await getKeplr(networkConfig.chainId);
+        const { key, offlineSigner } = await getKeplrOfflineSigner(networkConfig.chainId, true);
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
 
@@ -122,21 +122,26 @@ const AirdropModal = (props) => {
                 });
 
                 let calculatedGas = filteredChunk.length * gasPerRecord;
-                if (calculatedGas < 5000000) {
-                    calculatedGas = 5000000;
+                if (calculatedGas < 500000) {
+                    calculatedGas = 500000;
                 }
+
+                const fee = (calculatedGas * Number(160000000)) / Math.pow(10, 18)
+                const feeFormatted = Math.round(((fee * 1.05) * Math.pow(10, 18))).toString()
 
                 const gas = {
                     amount: [
                         {
                             denom: "inj",
-                            amount: calculatedGas.toString()
+                            amount: feeFormatted
                         }
                     ],
-                    gas: calculatedGas.toString()
+                    gas: calculatedGas
                 };
 
-                console.log(msg)
+                console.log("gas", gas)
+                console.log("msg", msg)
+
                 setMsgPreview(msg)
 
                 const response = await handleSendTx(networkConfig, pubKey, msg, injectiveAddress, offlineSigner, gas);

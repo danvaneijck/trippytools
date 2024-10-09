@@ -1,20 +1,9 @@
 import {
-    BaseAccount,
-    BroadcastModeKeplr,
-    ChainRestAuthApi,
-    ChainRestTendermintApi,
-    CosmosTxV1Beta1Tx,
-    createTransaction,
-    getTxRawFromTxRawOrDirectSignResponse,
     MsgExecuteContract,
     MsgExecuteContractCompat,
     MsgMultiSend,
-    TxGrpcClient,
-    TxRaw,
-    TxRestClient,
 } from "@injectivelabs/sdk-ts";
-import { TransactionException } from "@injectivelabs/exceptions";
-import { BigNumber, BigNumberInBase, BigNumberInWei, DEFAULT_BLOCK_TIMEOUT_HEIGHT, getStdFee } from "@injectivelabs/utils";
+import { BigNumber, BigNumberInBase, BigNumberInWei } from "@injectivelabs/utils";
 import { Buffer } from "buffer";
 import { useCallback, useState } from "react";
 import { useSelector } from "react-redux";
@@ -24,6 +13,7 @@ import { WALLET_LABELS } from "../../constants/walletLabels";
 import { sendTelegramMessage } from "../../modules/telegram";
 import { gql, useMutation } from '@apollo/client';
 import moment from "moment";
+import { getKeplrOfflineSigner, handleSendTx } from "../../utils/keplr";
 
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
@@ -108,85 +98,8 @@ const AirdropConfirmModal = (props: {
     const [insertWallets] = useMutation(INSERT_WALLETS_MUTATION)
     const [insertTokenDropped] = useMutation(INSERT_TOKEN_MUTATION)
 
-    const getKeplr = useCallback(async () => {
-        await window.keplr.enable(networkConfig.chainId);
-        const offlineSigner = window.keplr.getOfflineSigner(networkConfig.chainId);
-        const accounts = await offlineSigner.getAccounts();
-        const key = await window.keplr.getKey(networkConfig.chainId);
-        return { offlineSigner, accounts, key };
-    }, [networkConfig]);
-
-    const broadcastTx = useCallback(async (chainId: string, txRaw: TxRaw) => {
-        await getKeplr();
-        const result = await window.keplr.sendTx(
-            chainId,
-            CosmosTxV1Beta1Tx.TxRaw.encode(txRaw).finish(),
-            BroadcastModeKeplr.Sync
-        );
-
-        if (!result || result.length === 0) {
-            throw new TransactionException(
-                new Error("Transaction failed to be broadcasted"),
-                { contextModule: "Keplr" }
-            );
-        }
-
-        return Buffer.from(result).toString("hex");
-    }, [getKeplr]);
-
-    const handleSendTx = useCallback(async (pubKey: any, msg: any, injectiveAddress: string, offlineSigner: { signDirect: (arg0: any, arg1: CosmosTxV1Beta1Tx.SignDoc) => any; }, gas: any = null) => {
-        setTxLoading(true)
-        const chainRestAuthApi = new ChainRestAuthApi(networkConfig.rest);
-        const chainRestTendermintApi = new ChainRestTendermintApi(networkConfig.rest);
-
-        const latestBlock = await chainRestTendermintApi.fetchLatestBlock();
-        const latestHeight = latestBlock.header.height;
-        const timeoutHeight = new BigNumberInBase(latestHeight).plus(
-            DEFAULT_BLOCK_TIMEOUT_HEIGHT
-        );
-
-        const accountDetailsResponse = await chainRestAuthApi.fetchAccount(
-            injectiveAddress
-        );
-
-        const baseAccount = BaseAccount.fromRestApi(accountDetailsResponse);
-
-        const { signDoc } = createTransaction({
-            pubKey: pubKey,
-            chainId: networkConfig.chainId,
-            fee: gas ?? getStdFee({}),
-            message: msg,
-            sequence: baseAccount.sequence,
-            timeoutHeight: timeoutHeight.toNumber(),
-            accountNumber: baseAccount.accountNumber,
-        });
-
-        const directSignResponse = await offlineSigner.signDirect(
-            injectiveAddress,
-            signDoc
-        );
-
-        const txRaw = getTxRawFromTxRawOrDirectSignResponse(directSignResponse);
-
-        const txService = new TxGrpcClient(networkConfig.grpc);
-        const simulationResponse = await txService.simulate(txRaw);
-        console.log(
-            `Transaction simulation response: ${JSON.stringify(
-                simulationResponse.gasInfo
-            )}`
-        );
-
-        const txHash = await broadcastTx(networkConfig.chainId, txRaw);
-        const response = await new TxRestClient(networkConfig.rest).fetchTxPoll(txHash);
-
-        console.log(response);
-        setTxLoading(false)
-
-        return response
-    }, [broadcastTx, networkConfig])
-
     const sendAirdrops = useCallback(async (denom: any, decimals: number | undefined, airdropDetails: any[]) => {
-        const { key, offlineSigner } = await getKeplr();
+        const { key, offlineSigner } = await getKeplrOfflineSigner(networkConfig.chainId);
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
 
@@ -201,7 +114,7 @@ const AirdropConfirmModal = (props: {
             }
         });
 
-        const chunkSize = denom.includes("factory") ? 500 : 500;
+        const chunkSize = denom.includes("factory") ? 1200 : 500;
         const gasPerRecord = denom.includes("factory") ? 40000 : 80000;
         const chunks = [];
 
@@ -290,9 +203,10 @@ const AirdropConfirmModal = (props: {
                         gas: calculatedGas.toString()
                     };
 
-                    console.log(gas)
+                    console.log("gas", gas)
+                    console.log("msg", msg)
 
-                    const response = await handleSendTx(pubKey, msg, injectiveAddress, offlineSigner, gas);
+                    const response = await handleSendTx(networkConfig, pubKey, msg, injectiveAddress, offlineSigner, gas);
                     filteredChunk.forEach(record => successfullyProcessed.add(record.address));
 
                     success = true;
@@ -310,11 +224,10 @@ const AirdropConfirmModal = (props: {
             }
         }
         return transactions
-    }, [getKeplr, handleSendTx, props.tokenDecimals, connectedAddress]);
-
+    }, [connectedAddress, props.tokenDecimals, networkConfig]);
 
     const payFee = useCallback(async () => {
-        const { key, offlineSigner } = await getKeplr();
+        const { key, offlineSigner } = await getKeplrOfflineSigner(networkConfig.chainId);
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
 
@@ -329,8 +242,8 @@ const AirdropConfirmModal = (props: {
             },
         });
         console.log("send shroom fee", msg)
-        return await handleSendTx(pubKey, msg, injectiveAddress, offlineSigner)
-    }, [getKeplr, handleSendTx, props.shroomCost])
+        return await handleSendTx(networkConfig, pubKey, msg, injectiveAddress, offlineSigner)
+    }, [networkConfig, props.shroomCost])
 
     const startAirdrop = useCallback(async () => {
         setError(null)

@@ -153,7 +153,7 @@ const PreSaleTool = () => {
             );
 
             setAmountList(Array.from(preSaleAmounts.values()))
-            setTotalToRefund(totalToRefund)
+            setTotalToRefund(totalToRefund - totalRefunded)
         }
 
     }, [networkConfig, walletAddress, presaleToken, maxCap, minPerWallet, maxPerWallet])
