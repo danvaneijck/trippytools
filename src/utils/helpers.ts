@@ -1,9 +1,10 @@
 
 
 export function humanReadableAmount(number: number) {
-    if (!number) {
-        return 0
+    if (!number || isNaN(Number(number))) {
+        return "0";
     }
+
     const units = ["", "k", "m", "b", "t"];
     let unitIndex = 0;
 
@@ -12,5 +13,5 @@ export function humanReadableAmount(number: number) {
         unitIndex++;
     }
 
-    return `${number.toFixed(2)}${units[unitIndex]}`;
+    return `${Number(number).toFixed(2)}${units[unitIndex]}`;
 }

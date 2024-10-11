@@ -13,14 +13,13 @@ const ShroomBalance = () => {
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
 
     const [loading, setLoading] = useState(false)
-
+    const [lastLoadedAddress, setLastLoadedAddress] = useState(null)
 
     const [balance, setBalance] = useState(null)
     const [usd, setUsd] = useState(null)
 
     const getBalance = useCallback(async () => {
         if (!connectedAddress) return
-        console.log("get shroom bal")
         const module = new TokenUtils(networkConfig);
         try {
             const [baseAssetPrice, tokenBalance, pairInfo] = await Promise.all([
@@ -34,27 +33,35 @@ const ShroomBalance = () => {
             const returnAmount = Number(quote.amount) / Math.pow(10, 18);
             const totalUsdValue = (returnAmount * baseAssetPrice).toFixed(2);
             setUsd(totalUsdValue);
+            setLastLoadedAddress(connectedAddress)
             return normalizedBalance
         } catch (error) {
             console.error('Failed to update balance and USD value:', error);
         }
     }, [connectedAddress, networkConfig]);
 
-
     useEffect(() => {
         if (!connectedAddress) return
         if (loading) return
-        if (!balance || !usd) {
+        if (!balance || !usd || (!lastLoadedAddress || lastLoadedAddress !== connectedAddress)) {
             setLoading(true)
             getBalance().then(r => {
-                console.log(r)
+
             }).catch(e => {
                 console.log(e)
             }).finally(() => {
                 setLoading(false)
             })
         }
-    }, [balance, getBalance, usd, loading, connectedAddress])
+    }, [balance, getBalance, usd, loading, connectedAddress, lastLoadedAddress])
+
+    useEffect(() => {
+        setLastLoadedAddress(null)
+        if (!connectedAddress) {
+            setBalance(null)
+            setUsd(null)
+        }
+    }, [connectedAddress])
 
     return (
         <div className="flex self-end items-center text-sm w-full hover:cursor-pointer max-w-screen-sm" onClick={getBalance}>
