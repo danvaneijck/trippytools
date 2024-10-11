@@ -724,6 +724,7 @@ class TokenUtils {
                                             let toRefund =
                                                 Number(entry.toRefund) ??
                                                 0 - amountRefunded;
+
                                             if (toRefund < 0) toRefund = 0;
 
                                             preSaleAmounts.set(participant, {
