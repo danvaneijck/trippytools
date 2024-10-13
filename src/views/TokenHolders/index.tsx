@@ -28,7 +28,7 @@ const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
 
 
 const HOLDER_QUERY = gql`
-query getTokenHolders($address: String!, $addresses: [String!]) {
+query getTokenHolders($address: String!, $addresses: [String!], $balanceMin: float8) {
   token_info:token_tracker_token_by_pk(address: $address){
     address
     name
@@ -38,11 +38,21 @@ query getTokenHolders($address: String!, $addresses: [String!]) {
     decimals
     holders_last_updated
   }
-  holders: wallet_tracker_balance(where: {token_id: {_in: $addresses}}, order_by: {percentage_held:desc}) {
+  holders: wallet_tracker_balance(where: {token_id: {_in: $addresses}, balance: { _gt: $balanceMin }}, order_by: {balance:desc}) {
     wallet_id
     balance
     percentage_held
     token_id
+  }
+  holder_aggregate: wallet_tracker_balance_aggregate(
+    where: {
+      token_id: { _in: $addresses }
+      balance: { _gt: 0 } 
+    }
+  ) {
+    aggregate {
+      count
+    }
   }
 }
 `
@@ -79,7 +89,8 @@ const TokenHolders = () => {
             addresses: contractAddress ? [
                 contractAddress.value,
                 `factory/${INJ_CW20_ADAPTER}/${contractAddress.value}`
-            ] : []
+            ] : [],
+            balanceMin: contractAddress.value == "factory/inj127l5a2wmkyvucxdlupqyac3y0v6wqfhq03ka64/qunt" ? 1 : 0,
         }
     });
 
@@ -89,6 +100,7 @@ const TokenHolders = () => {
     const [pairMarketing, setPairMarketing] = useState<MarketingInfo | null>(null);
 
     const [holders, setHolders] = useState<Holder[]>([]);
+    const [totalHolderCount, setTotalHolderCount] = useState(null)
     const [hasSplitBalances, setHasSplitBalances] = useState(false)
 
     const [loading, setLoading] = useState(false);
@@ -249,6 +261,12 @@ const TokenHolders = () => {
 
         setHolders(finalHolderList);
         console.log("set holders list")
+        if (tokenIds.size === 1) {
+            setTotalHolderCount(data.holder_aggregate.aggregate.count)
+        }
+        else {
+            setTotalHolderCount(finalHolderList.length)
+        }
 
         const totalBurnedBalance = finalHolderList
             .filter(addressObj => BURN_ADDRESSES.includes(addressObj.address))
@@ -757,7 +775,7 @@ const TokenHolders = () => {
                                         <CSVLink data={holders} headers={headers} filename={"holders.csv"}>
                                             <button className="p-1 bg-slate-700 hover:bg-slate-800 rounded mb-2">Download Holders CSV</button>
                                         </CSVLink>
-                                        <div>Total token holders: {holders.length}</div>
+                                        <div>Total token holders: {totalHolderCount}</div>
                                     </div>
                                     <div>
                                         <form onSubmit={goToPage} className="mt-4">
