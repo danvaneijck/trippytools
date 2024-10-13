@@ -11,6 +11,7 @@ import RefundModal from "./RefundModal"
 import { humanReadableAmount } from "../../utils/helpers"
 import AirdropModal from "./AirdropModal"
 import DisclaimerModal from "./DisclaimerModal"
+import { CSVLink } from 'react-csv';
 
 
 const INJECTIVE_TOKEN = {
@@ -232,6 +233,12 @@ const PreSaleTool = () => {
     const handleAirdrop = useCallback(() => {
         setAirdropModal(true)
     }, [])
+
+    const CsvHeaders = [
+        { label: "address", key: "address" },
+        { label: "amount", key: "amountFormatted" },
+    ];
+
 
     return (
         <>
@@ -598,18 +605,21 @@ const PreSaleTool = () => {
                                         </table>
                                     </div>
 
-
-                                    <button
-                                        onClick={handleAirdrop}
-                                        className="p-2 rounded-lg text-center bg-slate-700 hover:bg-slate-800 mt-5"
-                                    >
-                                        Review Airdrop
-                                    </button>
-
-
+                                    <div className="flex flex-row mt-5">
+                                        <button
+                                            onClick={handleAirdrop}
+                                            className="p-2 rounded-lg text-center bg-slate-700 hover:bg-slate-800 "
+                                        >
+                                            Review Airdrop
+                                        </button>
+                                        <CSVLink data={airdropList} headers={CsvHeaders} filename={"airdrop.csv"}>
+                                            <button className="p-2 rounded-lg text-center bg-slate-700 hover:bg-slate-800 ml-5">
+                                                Download CSV
+                                            </button>
+                                        </CSVLink>
+                                    </div>
                                 </div>
                             }
-
                             {error !== null &&
                                 <div className="text-rose-600 text-lg mt-5">
                                     {error}
