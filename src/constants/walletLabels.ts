@@ -13,6 +13,12 @@ const mirza = "inj1pem9tjvql4zjy32hlp30epz77x5sjuy6qcrck2"
 const eric = "inj1mf54qzss29pyk450lkdpa2rqpn38hzcexfpyac"
 const mito = "inj14vnmw2wee3xtrsqfvpcqg35jg9v7j2vdpzx0kk"
 
+const drugsPurge = "inj1rcrw7gt2sv342p49zzqq7p68cwhjsxc90emh5y"
+const galactic = "inj1xzvnt0j22mlzngvgr7vq8ku9mxk4qy30pgjhnf"
+const galacticMining = "inj1q044fvkkglqqm6wz0sxut2dfn0srqjzw0kulm5"
+const drugsDAO = "inj1q2f3dxy064vyqnvvzszwpgkv8aglzgz36jazu7"
+
+
 export const WALLET_LABELS = {
     ...LIQUIDITY_POOLS.reduce((acc, pool) => {
         acc[pool.value] = {
@@ -79,6 +85,26 @@ export const WALLET_LABELS = {
     },
     [mito]: {
         label: "Mito Finance",
+        bgColor: "",
+        textColor: "text-green-500"
+    },
+    [drugsPurge]: {
+        label: "DRUGS Purge Wallet",
+        bgColor: "",
+        textColor: "text-green-500"
+    },
+    [galactic]: {
+        label: "Galactic Syndicate",
+        bgColor: "",
+        textColor: "text-green-500"
+    },
+    [galacticMining]: {
+        label: "Galactic Mining Club",
+        bgColor: "",
+        textColor: "text-green-500"
+    },
+    [drugsDAO]: {
+        label: "DRUGS on INJ DAO",
         bgColor: "",
         textColor: "text-green-500"
     }
