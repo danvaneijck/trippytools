@@ -20,7 +20,7 @@ const RefundModal = (props) => {
     const [error, setError] = useState(null)
 
     const sendRefunds = useCallback(async (denom: any) => {
-        const { key, offlineSigner } = await getKeplrOfflineSigner(networkConfig.chainId, true);
+        const { key, offlineSigner } = await getKeplrOfflineSigner(networkConfig.chainId);
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
 
@@ -88,22 +88,37 @@ const RefundModal = (props) => {
                     }),
                 });
 
-                let calculatedGas = filteredChunk.length * gasPerRecord;
-                if (calculatedGas < 500000) {
-                    calculatedGas = 500000;
-                }
+                // let calculatedGas = filteredChunk.length * gasPerRecord;
+                // if (calculatedGas < 500000) {
+                //     calculatedGas = 500000;
+                // }
 
-                const fee = (calculatedGas * Number(160000000)) / Math.pow(10, 18)
-                const feeFormatted = Math.round(((fee * 1.05) * Math.pow(10, 18))).toString()
+                // const fee = (calculatedGas * Number(160000000)) / Math.pow(10, 18)
+                // const feeFormatted = Math.round(((fee * 1.05) * Math.pow(10, 18))).toString()
+
+                // const gas = {
+                //     amount: [
+                //         {
+                //             denom: "inj",
+                //             amount: feeFormatted
+                //         }
+                //     ],
+                //     gas: calculatedGas
+                // };
+
+                let calculatedGas = filteredChunk.length * gasPerRecord;
+                if (calculatedGas < 5000000) {
+                    calculatedGas = 5000000;
+                }
 
                 const gas = {
                     amount: [
                         {
                             denom: "inj",
-                            amount: feeFormatted
+                            amount: calculatedGas.toString()
                         }
                     ],
-                    gas: calculatedGas
+                    gas: calculatedGas.toString()
                 };
 
                 console.log("gas", gas)

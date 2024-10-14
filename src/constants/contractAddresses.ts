@@ -32,8 +32,13 @@ export const LIQUIDITY_POOLS = [
         img: "https://wsrv.nl/?url=https%3A%2F%2Fi.ibb.co%2FLh2xJ2w%2FTOKENINJUSSY.jpg&n=-1&w=64&h=64"
     },
     {
+        value: "inj1y6x5kfc5m7vhmy8dfry2vdqsvrnqrnwmw4rea0",
+        label: "DRUGS / INJ DojoSwap",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fbafkreiba422adveub2xbhklqj6etrhuhctra2rtjqc6ytedjumcastbsiy.ipfs.w3s.link%2F&n=-1&w=64&h=64"
+    },
+    {
         value: "inj102qaywu5pqu2ec30ltevxwmp3yn3lfahlvswyh",
-        label: "DRUGS / INJ Astroport",
+        label: "DRUGS / INJ Astroport OLD",
         img: "https://i.imgur.com/8f9uHTN.png"
     },
     {
