@@ -18,6 +18,7 @@ import AirdropHistory from './views/AirdropHistory';
 import MitoMarketMake from './views/MitoMarketMake';
 import PreSaleTool from './views/PresaleTool';
 import { PersistGate } from 'redux-persist/integration/react';
+import DojoWhitelist from './views/DojoWhitelist';
 
 const App = () => {
   return (
@@ -39,6 +40,7 @@ const App = () => {
               <Route path="/binary-option-markets" element={<BinaryOptionMarkets />} />
               <Route path="/market-make" element={<MitoMarketMake />} />
               <Route path="/pre-sale-tool" element={<PreSaleTool />} />
+              <Route path="/dojo-whitelist" element={<DojoWhitelist />} />
 
               <Route path="/" element={<Home />} />
             </Routes>
