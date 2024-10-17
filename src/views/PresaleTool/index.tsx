@@ -208,9 +208,10 @@ const PreSaleTool = () => {
 
     const handleRefund = useCallback(() => {
         const refundList = amountList.map((amount) => {
+            console.log(amount.amountRefunded)
             return {
                 address: amount.address,
-                amount: amount.toRefund
+                amount: Number(amount.toRefund) - Number(amount.amountRefunded ?? 0)
             }
         })
         setRefundAmounts(refundList.filter(x => x.amount !== 0))
@@ -221,7 +222,7 @@ const PreSaleTool = () => {
         const refundList = amountList.map((amount) => {
             return {
                 address: amount.address,
-                amount: amount.amountSent - amount.amountRefunded
+                amount: Number(amount.amountSent) - Number(amount.amountRefunded ?? 0)
             }
         })
         setRefundAmounts(refundList.filter(x => x.amount > 0))
