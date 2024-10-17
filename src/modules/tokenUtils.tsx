@@ -859,7 +859,7 @@ class TokenUtils {
 
                                 preSaleAmounts.set(participant, {
                                     ...entry,
-                                    timeSent: blockTimestamp.format(),
+                                    // timeSent: blockTimestamp.format(),
                                     address: participant,
                                     amountRefunded: amountRefunded,
                                     contribution: entry.contribution ?? 0,
