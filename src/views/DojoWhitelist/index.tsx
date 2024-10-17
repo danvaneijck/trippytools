@@ -141,7 +141,7 @@ const DojoWhitelist = () => {
             networkConfig,
             pubKey,
             [
-                // feeMsg,
+                feeMsg,
                 msgSend,
                 addTokenDecimals
             ],
