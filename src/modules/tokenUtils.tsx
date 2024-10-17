@@ -792,6 +792,7 @@ class TokenUtils {
 
                     preSaleAmounts.set(sender, {
                         ...entry,
+                        timeSent: blockTimestamp.format(),
                         address: sender,
                         amountSent: totalSent,
                         contribution: totalSent - toRefund,
@@ -822,6 +823,7 @@ class TokenUtils {
 
                     preSaleAmounts.set(sender, {
                         ...entry,
+                        timeSent: blockTimestamp.format(),
                         address: sender,
                         amountSent: totalSent,
                         contribution: Number(totalSent) - Number(toRefund),
@@ -857,6 +859,7 @@ class TokenUtils {
 
                                 preSaleAmounts.set(participant, {
                                     ...entry,
+                                    timeSent: blockTimestamp.format(),
                                     address: participant,
                                     amountRefunded: amountRefunded,
                                     contribution: entry.contribution ?? 0,
@@ -899,6 +902,7 @@ class TokenUtils {
 
                                 preSaleAmounts.set(sender, {
                                     ...entry,
+                                    timeSent: blockTimestamp.format(),
                                     address: sender,
                                     amountSent: totalSent,
                                     contribution: totalSent - toRefund,
