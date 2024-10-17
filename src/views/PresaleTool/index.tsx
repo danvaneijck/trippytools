@@ -15,6 +15,7 @@ import { CSVLink } from 'react-csv';
 import moment from "moment"
 import { FaCheckCircle } from "react-icons/fa"
 import { ImCross } from "react-icons/im"
+import logo from '../../assets/trippy_blue_yellow.svg';
 
 
 const INJECTIVE_TOKEN = {
@@ -45,16 +46,15 @@ const PreSaleTool = () => {
         searchParams.get("ignoredAddresses") || "inj18xsczx27lanjt40y9v79q0v57d76j2s8ctj85x"
     );
     const [maxCap, setMaxCap] = useState(
-        Number(searchParams.get("maxCap")) || 500
+        Number(searchParams.get("maxCap")) || 200
     );
     const [minPerWallet, setMinPerWallet] = useState(
         Number(searchParams.get("minPerWallet")) || 0.1
     );
     const [maxPerWallet, setMaxPerWallet] = useState(
-        Number(searchParams.get("maxPerWallet")) || 20
+        Number(searchParams.get("maxPerWallet")) || 2
     );
 
-    // Update the URL when state changes
     useEffect(() => {
         const params = {
             walletAddress,
@@ -68,11 +68,13 @@ const PreSaleTool = () => {
     }, [walletAddress, ignoredAddresses, maxCap, minPerWallet, maxPerWallet, setSearchParams]);
 
     const [amountList, setAmountList] = useState(null)
+    const [walletFilter, setWalletFilter] = useState(null)
 
     const [refundModal, setRefundModal] = useState(false)
     const [refundAmounts, setRefundAmounts] = useState([])
 
     const [totalToRefund, setTotalToRefund] = useState(null)
+    const [totalRefunded, setTotalRefunded] = useState(null)
     const [totalContributions, setTotalContributions] = useState(null)
 
     const [tokenToAirdrop, setTokenToAirdrop] = useState("factory/inj1lq9wn94d49tt7gc834cxkm0j5kwlwu4gm65lhe/subs")
@@ -124,7 +126,6 @@ const PreSaleTool = () => {
             }
         }
     }, [connectedAddress, getINJBalance, networkConfig, walletAddress])
-
 
     const handleCollectWallets = useCallback(async () => {
         setAmountList(null)
@@ -190,10 +191,20 @@ const PreSaleTool = () => {
             if (totalToRef < 0) totalToRef = 0
             setTotalToRefund(totalToRef)
 
+            setTotalRefunded((totalRefunded / Math.pow(10, 18)).toFixed(2))
+
             setTotalContributions((totalContribution / Math.pow(10, 18)).toFixed(2))
         }
 
     }, [networkConfig, walletAddress, presaleToken, maxCap, minPerWallet, maxPerWallet, ignoredAddresses])
+
+    useEffect(() => {
+        if (
+            walletAddress && ignoredAddresses && maxCap && minPerWallet && maxPerWallet && !amountList
+        ) {
+            handleCollectWallets()
+        }
+    }, [walletAddress, ignoredAddresses, maxCap, minPerWallet, maxPerWallet, amountList, handleCollectWallets])
 
     const handleRefund = useCallback(() => {
         const refundList = amountList.map((amount) => {
@@ -343,9 +354,10 @@ const PreSaleTool = () => {
 
                     <div className="flex justify-center items-center min-h-full">
                         <div className="w-full max-w-screen-lg px-2 ">
+                            <img src={logo} alt="My SVG" width={200} className="m-auto" />
                             <div className="text-center text-white">
-                                <div className="text-3xl font-magic">
-                                    Trippy Pre sale tool
+                                <div className="text-xl font-magic text-yellow-500">
+                                    pre sale tool
                                 </div>
                             </div>
 
@@ -479,6 +491,13 @@ const PreSaleTool = () => {
 
                             {amountList !== null &&
                                 <div>
+                                    <input
+                                        className="w-full rounded p-1 px-2 text-black mt-1 text-sm"
+                                        type="text"
+                                        placeholder="Search wallet"
+                                        value={walletFilter}
+                                        onChange={(e) => setWalletFilter(e.target.value)}
+                                    />
                                     <div className="overflow-x-auto mt-2 text-sm  max-h-80 overflow-y-scroll">
                                         <table className="table-auto w-full">
                                             <thead className="text-white text-left">
@@ -504,21 +523,25 @@ const PreSaleTool = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {amountList.sort((a, b) => new Date(a.timeSent) - new Date(b.timeSent)).map((holder, index) => (
+                                                {amountList.filter(holder => {
+                                                    return walletFilter && walletFilter.length > 0
+                                                        ? holder.address === walletFilter
+                                                        : true;
+                                                }).sort((a, b) => new Date(a.timeSent) - new Date(b.timeSent)).map((holder, index) => (
                                                     <tr
                                                         key={index}
                                                         className={holder.toRefundFormatted != holder.amountRefundedFormatted ? "bg-rose-600" : "text-white border-b text-left"}
                                                     >
-                                                        <td className="px-2 py-1 w-full">{moment(holder.timeSent).format("D MMM hh:mm:ss a")}</td>
-                                                        <td className="px-2 py-1 w-1/2">{holder.address}</td>
-                                                        <td className="px-2 py-1 w-1/12">{holder.contribution > 0 ?
+                                                        <td className="px-2 py-1">{moment(holder.timeSent).format("D MMM hh:mm:ss a")}</td>
+                                                        <td className="px-2 py-1 ">{holder.address}</td>
+                                                        <td className="px-2 py-1">{holder.contribution > 0 ?
                                                             <div><FaCheckCircle className="text-emerald-500" /></div>
                                                             :
                                                             <div><ImCross className="text-rose-500" /></div>}
                                                         </td>
-                                                        <td className="px-2 py-1 w-1/12">{holder.amountSentFormatted} {presaleToken.label}</td>
-                                                        <td className="px-2 py-1 w-1/12">{holder.toRefundFormatted} {presaleToken.label}</td>
-                                                        <td className="px-2 py-1 w-1/12">{holder.amountRefundedFormatted} {presaleToken.label}</td>
+                                                        <td className="px-2 py-1 ">{holder.amountSentFormatted.toFixed(4)} {presaleToken.label}</td>
+                                                        <td className="px-2 py-1 ">{holder.toRefundFormatted.toFixed(4)} {presaleToken.label}</td>
+                                                        <td className="px-2 py-1 ">{holder.amountRefundedFormatted.toFixed(4)} {presaleToken.label}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -526,14 +549,20 @@ const PreSaleTool = () => {
                                     </div>
 
                                     {
-                                        totalToRefund !== null &&
+                                        totalRefunded !== null &&
                                         <div className="mt-5">
+                                            Total refunded: {totalRefunded} {presaleToken.label}
+                                        </div>
+                                    }
+                                    {
+                                        totalToRefund !== null &&
+                                        <div className="mt-1">
                                             Total to refund: {totalToRefund / Math.pow(10, 18)} {presaleToken.label}
                                         </div>
                                     }
                                     {
                                         totalContributions !== null &&
-                                        <div className="mt-2">
+                                        <div className="mt-1">
                                             Total contributions: {totalContributions} {presaleToken.label}
                                         </div>
                                     }
