@@ -1,6 +1,6 @@
 import { ToastContainer } from "react-toastify"
 import Footer from "../../components/App/Footer"
-import { Link } from "react-router-dom"
+import { Link, useSearchParams } from "react-router-dom"
 import ConnectKeplr from "../../components/App/ConnectKeplr"
 import TokenSelect from "../../components/Inputs/TokenSelect"
 import { useCallback, useEffect, useState } from "react"
@@ -12,6 +12,9 @@ import { humanReadableAmount } from "../../utils/helpers"
 import AirdropModal from "./AirdropModal"
 import DisclaimerModal from "./DisclaimerModal"
 import { CSVLink } from 'react-csv';
+import moment from "moment"
+import { FaCheckCircle } from "react-icons/fa"
+import { ImCross } from "react-icons/im"
 
 
 const INJECTIVE_TOKEN = {
@@ -23,6 +26,8 @@ const INJECTIVE_TOKEN = {
 
 const PreSaleTool = () => {
 
+    const [searchParams, setSearchParams] = useSearchParams();
+
     const connectedAddress = useSelector(state => state.network.connectedAddress);
     const currentNetwork = useSelector(state => state.network.currentNetwork);
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
@@ -31,11 +36,36 @@ const PreSaleTool = () => {
     const [injBalance, setINJBalance] = useState(null)
 
     const [presaleToken, setPresaleToken] = useState(INJECTIVE_TOKEN)
-    const [walletAddress, setWalletAddress] = useState(connectedAddress ?? "")
+    // const [walletAddress, setWalletAddress] = useState(connectedAddress ?? "")
 
-    const [maxCap, setMaxCap] = useState(500)
-    const [minPerWallet, setMinPerWallet] = useState(0.1)
-    const [maxPerWallet, setMaxPerWallet] = useState(20)
+    const [walletAddress, setWalletAddress] = useState(
+        searchParams.get("walletAddress") || "inj1u5tqjvvffun8ld35kq860sw9rpvcmmr2adeucg"
+    );
+    const [ignoredAddresses, setIgnoredAddresses] = useState(
+        searchParams.get("ignoredAddresses") || "inj18xsczx27lanjt40y9v79q0v57d76j2s8ctj85x"
+    );
+    const [maxCap, setMaxCap] = useState(
+        Number(searchParams.get("maxCap")) || 500
+    );
+    const [minPerWallet, setMinPerWallet] = useState(
+        Number(searchParams.get("minPerWallet")) || 0.1
+    );
+    const [maxPerWallet, setMaxPerWallet] = useState(
+        Number(searchParams.get("maxPerWallet")) || 20
+    );
+
+    // Update the URL when state changes
+    useEffect(() => {
+        const params = {
+            walletAddress,
+            ignoredAddresses,
+            maxCap,
+            minPerWallet,
+            maxPerWallet,
+        };
+
+        setSearchParams(params);
+    }, [walletAddress, ignoredAddresses, maxCap, minPerWallet, maxPerWallet, setSearchParams]);
 
     const [amountList, setAmountList] = useState(null)
 
@@ -43,6 +73,7 @@ const PreSaleTool = () => {
     const [refundAmounts, setRefundAmounts] = useState([])
 
     const [totalToRefund, setTotalToRefund] = useState(null)
+    const [totalContributions, setTotalContributions] = useState(null)
 
     const [tokenToAirdrop, setTokenToAirdrop] = useState("factory/inj1lq9wn94d49tt7gc834cxkm0j5kwlwu4gm65lhe/subs")
     const [tokenInfo, setTokenInfo] = useState(null);
@@ -112,6 +143,7 @@ const PreSaleTool = () => {
         if (allTransactions) {
             const { preSaleAmounts, totalAmountReceived } = module.getPreSaleAmounts(
                 walletAddress,
+                ignoredAddresses.split(","),
                 allTransactions,
                 maxCap,
                 minPerWallet,
@@ -157,9 +189,11 @@ const PreSaleTool = () => {
             let totalToRef = totalToRefund - totalRefunded
             if (totalToRef < 0) totalToRef = 0
             setTotalToRefund(totalToRef)
+
+            setTotalContributions((totalContribution / Math.pow(10, 18)).toFixed(2))
         }
 
-    }, [networkConfig, walletAddress, presaleToken, maxCap, minPerWallet, maxPerWallet])
+    }, [networkConfig, walletAddress, presaleToken, maxCap, minPerWallet, maxPerWallet, ignoredAddresses])
 
     const handleRefund = useCallback(() => {
         const refundList = amountList.map((amount) => {
@@ -212,7 +246,11 @@ const PreSaleTool = () => {
 
         totalToSend = totalToSend - (totalToSend * 0.0000001)
 
+        console.log(`total to send ${totalToSend}`)
+
         const totalContributions = amountList.reduce((acc, curr) => acc + curr.contribution, 0);
+
+        console.log(`total contributions ${totalContributions}`)
 
         const airdropList = amountList.map((amount) => {
             const percentContribution = (amount.contribution / totalContributions) * 100;
@@ -227,6 +265,9 @@ const PreSaleTool = () => {
                 contributionFormatted: amount.totalContributionFormatted
             }
         })
+
+        console.log(airdropList)
+
         setAirdropList(airdropList)
     }, [tokenInfo, percentToAirdrop, amountList, tokenBalance])
 
@@ -352,6 +393,28 @@ const PreSaleTool = () => {
                                     onChange={(e) => setWalletAddress(e.target.value)}
                                 />
                             </div>
+                            <div className="mt-4 space-y-2">
+                                <label
+                                    htmlFor="token-address"
+                                    className="block text-white font-bold"
+                                >
+                                    Wallets to ignore
+                                </label>
+                                <span
+                                    className="text-sm"
+                                >
+                                    Wallet addresses to exclude from the count.
+                                    These may be addresses you sent gas from or are sending the pre sale funds to in order to create the LP.
+                                    Comma separated.
+                                </span>
+                                <br />
+                                <input
+                                    className="w-full rounded p-2 text-black"
+                                    type="text"
+                                    value={ignoredAddresses}
+                                    onChange={(e) => setIgnoredAddresses(e.target.value)}
+                                />
+                            </div>
 
                             <div
                                 className="mt-4 space-x-5 flex flex-row"
@@ -416,35 +479,46 @@ const PreSaleTool = () => {
 
                             {amountList !== null &&
                                 <div>
-                                    <div className="overflow-x-auto mt-2 text-sm  max-h-60 overflow-y-scroll">
+                                    <div className="overflow-x-auto mt-2 text-sm  max-h-80 overflow-y-scroll">
                                         <table className="table-auto w-full">
                                             <thead className="text-white text-left">
                                                 <tr>
-                                                    <th className="px-4 py-2">
-                                                        Position
+                                                    <th className="px-2 py-2">
+                                                        Block time
                                                     </th>
-                                                    <th className="px-4 py-2">
+                                                    <th className="px-2 py-2">
                                                         Address
                                                     </th>
-                                                    <th className="px-4 py-2">
+                                                    <th className="px-2 py-2">
+                                                        Included
+                                                    </th>
+                                                    <th className="px-2 py-2">
                                                         Amount Sent
                                                     </th>
-                                                    <th className="px-4 py-2">
+                                                    <th className="px-2 py-2">
                                                         To Refund
                                                     </th>
-                                                    <th className="px-4 py-2">
-                                                        Amount Refunded
+                                                    <th className="px-2 py-2">
+                                                        Refunded
                                                     </th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {amountList.sort((a, b) => b.amountSent - a.amountSent).map((holder, index) => (
-                                                    <tr key={index} className="text-white border-b text-left">
-                                                        <td className="px-6 py-1">{index + 1}</td>
-                                                        <td className="px-6 py-1">{holder.address}</td>
-                                                        <td className="px-6 py-1">{holder.amountSentFormatted} {presaleToken.label}</td>
-                                                        <td className="px-6 py-1">{holder.toRefundFormatted} {presaleToken.label}</td>
-                                                        <td className="px-6 py-1">{holder.amountRefundedFormatted} {presaleToken.label}</td>
+                                                {amountList.sort((a, b) => new Date(a.timeSent) - new Date(b.timeSent)).map((holder, index) => (
+                                                    <tr
+                                                        key={index}
+                                                        className={holder.toRefundFormatted != holder.amountRefundedFormatted ? "bg-rose-600" : "text-white border-b text-left"}
+                                                    >
+                                                        <td className="px-2 py-1 w-full">{moment(holder.timeSent).format("D MMM hh:mm:ss a")}</td>
+                                                        <td className="px-2 py-1 w-1/2">{holder.address}</td>
+                                                        <td className="px-2 py-1 w-1/12">{holder.contribution > 0 ?
+                                                            <div><FaCheckCircle className="text-emerald-500" /></div>
+                                                            :
+                                                            <div><ImCross className="text-rose-500" /></div>}
+                                                        </td>
+                                                        <td className="px-2 py-1 w-1/12">{holder.amountSentFormatted} {presaleToken.label}</td>
+                                                        <td className="px-2 py-1 w-1/12">{holder.toRefundFormatted} {presaleToken.label}</td>
+                                                        <td className="px-2 py-1 w-1/12">{holder.amountRefundedFormatted} {presaleToken.label}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -455,6 +529,12 @@ const PreSaleTool = () => {
                                         totalToRefund !== null &&
                                         <div className="mt-5">
                                             Total to refund: {totalToRefund / Math.pow(10, 18)} {presaleToken.label}
+                                        </div>
+                                    }
+                                    {
+                                        totalContributions !== null &&
+                                        <div className="mt-2">
+                                            Total contributions: {totalContributions} {presaleToken.label}
                                         </div>
                                     }
 
@@ -630,7 +710,7 @@ const PreSaleTool = () => {
                 </div>
 
                 <Footer />
-            </div>
+            </div >
         </>
 
     )
