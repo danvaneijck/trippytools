@@ -643,6 +643,7 @@ class TokenUtils {
 
     getPreSaleAmounts(
         address: string,
+        ignoredAddresses: string[],
         allTransactions: ExplorerTransaction[],
         max: number,
         minPerWallet: number,
@@ -650,6 +651,8 @@ class TokenUtils {
         denom: string
     ) {
         const preSaleAmounts = new Map();
+
+        console.log(ignoredAddresses)
 
         const maxCap = max * Math.pow(10, 18);
         const minContribution = minPerWallet * Math.pow(10, 18);
@@ -743,6 +746,12 @@ class TokenUtils {
                 }
                 else {
                     // sending out the memes
+                    return;
+                }
+
+                if (ignoredAddresses.includes(recipient) || ignoredAddresses.includes(sender)) {
+                    const ignoredAddress = ignoredAddresses.includes(recipient) ? recipient : sender;
+                    console.log("Ignoring tx from address:", ignoredAddress);
                     return;
                 }
 
@@ -862,6 +871,7 @@ class TokenUtils {
                                 const totalSent =
                                     Number(amount) +
                                     (Number(entry.amountSent) ?? 0);
+
                                 let toRefund = 0;
 
                                 if (!withinMaxCap) {
@@ -872,13 +882,20 @@ class TokenUtils {
                                     toRefund =
                                         Number(totalSent) -
                                         Number(maxContribution);
-                                } else if (totalSent < minContribution) {
+                                }
+                                else if (totalSent < minContribution) {
                                     toRefund = Number(amount);
                                 }
 
                                 toRefund -= entry.amountRefunded
                                     ? Number(entry.amountRefunded)
                                     : 0;
+
+                                if (toRefund < 0) toRefund = 0
+
+                                if (sender == "inj18xsczx27lanjt40y9v79q0v57d76j2s8ctj85x") {
+                                    console.log("HERE BITCH", totalSent - toRefund)
+                                }
 
                                 preSaleAmounts.set(sender, {
                                     ...entry,
