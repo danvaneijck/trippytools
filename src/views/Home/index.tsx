@@ -58,10 +58,11 @@ const Home = () => {
                             <div
                                 className='text-base font-sans text-sm'
                             >
-                                SHROOM is a meme coin on the Injective blockchain with two liquidity pools on Mito Finance and DojoSwap. It's designed for more than just fun - SHROOM allows users to pay for completing airdrops to communities such as token holders, NFT collectors, proposal voters, Mito vault stakers, and custom CSV airdrop uploads.
+                                SHROOM is a meme coin with utility on the Injective blockchain. SHROOM is available to trade via two liquidity pools: Mito Finance and DojoSwap. It's designed for more than just fun - SHROOM allows users to pay for completing airdrops to communities such as token holders, holders of NFT collections, governance proposal voters, Mito vault stakers, and custom CSV airdrop file uploads.
+                                There is also a pre sale function, which allows anyone to complete a pre sale with zero dev knowledge. This allows for anyone to launch their own token and makes distribution easy.
                                 <br />
                                 <br />
-                                The accompanying web tool offers insights into token holders and liquidity providers on DojoSwap and Stroport, highlighting whether liquidity is burned. With its strong integration into Injective’s DeFi ecosystem, SHROOM is a practical tool for managing airdrops and liquidity in a transparent and efficient way.
+                                The web tool offers also insights into token holders and liquidity providers on DojoSwap and Astroport, highlighting whether liquidity is burned. With its strong integration into Injective's DeFi ecosystem, SHROOM is a practical tool for managing tokens, performing airdrops and viewing token / liquidity holders in a transparent and efficient way.
                             </div>
                             <div
                                 className='flex flex-row mt-5'
