@@ -193,7 +193,7 @@ const TrippyDistribution = () => {
                 </div>
                 {loading && (
                     <div className="items-center justify-center flex flex-col pt-5">
-                        <GridLoader color="#36d7b7" /> <br />
+                        <GridLoader color="#f9d73f" /> <br />
                     </div>
                 )}
                 <div className="mt-2 overflow-x-scroll md:overflow-x-none w-full pb-10 pl-5 pr-10">

@@ -9,7 +9,7 @@ const Home = () => {
     const divStyle = {
         position: 'relative',
         width: '100%',
-        paddingBottom: '5%',
+        paddingBottom: '10%',
     };
 
     const iframeStyle = {
@@ -116,7 +116,7 @@ const Home = () => {
                         >
                             <div
                             >
-                                Manage native tokens
+                                Manage tokens
                             </div>
                         </Link>
                     </div>
@@ -127,7 +127,7 @@ const Home = () => {
         <div
             id="dexscreener-embed"
             style={divStyle}
-            className='mt-2 flex justify-center flex-row bg-black pt-10'
+            className='mt-2 flex justify-center flex-row bg-black pt-10 pb-20'
         >
             <iframe
                 src="https://dexscreener.com/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl?embed=1&theme=dark&trades=0"

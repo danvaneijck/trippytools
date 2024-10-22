@@ -534,7 +534,7 @@ const MyTokens = () => {
                             }
                             {loading &&
                                 <div className="flex flex-col items-center justify-center pt-5">
-                                    <GridLoader color="#36d7b7" />
+                                    <GridLoader color="#f9d73f" />
                                 </div>
                             }
                         </div>

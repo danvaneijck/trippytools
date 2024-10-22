@@ -91,7 +91,7 @@ const TokenHolders = () => {
                 contractAddress.value,
                 `factory/${INJ_CW20_ADAPTER}/${contractAddress.value}`
             ] : [],
-            balanceMin: contractAddress.value == "factory/inj127l5a2wmkyvucxdlupqyac3y0v6wqfhq03ka64/qunt" ? 1 : 0,
+            balanceMin: contractAddress && contractAddress.value == "factory/inj127l5a2wmkyvucxdlupqyac3y0v6wqfhq03ka64/qunt" ? 1 : 0,
         }
     });
 
@@ -735,7 +735,7 @@ const TokenHolders = () => {
 
                         {loading && (
                             <div className="flex flex-col items-center justify-center pt-5">
-                                <GridLoader color="#36d7b7" />
+                                <GridLoader color="#f9d73f" />
                                 {progress.length > 0 &&
                                     <div className="mt-2">
                                         {progress}
