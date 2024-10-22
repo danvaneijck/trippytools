@@ -4,7 +4,7 @@ import { FaSquareXTwitter } from "react-icons/fa6";
 
 const Footer = () => {
     return (
-        <footer className="bg-gray-800 text-white text-xs p-3 fixed bottom-0 left-0 right-0 flex flex-row justify-between items-center">
+        <footer className="bg-customGray text-white text-xs p-3 fixed bottom-0 left-0 right-0 flex flex-row justify-between items-center font-sans">
             <a
                 className="flex flex-row items-center"
                 href="https://x.com/trippykiwiPRMR">

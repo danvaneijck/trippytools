@@ -159,31 +159,8 @@ const MyceliumFarm = () => {
     }, [getKeplr, getPendingRewards, handleSendTx, selectedPool])
 
     return (
-        <div className="flex flex-col min-h-screen pb-10">
-            <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
-                <div className="container mx-auto flex items-center p-2 text-xs md:text-sm">
-                    <Link to="/" className="ml-5 font-bold hover:underline mr-5">
-                        home
-                    </Link>
-                    <Link
-                        to="/token-holders"
-                        className="font-bold hover:underline mr-5"
-                    >
-                        holder tool
-                    </Link>
-                    <Link
-                        to="/token-liquidity?address=inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
-                        className="font-bold hover:underline "
-                    >
-                        liquidity tool
-                    </Link>
-
-                </div>
-                <div className="m-2">
-                    <ConnectKeplr />
-                </div>
-            </header>
-            <div className="pt-14 mx-2 pb-20">
+        <div className="flex flex-col min-h-screen pb-10 bg-customGray">
+            <div className="pt-24 mx-2 pb-20">
                 {currentNetwork == "mainnet" && <div className="mt-2 md:mt-0"><ShroomBalance /></div>}
                 <div className="flex justify-center items-center min-h-full mt-2 md:mt-0">
                     <div className="px-2 text-black">

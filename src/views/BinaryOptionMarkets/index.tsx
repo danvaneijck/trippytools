@@ -76,26 +76,7 @@ const BinaryOptionMarkets = () => {
                     {viewMarket !== null && <ViewMarketModal setShowModal={setViewMarket} marketId={viewMarket} setLoaded={setLoaded} />}
                     {showNewMarket && <NewMarketModal setShowModal={setShowNewMarket} setLoaded={setLoaded} />}
 
-                    <div className="flex flex-col min-h-screen pb-10">
-                        <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
-                            <div className="container mx-auto flex items-center p-2 text-xs md:text-sm">
-                                <Link to="/" className="font-bold hover:underline mx-5">
-                                    home
-                                </Link>
-
-                                <Link
-                                    to="/manage-tokens"
-                                    className="font-bold hover:underline "
-                                >
-                                    manage tokens
-                                </Link>
-
-                            </div>
-                            <div className="m-2">
-                                <ConnectKeplr />
-                            </div>
-                        </header>
-
+                    <div className="flex flex-col min-h-screen pb-10 bg-customGray">
                         <div className="pt-14 flex-grow mx-2 pb-20">
                             <div className="flex justify-center items-center min-h-full">
                                 <div className="w-full max-w-screen-xl px-2 py-10">
