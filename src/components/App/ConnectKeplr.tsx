@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { useDispatch, useSelector } from 'react-redux';
 import { switchNetwork, setConnectedAddress, clearConnectedAddress } from '../../store/features/network';
 import { getKeplrFromWindow } from "../../utils/keplr";
@@ -13,7 +13,6 @@ const ConnectKeplr = (props: { hideNetwork?: boolean, button?: boolean }) => {
     const loadKeplr = useCallback(async (chainId) => {
         const keplr = getKeplrFromWindow();
         await keplr.enable(chainId);
-        console.log("loaded keplr on chain id", chainId)
         const injectiveAddresses = await keplr.getOfflineSigner(chainId).getAccounts();
         dispatch(setConnectedAddress(injectiveAddresses[0].address));
     }, [dispatch])
@@ -25,9 +24,9 @@ const ConnectKeplr = (props: { hideNetwork?: boolean, button?: boolean }) => {
         dispatch(clearConnectedAddress());
     }
 
-    useEffect(() => {
-        loadKeplr(networkConfig.chainId)
-    }, [loadKeplr, networkConfig])
+    // useEffect(() => {
+    //     loadKeplr(networkConfig.chainId)
+    // }, [loadKeplr, networkConfig])
 
     return (
         <div className=''>

@@ -1,7 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-// @ts-ignore
-// import CELLS from 'vanta/dist/vanta.cells.min'
-import WAVES from 'vanta/dist/vanta.waves.min'
+
 
 import { Link } from 'react-router-dom';
 import shroom from '../../assets/shroom.jpg';
@@ -25,9 +23,6 @@ interface ShroomBalanceResponse {
 
 const PreSaleInfo = () => {
 
-    const [vantaEffect, setVantaEffect] = useState(null)
-    const myRef = useRef(null)
-
     const wallet = "inj1yegzy0u8z8k0mzcq6532nzk8eg2z9yyuppqxgk"
     const shroomAddress = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 
@@ -37,24 +32,6 @@ const PreSaleInfo = () => {
 
     const [shroomBalance, setShroomBalance] = useState(0)
 
-
-    useEffect(() => {
-        if (!vantaEffect) {
-            setVantaEffect(WAVES({
-                el: myRef.current,
-                minHeight: 200.00,
-                minWidth: 200.00,
-                scale: 1.00,
-                scaleMobile: 1.00,
-                color: 0xf14,
-                shininess: 25.00,
-                waveHeight: 19.50,
-                waveSpeed: 0.55,
-                zoom: 0.65
-            }))
-        }
-
-    }, [vantaEffect])
 
     const getBalance = useCallback(() => {
         const module = new TokenUtils(MAIN_NET);
@@ -107,7 +84,7 @@ const PreSaleInfo = () => {
     };
 
 
-    return <div ref={myRef} className='overflow-hidden'>
+    return <div className='overflow-hidden'>
         <header className="bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
             <div className="container mx-auto flex items-center p-2 text-sm md:text-base">
                 {/* <Link to="/trippy-distribution" className="font-bold hover:underline mr-5">
