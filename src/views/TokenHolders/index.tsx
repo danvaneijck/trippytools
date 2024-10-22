@@ -21,6 +21,7 @@ import { Bounce, ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { GrStatusUnknown } from "react-icons/gr";
 import TokenHoldersTable from "./TokenHolderTable";
+import Header from "../../components/App/Header";
 
 const INJ_CW20_ADAPTER = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
@@ -509,32 +510,8 @@ const TokenHolders = () => {
     ];
 
     return (
-        <div className="flex flex-col min-h-screen pb-10">
+        <div className="flex flex-col min-h-screen pb-10 bg-customGray">
             <ToastContainer />
-            <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
-                <div className="container mx-auto flex items-center p-2 text-xs md:text-sm">
-                    <Link to="/" className="font-bold hover:underline mx-5">
-                        home
-                    </Link>
-
-                    <Link
-                        to="/token-liquidity?address=inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
-                        className="font-bold hover:underline mr-5"
-                    >
-                        liquidity tool
-                    </Link>
-                    <Link
-                        to="/manage-tokens"
-                        className="font-bold hover:underline "
-                    >
-                        manage tokens
-                    </Link>
-                </div>
-                <div className="m-2">
-                    <ConnectKeplr />
-                </div>
-            </header>
-
             <div className="pt-14 flex-grow mx-2 pb-20">
                 <div className="flex justify-center items-center min-h-full">
                     <div className="w-full max-w-screen-lg px-2 py-10">

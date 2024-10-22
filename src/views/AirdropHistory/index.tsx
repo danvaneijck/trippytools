@@ -69,27 +69,15 @@ const AirdropHistory = () => {
 
 
     return (
-        <div className="flex flex-col min-h-screen pb-10">
-            <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
-                <div className="container mx-auto flex items-center p-2 text-xs md:text-sm">
-                    <Link to="/" className="ml-5 font-bold hover:underline mr-5">
-                        home
-                    </Link>
-                    <Link to="/airdrop" className="font-bold hover:underline">
-                        do airdrop
-                    </Link>
-                </div>
-                <div className="m-2">
-                    <ConnectKeplr />
-                </div>
-            </header>
-            <div className="pt-14 mx-2 pb-20">
+        <div className="flex flex-col min-h-screen pb-10 bg-customGray">
+
+            <div className="pt-16 mx-2 pb-20">
                 {currentNetwork == "mainnet" && <div className="mt-2 md:mt-0"><ShroomBalance /></div>}
 
                 <div className="min-h-full mt-2 md:mt-0 md:w-1/2 mx-auto">
                     <div className="px-2 text-white">
 
-                        <div className="text-white text-lg">Airdrop History</div>
+                        <div className="text-white text-2xl font-magic">Airdrop History</div>
                         <div className="flex flex-row justify-end">
                             <Link to="/airdrop" className="bg-slate-800 p-2 mt-2 rounded  text-sm">
                                 Do airdrop

@@ -15,6 +15,10 @@ export default {
       fontFamily: {
         magic: ['MagicMushroom', 'sans-serif'],
       },
+      colors: {
+        customGray: '#001319',
+        trippyYellow: '#f9d73f'
+      }
     },
   },
   plugins: [],

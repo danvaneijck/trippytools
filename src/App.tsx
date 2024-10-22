@@ -19,6 +19,7 @@ import MitoMarketMake from './views/MitoMarketMake';
 import PreSaleTool from './views/PresaleTool';
 import { PersistGate } from 'redux-persist/integration/react';
 import DojoWhitelist from './views/DojoWhitelist';
+import Header from './components/App/Header';
 
 const App = () => {
   return (
@@ -26,6 +27,7 @@ const App = () => {
       <PersistGate loading={null} persistor={persistor}>
         <ApolloProvider client={client}>
           <Router>
+            <Header />
             <Routes>
               <Route path="/token-holders" element={<TokenHolders />} />
               <Route path="/sushi-tool" element={<SushiTool />} />

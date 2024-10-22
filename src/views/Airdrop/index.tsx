@@ -770,36 +770,8 @@ const Airdrop = () => {
                     criteria={criteria}
                 />
             }
-            <div className="flex flex-col min-h-screen pb-10">
-                <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
-                    <div className="container mx-auto flex items-center p-2 text-xs md:text-sm">
-                        <Link to="/" className="ml-5 font-bold hover:underline mr-5">
-                            home
-                        </Link>
-                        <Link
-                            to="/token-holders"
-                            className="font-bold hover:underline mr-5"
-                        >
-                            holder tool
-                        </Link>
-                        <Link
-                            to="/token-liquidity?address=inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
-                            className="font-bold hover:underline mr-5"
-                        >
-                            liquidity tool
-                        </Link>
-                        <Link to="/manage-tokens" className="font-bold hover:underline">
-                            manage tokens
-                        </Link>
-
-
-                    </div>
-                    <div className="m-2">
-                        <ConnectKeplr />
-                    </div>
-                </header>
-
-                <div className="pt-14 flex-grow mx-2 pb-20">
+            <div className="flex flex-col min-h-screen pb-10 bg-customGray">
+                <div className="pt-24 flex-grow mx-2 pb-20">
                     {currentNetwork == "mainnet" && <div className=""><ShroomBalance /></div>}
 
                     <div className="flex justify-center items-center min-h-full ">
@@ -808,10 +780,10 @@ const Airdrop = () => {
                                 <div>
 
                                     <div className="text-center text-white mb-2">
-                                        <div className="text-lg font-bold">
+                                        <div className="text-3xl font-magic">
                                             New Airdrop
                                         </div>
-                                        <div className="text-xs">on Injective {currentNetwork}</div>
+                                        <div className="text-sm">on Injective {currentNetwork}</div>
                                     </div>
                                     <Link to="/airdrop-history" >
                                         <div className="mt-2 bg-slate-800 p-2 my-4 rounded text-center text-sm w-1/2 mx-auto">
@@ -1979,7 +1951,9 @@ const Airdrop = () => {
                                                                                         className="hover:text-indigo-900"
                                                                                         href={`https://explorer.injective.network/account/${holder.address}`}
                                                                                     >
-                                                                                        {holder.address.slice(0, 5) + '...' + holder.address.slice(-5)}
+                                                                                        {/* {holder.address.slice(0, 5) + '...' + holder.address.slice(-5)} */}
+                                                                                        {holder.address}
+
                                                                                         {
                                                                                             WALLET_LABELS[holder.address] ? (
                                                                                                 <span className={`${WALLET_LABELS[holder.address].bgColor} ${WALLET_LABELS[holder.address].textColor} ml-2`}>
