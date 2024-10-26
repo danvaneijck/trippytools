@@ -492,6 +492,11 @@ export const NFT_COLLECTIONS = [
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/66fbb4a4d5978b6944b0a760/miniaturePicture"
     },
     {
+        value: "inj1rrrc7qe2sg93j2zj4dv8j5wv0nwsfx29hzxngq",
+        label: "The Junior",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/658aa148de32027ff36ec0bd/miniaturePicture"
+    },
+    {
         value: "inj1nxn08znpqrf7xqafg6m473hf0um26gjjp0ptz4",
         label: "The Munchers",
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/65bfc28b6437ca1ba252f7b9/miniaturePicture"
