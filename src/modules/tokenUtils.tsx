@@ -1177,6 +1177,43 @@ class TokenUtils {
         return infoDecoded
     }
 
+    async fetchOwnersInBatches(tokensNeedingOwners, collectionAddress, batchSize = 5, delay = 500, maxRetries = 3) {
+        const ownerResults = [];
+
+        const fetchWithRetry = async (tokenId, retries = maxRetries) => {
+            const ownerQuery = Buffer.from(
+                JSON.stringify({
+                    owner_of: { token_id: tokenId }
+                })
+            ).toString("base64");
+
+            for (let attempt = 0; attempt <= retries; attempt++) {
+                try {
+                    const response = await this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, ownerQuery);
+                    return { tokenId, ownerInfo: JSON.parse(new TextDecoder().decode(response.data)) };
+                } catch (error) {
+                    if (attempt < retries) {
+                        await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, attempt)));
+                    } else {
+                        return { tokenId, error };
+                    }
+                }
+            }
+        };
+
+        for (let i = 0; i < tokensNeedingOwners.length; i += batchSize) {
+            const batch = tokensNeedingOwners.slice(i, i + batchSize);
+            const ownerQueries = batch.map(tokenId => fetchWithRetry(tokenId));
+            const results = await Promise.all(ownerQueries);
+            ownerResults.push(...results);
+            if (i + batchSize < tokensNeedingOwners.length) {
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+
+        return ownerResults;
+    }
+
     async getNFTHolders(collectionAddress: string, setProgress: React.Dispatch<React.SetStateAction<string>>) {
         const numTokensQuery = Buffer.from(
             JSON.stringify({
@@ -1186,9 +1223,8 @@ class TokenUtils {
 
         const numTokensInfo = await this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, numTokensQuery);
         const numTokensDecoded = JSON.parse(new TextDecoder().decode(numTokensInfo.data));
-        console.log(numTokensDecoded);
         const totalTokens = numTokensDecoded.count;
-        console.log("total tokens")
+        console.log("total NFT tokens", numTokensDecoded);
 
         let startAfter = "";
         let hasMore = true;
@@ -1208,35 +1244,65 @@ class TokenUtils {
             const allTokensDecoded = JSON.parse(new TextDecoder().decode(allTokensInfo.data));
 
             if (allTokensDecoded && allTokensDecoded.tokens && allTokensDecoded.tokens.length > 0) {
-                allTokensDecoded.tokens.forEach(token => {
-                    const owner = token.owner;
-                    if (holderMap[owner]) {
-                        holderMap[owner].balance++;
-                        holderMap[owner].metadataIds.push(token.metadata_uri);
+                // Tokens that need an owner lookup
+                const tokensNeedingOwners = [];
+
+                for (const token of allTokensDecoded.tokens) {
+                    if (token.owner) {
+                        const owner = token.owner;
+                        if (holderMap[owner]) {
+                            holderMap[owner].balance++;
+                            holderMap[owner].metadataIds.push(token.metadata_uri);
+                        } else {
+                            holderMap[owner] = {
+                                balance: 1,
+                                address: owner,
+                                metadataIds: [token.metadata_uri]
+                            };
+                        }
                     } else {
-                        holderMap[owner] = {
-                            balance: 1,
-                            address: owner,
-                            metadataIds: [token.metadata_uri]
-                        };
+                        tokensNeedingOwners.push(token.token_id || token);
+                    }
+                }
+
+                // Execute all owner fetches in parallel
+                const ownerResults = await this.fetchOwnersInBatches(tokensNeedingOwners, collectionAddress);
+
+                // Process the fetched owners
+                ownerResults.forEach(({ tokenId, ownerInfo }) => {
+                    if (ownerInfo && ownerInfo.owner) {
+                        const owner = ownerInfo.owner;
+                        if (holderMap[owner]) {
+                            holderMap[owner].balance++;
+                            holderMap[owner].metadataIds.push(tokenId);
+                        } else {
+                            holderMap[owner] = {
+                                balance: 1,
+                                address: owner,
+                                metadataIds: [tokenId]
+                            };
+                        }
                     }
                 });
 
-                startAfter = allTokensDecoded.tokens[allTokensDecoded.tokens.length - 1].token_id;
-                setProgress(`wallets checked: ${Object.values(holderMap).length} / ${totalTokens}`)
+                console.log(holderMap)
+
+                startAfter = allTokensDecoded.tokens[allTokensDecoded.tokens.length - 1].token_id ?? allTokensDecoded.tokens[allTokensDecoded.tokens.length - 1];
+                setProgress(`wallets checked: ${Object.values(holderMap).reduce((sum, obj) => sum + obj.balance, 0)} / ${totalTokens}`);
             } else {
                 hasMore = false;
             }
         }
 
         Object.keys(holderMap).forEach(key => {
-            holderMap[key].percentageHeld = Number((holderMap[key].balance / totalTokens * 100).toFixed(4))
+            holderMap[key].percentageHeld = Number((holderMap[key].balance / totalTokens * 100).toFixed(4));
         });
 
         const sortedHolders = Object.values(holderMap).sort((a, b) => b.balance - a.balance);
 
         return sortedHolders;
     }
+
 
     async getCW404TokenInfo(collectionAddress: string) {
         const infoQuery = Buffer.from(

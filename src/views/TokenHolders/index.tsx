@@ -471,7 +471,7 @@ const TokenHolders = () => {
                             console.error("Error with CW404 token info retrieval:", innerError);
                         }
                     }
-                    else if (error.message.includes("Error parsing into type talis_nft")) {
+                    else if (error.message.includes("Error parsing into type talis_nft") || error.message.includes("Error parsing into type cw721_base")) {
                         const tokenInfo = await module.getNFTCollectionInfo(address)
                         const holders = await module.getNFTHolders(address, setProgress)
                         setTokenInfo({ ...tokenInfo, denom: address });
@@ -489,6 +489,7 @@ const TokenHolders = () => {
             if (e && e.message) {
                 setError(e.message);
             }
+            throw e
         } finally {
             setLoading(false);
 
@@ -498,7 +499,10 @@ const TokenHolders = () => {
     useEffect(() => {
         const address = searchParams.get("address")
         if (address && address !== lastLoadedAddress && !loading) {
-            getTokenHolders(address).then(() => console.log("got token holders")).catch(e => console.log(e))
+            getTokenHolders(address).then(() => console.log("got token holders")).catch(e => {
+                console.log(e)
+                setLastLoadedAddress(address);
+            })
             setContractAddress(address => TOKENS.find(v => v.value == address) ?? address)
         }
     }, [searchParams, lastLoadedAddress, getTokenHolders, loading])
