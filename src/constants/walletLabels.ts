@@ -19,6 +19,13 @@ const galacticMining = "inj1q044fvkkglqqm6wz0sxut2dfn0srqjzw0kulm5"
 const drugsDAO = "inj1q2f3dxy064vyqnvvzszwpgkv8aglzgz36jazu7"
 
 
+const quntTreasury1 = "inj127l5a2wmkyvucxdlupqyac3y0v6wqfhq03ka64"
+const quntTreasury2 = "inj1dcgukyg6hj4zqerm02a4vfsgl0h8nd3ywmzce3"
+const quntTreasury3 = "inj1rlyp66l2macpfqer2tg57a6alvgv7ydvrlfwrh"
+
+const illu = "inj1q82fmsgee627wh2w2rthy6eqt2jst9wc3tytz4"
+
+
 export const WALLET_LABELS = {
     ...LIQUIDITY_POOLS.reduce((acc, pool) => {
         acc[pool.value] = {
@@ -105,6 +112,29 @@ export const WALLET_LABELS = {
     },
     [drugsDAO]: {
         label: "DRUGS on INJ DAO",
+        bgColor: "",
+        textColor: "text-green-500"
+    },
+    [quntTreasury1]: {
+        label: "PRMR treasury 1",
+        bgColor: "",
+        textColor: "text-green-500",
+        treasury: true
+    },
+    [quntTreasury2]: {
+        label: "PRMR treasury 2",
+        bgColor: "",
+        textColor: "text-green-500",
+        treasury: true
+    },
+    [quntTreasury3]: {
+        label: "PRMR treasury 3",
+        bgColor: "",
+        textColor: "text-green-500",
+        treasury: true
+    },
+    [illu]: {
+        label: "@illustriousPRMR",
         bgColor: "",
         textColor: "text-green-500"
     }
