@@ -115,6 +115,7 @@ const TokenHolders = () => {
     const [findingLiq, setFindingLiq] = useState(false)
     const [liqError, setLiqError] = useState(false)
     const [totalBurned, setTotalBurned] = useState(null)
+    const [totalTreasuryHoldings, setTotalTreasuryHoldings] = useState(null)
 
     const [mitoVault, setMitoVault] = useState(null)
     const [tokenPrice, setTokenPrice] = useState(null)
@@ -276,6 +277,19 @@ const TokenHolders = () => {
             }, 0);
 
         setTotalBurned(totalBurnedBalance)
+
+        const totalTreasuryHoldings = finalHolderList
+            .filter(addressObj => WALLET_LABELS[addressObj.address]?.treasury)
+            .reduce((total, addressObj) => {
+                return total + addressObj.balance;
+            }, 0);
+
+        if (data.token_info.address == "factory/inj127l5a2wmkyvucxdlupqyac3y0v6wqfhq03ka64/qunt") {
+            setTotalTreasuryHoldings(totalTreasuryHoldings);
+        }
+        else {
+            setTotalTreasuryHoldings(0)
+        }
     }, [data, tokenPrice]);
 
     const getSpotMarkets = useCallback(async () => {
@@ -669,15 +683,31 @@ const TokenHolders = () => {
 
                         {totalBurned !== null && totalBurned !== 0 && tokenInfo !== null && (
                             <div>
+                                {/* Total Burned Tokens */}
                                 Total burned tokens: {humanReadableAmount(totalBurned)} 🔥{" "}
                                 {(liquidity.length > 0 || tokenPrice) && `$${humanReadableAmount(totalBurned * (tokenPrice !== null ? tokenPrice : liquidity[0].price))}`}
                                 <br />
-                                Circulating supply: {humanReadableAmount((tokenInfo.total_supply /
-                                    Math.pow(10, tokenInfo.decimals)) - totalBurned)}{" "}
-                                {(liquidity.length > 0 || tokenPrice) && `$${humanReadableAmount(((tokenInfo.total_supply /
-                                    Math.pow(10, tokenInfo.decimals)) - totalBurned) * (tokenPrice !== null ? tokenPrice : liquidity[0].price))}`}
+
+                                {/* Total Treasury Holdings */}
+                                {totalTreasuryHoldings !== null && totalTreasuryHoldings !== 0 && tokenInfo.denom == "factory/inj127l5a2wmkyvucxdlupqyac3y0v6wqfhq03ka64/qunt" && (
+                                    <div>
+                                        Total treasury holdings: {humanReadableAmount(totalTreasuryHoldings)} 💰{" "}
+                                        {(liquidity.length > 0 || tokenPrice) && `$${humanReadableAmount(totalTreasuryHoldings * (tokenPrice !== null ? tokenPrice : liquidity[0].price))}`}
+                                    </div>
+                                )}
+
+
+                                {/* Circulating Supply */}
+                                Circulating supply: {humanReadableAmount(
+                                    (tokenInfo.total_supply / Math.pow(10, tokenInfo.decimals)) - (totalBurned + totalTreasuryHoldings)
+                                )}{" "}
+                                {(liquidity.length > 0 || tokenPrice) && `$${humanReadableAmount(
+                                    ((tokenInfo.total_supply / Math.pow(10, tokenInfo.decimals)) - (totalBurned + totalTreasuryHoldings)) *
+                                    (tokenPrice !== null ? tokenPrice : liquidity[0].price)
+                                )}`}
                             </div>
                         )}
+
 
                         <div className="flex flex-row justify-center mt-2">
                             {liquidity.length > 0 && liquidity.map(({ infoDecoded, marketCap, price, factory, liquidity }, index) => {
