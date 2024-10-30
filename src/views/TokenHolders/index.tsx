@@ -79,7 +79,7 @@ const TokenHolders = () => {
         if (!address) {
             return TOKENS[0];
         }
-        return TOKENS.find(x => x.value === address) || { label: address, value: address };
+        return TOKENS.find(x => x.value === address) || NFT_COLLECTIONS.find(x => x.value === address) || { label: address, value: address };
     });
 
     const { data, loading: queryLoading } = useQuery(HOLDER_QUERY, {
@@ -284,7 +284,7 @@ const TokenHolders = () => {
                 return total + addressObj.balance;
             }, 0);
 
-        if (data.token_info.address == "factory/inj127l5a2wmkyvucxdlupqyac3y0v6wqfhq03ka64/qunt") {
+        if (data.token_info && data.token_info.address == "factory/inj127l5a2wmkyvucxdlupqyac3y0v6wqfhq03ka64/qunt") {
             setTotalTreasuryHoldings(totalTreasuryHoldings);
         }
         else {
