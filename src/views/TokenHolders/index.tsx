@@ -699,10 +699,10 @@ const TokenHolders = () => {
 
                                 {/* Circulating Supply */}
                                 Circulating supply: {humanReadableAmount(
-                                    (tokenInfo.total_supply / Math.pow(10, tokenInfo.decimals)) - (totalBurned + totalTreasuryHoldings)
+                                    (tokenInfo.total_supply / Math.pow(10, tokenInfo.decimals)) - (totalBurned)
                                 )}{" "}
                                 {(liquidity.length > 0 || tokenPrice) && `$${humanReadableAmount(
-                                    ((tokenInfo.total_supply / Math.pow(10, tokenInfo.decimals)) - (totalBurned + totalTreasuryHoldings)) *
+                                    ((tokenInfo.total_supply / Math.pow(10, tokenInfo.decimals)) - (totalBurned)) *
                                     (tokenPrice !== null ? tokenPrice : liquidity[0].price)
                                 )}`}
                             </div>
