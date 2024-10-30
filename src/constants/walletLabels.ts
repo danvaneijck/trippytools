@@ -20,8 +20,11 @@ const drugsDAO = "inj1q2f3dxy064vyqnvvzszwpgkv8aglzgz36jazu7"
 
 
 const quntTreasury1 = "inj127l5a2wmkyvucxdlupqyac3y0v6wqfhq03ka64"
-const quntTreasury2 = "inj1dcgukyg6hj4zqerm02a4vfsgl0h8nd3ywmzce3"
-const quntTreasury3 = "inj1rlyp66l2macpfqer2tg57a6alvgv7ydvrlfwrh"
+const quntTreasury2 = "inj1rlyp66l2macpfqer2tg57a6alvgv7ydvrlfwrh"
+const quntTreasury3 = "inj14lt3ksa9kzy3zadxej8xtf2apwp0w33v5g7vcu"
+
+const quntMarketing = "inj1dcgukyg6hj4zqerm02a4vfsgl0h8nd3ywmzce3"
+const quntBuybacks = "inj1fj6syxy0wmvqhr3n57hwrljxwsng3k55t3yxgj"
 
 const illu = "inj1q82fmsgee627wh2w2rthy6eqt2jst9wc3tytz4"
 
@@ -132,6 +135,16 @@ export const WALLET_LABELS = {
         bgColor: "",
         textColor: "text-green-500",
         treasury: true
+    },
+    [quntMarketing]: {
+        label: "PRMR marketing",
+        bgColor: "",
+        textColor: "text-green-500",
+    },
+    [quntBuybacks]: {
+        label: "QUNT buybacks",
+        bgColor: "",
+        textColor: "text-green-500",
     },
     [illu]: {
         label: "@illustriousPRMR",
