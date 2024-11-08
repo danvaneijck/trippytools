@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { GridLoader } from "react-spinners";
 import { Link } from "react-router-dom";
 import { Holder, MarketingInfo, TokenInfo } from "../../constants/types";
 import { useSearchParams } from 'react-router-dom';
-import ConnectKeplr from "../../components/App/ConnectKeplr";
 import { useSelector } from "react-redux";
 import IPFSImage from "../../components/App/IpfsImage";
 import { WALLET_LABELS } from "../../constants/walletLabels";
@@ -21,7 +20,6 @@ import { Bounce, ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { GrStatusUnknown } from "react-icons/gr";
 import TokenHoldersTable from "./TokenHolderTable";
-import Header from "../../components/App/Header";
 
 const INJ_CW20_ADAPTER = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
@@ -38,12 +36,15 @@ query getTokenHolders($address: String!, $addresses: [String!], $balanceMin: flo
     circulating_supply
     decimals
     holders_last_updated
+    holders_query_progress
+    holders_save_progress
   }
   holders: wallet_tracker_balance(where: {token_id: {_in: $addresses}, balance: { _gt: $balanceMin }}, order_by: {balance:desc}) {
     wallet_id
     balance
     percentage_held
     token_id
+    id
   }
   holder_aggregate: wallet_tracker_balance_aggregate(
     where: {
@@ -53,6 +54,22 @@ query getTokenHolders($address: String!, $addresses: [String!], $balanceMin: flo
   ) {
     aggregate {
       count
+    }
+  }
+}
+`
+
+const PROGRESS_QUERY = gql`
+query getTokenHolders($addresses: [String!]) {
+  token_info: token_tracker_token(where: {address: {_in: $addresses}}) {
+    address
+    holders_query_progress
+    holders_save_progress
+    holders_last_updated
+    balances_aggregate {
+      aggregate {
+        count
+      }
     }
   }
 }
@@ -68,6 +85,35 @@ mutation updateTokenHolders($address: String!){
 
 const ITEMS_PER_PAGE = 50;
 
+const ProgressBar = ({ queryProgress, saveProgress }) => {
+    const [progress, setProgress] = useState(0);
+    const prevProgress = useRef(0);
+    const label = queryProgress !== null ? 'Update Query Progress' : 'Holders Saving to Database';
+
+    useEffect(() => {
+        const newProgress = queryProgress !== null ? queryProgress : saveProgress;
+        if (newProgress !== null && newProgress >= prevProgress.current) {
+            setProgress(Math.min(Number(newProgress.toFixed(2)), 100));
+            prevProgress.current = newProgress;
+        }
+    }, [queryProgress, saveProgress]);
+
+    return (
+        <div className="w-full max-w-md mx-auto mt-4">
+            <div className="flex items-center justify-between mb-1">
+                <span className="text-sm font-medium text-white">{label}</span>
+                <span className="text-sm font-medium text-white">{progress}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3">
+                <div
+                    className="bg-[#36d7b7] h-3 rounded-full transition-all duration-500 ease-in-out"
+                    style={{ width: `${progress}%` }}
+                ></div>
+            </div>
+        </div>
+    );
+};
+
 const TokenHolders = () => {
     const [searchParams, setSearchParams] = useSearchParams();
 
@@ -82,8 +128,9 @@ const TokenHolders = () => {
         return TOKENS.find(x => x.value === address) || NFT_COLLECTIONS.find(x => x.value === address) || { label: address, value: address };
     });
 
-    const { data, loading: queryLoading } = useQuery(HOLDER_QUERY, {
+    const { data, loading: queryLoading, refetch } = useQuery(HOLDER_QUERY, {
         skip: !contractAddress || !contractAddress.value,
+        fetchPolicy: "network-only",
         pollInterval: 60000,
         variables: {
             address: contractAddress?.value || "",
@@ -92,6 +139,18 @@ const TokenHolders = () => {
                 `factory/${INJ_CW20_ADAPTER}/${contractAddress.value}`
             ] : [],
             balanceMin: contractAddress && contractAddress.value == "factory/inj127l5a2wmkyvucxdlupqyac3y0v6wqfhq03ka64/qunt" ? 1 : 0,
+        }
+    });
+
+    const { data: progressData, startPolling, stopPolling } = useQuery(PROGRESS_QUERY, {
+        skip: !contractAddress || !contractAddress.value,
+        pollInterval: 5000,
+        fetchPolicy: "network-only",
+        variables: {
+            addresses: contractAddress ? [
+                contractAddress.value,
+                `factory/${INJ_CW20_ADAPTER}/${contractAddress.value}`
+            ] : [],
         }
     });
 
@@ -122,6 +181,9 @@ const TokenHolders = () => {
 
     const [currentPage, setCurrentPage] = useState(1);
     const [pageInput, setPageInput] = useState("");
+
+    const [queryProgress, setQueryProgress] = useState(null)
+    const [saveProgress, setSaveProgress] = useState(null)
 
     const startIndex = useMemo(() => {
         return (currentPage - 1) * ITEMS_PER_PAGE;
@@ -194,6 +256,31 @@ const TokenHolders = () => {
     }, [contractAddress, updateTokenHolders])
 
     useEffect(() => {
+        if (!progressData || !Array.isArray(progressData.token_info)) return;
+
+        const queryProgresses = progressData.token_info
+            .map(info => {
+                const totalHolderCount = info.balances_aggregate?.aggregate?.count || 1;
+                return info.holders_query_progress
+                    ? (info.holders_query_progress / totalHolderCount) * 100
+                    : null;
+            })
+            .filter(value => value !== null);
+
+        const saveProgresses = progressData.token_info
+            .map(info => info.holders_save_progress)
+            .filter(value => value !== null);
+
+        const minQueryProgress = queryProgresses.length > 0 ? Math.min(...queryProgresses) : null;
+        const minSaveProgress = saveProgresses.length > 0 ? Math.min(...saveProgresses) : null;
+
+        setQueryProgress(minQueryProgress);
+        setSaveProgress(minSaveProgress);
+
+        if (!minQueryProgress && !minSaveProgress) refetch();
+    }, [progressData, refetch]);
+
+    useEffect(() => {
         if (!data) return;
 
         const BURN_ADDRESSES = [
@@ -262,7 +349,7 @@ const TokenHolders = () => {
         }).filter(x => x.balance !== 0).sort((a, b) => b.balance - a.balance)
 
         setHolders(finalHolderList);
-        console.log("set holders list")
+
         if (tokenIds.size === 1) {
             setTotalHolderCount(data.holder_aggregate.aggregate.count)
         }
@@ -574,27 +661,34 @@ const TokenHolders = () => {
                                         <div>
                                             Holders last updated: {moment(holdersLastUpdated).fromNow()}
                                         </div>
-                                        <div
-                                            onClick={handleUpdateTokenHolders}
-                                            className="ml-5 p-2 rounded shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-lg hover:cursor-pointer text-center font-magic"
-                                        >
-                                            Refresh
-                                        </div>
+                                        {!queryProgress && !saveProgress &&
+                                            <div
+                                                onClick={handleUpdateTokenHolders}
+                                                className="ml-5 p-2 rounded shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-lg hover:cursor-pointer text-center font-magic"
+                                            >
+                                                Refresh
+                                            </div>
+                                        }
                                     </div>
                                     :
                                     <div className="mt-4 flex flex-row items-center">
                                         <div className="flex flex-row items-center">
                                             Unknown last updated <GrStatusUnknown className="ml-4 text-lg" />
                                         </div>
-                                        <div
-                                            onClick={handleUpdateTokenHolders}
-                                            className="ml-5 p-2 rounded shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-lg hover:cursor-pointer text-center font-magic"
-                                        >
-                                            Refresh
-                                        </div>
+                                        {!queryProgress && !saveProgress &&
+                                            <div
+                                                onClick={handleUpdateTokenHolders}
+                                                className="ml-5 p-2 rounded shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-lg hover:cursor-pointer text-center font-magic"
+                                            >
+                                                Refresh
+                                            </div>
+                                        }
                                     </div>
                                 }
                             </>
+                        }
+                        {(queryProgress || saveProgress) &&
+                            <ProgressBar queryProgress={queryProgress} saveProgress={saveProgress} />
                         }
 
                         {error && <div className="text-red-500 mt-2">
