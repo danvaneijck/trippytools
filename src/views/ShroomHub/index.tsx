@@ -387,7 +387,7 @@ const ShroomHub = () => {
                 BUY,
                 18,
                 injectiveAddress,
-                injectiveAddress,
+                FEE_COLLECTION_ADDRESS,
             )
 
             console.log(msgOrderBookSwap)
