@@ -226,7 +226,7 @@ const MitoMarketMake = () => {
         await handleSendTx(
             pubKey,
             [
-                feeMsg,
+                // feeMsg,
                 msgMarketMake
             ],
             injectiveAddress,

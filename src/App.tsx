@@ -20,6 +20,7 @@ import PreSaleTool from './views/PresaleTool';
 import { PersistGate } from 'redux-persist/integration/react';
 import DojoWhitelist from './views/DojoWhitelist';
 import Header from './components/App/Header';
+import ShroomHub from './views/ShroomHub';
 
 const App = () => {
   return (
@@ -43,6 +44,7 @@ const App = () => {
               <Route path="/market-make" element={<MitoMarketMake />} />
               <Route path="/pre-sale-tool" element={<PreSaleTool />} />
               <Route path="/dojo-whitelist" element={<DojoWhitelist />} />
+              <Route path="/shroom-hub" element={<ShroomHub />} />
 
               <Route path="/" element={<Home />} />
             </Routes>

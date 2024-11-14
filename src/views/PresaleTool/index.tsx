@@ -1,7 +1,6 @@
 import { ToastContainer } from "react-toastify"
 import Footer from "../../components/App/Footer"
-import { Link, useSearchParams } from "react-router-dom"
-import ConnectKeplr from "../../components/App/ConnectKeplr"
+import { useSearchParams } from "react-router-dom"
 import TokenSelect from "../../components/Inputs/TokenSelect"
 import { useCallback, useEffect, useState } from "react"
 import ShroomBalance from "../../components/App/ShroomBalance"
@@ -10,12 +9,11 @@ import TokenUtils from "../../modules/tokenUtils"
 import RefundModal from "./RefundModal"
 import { humanReadableAmount } from "../../utils/helpers"
 import AirdropModal from "./AirdropModal"
-import DisclaimerModal from "./DisclaimerModal"
+import DisclaimerModal from "../../components/Modals/DisclaimerModal"
 import { CSVLink } from 'react-csv';
 import moment from "moment"
 import { FaCheckCircle } from "react-icons/fa"
 import { ImCross } from "react-icons/im"
-import logo from '../../assets/trippy_blue_yellow.svg';
 
 
 const INJECTIVE_TOKEN = {

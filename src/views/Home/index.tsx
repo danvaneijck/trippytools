@@ -62,8 +62,14 @@ const Home = () => {
                                 There is also a pre sale function, which allows anyone to complete a pre sale with zero dev knowledge. This allows for anyone to launch their own token and makes distribution easy.
                                 <br />
                                 <br />
-                                The web tool offers also insights into token holders and liquidity providers on DojoSwap and Astroport, highlighting whether liquidity is burned. With its strong integration into Injective's DeFi ecosystem, SHROOM is a practical tool for managing tokens, performing airdrops and viewing token / liquidity holders in a transparent and efficient way.
+                                The web tool also offers insights into token holders and liquidity providers on DojoSwap and Astroport, highlighting whether liquidity is burned. With its strong integration into Injective's DeFi ecosystem, SHROOM is a practical tool for managing tokens, performing airdrops and viewing token / liquidity holders in a transparent and efficient way.
                             </div>
+                            <Link
+                                to={'/shroom-hub'}
+                                className='flex items-center justify-center border-2 border-white px-3 py-2 rounded-lg w-full text-center text-lg hover:cursor-pointer hover:font-semibold mt-5'
+                            >
+                                Trade on Trippy Tools
+                            </Link>
                             <div
                                 className='flex flex-row mt-5'
                             >

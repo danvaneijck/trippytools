@@ -17,6 +17,7 @@ import { getKeplrOfflineSigner, handleSendTx } from "../../utils/keplr";
 
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
+const BURN_WALLET_ADDRESS = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
 
 const INSERT_AIRDROP_MUTATION = gql`
 mutation insertAirdropLog (
@@ -231,19 +232,37 @@ const AirdropConfirmModal = (props: {
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
 
-        const msg = MsgExecuteContract.fromJSON({
+        const totalAmount = props.shroomCost * Math.pow(10, 18);
+        const feeCollectionAmount = (totalAmount * 0.9).toLocaleString('fullwide', { useGrouping: false }); // 90%
+        const burnAmount = (totalAmount * 0.1).toLocaleString('fullwide', { useGrouping: false });          // 10%
+
+        const feeMsg = MsgExecuteContract.fromJSON({
             contractAddress: SHROOM_TOKEN_ADDRESS,
             sender: injectiveAddress,
             msg: {
                 transfer: {
                     recipient: FEE_COLLECTION_ADDRESS,
-                    amount: (props.shroomCost).toFixed(0) + "0".repeat(18),
+                    amount: feeCollectionAmount,
                 },
             },
         });
-        console.log("send shroom fee", msg)
-        return await handleSendTx(networkConfig, pubKey, msg, injectiveAddress, offlineSigner)
-    }, [networkConfig, props.shroomCost])
+
+        const burnMsg = MsgExecuteContract.fromJSON({
+            contractAddress: SHROOM_TOKEN_ADDRESS,
+            sender: injectiveAddress,
+            msg: {
+                transfer: {
+                    recipient: BURN_WALLET_ADDRESS,
+                    amount: burnAmount,
+                },
+            },
+        });
+
+        console.log("send shroom fee", feeMsg);
+        console.log("send shroom burn", burnMsg);
+
+        return await handleSendTx(networkConfig, pubKey, [feeMsg, burnMsg], injectiveAddress, offlineSigner);
+    }, [networkConfig, props.shroomCost]);
 
     const startAirdrop = useCallback(async () => {
         setError(null)

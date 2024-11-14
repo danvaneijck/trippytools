@@ -18,6 +18,13 @@ import {
     IndexerGrpcOracleApi,
     IndexerGrpcDerivativesApi,
     IndexerGrpcAccountApi,
+    getEthereumAddress,
+    spotPriceToChainPriceToFixed,
+    spotQuantityToChainQuantityToFixed,
+    getSpotMarketTensMultiplier,
+    MsgCreateSpotMarketOrder,
+    MsgExecuteContract,
+    MsgExecuteContractCompat,
 } from "@injectivelabs/sdk-ts";
 import { Buffer } from "buffer";
 import moment from "moment";
@@ -90,6 +97,7 @@ class TokenUtils {
     denomClient: DenomClientAsync;
     indexerGrpcSpotApi: IndexerGrpcSpotApi;
     mitoApi: IndexerGrpcMitoApi;
+    coinhallRouter: string;
 
     constructor(endpoints: EndpointConfig) {
         this.endpoints = endpoints;
@@ -135,6 +143,8 @@ class TokenUtils {
             }
 
         ]
+
+        this.coinhallRouter = "inj16lkekzp36vj6a9zjl778a2s5nd9f6ft67w2e90"
     }
 
     async getINJPrice() {
@@ -198,6 +208,53 @@ class TokenUtils {
         }
     }
 
+    async getBuyQuoteRouter(pair, amount) {
+        const pairName = `${pair.token0Meta.symbol}, ${pair.token1Meta.symbol}`;
+
+        try {
+            if (!pair || !pair.asset_infos || !Array.isArray(pair.asset_infos)) {
+                throw new Error(`Invalid pair or asset_infos for getBuyQuoteFromRouter DojoSwap: ${pair}`);
+            }
+
+            const assetToBuy = pair.asset_infos.findIndex(assetInfo => {
+                const isNativeToken = assetInfo.native_token && assetInfo.native_token.denom !== 'inj';
+                const isCW20Token = assetInfo.token && assetInfo.token.contract_addr !== 'inj';
+                return isNativeToken || isCW20Token;
+            });
+
+            if (assetToBuy === -1) {
+                throw new Error(`Error finding ask asset for ${pairName}`);
+            }
+            const assetInfo = pair.asset_infos[assetToBuy];
+
+            const simulationQuery = {
+                simulate_swap_operations: {
+                    offer_amount: amount.toString(),
+                    operations: [
+                        {
+                            dojo_swap: {
+                                offer_asset_info: {
+                                    native_token: {
+                                        denom: 'inj'
+                                    }
+                                },
+                                ask_asset_info: assetInfo
+                            }
+                        }
+                    ]
+                }
+            };
+
+            const query = Buffer.from(JSON.stringify(simulationQuery)).toString('base64');
+            const sim = await this.chainGrpcWasmApi.fetchSmartContractState(DOJO_ROUTER, query);
+            const decodedData = JSON.parse(new TextDecoder().decode(sim.data));
+            return decodedData;
+        } catch (error) {
+            console.error(`Error getting DojoSwap buy quote for ${pairName}: ${error}`);
+            return null;
+        }
+    }
+
     async getSellQuoteRouter(pair, amount) {
         const pairName = `${pair.token0Meta.symbol}, ${pair.token1Meta.symbol}`;
 
@@ -213,7 +270,7 @@ class TokenUtils {
             });
 
             if (assetToSell === -1) {
-                throw new Error(`Error finding ask asset for ${pairName}`);
+                throw new Error(`Error finding offer asset for ${pairName}`);
             }
             const assetInfo = pair.asset_infos[assetToSell];
 
@@ -1913,12 +1970,304 @@ class TokenUtils {
         return subaccountsList
     }
 
-    async getHelixMarketQuote(marketId: string, decimals: number) {
+    async getHelixMarketBestBuy(marketId: string, decimals: number) {
         const orders = await this.indexerGrpcSpotApi.fetchOrders({ marketId });
         const buyOrders = orders.orders.filter(order => order.orderSide === 'buy').sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
         // const sellOrders = orders.orders.filter(order => order.orderSide === 'sell').sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
         const injPrice = await this.getINJDerivativesPrice()
         return (Number(buyOrders[0].price) / Math.pow(10, decimals)) * Number(injPrice)
+    }
+
+    async getSpotMarket(marketId) {
+        return await this.indexerGrpcSpotApi.fetchMarket(marketId);
+    }
+
+    async getSpotMarketOrders(marketId) {
+        return await this.indexerGrpcSpotApi.fetchOrders({ marketId });
+    }
+
+    constructCW20ToBankMsg(cw20Address, amount, decimals, wallet) {
+        const adapterContract = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
+
+        const msg = MsgExecuteContractCompat.fromJSON({
+            contractAddress: cw20Address,
+            sender: wallet,
+            msg: {
+                send: {
+                    contract: adapterContract,
+                    amount: (Number(amount) * Math.pow(10, decimals)).toLocaleString('fullwide', { useGrouping: false }),
+                    msg: Buffer.from(JSON.stringify({})).toString('base64'),
+                }
+            }
+        });
+
+        return msg
+    }
+
+    constructBankToCW20Msg(cw20Address, amount, decimals, wallet) {
+        const adapterContract = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
+        const denom = `factory/${adapterContract}/${cw20Address}`
+
+        const msg = MsgExecuteContractCompat.fromJSON({
+            contractAddress: adapterContract,
+            sender: wallet,
+            msg: {
+                redeem_and_transfer: {
+                    recipient: wallet,
+                }
+            },
+            funds: {
+                denom: denom,
+                amount: (Number(amount) * Math.pow(10, decimals)).toLocaleString('fullwide', { useGrouping: false }),
+            },
+        });
+
+        return msg
+    }
+
+    constructExecuteRouteMessage(injectiveAddress, route, offer_asset, amount, minReceive, funds) {
+        const swapOperations = {
+            execute_routes: {
+                offer_asset_info: offer_asset,
+                routes: [
+                    {
+                        route: route.map((pool) => {
+                            return {
+                                contract_addr: pool.address,
+                            }
+                        }),
+                        offer_amount: amount
+                    }
+                ],
+                minimum_receive: minReceive
+            }
+        };
+
+        console.log(swapOperations)
+
+        let msg = MsgExecuteContract.fromJSON({
+            contractAddress: this.coinhallRouter,
+            sender: injectiveAddress,
+            msg: swapOperations,
+            funds: funds
+        });
+
+        if (!offer_asset.native_token && offer_asset.token) {
+            msg = MsgExecuteContract.fromJSON({
+                contractAddress: offer_asset.token.contract_addr,
+                sender: injectiveAddress,
+                msg: {
+                    send: {
+                        contract: this.coinhallRouter,
+                        amount: amount,
+                        msg: Buffer.from(JSON.stringify(swapOperations)).toString('base64'),
+                    }
+                }
+            });
+        }
+
+        return msg
+    }
+
+    async constructSpotMarketOrder(marketId, price, quantity, orderType, decimals, injectiveAddress, feeRecipient) {
+        const marketInfo = await this.indexerGrpcSpotApi.fetchMarket(marketId);
+
+        const { priceTensMultiplier, quantityTensMultiplier } = getSpotMarketTensMultiplier({
+            baseDecimals: decimals,
+            quoteDecimals: 18,
+            minPriceTickSize: marketInfo.minPriceTickSize,
+            minQuantityTickSize: marketInfo.minQuantityTickSize,
+        })
+
+        const market = {
+            marketId: marketId,
+            baseDecimals: decimals,
+            quoteDecimals: 18,
+            minPriceTickSize: marketInfo.minPriceTickSize,
+            minQuantityTickSize: marketInfo.minQuantityTickSize,
+            priceTensMultiplier: priceTensMultiplier,
+            quantityTensMultiplier: quantityTensMultiplier,
+        }
+
+        const order = {
+            price: price,
+            quantity: quantity
+        }
+
+        const ethereumAddress = getEthereumAddress(injectiveAddress)
+        const subaccountIndex = 0
+        const suffix = '0'.repeat(23) + subaccountIndex
+        const subaccountId = ethereumAddress + suffix
+
+        const msg = MsgCreateSpotMarketOrder.fromJSON({
+            subaccountId,
+            injectiveAddress,
+            orderType: orderType,
+            price: spotPriceToChainPriceToFixed({
+                value: order.price,
+                tensMultiplier: market.priceTensMultiplier,
+                baseDecimals: market.baseDecimals,
+                quoteDecimals: market.quoteDecimals
+            }),
+            quantity: spotQuantityToChainQuantityToFixed({
+                value: order.quantity,
+                tensMultiplier: market.quantityTensMultiplier,
+                baseDecimals: market.baseDecimals
+            }),
+            marketId: market.marketId,
+            feeRecipient: feeRecipient,
+        })
+
+        return msg
+    }
+
+    getHelixShroomBuyQuote(market, orders, quoteAmount, decimals) {
+        const takerFeeRate = parseFloat(market.takerFeeRate);
+
+        const sellOrders = orders.orders
+            .filter(order => order.orderSide === 'sell')
+            .sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+
+        let totalQuantity = 0;
+        let remainingQuote = quoteAmount * (1 - takerFeeRate); // Apply taker fee at the start
+        let worstAcceptablePrice = null;
+
+        for (const order of sellOrders) {
+            const price = parseFloat(order.price) / Math.pow(10, 18 - decimals);
+            const quantityAvailable = parseFloat(order.unfilledQuantity) / Math.pow(10, decimals);
+
+            const maxSpendableQuantity = remainingQuote / price;
+
+            if (maxSpendableQuantity >= quantityAvailable) {
+                totalQuantity += quantityAvailable;
+                remainingQuote -= quantityAvailable * price;
+            } else {
+                totalQuantity += maxSpendableQuantity;
+                remainingQuote = 0;
+                break;
+            }
+
+            // Update worst acceptable price to the current price level
+            worstAcceptablePrice = price;
+
+            if (remainingQuote <= 0) {
+                break;
+            }
+        }
+
+        const averagePrice = totalQuantity > 0 ? quoteAmount / totalQuantity : 0;
+
+        return {
+            totalQuantity,
+            averagePrice,
+            worstAcceptablePrice
+        };
+    }
+
+    getHelixShroomSellQuote(market, orders, baseAmount, decimals) {
+        const takerFeeRate = parseFloat(market.takerFeeRate);
+
+        const buyOrders = orders.orders
+            .filter(order => order.orderSide === 'buy')
+            .sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+
+        let totalQuote = 0;
+        let totalBaseSold = 0;
+        let remainingBase = baseAmount;
+        let worstAcceptablePrice = null;
+
+        for (const order of buyOrders) {
+            const price = parseFloat(order.price) / Math.pow(10, 18 - decimals);
+            const quantityAvailable = parseFloat(order.unfilledQuantity) / Math.pow(10, decimals);
+
+            const maxSellableQuantity = remainingBase;
+
+            if (maxSellableQuantity >= quantityAvailable) {
+                totalQuote += quantityAvailable * price;
+                totalBaseSold += quantityAvailable;
+                remainingBase -= quantityAvailable;
+            } else {
+                totalQuote += remainingBase * price;
+                totalBaseSold += remainingBase;
+                remainingBase = 0;
+                break;
+            }
+
+            // Update worst acceptable price to the current price level
+            worstAcceptablePrice = price;
+
+            if (remainingBase <= 0) {
+                break;
+            }
+        }
+
+        // Apply taker fee to the total quote amount at the end
+        totalQuote *= (1 - takerFeeRate);
+
+        const averagePrice = totalBaseSold > 0 ? totalQuote / totalBaseSold : 0;
+
+        return {
+            totalQuantity: totalQuote,
+            averagePrice,
+            worstAcceptablePrice
+        };
+    }
+
+    async getHelixMarketQuote(marketId, baseTokenAmount, decimals) {
+        const market = await this.indexerGrpcSpotApi.fetchMarket(marketId);
+
+        const baseDecimals = decimals;
+
+        const orders = await this.indexerGrpcSpotApi.fetchOrders({ marketId });
+
+        const takerFeeRate = parseFloat(market.takerFeeRate);
+        const makerFeeRate = parseFloat(market.makerFeeRate);
+
+        const buyOrders = orders.orders.filter(order => order.orderSide === 'buy').sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+        const sellOrders = orders.orders.filter(order => order.orderSide === 'sell').sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+
+        console.log("buy orders", buyOrders)
+        console.log("sell orders", sellOrders)
+
+        function calculateQuoteAmount(orderList, baseTokenAmount, fee) {
+            let totalPrice = 0;
+            let totalQuantity = 0;
+            let remainingBaseAmount = baseTokenAmount
+
+            for (const order of orderList) {
+                let price = parseFloat(order.price) / Math.pow(10, 18 - baseDecimals);
+                const quantity = parseFloat(order.unfilledQuantity) / Math.pow(10, baseDecimals);
+
+                // console.log(price, quantity)
+
+                price += price * fee;
+
+                if (remainingBaseAmount <= quantity) {
+                    totalPrice += remainingBaseAmount * price;
+                    totalQuantity += remainingBaseAmount;
+                    break;
+                } else {
+                    totalPrice += quantity * price;
+                    totalQuantity += quantity;
+                    remainingBaseAmount -= quantity;
+                }
+            }
+
+            return {
+                averagePrice: totalQuantity ? totalPrice / totalQuantity : 0,
+                quoteAmount: totalPrice
+            };
+        }
+
+        const { averagePrice: averageBuyPrice, quoteAmount: buyQuoteAmount } = calculateQuoteAmount(sellOrders, baseTokenAmount, takerFeeRate);
+        const { averagePrice: averageSellPrice, quoteAmount: sellQuoteAmount } = calculateQuoteAmount(buyOrders, baseTokenAmount, -takerFeeRate);
+
+        return {
+            averageBuyPrice,
+            averageSellPrice,
+            buyQuoteAmount,
+            sellQuoteAmount
+        };
     }
 }
 

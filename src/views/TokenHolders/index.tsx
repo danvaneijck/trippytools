@@ -88,10 +88,10 @@ const ITEMS_PER_PAGE = 50;
 const ProgressBar = ({ queryProgress, saveProgress }) => {
     const [progress, setProgress] = useState(0);
     const prevProgress = useRef(0);
-    const label = queryProgress !== null ? 'Update Query Progress' : 'Holders Saving to Database';
+    const label = saveProgress !== null ? 'Holders Saving to Database' : 'Update Query Progress';
 
     useEffect(() => {
-        const newProgress = queryProgress !== null ? queryProgress : saveProgress;
+        const newProgress = saveProgress !== null ? saveProgress : queryProgress;
         if (newProgress !== null && newProgress >= prevProgress.current) {
             setProgress(Math.min(Number(newProgress.toFixed(2)), 100));
             prevProgress.current = newProgress;
@@ -277,6 +277,8 @@ const TokenHolders = () => {
         setQueryProgress(minQueryProgress);
         setSaveProgress(minSaveProgress);
 
+        console.log(minQueryProgress, minSaveProgress)
+
         if (!minQueryProgress && !minSaveProgress) refetch();
     }, [progressData, refetch]);
 
@@ -447,7 +449,7 @@ const TokenHolders = () => {
             if (vault) {
                 console.log("Found vault:", vault);
                 setMitoVault(vault);
-                currentMitoPrice = await module.getHelixMarketQuote(vault.marketId, 18 - tokenInfo?.decimals);
+                currentMitoPrice = await module.getHelixMarketBestBuy(vault.marketId, 18 - tokenInfo?.decimals);
 
                 setTokenPrice(currentMitoPrice);
             }

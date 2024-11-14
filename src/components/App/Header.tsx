@@ -26,6 +26,9 @@ const Header = () => {
                     <Link to="/" className={getLinkStyle('/')}>
                         $SHROOM
                     </Link>
+                    <Link to="/shroom-hub" className={getLinkStyle('/shroom-hub')}>
+                        Trade
+                    </Link>
                     <Link to="/token-holders" className={getLinkStyle('/token-holders')}>
                         Holders
                     </Link>
@@ -89,6 +92,9 @@ const Header = () => {
 
                     <Link to="/" className={getLinkStyle('/')} onClick={toggleMenu}>
                         $SHROOM
+                    </Link>
+                    <Link to="/shroom-hub" className={getLinkStyle('/shroom-hub')} onClick={toggleMenu}>
+                        Trade SHROOM
                     </Link>
                     <Link to="/token-holders" className={getLinkStyle('/token-holders')} onClick={toggleMenu}>
                         Holder tool
