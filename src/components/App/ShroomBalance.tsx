@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import TokenUtils from "../../modules/tokenUtils";
 import { useSelector } from "react-redux";
 import shroom from "../../assets/shroom.jpg"
+import { humanReadableAmount } from "../../utils/helpers";
 
 const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
@@ -11,14 +12,18 @@ const ShroomBalance = () => {
     const currentNetwork = useSelector(state => state.network.currentNetwork);
     const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
 
+    const [loading, setLoading] = useState(false)
+    const [lastLoadedAddress, setLastLoadedAddress] = useState(null)
+
     const [balance, setBalance] = useState(null)
     const [usd, setUsd] = useState(null)
 
     const getBalance = useCallback(async () => {
+        if (!connectedAddress) return
         const module = new TokenUtils(networkConfig);
         try {
             const [baseAssetPrice, tokenBalance, pairInfo] = await Promise.all([
-                module.updateBaseAssetPrice(),
+                module.getINJPrice(),
                 module.queryTokenForBalance(SHROOM_TOKEN_ADDRESS, connectedAddress),
                 module.getPairInfo(SHROOM_PAIR_ADDRESS)
             ]);
@@ -28,29 +33,42 @@ const ShroomBalance = () => {
             const returnAmount = Number(quote.amount) / Math.pow(10, 18);
             const totalUsdValue = (returnAmount * baseAssetPrice).toFixed(2);
             setUsd(totalUsdValue);
+            setLastLoadedAddress(connectedAddress)
             return normalizedBalance
         } catch (error) {
             console.error('Failed to update balance and USD value:', error);
         }
     }, [connectedAddress, networkConfig]);
 
-
     useEffect(() => {
-        if (!balance) {
+        if (!connectedAddress) return
+        if (loading) return
+        if (!balance || !usd || (!lastLoadedAddress || lastLoadedAddress !== connectedAddress)) {
+            setLoading(true)
             getBalance().then(r => {
-                console.log(r)
+
             }).catch(e => {
                 console.log(e)
+            }).finally(() => {
+                setLoading(false)
             })
         }
-    }, [balance, getBalance])
+    }, [balance, getBalance, usd, loading, connectedAddress, lastLoadedAddress])
+
+    useEffect(() => {
+        setLastLoadedAddress(null)
+        if (!connectedAddress) {
+            setBalance(null)
+            setUsd(null)
+        }
+    }, [connectedAddress])
 
     return (
         <div className="flex self-end items-center text-sm w-full hover:cursor-pointer max-w-screen-sm" onClick={getBalance}>
             <div>
-                <img src={shroom} style={{ borderRadius: '50%', width: 30 }} className="mr-2" alt="Spinning Image" />
+                <img src={shroom} style={{ borderRadius: '50%', width: 32 }} className="mr-2" alt="Spinning Image" />
             </div>
-            {balance ? balance : "0"}
+            {balance ? humanReadableAmount(balance) : "0"}
             <br />
             ${usd ? usd : "0"}
         </div>

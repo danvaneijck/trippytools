@@ -1,128 +1,148 @@
-import { useRef, useEffect, useState } from 'react';
-import WAVES from 'vanta/dist/vanta.waves.min'
 import { Link } from 'react-router-dom';
-import ConnectKeplr from '../../components/App/ConnectKeplr';
 import shroom from "../../assets/shroom.jpg"
-import { FaDiscord, FaTelegram } from 'react-icons/fa';
+import { FaDiscord, FaTelegram, FaTwitter } from 'react-icons/fa';
+import Footer from '../../components/App/Footer';
+import { FaArrowRight } from "react-icons/fa";
 
 const Home = () => {
-
-    const [vantaEffect, setVantaEffect] = useState(null)
-    const myRef = useRef(null)
-
-    useEffect(() => {
-        if (!vantaEffect) {
-            setVantaEffect(WAVES({
-                el: myRef.current,
-                minHeight: 200.00,
-                minWidth: 200.00,
-                scale: 1.00,
-                scaleMobile: 1.00,
-                color: 0xf14,
-                shininess: 25.00,
-                waveHeight: 19.50,
-                waveSpeed: 0.55,
-                zoom: 0.65
-            }))
-        }
-
-    }, [vantaEffect])
 
     const divStyle = {
         position: 'relative',
         width: '100%',
-        paddingBottom: '5%',
+        paddingBottom: '10%',
     };
 
     const iframeStyle = {
         width: 1000,
-        height: 480,
+        height: 500,
         border: 0,
     };
 
-    return <div ref={myRef} className='overflow-hidden min-h-screen pb-20'>
-        <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
-            <div className="container mx-auto flex items-center p-2 text-sm md:text-sm">
-                <Link to="/token-holders" className="font-bold hover:underline mx-5">
-                    holder tool
-                </Link>
-                <Link to="/token-liquidity?address=inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl" className="font-bold hover:underline mr-5">
-                    liquidity tool
-                </Link>
-                <Link to="/manage-tokens" className="font-bold hover:underline ">
-                    manage tokens
-                </Link>
-            </div>
-            <div className="m-2">
-                <ConnectKeplr />
-            </div>
-        </header>
-        <div className=''>
-            <div className='text-center pt-20 text-2xl md:text-3xl font-bold '>
-                TRIPPY token tools
-            </div>
-            <div className='text-center text-base md:text-xl '>
-                on injective
-            </div>
-
-            <div className='flex-grow'>
-                <div className='flex justify-center'>
-                    <div className='mt-2 text-center py-4  md:w-1/2 rounded-xl p-2 mb-2 bg-gradient-to-br from-transparent to-black mx-2'>
-                        <div className='text-xl md:text-2xl'>Building tools for the community</div>
-
-                        <a href='https://discord.gg/Nnz34jzA5T' >
-                            <div className='flex flex-row mt-2 text-sm items-center justify-center  w-auto rounded-lg hover:font-bold'>
-                                <FaDiscord className='mr-2 text-3xl' />
-                                Join the discord
+    return <div className='overflow-hidden min-h-screen text-stone-100 bg-customGray font-magic'>
+        <div className='flex-grow'>
+            <div className='flex justify-center'>
+                <div className="pt-20 md:pt-44 pb-20 flex flex-col justify-center items-start text-left py-4 lg:w-3/4 mx-3 text-white">
+                    <div className='flex flex-col md:flex-row items-center'>
+                        <img src={shroom} className='rounded-full w-[150px] md:w-[300px] lg:w-[400px]' />
+                        <div className='md:ml-5 lg:ml-20'>
+                            <div
+                                className='mt-5 md:mt-0 text-xl md:text-3xl text-left'
+                            >
+                                Get trippy with
                             </div>
-                        </a>
-                        <a href='https://t.me/trippinj' >
-                            <div className='flex flex-row mt-2 text-sm items-center justify-center  w-auto rounded-lg hover:font-bold'>
-                                <FaTelegram className='mr-2 text-3xl' />
-                                Join the telegram
+                            <div
+                                className='font-magic text-5xl md:text-8xl text-left'
+                            >
+                                $SHROOM
                             </div>
-                        </a>
-                        <Link to="/token-holders">
-                            <div className='mt-5 text-sm hover:font-bold'>
-                                Query token holders
+                            <div className='flex flex-row justify-start space-x-5 mb-2 text-2xl'>
+                                <a
+                                    className='hover:text-trippyYellow'
+                                    href='https://x.com/trippy_inj'
+                                >
+                                    <FaTwitter />
+                                </a>
+                                <a
+                                    className='hover:text-trippyYellow'
+                                    href='https://discord.gg/Nnz34jzA5T'
+                                >
+                                    <FaDiscord />
+                                </a>
+                                <a
+                                    className='hover:text-trippyYellow'
+                                    href='https://t.me/trippinj'
+                                >
+                                    <FaTelegram />
+                                </a>
+                            </div>
+                            <div
+                                className='text-base font-sans text-sm'
+                            >
+                                SHROOM is a meme coin with utility on the Injective blockchain. SHROOM is available to trade via two liquidity pools: Mito Finance and DojoSwap. It's designed for more than just fun - SHROOM allows users to pay for completing airdrops to communities such as token holders, holders of NFT collections, governance proposal voters, Mito vault stakers, and custom CSV airdrop file uploads.
+                                There is also a pre sale function, which allows anyone to complete a pre sale with zero dev knowledge. This allows for anyone to launch their own token and makes distribution easy.
+                                <br />
+                                <br />
+                                The web tool also offers insights into token holders and liquidity providers on DojoSwap and Astroport, highlighting whether liquidity is burned. With its strong integration into Injective's DeFi ecosystem, SHROOM is a practical tool for managing tokens, performing airdrops and viewing token / liquidity holders in a transparent and efficient way.
+                            </div>
+                            <Link
+                                to={'/shroom-hub'}
+                                className='flex items-center justify-center border-2 border-white px-3 py-2 rounded-lg w-full text-center text-lg hover:cursor-pointer hover:font-semibold mt-5'
+                            >
+                                Trade on Trippy Tools
+                            </Link>
+                            <div
+                                className='flex flex-row mt-5'
+                            >
+                                <a
+                                    href='https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl'
+                                    className='flex items-center justify-center border-2 border-white px-3 py-2 rounded-lg w-full text-center text-lg hover:cursor-pointer hover:font-semibold'
+                                >
+                                    Trade on Coinhall
+                                </a>
+                                <a
+                                    href='https://helixapp.com/spot/?marketId=0xc6b6d6627aeed8b9c29810163bed47d25c695d51a2aa8599fc5e39b2d88ef934'
+                                    className='flex items-center justify-center border-2 border-white px-3 py-2 rounded-lg  ml-5 w-full text-center text-lg hover:cursor-pointer hover:font-semibold'
+                                >
+                                    Trade on Helix
+                                </a>
+                            </div>
+                            <a
+                                href='https://mito.fi/vault/inj1g89dl74lyre9q6rjua9l37pcc7psnw66capurp/'
+                                className='mt-5 text-center flex flex-row justify-center items-center w-full text-lg hover:cursor-pointer hover:font-semibold'
+                            >
+                                <div>View Mito finance vault</div>
+                                <FaArrowRight className='ml-5' />
+                            </a>
+                        </div>
+                    </div>
+                    <div
+                        className='flex flex-row justify-center w-full mt-5 space-x-5'
+                    >
+                        <Link
+                            to={'/airdrop'}
+                            className='flex items-center justify-center border-2 border-white px-3 py-2 rounded-lg w-full text-center text-lg hover:cursor-pointer hover:font-semibold '
+                        >
+                            <div
+                            >
+                                Plan Airdrops
                             </div>
                         </Link>
-                        <Link to="/token-liquidity">
-                            <div className='mt-2 text-sm hover:font-bold'>
-                                Query Astroport and DojoSwap liquidity holders
-                            </div>
-                        </Link>
-                        <Link to="/manage-tokens">
-                            <div className='mt-2 text-sm hover:font-bold'>
-                                Create and airdrop token factory tokens
-                            </div>
-                        </Link>
-                        <a href='https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl' >
-                            <div className='flex flex-row mt-5 text-sm items-center justify-center p-2 w-auto rounded-lg  hover:font-bold'>
-                                <img src={shroom} style={{ borderRadius: '50%', width: 40, height: 40 }} className="animate-3dspin mr-2" alt="Spinning Image" />
-                                Trade shroom on Coinhall
-                            </div>
-                        </a>
 
+                        <Link
+                            to={'/pre-sale-tool'}
+                            className='flex items-center justify-center border-2 border-white px-3 py-2 rounded-lg w-full text-center text-lg hover:cursor-pointer hover:font-semibold'
+                        >
+                            <div
+                            >
+                                Plan Presale
+                            </div>
+                        </Link>
+                        <Link
+                            to={'/manage-tokens'}
+                            className='flex items-center justify-center border-2 border-white px-3 py-2 rounded-lg w-full text-center text-lg hover:cursor-pointer hover:font-semibold'
+                        >
+                            <div
+                            >
+                                Manage tokens
+                            </div>
+                        </Link>
                     </div>
                 </div>
             </div>
-
-            <div
-                id="dexscreener-embed"
-                style={divStyle}
-                className='mt-2 flex justify-center flex-row mx-2'
-            >
-                <iframe
-                    src="https://dexscreener.com/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl?embed=1&theme=dark&trades=0"
-                    style={iframeStyle}
-                    title="dexscreener-embed"
-                ></iframe>
-            </div>
         </div>
-        <footer className="bg-gray-800 text-white text-xs p-4 fixed bottom-0 left-0 right-0 z-10">
-            buy me a coffee: inj1q2m26a7jdzjyfdn545vqsude3zwwtfrdap5jgz
-        </footer>
+
+        <div
+            id="dexscreener-embed"
+            style={divStyle}
+            className='mt-2 flex justify-center flex-row bg-black pt-10 pb-20'
+        >
+            <iframe
+                src="https://dexscreener.com/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl?embed=1&theme=dark&trades=0"
+                style={iframeStyle}
+                title="dexscreener-embed"
+            ></iframe>
+        </div>
+        <Footer />
     </div>
 };
 

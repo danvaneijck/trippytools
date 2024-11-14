@@ -10,8 +10,15 @@ export default {
         },
       },
       animation: {
-        '3dspin': '3dspin 15s linear infinite',
+        '3dspin': '3dspin 5s linear infinite',
       },
+      fontFamily: {
+        magic: ['MagicMushroom', 'sans-serif'],
+      },
+      colors: {
+        customGray: '#001319',
+        trippyYellow: '#f9d73f'
+      }
     },
   },
   plugins: [],

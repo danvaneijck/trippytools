@@ -1,7 +1,7 @@
 
 
 const IPFSImage = ({ ipfsPath, className, width }) => {
-    const baseUrl = "https://cloudflare-ipfs.com/ipfs/";
+    const baseUrl = "https://ipfs.io/ipfs/";
 
     const getImageUrl = (path) => {
         if (path.startsWith("https://")) {
@@ -15,9 +15,12 @@ const IPFSImage = ({ ipfsPath, className, width }) => {
 
     const imageUrl = getImageUrl(ipfsPath);
 
-    return <img src={imageUrl} style={{ width: width }}
+    return <img
+        src={imageUrl}
+        style={{ width: width }}
         className={className}
-        alt="logo" alt="IPFS Image" />;
+        alt="logo" alt="IPFS Image"
+    />;
 };
 
 export default IPFSImage

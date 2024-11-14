@@ -1,5 +1,6 @@
 export interface TokenInfo {
     name: string;
+    denom: string;
     symbol: string;
     decimals: number;
     total_supply?: number;
@@ -12,7 +13,9 @@ export interface Holder {
     address: string;
     balance: string | number;
     percentageHeld: number;
+    usdValue?: number
 }
+
 
 export interface TokenMeta {
     denom: string;

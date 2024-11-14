@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import parachute from "../../assets/parachute.webp"
 import TokenConfirmModal from "./TokenConfirmModal";
-import ConnectKeplr from "../../components/App/ConnectKeplr";
 import { useSelector } from "react-redux";
 import ShroomBalance from "../../components/App/ShroomBalance";
-
+import Footer from "../../components/App/Footer";
 
 const TokenLaunch = () => {
 
@@ -24,7 +22,6 @@ const TokenLaunch = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-
     return (
         <>
             {showConfirm &&
@@ -38,37 +35,14 @@ const TokenLaunch = () => {
                     tokenDescription={tokenDescription}
                 />
             }
-            <div className="flex flex-col min-h-screen">
-                <header className="flex flex-row bg-gray-800 text-white shadow-md fixed top-0 left-0 right-0 z-10">
-                    <div className=" container mx-auto flex items-center p-2 text-sm md:text-sm">
-                        <Link to="/" className="font-bold hover:underline mx-5">
-                            home
-                        </Link>
-                        <Link
-                            to="/token-holders"
-                            className="font-bold hover:underline  mr-5"
-                        >
-                            token holders
-                        </Link>
-                        <Link to="/token-liquidity?address=inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl" className="font-bold hover:underline mr-5">
-                            token liquidity
-                        </Link>
-                        <Link to="/manage-tokens" className="font-bold hover:underline">
-                            manage tokens
-                        </Link>
-                    </div>
-                    <div className="m-2">
-                        <ConnectKeplr />
-                    </div>
-                </header>
-
-                <div className="mt-14 flex-grow mx-2">
+            <div className="flex flex-col min-h-screen bg-customGray">
+                <div className="pt-20 flex-grow mx-2">
                     {currentNetwork == "mainnet" && <div className="flex "><ShroomBalance /></div>}
                     <div className="flex justify-center items-center min-h-full">
                         <div className="w-full max-w-screen-sm px-2 pb-10">
                             <div className="flex flex-row justify-center items-center">
                                 <div>
-                                    <div className="text-center text-xl">Launch new token</div>
+                                    <div className="text-center text-3xl font-magic">Launch new token</div>
                                     <div className="text-xs text-center">on Injective {currentNetwork}</div>
                                 </div>
                                 <img
@@ -79,7 +53,7 @@ const TokenLaunch = () => {
                                 />
                             </div>
 
-                            <div className="text-center mt-4">New Token Details</div>
+                            <div className="text-center mt-4 mb-1">New Token Details</div>
 
                             <div className="flex flex-col md:flex-row justify-between">
                                 <div className="mb-1">
@@ -97,12 +71,13 @@ const TokenLaunch = () => {
                                         value={tokenName}
                                     />
                                 </div>
-                                <div className="">
+                                <div className="ml-0 md:ml-2">
                                     <label
                                         className="block text-base font-bold text-white"
                                     >
                                         Token symbol
                                     </label>
+
                                     <input
                                         type="text"
                                         className="text-black w-full rounded p-1 text-sm"
@@ -111,6 +86,8 @@ const TokenLaunch = () => {
                                         }
                                         value={tokenSymbol}
                                     />
+                                    <span className="text-xs">all capitals if you want to launch LP on DojoSwap</span>
+
                                 </div>
                             </div>
 
@@ -168,7 +145,7 @@ const TokenLaunch = () => {
                                 >
                                     Token image URL
                                 </label>
-                                <span className="text-xs">the logo of your token, should be hosted on IPFS and should be a small webp image</span>
+                                <span className="text-xs">the logo of your token, should be hosted on IPFS and should be a small webp image and accessible via https://</span>
                                 <input
                                     type="text"
                                     className="text-black w-full rounded p-1 text-sm"
@@ -202,9 +179,7 @@ const TokenLaunch = () => {
                     </div>
                 </div>
 
-                <footer className="bg-gray-800 text-white text-xs p-4 fixed bottom-0 left-0 right-0">
-                    buy me a coffee: inj1q2m26a7jdzjyfdn545vqsude3zwwtfrdap5jgz
-                </footer>
+                <Footer />
             </div>
         </>
 
