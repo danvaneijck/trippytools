@@ -10,6 +10,7 @@ import { CircleLoader } from "react-spinners";
 import { SiConvertio } from "react-icons/si";
 import ConvertModal from "./ConvertModal";
 import DisclaimerModal from "../../components/Modals/DisclaimerModal";
+import { MsgExecuteContractCompat } from "@injectivelabs/sdk-ts";
 
 
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
@@ -19,9 +20,8 @@ const SHROOM_BANK_DENOM = `factory/${INJ_CW20_ADAPTER}/${SHROOM_TOKEN_ADDRESS}`
 const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
 const HELIX_MARKET_ID = "0xc6b6d6627aeed8b9c29810163bed47d25c695d51a2aa8599fc5e39b2d88ef934"
 
-const ATOMIC_SWAP_ROUTER = "inj1l52rs8s2z5pgefu5jpkxdm6zckh48def4nm2ex"
-const ATOMIC_BUY = 9
-const ATOMIC_SELL = 10
+const BUY = 1
+const SELL = 2
 
 
 const TokenView = ({ token, setSwapAmount, inputDisabled, swapAmount, outputAmount }) => {
@@ -38,7 +38,7 @@ const TokenView = ({ token, setSwapAmount, inputDisabled, swapAmount, outputAmou
                     {token.name} ({token.symbol})
                 </span>
                 <span className="text-sm text-gray-400">
-                    Available: {token.available.toFixed(2)} ({token.priceDisplayAmount.toFixed(2)} USD)
+                    Available: {token.available.toFixed(4)} ({token.priceDisplayAmount.toFixed(2)} USD)
                 </span>
             </div>
 
@@ -70,6 +70,16 @@ const TokenView = ({ token, setSwapAmount, inputDisabled, swapAmount, outputAmou
     );
 };
 
+const debounce = (func, delay) => {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            func(...args);
+        }, delay);
+    };
+};
+
 
 const ShroomHub = () => {
     const connectedAddress = useSelector(state => state.network.connectedAddress);
@@ -83,8 +93,7 @@ const ShroomHub = () => {
     const [cw20Balance, setCw20Balance] = useState(0)
     const [bankBalance, setBankBalance] = useState(0)
 
-    const [isSwapping, setIsSwapping] = useState(false);
-
+    const [isSwappingToFrom, setIsSwappingToFrom] = useState(false);
     const [gettingRoute, setGettingRoute] = useState(false)
 
     const [route, setRoute] = useState(null)
@@ -94,9 +103,9 @@ const ShroomHub = () => {
     const [outputAmount, setOutputAmount] = useState(0)
 
     const [error, setError] = useState(null);
-    const [success, setSuccess] = useState(false);
-
     const [convertModal, setConvertModal] = useState(false)
+
+    const [txHash, setTxHash] = useState()
 
     const [dropdownList, setDropdownList] = useState([{
         imgSrc: "https://wsrv.nl/?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcosmos%2Fchain-registry%2Fmaster%2Finjective%2Fimages%2Finj.svg&n=-1&w=64&h=64",
@@ -121,11 +130,11 @@ const ShroomHub = () => {
     const [from, setFrom] = useState(dropdownList[0])
 
     const handleSwap = () => {
-        setIsSwapping(true);
+        setIsSwappingToFrom(true);
         setTimeout(() => {
             setFrom(to);
             setTo(from);
-            setIsSwapping(false);
+            setIsSwappingToFrom(false);
         }, 500);
     };
 
@@ -209,8 +218,7 @@ const ShroomHub = () => {
             injectiveAddress
         )
 
-        console.log(msg)
-
+        setTxHash(null)
         const result = await handleSendTx(
             networkConfig,
             pubKey,
@@ -218,8 +226,7 @@ const ShroomHub = () => {
             injectiveAddress,
             offlineSigner,
         )
-
-        console.log("result", result)
+        setTxHash(result['txHash'])
 
         setConvertModal(false)
         await loadBalance()
@@ -238,8 +245,7 @@ const ShroomHub = () => {
             injectiveAddress
         )
 
-        console.log(msg)
-
+        setTxHash(null)
         const result = await handleSendTx(
             networkConfig,
             pubKey,
@@ -247,90 +253,91 @@ const ShroomHub = () => {
             injectiveAddress,
             offlineSigner,
         )
-        console.log("result", result)
+        setTxHash(result['txHash'])
 
         setConvertModal(false)
         await loadBalance()
     }, [networkConfig, loadBalance])
 
-    useEffect(() => {
-        const delayDebounce = setTimeout(() => {
+    const getRoute = useCallback(async () => {
+        setError(null);
+        setGettingRoute(true);
 
-            const getRoute = async () => {
-                setError(null)
+        const module = new TokenUtils(networkConfig);
+        const pairInfo = await module.getPairInfo(SHROOM_PAIR_ADDRESS);
 
-                setGettingRoute(true)
+        let bestOutputAmount = 0;
+        let bestRoute = null;
+        let bestDisplay = "";
 
-                const module = new TokenUtils(networkConfig);
-                const pairInfo = await module.getPairInfo(SHROOM_PAIR_ADDRESS);
+        const market = await module.getSpotMarket(HELIX_MARKET_ID);
+        const orders = await module.getSpotMarketOrders(HELIX_MARKET_ID);
 
-                let bestOutputAmount = 0;
-                let bestRoute = null
-                let bestDisplay = "";
+        for (let ratio = 0; ratio <= 1; ratio += 0.1) {
+            const dojoPortion = swapAmount * ratio;
+            const helixPortion = swapAmount * (1 - ratio);
 
-                const market = await module.getSpotMarket(HELIX_MARKET_ID)
-                const orders = await module.getSpotMarketOrders(HELIX_MARKET_ID)
+            const formattedDojoPortion = (dojoPortion * Math.pow(10, 18)).toLocaleString('fullwide', { useGrouping: false });
 
-                for (let ratio = 0; ratio <= 1; ratio += 0.1) {
-                    const dojoPortion = swapAmount * ratio;
-                    const helixPortion = swapAmount * (1 - ratio);
+            let dojoQuote, helixQuote;
 
-                    const formattedDojoPortion = (dojoPortion * Math.pow(10, 18)).toLocaleString('fullwide', { useGrouping: false });
-
-                    let dojoQuote, helixQuote;
-
-                    if (to.denom === 'inj') {
-                        dojoQuote = await module.getSellQuoteRouter(pairInfo, formattedDojoPortion);
-                        helixQuote = await module.getHelixShroomSellQuote(market, orders, helixPortion, 18);
-                    } else {
-                        dojoQuote = await module.getBuyQuoteRouter(pairInfo, formattedDojoPortion);
-                        helixQuote = await module.getHelixShroomBuyQuote(market, orders, helixPortion, 18);
-                    }
-
-                    const dojoAmount = Number(dojoQuote.amount) / Math.pow(10, 18);
-                    const helixAmount = helixQuote.totalQuantity;
-                    const combinedOutput = dojoAmount + helixAmount;
-
-                    // console.log(`Ratio: ${ratio * 100}% DojoSwap, ${100 - ratio * 100}% Helix`);
-                    // console.log("Combined output:", combinedOutput);
-
-                    // Check if this ratio gives a better output
-                    if (combinedOutput > bestOutputAmount) {
-                        bestOutputAmount = combinedOutput;
-                        bestRoute = {
-                            'dojo': {
-                                inputAmount: dojoPortion * Math.pow(10, 18),
-                                amount: Number(dojoQuote.amount),
-                                ratio: (ratio * 100).toFixed(0)
-                            },
-                            'helix': {
-                                inputAmount: helixPortion,
-                                amount: Number(helixQuote.totalQuantity) * Math.pow(10, 18),
-                                price: helixQuote.averagePrice,
-                                worstPrice: helixQuote.worstAcceptablePrice,
-                                ratio: ((1 - ratio) * 100).toFixed(0)
-                            }
-                        }
-                        bestDisplay = `${(ratio * 100).toFixed(0)}% DojoSwap ${dojoAmount.toFixed(4)} ${to.symbol}, ${((1 - ratio) * 100).toFixed(0)}% INJ Orderbook ${helixAmount.toFixed(4)} ${to.symbol}`;
-                    }
-                }
-
-                // Set the best output amount and display the best route
-                setOutputAmount(bestOutputAmount);
-                setRouteDisplay(bestDisplay);
-                setRoute(bestRoute)
-                setGettingRoute(false)
-            };
-
-            if (swapAmount === 0) {
-                setOutputAmount(0);
+            if (to.denom === 'inj') {
+                dojoQuote = await module.getSellQuoteRouter(pairInfo, formattedDojoPortion);
+                helixQuote = await module.getHelixShroomSellQuote(market, orders, helixPortion, 18);
             } else {
-                void getRoute();
+                dojoQuote = await module.getBuyQuoteRouter(pairInfo, formattedDojoPortion);
+                helixQuote = await module.getHelixShroomBuyQuote(market, orders, helixPortion, 18);
             }
-        }, 1000); // 500ms debounce delay
 
-        return () => clearTimeout(delayDebounce);
-    }, [networkConfig, swapAmount, to, from]);
+            const dojoAmount = Number(dojoQuote.amount) / Math.pow(10, 18);
+            const helixAmount = helixQuote.totalQuantity;
+            const combinedOutput = dojoAmount + helixAmount;
+
+            if (combinedOutput > bestOutputAmount) {
+                bestOutputAmount = combinedOutput;
+                bestRoute = {
+                    dojo: {
+                        inputAmount: dojoPortion * Math.pow(10, 18),
+                        amount: Number(dojoQuote.amount),
+                        ratio: (ratio * 100).toFixed(0)
+                    },
+                    helix: {
+                        inputAmount: helixPortion,
+                        amount: Number(helixQuote.totalQuantity) * Math.pow(10, 18),
+                        price: helixQuote.averagePrice,
+                        worstPrice: helixQuote.worstAcceptablePrice,
+                        ratio: ((1 - ratio) * 100).toFixed(0)
+                    }
+                };
+                bestDisplay = `${(ratio * 100).toFixed(0)}% DojoSwap ${dojoAmount.toFixed(4)} ${to.symbol}, ${((1 - ratio) * 100).toFixed(0)}% INJ Orderbook ${helixAmount.toFixed(4)} ${to.symbol}`;
+            }
+        }
+
+        setOutputAmount(bestOutputAmount);
+        setRouteDisplay(bestDisplay);
+        setRoute(bestRoute);
+        setGettingRoute(false);
+    }, [networkConfig, swapAmount, to]);
+
+    useEffect(() => {
+        const debouncedGetRoute = debounce(getRoute, 2000);
+
+        if (swapAmount === 0) {
+            setOutputAmount(0);
+        } else {
+            debouncedGetRoute();
+        }
+
+        const intervalId = setInterval(() => {
+            void loadBalance()
+            void getRoute();
+        }, 30000);
+
+        return () => {
+            clearTimeout(debouncedGetRoute);
+            clearInterval(intervalId);
+        };
+    }, [networkConfig, swapAmount, to, from, getRoute, loadBalance]);
 
     const sendTx = useCallback(async () => {
 
@@ -377,10 +384,10 @@ const ShroomHub = () => {
                 HELIX_MARKET_ID,
                 route['helix'].price,
                 route['helix'].amount / Math.pow(10, 18),
-                ATOMIC_BUY,
+                BUY,
                 18,
                 injectiveAddress,
-                FEE_COLLECTION_ADDRESS,
+                injectiveAddress,
             )
 
             console.log(msgOrderBookSwap)
@@ -442,7 +449,7 @@ const ShroomHub = () => {
                 HELIX_MARKET_ID,
                 route['helix'].price,
                 route['helix'].inputAmount,
-                ATOMIC_SELL,
+                SELL,
                 18,
                 injectiveAddress,
                 FEE_COLLECTION_ADDRESS,
@@ -488,7 +495,9 @@ const ShroomHub = () => {
 
         console.log(txMessages)
 
-        await handleSendTx(
+        setTxHash(null)
+
+        const result = await handleSendTx(
             networkConfig,
             pubKey,
             txMessages,
@@ -496,10 +505,49 @@ const ShroomHub = () => {
             offlineSigner,
             gas
         )
+        setTxHash(result['txHash'])
         await loadBalance()
         setSwapAmount(0)
 
     }, [route, from, cw20Balance, bankBalance, swapAmount, networkConfig, connectedAddress, to, injBalance, loadBalance])
+
+    const sendMarketMake = useCallback(async () => {
+        const { key, offlineSigner } = await getKeplrOfflineSigner(networkConfig.chainId);
+        const pubKey = Buffer.from(key.pubKey).toString("base64");
+        const injectiveAddress = key.bech32Address;
+
+        const msgMarketMake = MsgExecuteContractCompat.fromJSON({
+            sender: injectiveAddress,
+            contractAddress: "inj1g89dl74lyre9q6rjua9l37pcc7psnw66capurp",
+            msg: {
+                market_make: {}
+            },
+        });
+
+        const gas = {
+            amount: [
+                {
+                    denom: "inj",
+                    amount: '3500000'
+                }
+            ],
+            gas: '3500000'
+        };
+
+        setTxHash(null)
+        const result = await handleSendTx(
+            networkConfig,
+            pubKey,
+            msgMarketMake,
+            injectiveAddress,
+            offlineSigner,
+            gas
+        )
+        setTxHash(result['txHash'])
+
+        await loadBalance()
+        await getRoute()
+    }, [getRoute, loadBalance, networkConfig])
 
 
     return (
@@ -576,6 +624,16 @@ const ShroomHub = () => {
                                     {((cw20Balance + bankBalance) * shroomPrice).toFixed(2)} USD
                                 </div>
                             </div>
+                            <div className="flex justify-center mt-5">
+                                <button
+                                    onClick={sendMarketMake}
+                                    className="p-1 rounded-lg border"
+                                >
+                                    <div className="text-sm">
+                                        Tighten mito orders
+                                    </div>
+                                </button>
+                            </div>
                         </div>
 
 
@@ -585,8 +643,9 @@ const ShroomHub = () => {
                             <div className="font-magic text-center text-3xl mt-5 md:mt-10">
                                 Shroom Swap
                             </div>
-                            <div className="text-sm w-3/4 text-center m-auto">
-                                This trading tool optimizes your trade by finding the ideal split between DojoSwap’s liquidity pool and Injective's order book, helping you secure a better price with minimized slippage!
+                            <div className="text-sm text-center m-auto">
+                                This trading tool optimizes your trade by finding the ideal split between DojoSwap's liquidity pool and Injective's order book, helping you secure a better price with minimized slippage!
+                                Use the button above to tighten the spread on the mito vault before you trade to ensure best price.
                             </div>
                             <div className="mt-4">
                                 <TokenView
@@ -599,7 +658,7 @@ const ShroomHub = () => {
                                 <div className="flex justify-center my-4">
                                     <button
                                         onClick={handleSwap}
-                                        className={isSwapping ? 'animate-spin' : ''}
+                                        className={isSwappingToFrom ? 'animate-spin' : ''}
                                     >
                                         <FaExchangeAlt className="text-xl" />
                                     </button>
@@ -627,16 +686,46 @@ const ShroomHub = () => {
                                 </div>
                             }
 
-                            <button
-                                onClick={sendTx}
-                                disabled={gettingRoute}
-                                className="w-full p-2 rounded-lg mt-5 border "
-                            >
-                                <div className="transform transition duration-300 hover:scale-110">
-                                    Swap
+                            <div className="flex flex-row justify-center">
+                                <button
+                                    onClick={async () => {
+                                        await loadBalance()
+                                        await getRoute()
+                                    }}
+                                    disabled={gettingRoute}
+                                    className="w-1/2 lg:w-full rounded-lg mt-5 "
+                                >
+                                    <div className="transform transition duration-300 hover:scale-110">
+                                        Refresh prices
+                                    </div>
+                                </button>
 
+                            </div>
+
+                            <div className="flex flex-row justify-center">
+                                <button
+                                    onClick={sendTx}
+                                    disabled={gettingRoute}
+                                    className="w-1/2 lg:w-full p-2 rounded-lg mt-5 border "
+                                >
+                                    <div className="transform transition duration-300 hover:scale-110">
+                                        Swap
+                                    </div>
+                                </button>
+                            </div>
+
+                            {txHash &&
+                                <div className="text-emerald-500 mt-5 text-xs overflow-hidden">
+                                    Transaction success!
+                                    <br />
+                                    <a
+                                        className="underline text-white "
+                                        href={`https://explorer.injective.network/transaction/${txHash}`}
+                                    >
+                                        {`https://explorer.injective.network/transaction/${txHash}`}
+                                    </a>
                                 </div>
-                            </button>
+                            }
 
                             {error &&
                                 <div

@@ -28,8 +28,11 @@ const ConvertModal = ({ onClose, cw20Balance, bankBalance, convertToBank, conver
 
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 ">
-            <div className="bg-gray-900 p-6 rounded-lg shadow-lg max-w-sm w-full">
-                <h2 className="text-center mb-4 font-magic text-3xl">Convert {conversionDirection === 'cw20ToBank' ? 'CW20 to Bank' : 'Bank to CW20'}</h2>
+            <div className="bg-customGray p-6 rounded-lg shadow-lg max-w-sm w-full">
+                <h2 className="text-center mb-2 font-magic text-3xl">Convert {conversionDirection === 'cw20ToBank' ? 'CW20 to Bank' : 'Bank to CW20'}</h2>
+                <div className='mb-4 text-sm'>
+                    You can switch between CW20 and bank tokens at a 1:1 ratio at any time. CW20 tokens are ideal for paying tool fees, while bank tokens are best suited for use on Mito Finance and the Helix DEX.
+                </div>
                 <div className="mb-2">
                     <label className="block text-white font-medium mb-2">
                         {conversionDirection === 'cw20ToBank' ? 'CW20 Input' : 'Bank Input'}
@@ -46,7 +49,7 @@ const ConvertModal = ({ onClose, cw20Balance, bankBalance, convertToBank, conver
                             onClick={() => {
                                 setAmount(conversionDirection === 'cw20ToBank' ? cw20Balance : bankBalance);
                             }}
-                            className="bg-blue-700 text-white border px-4 py-2 rounded-r hover:bg-blue-800 transition"
+                            className="bg-gray-700 text-white border px-4 py-2 rounded-r hover:bg-gray-800 transition"
                         >
                             MAX
                         </button>
