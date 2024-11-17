@@ -86,8 +86,6 @@ const TokenLaunch = () => {
                                         }
                                         value={tokenSymbol}
                                     />
-                                    <span className="text-xs">all capitals if you want to launch LP on DojoSwap</span>
-
                                 </div>
                             </div>
 
