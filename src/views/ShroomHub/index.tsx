@@ -201,9 +201,16 @@ const ShroomHub = () => {
     }, [shroomPrice, injPrice, cw20Balance, bankBalance, injBalance])
 
     useEffect(() => {
-        setTo(dropdownList[1])
-        setFrom(dropdownList[0])
-    }, [dropdownList])
+        console.log("here")
+        if (from.denom == "inj") {
+            setTo(dropdownList[1])
+            setFrom(dropdownList[0])
+        }
+        else {
+            setTo(dropdownList[0])
+            setFrom(dropdownList[1])
+        }
+    }, [dropdownList, from.denom])
 
     const convertToBank = useCallback(async (amount) => {
         const { key, offlineSigner } = await getKeplrOfflineSigner(networkConfig.chainId);
@@ -305,7 +312,7 @@ const ShroomHub = () => {
                         inputAmount: helixPortion,
                         amount: Number(helixQuote.totalQuantity) * Math.pow(10, 18),
                         price: helixQuote.averagePrice,
-                        worstPrice: helixQuote.worstAcceptablePrice,
+                        worstAcceptablePrice: helixQuote.worstAcceptablePrice,
                         ratio: ((1 - ratio) * 100).toFixed(0)
                     }
                 };
@@ -380,9 +387,12 @@ const ShroomHub = () => {
         if (to.symbol == 'SHROOM') {
             console.log("construct buy")
 
+            console.log("price", route['helix'].price)
+            console.log("worst price", route['helix'].worstAcceptablePrice)
+
             msgOrderBookSwap = await module.constructSpotMarketOrder(
                 HELIX_MARKET_ID,
-                route['helix'].price,
+                route['helix'].worstAcceptablePrice,
                 route['helix'].amount / Math.pow(10, 18),
                 BUY,
                 18,
@@ -434,8 +444,8 @@ const ShroomHub = () => {
                 txMessages.push(msgConvertToBank)
             }
 
-            if (route['dojo'].ratio > 0 && route['dojo'].inputAmount > cw20Balance) {
-                console.log("need to convert bank to cw20")
+            if (route['dojo'].ratio > 0 && (route['dojo'].inputAmount / Math.pow(10, 18)) > cw20Balance) {
+                console.log("need to convert bank to cw20", route['dojo'].inputAmount)
                 const msgConvertToCw20 = module.constructBankToCW20Msg(
                     SHROOM_TOKEN_ADDRESS,
                     (route['dojo'].inputAmount / Math.pow(10, 18)) - cw20Balance,
@@ -447,7 +457,7 @@ const ShroomHub = () => {
 
             msgOrderBookSwap = await module.constructSpotMarketOrder(
                 HELIX_MARKET_ID,
-                route['helix'].price,
+                route['helix'].worstAcceptablePrice,
                 route['helix'].inputAmount,
                 SELL,
                 18,
