@@ -1,10 +1,8 @@
 import { useSelector } from "react-redux";
-import { Link } from "react-router-dom";
-import ConnectKeplr from "../../components/App/ConnectKeplr";
 import { useCallback, useEffect, useState } from "react";
 import ShroomBalance from "../../components/App/ShroomBalance";
 import TokenUtils from "../../modules/tokenUtils";
-import { BaseAccount, BroadcastModeKeplr, ChainRestAuthApi, ChainRestTendermintApi, CosmosTxV1Beta1Tx, createTransaction, getTxRawFromTxRawOrDirectSignResponse, MsgChangeAdmin, MsgExecuteContract, MsgExecuteContractCompat, TxRaw, TxRestClient } from "@injectivelabs/sdk-ts";
+import { BaseAccount, BroadcastModeKeplr, ChainRestAuthApi, ChainRestTendermintApi, CosmosTxV1Beta1Tx, createTransaction, getTxRawFromTxRawOrDirectSignResponse, MsgExecuteContract, MsgExecuteContractCompat, TxRaw, TxRestClient } from "@injectivelabs/sdk-ts";
 import { BigNumberInBase, DEFAULT_BLOCK_TIMEOUT_HEIGHT, getStdFee } from "@injectivelabs/utils";
 import { Buffer } from "buffer";
 import { TransactionException } from "@injectivelabs/exceptions";
@@ -26,7 +24,7 @@ const MitoMarketMake = () => {
 
     const [selectedVault, setSelectedVault] = useState(null)
 
-    const shroomCost = 5000
+    const shroomCost = 2500
     const [shroomPrice, setShroomPrice] = useState(null)
 
 
