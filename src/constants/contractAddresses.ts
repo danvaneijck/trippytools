@@ -9,7 +9,7 @@ export const LIQUIDITY_POOLS = [
     {
         value: "inj1k76ty6znvrcnawl5zpcpjc9my9984nntfchmaj",
         label: "COKE / INJ DojoSwap",
-        img: "https://imagedelivery.net/DYKOWp0iCc0sIkF-2e4dNw/9567494c-30d5-41bd-f8b2-35d17709b100/public"
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fi.ibb.co%2FDQPT9bH%2Fcocaine-bear2.webp&n=-1&w=64&h=64"
     },
     {
         value: "inj1ylcr85kkksgkqnpzmmrmg5tmfnqmq7trjpe4vs",
@@ -20,6 +20,16 @@ export const LIQUIDITY_POOLS = [
         value: "inj1efdrt4s78gffnntlqlhcctu3h0ndsd0nr86edc",
         label: "NINJA / INJ DojoSwap",
         img: "https://wsrv.nl/?url=https%3A%2F%2Fi.ibb.co%2FqJwYW3X%2FNINJA.png&n=-1&w=64&h=64"
+    },
+    {
+        value: "inj1raxptjjkzqd6u300dgrrjvwzmem37alszseqkt",
+        label: "Pedro / DOJO DojoSwap",
+        img: "https://i.imgur.com/YKAXi2c.png"
+    },
+    {
+        value: "inj15ckgh6kdqg0x5p7curamjvqrsdw4cdzz5ky9v6",
+        label: "Pedro / INJ DojoSwap",
+        img: "https://i.imgur.com/YKAXi2c.png"
     },
     {
         value: "inj1967xd6krmzm0hllgddmf55vtmtck5l7ur79gsx",
@@ -277,6 +287,11 @@ export const TOKENS = [
         value: "factory/inj1s9smy53dtqq087usaf02sz984uddndwuj2f0wt/injussy",
         label: "INJUSSY",
         img: "https://wsrv.nl/?url=https%3A%2F%2Fi.ibb.co%2FLh2xJ2w%2FTOKENINJUSSY.jpg&n=-1&w=64&h=64"
+    },
+    {
+        value: "inj1c6lxety9hqn9q4khwqvjcfa24c2qeqvvfsg4fm",
+        label: "Pedro",
+        img: "https://i.imgur.com/YKAXi2c.png"
     },
     {
         value: "factory/inj163072g64wsn8a9n2mydwlx7c0aqt4l7pjseeuu/PORTAL",
