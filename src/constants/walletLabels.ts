@@ -29,6 +29,10 @@ const quntBuybacks = "inj1fj6syxy0wmvqhr3n57hwrljxwsng3k55t3yxgj"
 const illu = "inj1q82fmsgee627wh2w2rthy6eqt2jst9wc3tytz4"
 
 
+const pedroMain = "inj1x6u08aa3plhk3utjk7wpyjkurtwnwp6dhudh0j"
+const pedroVault = "inj1y43urcm8w0vzj74ys6pwl422qtd0a278hqchw8"
+
+
 export const WALLET_LABELS = {
     ...LIQUIDITY_POOLS.reduce((acc, pool) => {
         acc[pool.value] = {
@@ -150,5 +154,15 @@ export const WALLET_LABELS = {
         label: "@illustriousPRMR",
         bgColor: "",
         textColor: "text-green-500"
+    },
+    [pedroMain]: {
+        label: "Pedro Main",
+        bgColor: "",
+        textColor: "text-yellow-500"
+    },
+    [pedroVault]: {
+        label: "Pedro Vault",
+        bgColor: "",
+        textColor: "text-yellow-500"
     }
 }
