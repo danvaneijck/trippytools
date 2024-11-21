@@ -258,6 +258,11 @@ export const TOKENS = [
         label: "SHROOM",
         img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg"
     },
+    {
+        value: "factory/inj16dd5xzszud3u5wqphr3tq8eaz00gjdn3d4mvj8/agent",
+        label: "AGENT",
+        img: "https://pbs.twimg.com/media/Gc7DmRSboAAGKFY?format=png&name=small"
+    },
     // {
     //     value: "inj",
     //     label: "INJ",
