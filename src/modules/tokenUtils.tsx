@@ -395,6 +395,9 @@ class TokenUtils {
                 (unit) => unit.denom === data.display
             );
 
+            let decimals = matchingDenomUnit ? matchingDenomUnit.exponent : 0
+            if (data.decimals !== 0 && decimals == 0) decimals = data.decimals
+
             const supply = await this.chainGrpcBankApi.fetchSupplyOf(denom);
             const admin = await this.chainGrpcTokenFactoryApi.fetchDenomAuthorityMetadata(denom.split("/")[1], denom.split("/")[2])
 
@@ -402,14 +405,13 @@ class TokenUtils {
                 name: data.name,
                 denom: denom,
                 symbol: data.symbol,
-                decimals: matchingDenomUnit ? matchingDenomUnit.exponent : 0,
+                decimals: decimals,
                 total_supply: Number(supply.amount),
                 description: data.description,
                 logo: data.uri,
                 admin: admin.admin
             };
 
-            console.log(tokenInfo)
 
             return tokenInfo;
         } catch (error) {
