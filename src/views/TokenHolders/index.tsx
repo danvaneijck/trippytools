@@ -777,7 +777,7 @@ const TokenHolders = () => {
                             )}
                         </div>
 
-                        {totalBurned !== null && totalBurned !== 0 && tokenInfo !== null && (
+                        {totalBurned !== null && tokenInfo !== null && (
                             <div>
                                 {/* Total Burned Tokens */}
                                 Total burned tokens: {humanReadableAmount(totalBurned)} 🔥{" "}
