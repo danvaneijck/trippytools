@@ -21,6 +21,7 @@ import { PersistGate } from 'redux-persist/integration/react';
 import DojoWhitelist from './views/DojoWhitelist';
 import Header from './components/App/Header';
 import ShroomHub from './views/ShroomHub';
+import QuntUnwrap from './views/QuntUnwrap';
 
 const App = () => {
   return (
@@ -45,6 +46,7 @@ const App = () => {
               <Route path="/pre-sale-tool" element={<PreSaleTool />} />
               <Route path="/dojo-whitelist" element={<DojoWhitelist />} />
               <Route path="/shroom-hub" element={<ShroomHub />} />
+              <Route path="/qunt-unwrap" element={<QuntUnwrap />} />
 
               <Route path="/" element={<Home />} />
             </Routes>
