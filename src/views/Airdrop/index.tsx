@@ -9,7 +9,7 @@ import { WALLET_LABELS } from "../../constants/walletLabels";
 import IPFSImage from "../../components/App/IpfsImage";
 import AirdropConfirmModal from "./AirdropConfirmModal";
 import { Holder, MarketingInfo } from "../../constants/types";
-import { CW404_TOKENS, LIQUIDITY_TOKENS, NFT_COLLECTIONS, TOKENS } from "../../constants/contractAddresses";
+import { CW404_TOKENS, LIQUIDITY_POOLS, LIQUIDITY_TOKENS, NFT_COLLECTIONS, TOKENS } from "../../constants/contractAddresses";
 import TokenSelect from "../../components/Inputs/TokenSelect";
 import Papa from 'papaparse';
 import { ChainGrpcGovApi } from '@injectivelabs/sdk-ts'
@@ -20,6 +20,10 @@ import Select from "react-select"
 import Footer from "../../components/App/Footer";
 
 const STAKING_CONTRACT_ADDRESS = 'inj1gtze7qm07nky47n7mwgj4zatf2s77xqvh3k2n8'
+const INJ_CW20_ADAPTER = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
+const DOJO_BURN_ADDRESS = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
+const INJ_BURN_ADDRESS = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
+const MITO_ADDRESS = "inj14vnmw2wee3xtrsqfvpcqg35jg9v7j2vdpzx0kk"
 
 
 function humanReadableAmount(number) {
@@ -121,6 +125,10 @@ const Airdrop = () => {
     const [mitoHolders, setMitoHolders] = useState([])
 
     const [selectedMitoVault, setSelectedMitoVault] = useState(null)
+
+    useEffect(() => {
+        if (!limitSwitch) setWalletLimit(0)
+    }, [limitSwitch])
 
     const handleCheckboxChange = (index: number, dist: string, balance) => {
         const newDetails = [...airdropDetails];
@@ -408,7 +416,6 @@ const Airdrop = () => {
                     module.getPairInfo(SHROOM_PAIR_ADDRESS)
                 ]);
                 const quote = await module.getSellQuoteRouter(pairInfo, shroomCost + "0".repeat(18));
-                console.log(quote)
                 const returnAmount = Number(quote.amount) / Math.pow(10, 18);
                 const totalUsdValue = (returnAmount * baseAssetPrice).toFixed(3);
                 setShroomPrice(totalUsdValue);
@@ -419,7 +426,7 @@ const Airdrop = () => {
         }
         if (currentNetwork == "mainnet") {
             getShroomCost().then(r => {
-                console.log(r)
+
             }).catch(e => {
                 console.log(e)
             })
@@ -616,6 +623,20 @@ const Airdrop = () => {
         setLoading(true)
         setError(null)
 
+        let tokenInfo
+
+        const liquidityPoolAddresses = LIQUIDITY_POOLS.map(pool => pool.value);
+        const tokenAddresses = TOKENS.map(pool => pool.value);
+
+        const addressesToExclude = [
+            INJ_CW20_ADAPTER,
+            DOJO_BURN_ADDRESS,
+            INJ_BURN_ADDRESS,
+            MITO_ADDRESS,
+            ...liquidityPoolAddresses,
+            ...tokenAddresses,
+        ];
+
         try {
             if (
                 airdropTokenAddress.value.includes("factory") ||
@@ -630,6 +651,7 @@ const Airdrop = () => {
                     ...r,
                     denom: airdropTokenAddress.value
                 });
+                tokenInfo = r
             }
             let holders: Holder[] = []
 
@@ -638,12 +660,51 @@ const Airdrop = () => {
                 airdropTokenAddress.value.includes("peggy") ||
                 airdropTokenAddress.value.includes("ibc")
             ) {
-                const r = await module.getTokenFactoryTokenHolders(airdropTokenAddress.value, setProgress)
-                if (r) holders = r
+                const factoryHolders = await module.getTokenFactoryTokenHolders(airdropTokenAddress.value, setProgress)
+
+                const cleanList = factoryHolders.filter(
+                    holder => !addressesToExclude.includes(holder.address)
+                );
+
+                const totalBalance = cleanList.reduce((sum, holder) => sum + holder.balance, 0);
+
+                cleanList.forEach(holder => {
+                    holder.percentageHeld = (holder.balance / totalBalance) * 100;
+                });
+
+                if (factoryHolders) holders = cleanList
             }
             else {
-                const r = await module.getCW20TokenHolders(airdropTokenAddress.value, setProgress)
-                if (r) holders = r
+                const cw20Holders = await module.getCW20TokenHolders(airdropTokenAddress.value, setProgress)
+                const factoryAddress = `factory/${INJ_CW20_ADAPTER}/${airdropTokenAddress.value}`
+                const factoryHolders = await module.getTokenFactoryTokenHolders(factoryAddress, setProgress)
+
+                const holdersMap = new Map();
+
+                cw20Holders.forEach(({ address, balance }) => {
+                    if (!holdersMap.has(address)) {
+                        holdersMap.set(address, { address, balance: 0, percentageHeld: 0 });
+                    }
+                    holdersMap.get(address).balance += balance;
+                });
+                factoryHolders.forEach(({ address, balance }) => {
+                    if (!holdersMap.has(address)) {
+                        holdersMap.set(address, { address, balance: 0, percentageHeld: 0 });
+                    }
+                    holdersMap.get(address).balance += (balance / Math.pow(10, tokenInfo.decimals));
+                });
+
+                const combinedHolders = Array.from(holdersMap.values()).filter(
+                    holder => !addressesToExclude.includes(holder.address)
+                );
+
+                const totalBalance = combinedHolders.reduce((sum, holder) => sum + holder.balance, 0);
+
+                combinedHolders.forEach(holder => {
+                    holder.percentageHeld = (holder.balance / totalBalance) * 100;
+                });
+
+                if (combinedHolders) holders = combinedHolders.sort((a, b) => b.balance - a.balance)
             }
 
             const supplyToAirdrop = (balanceToDrop - (balanceToDrop * 0.00001))
