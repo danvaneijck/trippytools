@@ -2183,6 +2183,7 @@ class TokenUtils {
             const quantityAvailable = parseFloat(order.unfilledQuantity) / Math.pow(10, decimals);
 
             const maxSellableQuantity = remainingBase;
+            worstAcceptablePrice = price;
 
             if (maxSellableQuantity >= quantityAvailable) {
                 totalQuote += quantityAvailable * price;
@@ -2194,9 +2195,6 @@ class TokenUtils {
                 remainingBase = 0;
                 break;
             }
-
-            // Update worst acceptable price to the current price level
-            worstAcceptablePrice = price;
 
             if (remainingBase <= 0) {
                 break;
