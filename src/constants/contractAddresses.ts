@@ -259,6 +259,11 @@ export const TOKENS = [
         img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg"
     },
     {
+        value: "factory/inj10aa0h5s0xwzv95a8pjhwluxcm5feeqygdk3lkm/SAI",
+        label: "shroomAI",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fbafkreidnvcsyoafasrvihhw7jciqrtnzhtadyfnhopgy5tzbzhzhicvzgu.ipfs.w3s.link%2F&n=-1&w=64&h=64"
+    },
+    {
         value: "factory/inj16dd5xzszud3u5wqphr3tq8eaz00gjdn3d4mvj8/agent",
         label: "AGENT",
         img: "https://pbs.twimg.com/media/Gc7DmRSboAAGKFY?format=png&name=small"
