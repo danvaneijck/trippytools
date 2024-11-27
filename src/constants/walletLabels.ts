@@ -32,6 +32,8 @@ const illu = "inj1q82fmsgee627wh2w2rthy6eqt2jst9wc3tytz4"
 const pedroMain = "inj1x6u08aa3plhk3utjk7wpyjkurtwnwp6dhudh0j"
 const pedroVault = "inj1y43urcm8w0vzj74ys6pwl422qtd0a278hqchw8"
 
+const shroomiAgent = "inj10aa0h5s0xwzv95a8pjhwluxcm5feeqygdk3lkm"
+
 
 export const WALLET_LABELS = {
     ...LIQUIDITY_POOLS.reduce((acc, pool) => {
@@ -164,5 +166,10 @@ export const WALLET_LABELS = {
         label: "Pedro Vault",
         bgColor: "",
         textColor: "text-yellow-500"
+    },
+    [shroomiAgent]: {
+        label: "Shroomi AI Agent 👻",
+        bgColor: "",
+        textColor: "text-green-500"
     }
 }
