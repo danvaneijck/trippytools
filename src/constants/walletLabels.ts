@@ -32,7 +32,7 @@ const illu = "inj1q82fmsgee627wh2w2rthy6eqt2jst9wc3tytz4"
 const pedroMain = "inj1x6u08aa3plhk3utjk7wpyjkurtwnwp6dhudh0j"
 const pedroVault = "inj1y43urcm8w0vzj74ys6pwl422qtd0a278hqchw8"
 
-const shroomiAgent = "inj10aa0h5s0xwzv95a8pjhwluxcm5feeqygdk3lkm"
+const shroomiAgent = "inj1ne0h7cz6zh0743xfx93g9qpzmm3ylyy5rsduka"
 
 
 export const WALLET_LABELS = {
