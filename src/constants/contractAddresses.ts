@@ -7,6 +7,11 @@ export const LIQUIDITY_POOLS = [
         img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg"
     },
     {
+        value: "inj18nyltfvkyrx4wxfpdd6sn9l8wmqfr6t63y7nse",
+        label: "SAI / SHROOM DojoSwap",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fbafkreidnvcsyoafasrvihhw7jciqrtnzhtadyfnhopgy5tzbzhzhicvzgu.ipfs.w3s.link%2F&n=-1&w=64&h=64"
+    },
+    {
         value: "inj1k76ty6znvrcnawl5zpcpjc9my9984nntfchmaj",
         label: "COKE / INJ DojoSwap",
         img: "https://wsrv.nl/?url=https%3A%2F%2Fi.ibb.co%2FDQPT9bH%2Fcocaine-bear2.webp&n=-1&w=64&h=64"
@@ -219,6 +224,11 @@ export const LIQUIDITY_TOKENS = [
         value: "inj1yr2vl9vkwhw0g3tuhhm5jujpx2kzfmpp6lurrm",
         label: "SHROOM / INJ ASTRO LP",
         img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg"
+    },
+    {
+        value: "inj1vgzuzwy4s8zu6at3ldzwqvpu7q6uc26lmg4l7k",
+        label: "SAI / SHROOM DOJO LP",
+        img: "https://wsrv.nl/?url=https%3A%2F%2Fbafkreidnvcsyoafasrvihhw7jciqrtnzhtadyfnhopgy5tzbzhzhicvzgu.ipfs.w3s.link%2F&n=-1&w=64&h=64"
     },
     {
         value: "inj16qksf53k0n07cvpgzqs4q6kvpzh5aw2c6f9589",
