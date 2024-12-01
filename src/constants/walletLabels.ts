@@ -35,6 +35,10 @@ const pedroVault = "inj1y43urcm8w0vzj74ys6pwl422qtd0a278hqchw8"
 const shroomiAgent = "inj1ne0h7cz6zh0743xfx93g9qpzmm3ylyy5rsduka"
 
 
+const dojoDerf = "inj18xg2xfhv36v4z7dr3ldqnm43fzukqgsafyyg63"
+const smellyDonation = "inj1ld69wuvevtfyc6dd9hy4l9a70rp6z0vpqevv83"
+
+
 export const WALLET_LABELS = {
     ...LIQUIDITY_POOLS.reduce((acc, pool) => {
         acc[pool.value] = {
@@ -171,5 +175,15 @@ export const WALLET_LABELS = {
         label: "Shroomi AI Agent 👻",
         bgColor: "",
         textColor: "text-green-500"
+    },
+    [dojoDerf]: {
+        label: "Dojo DERF",
+        bgColor: "",
+        textColor: "text-yellow-500"
+    },
+    [smellyDonation]: {
+        label: "Smelly Donations",
+        bgColor: "",
+        textColor: "text-yellow-500"
     }
 }

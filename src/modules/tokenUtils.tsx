@@ -409,7 +409,8 @@ class TokenUtils {
                 total_supply: Number(supply.amount),
                 description: data.description,
                 logo: data.uri,
-                admin: admin.admin
+                admin: admin.admin,
+                denomUnits: data.denomUnits
             };
 
 
