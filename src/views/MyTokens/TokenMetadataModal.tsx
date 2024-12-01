@@ -110,7 +110,6 @@ const TokenMetadataModal = (props: {
     }, [broadcastTx, networkConfig])
 
     const updateMetadata = useCallback(async () => {
-        console.log(props.token)
         setError(null)
         const { key, offlineSigner } = await getKeplr(networkConfig.chainId);
         const pubKey = Buffer.from(key.pubKey).toString("base64");
@@ -119,29 +118,18 @@ const TokenMetadataModal = (props: {
         const msgSetDenomMetadata = MsgSetDenomMetadata.fromJSON({
             sender: injectiveAddress,
             metadata: {
-                base: props.token.metadata.denom, /** the base denom */
-                description: tokenDescription, /** description of your token */
-                display: props.token.metadata.symbol, /** the displayed name of your token on UIs */
-                name: props.token.metadata.name, /** the name of your token */
-                symbol: props.token.metadata.symbol, /** the symbol of your token */
+                base: props.token.metadata.denom,
+                description: tokenDescription,
+                display: props.token.metadata.symbol,
+                name: props.token.metadata.name,
+                symbol: props.token.metadata.symbol,
                 uri: tokenImage,
-                denomUnits: [
-                    {
-                        denom: props.token.metadata.denom,
-                        exponent: 0,
-                        aliases: [props.token.metadata.symbol]
-                    },
-                    {
-                        denom: props.token.metadata.symbol,
-                        exponent: props.token.metadata.decimals,
-                        aliases: [props.token.metadata.symbol]
-                    },
-                ],
+                denomUnits: props.token.metadata.denomUnits,
+                decimals: props.token.metadata.decimals,
                 uriHash: ""
             }
         });
 
-        // set metadata
         console.log("metadata", msgSetDenomMetadata)
         setProgress("Upload denom metadata")
         await handleSendTx(pubKey, msgSetDenomMetadata, injectiveAddress, offlineSigner)

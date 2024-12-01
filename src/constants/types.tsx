@@ -6,7 +6,8 @@ export interface TokenInfo {
     total_supply?: number;
     description?: string
     logo?: string
-    admin?: string
+    admin?: string,
+    denomUnits?: []
 }
 
 export interface Holder {
