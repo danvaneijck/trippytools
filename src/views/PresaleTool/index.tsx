@@ -695,11 +695,11 @@ const PreSaleTool = () => {
                                         >
                                             Review Airdrop
                                         </button>
-                                        <CSVLink data={airdropList} headers={CsvHeaders} filename={"airdrop.csv"}>
+                                        {/* <CSVLink data={airdropList} headers={CsvHeaders} filename={"airdrop.csv"}>
                                             <button className="p-2 rounded-lg text-center bg-slate-700 hover:bg-slate-800 ml-5">
                                                 Download CSV
                                             </button>
-                                        </CSVLink>
+                                        </CSVLink> */}
                                     </div>
                                 </div>
                             }
