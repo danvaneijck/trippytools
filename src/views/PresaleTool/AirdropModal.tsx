@@ -19,7 +19,7 @@ const AirdropModal = (props) => {
 
     const navigate = useNavigate()
 
-    const [shroomFee] = useState(1000000)
+    const [shroomFee] = useState(200000)
     const [feePayed, setFeePayed] = useState(false)
 
     const [progress, setProgress] = useState("")
