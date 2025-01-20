@@ -22,6 +22,7 @@ import DojoWhitelist from './views/DojoWhitelist';
 import Header from './components/App/Header';
 import ShroomHub from './views/ShroomHub';
 import QuntUnwrap from './views/QuntUnwrap';
+import WalletExport from './views/WalletExport';
 
 const App = () => {
   return (
@@ -47,6 +48,7 @@ const App = () => {
               <Route path="/dojo-whitelist" element={<DojoWhitelist />} />
               <Route path="/shroom-hub" element={<ShroomHub />} />
               <Route path="/qunt-unwrap" element={<QuntUnwrap />} />
+              <Route path="/wallet-export" element={<WalletExport />} />
 
               <Route path="/" element={<Home />} />
             </Routes>
