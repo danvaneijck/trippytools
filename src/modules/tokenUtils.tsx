@@ -2270,6 +2270,45 @@ class TokenUtils {
             sellQuoteAmount
         };
     }
+
+    async getAllAccountTx(walletAddress: string, setProgress) {
+        const api = new IndexerRestExplorerApi("https://sentry.explorer.grpc-web.injective.network/api/explorer/v1");
+        const allTransactions = [];
+        let skip = 0;
+        const limit = 100;
+        let totalFetched = 0;
+        let totalTransactions = 0;
+
+        try {
+            const tx = await api.fetchAccountTransactions({
+                account: walletAddress,
+                params: { limit }
+            });
+
+            totalTransactions = tx.paging.total;
+            totalFetched += tx.transactions.length;
+            allTransactions.push(...tx.transactions);
+
+            console.log(`${totalFetched} / ${totalTransactions}`)
+
+            while (totalFetched < totalTransactions) {
+                skip += limit;
+                const nextBatch = await api.fetchAccountTransactions({
+                    account: walletAddress,
+                    params: { limit, skip }
+                });
+
+                allTransactions.push(...nextBatch.transactions);
+                totalFetched += nextBatch.transactions.length;
+                setProgress(`${totalFetched} / ${totalTransactions}`)
+            }
+
+            return allTransactions
+
+        } catch (error) {
+            console.error(`Error fetching transactions:`, error);
+        }
+    }
 }
 
 export default TokenUtils;

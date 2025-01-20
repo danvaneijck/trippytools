@@ -224,7 +224,8 @@ const BinaryOptionMarkets = () => {
                                                                     className="my-2 bg-slate-700 shadow-lg p-1 rounded-lg text-xs"
                                                                     onClick={() => setSearchParams({
                                                                         marketId: market.marketId
-                                                                    })}>
+                                                                    })}
+                                                                >
                                                                     View
                                                                 </button>
                                                             </td>
