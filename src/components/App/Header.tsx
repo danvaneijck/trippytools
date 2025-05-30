@@ -126,6 +126,9 @@ const Header = () => {
                     <Link to="/dojo-whitelist" className={getLinkStyle('/dojo-whitelist')} onClick={toggleMenu}>
                         Dojo Whitelist
                     </Link>
+                    <Link to="/wallet-export" className={getLinkStyle('/wallet-export')} onClick={toggleMenu}>
+                        Wallet Export (beta)
+                    </Link>
                 </div>
             </div>
 
