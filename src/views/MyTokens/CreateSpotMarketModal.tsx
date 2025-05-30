@@ -18,6 +18,7 @@ import { useSelector } from "react-redux";
 import { Link } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
 import SpotMarketConfigDropdownTable from "../../components/App/SpotMarketOptionsTable";
+import { getKeplrOfflineSigner, handleSendTx } from "../../utils/keplr";
 
 
 const CreateSpotMarketModal = (props: {
@@ -39,76 +40,10 @@ const CreateSpotMarketModal = (props: {
 
     const [error, setError] = useState(null)
 
-    const getKeplr = useCallback(async () => {
-        await window.keplr.enable(networkConfig.chainId);
-        console.log("get offline signer for ", networkConfig.chainId)
-        const offlineSigner = window.keplr.getOfflineSigner(networkConfig.chainId);
-        const accounts = await offlineSigner.getAccounts();
-        const key = await window.keplr.getKey(networkConfig.chainId);
-        return { offlineSigner, accounts, key };
-    }, [networkConfig]);
-
-    const broadcastTx = useCallback(async (chainId: string, txRaw: TxRaw) => {
-        await getKeplr();
-        const result = await window.keplr.sendTx(
-            chainId,
-            CosmosTxV1Beta1Tx.TxRaw.encode(txRaw).finish(),
-            BroadcastModeKeplr.Sync
-        );
-
-        if (!result || result.length === 0) {
-            throw new TransactionException(
-                new Error("Transaction failed to be broadcasted"),
-                { contextModule: "Keplr" }
-            );
-        }
-
-        return Buffer.from(result).toString("hex");
-    }, [getKeplr]);
-
-    const handleSendTx = useCallback(async (pubKey: any, msg: any, injectiveAddress: string, offlineSigner: { signDirect: (arg0: any, arg1: CosmosTxV1Beta1Tx.SignDoc) => any; }, gas: any = null) => {
-        setTxLoading(true)
-        const chainRestAuthApi = new ChainRestAuthApi(networkConfig.rest);
-        const chainRestTendermintApi = new ChainRestTendermintApi(networkConfig.rest);
-
-        const latestBlock = await chainRestTendermintApi.fetchLatestBlock();
-        const latestHeight = latestBlock.header.height;
-        const timeoutHeight = new BigNumberInBase(latestHeight).plus(
-            DEFAULT_BLOCK_TIMEOUT_HEIGHT
-        );
-
-        const accountDetailsResponse = await chainRestAuthApi.fetchAccount(
-            injectiveAddress
-        );
-        const baseAccount = BaseAccount.fromRestApi(accountDetailsResponse);
-
-        const { signDoc } = createTransaction({
-            pubKey: pubKey,
-            chainId: networkConfig.chainId,
-            fee: gas ?? getStdFee({}),
-            message: msg,
-            sequence: baseAccount.sequence,
-            timeoutHeight: timeoutHeight.toNumber(),
-            accountNumber: baseAccount.accountNumber,
-        });
-
-        const directSignResponse = await offlineSigner.signDirect(
-            injectiveAddress,
-            signDoc
-        );
-
-        const txRaw = getTxRawFromTxRawOrDirectSignResponse(directSignResponse);
-        const txHash = await broadcastTx(networkConfig.chainId, txRaw);
-        const response = await new TxRestClient(networkConfig.rest).fetchTxPoll(txHash);
-
-        console.log(response);
-        setTxLoading(false)
-        return response
-    }, [broadcastTx, networkConfig])
 
     const create = useCallback(async () => {
         setError(null)
-        const { key, offlineSigner } = await getKeplr(networkConfig.chainId);
+        const { key, offlineSigner } = await getKeplrOfflineSigner(networkConfig.chainId);
         const pubKey = Buffer.from(key.pubKey).toString("base64");
         const injectiveAddress = key.bech32Address;
         if (connectedAddress !== injectiveAddress) {
@@ -132,6 +67,8 @@ const CreateSpotMarketModal = (props: {
 
         console.log(minPriceTick, minQuantityTick)
 
+        const minNotional = 1 * Math.pow(10, 18)
+
         const msgCreateSpotMarket = MsgInstantSpotMarketLaunch.fromJSON({
             proposer: injectiveAddress,
             market: {
@@ -140,14 +77,15 @@ const CreateSpotMarketModal = (props: {
                 baseDenom: props.token.token,
                 quoteDenom: 'inj',
                 minPriceTickSize: minPriceTick.toString(),
-                minQuantityTickSize: minQuantityTick.toString()
+                minQuantityTickSize: minQuantityTick.toString(),
+                minNotional: minNotional.toString()
             }
         });
 
         console.log("spot market msg", msgCreateSpotMarket)
         setProgress(`Create instant spot market`)
 
-        const response = await handleSendTx(pubKey, msgCreateSpotMarket, injectiveAddress, offlineSigner)
+        const response = await handleSendTx(networkConfig, pubKey, msgCreateSpotMarket, injectiveAddress, offlineSigner)
         console.log(response)
         let market = null
         const contract = response['events']?.find(x => x.type === 'injective.exchange.v1beta1.EventSpotMarketUpdate')
@@ -161,7 +99,7 @@ const CreateSpotMarketModal = (props: {
         }
         setProgress("Spot market created! Go back and refresh")
 
-    }, [getKeplr, networkConfig.chainId, connectedAddress, props.token, quantityTickSize, handleSendTx, priceTickSize, currentNetwork])
+    }, [connectedAddress, props.token, quantityTickSize, priceTickSize, currentNetwork, networkConfig])
 
     return (
         <>

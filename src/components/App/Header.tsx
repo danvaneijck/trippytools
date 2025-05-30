@@ -59,12 +59,21 @@ const Header = () => {
             </header>
 
             {/* Burger Menu for smaller screens */}
-            <header className="flex lg:hidden flex-row bg-customGray text-white shadow-lg fixed top-0 left-0 right-0 z-10 h-16 items-center ">
+            <header className="flex flex-row bg-customGray text-white shadow-lg fixed top-0 left-0 right-0 z-10 h-16 items-center ">
                 <div className="flex items-center p-2">
                     {/* Burger Icon */}
                     <button onClick={toggleMenu} className="text-white focus:outline-none">
                         {menuOpen ? <FiX size={24} /> : <FiMenu size={24} className='' />}
                     </button>
+                </div>
+
+                <div className='hidden md:inline-block'>
+                    <Link to="/" className={getLinkStyle('/')}>
+                        $SHROOM
+                    </Link>
+                    <Link to="/shroom-hub" className={getLinkStyle('/shroom-hub')}>
+                        Trade
+                    </Link>
                 </div>
 
                 <div className="hidden sm:flex flex-col absolute left-1/2 transform -translate-x-1/2 text-center">
@@ -102,6 +111,9 @@ const Header = () => {
                     <Link to="/token-liquidity?address=inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl" className={getLinkStyle('/token-liquidity')} onClick={toggleMenu}>
                         Liquidity tool
                     </Link>
+                    <Link to="/token-launch" className={getLinkStyle('/token-launch')} onClick={toggleMenu}>
+                        Create token
+                    </Link>
                     <Link to="/manage-tokens" className={getLinkStyle('/manage-tokens')} onClick={toggleMenu}>
                         Mange tokens
                     </Link>
@@ -116,6 +128,12 @@ const Header = () => {
                     </Link>
                     <Link to="/dojo-whitelist" className={getLinkStyle('/dojo-whitelist')} onClick={toggleMenu}>
                         Dojo Whitelist
+                    </Link>
+                    <Link to="/wallet-export" className={getLinkStyle('/wallet-export')} onClick={toggleMenu}>
+                        Wallet Export (beta)
+                    </Link>
+                    <Link to="/qunt-unwrap" className={getLinkStyle('/qunt-unwrap')} onClick={toggleMenu}>
+                        QUNT unwrap
                     </Link>
                 </div>
             </div>
