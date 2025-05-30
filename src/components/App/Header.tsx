@@ -111,6 +111,9 @@ const Header = () => {
                     <Link to="/token-liquidity?address=inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl" className={getLinkStyle('/token-liquidity')} onClick={toggleMenu}>
                         Liquidity tool
                     </Link>
+                    <Link to="/token-launch" className={getLinkStyle('/token-launch')} onClick={toggleMenu}>
+                        Create token
+                    </Link>
                     <Link to="/manage-tokens" className={getLinkStyle('/manage-tokens')} onClick={toggleMenu}>
                         Mange tokens
                     </Link>
@@ -128,6 +131,9 @@ const Header = () => {
                     </Link>
                     <Link to="/wallet-export" className={getLinkStyle('/wallet-export')} onClick={toggleMenu}>
                         Wallet Export (beta)
+                    </Link>
+                    <Link to="/qunt-unwrap" className={getLinkStyle('/qunt-unwrap')} onClick={toggleMenu}>
+                        QUNT unwrap
                     </Link>
                 </div>
             </div>
