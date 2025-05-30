@@ -80,3 +80,20 @@ body {
   font-weight: normal;
   font-style: normal;
 }
+
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(5%)
+    
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0%)
+  }
+}
+
+.slide-in {
+  animation: slideInFromBottom 100ms ease-in forwards;
+}

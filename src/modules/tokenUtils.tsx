@@ -30,7 +30,6 @@ import { Buffer } from "buffer";
 import moment from "moment";
 import { TokenInfo } from "../constants/types";
 import { Coin } from "@injectivelabs/ts-types";
-/* global BigInt */
 import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { CW404_BALANCE_STARTING_KEYS } from "../constants/cw404BalanceKeys";
 
@@ -94,9 +93,7 @@ class TokenUtils {
     baseDenom: any;
     dojoAssetInfo: { token: { contract_addr: string; }; };
     injAssetInfo: { native_token: { denom: string; }; };
-    denomClient: DenomClientAsync;
     indexerGrpcSpotApi: IndexerGrpcSpotApi;
-    mitoApi: IndexerGrpcMitoApi;
     coinhallRouter: string;
 
     constructor(endpoints: EndpointConfig) {
@@ -145,6 +142,10 @@ class TokenUtils {
         ]
 
         this.coinhallRouter = "inj16lkekzp36vj6a9zjl778a2s5nd9f6ft67w2e90"
+    }
+
+    async getTx(txHash: string) {
+        return await this.indexerRestExplorerApi.fetchTransaction(txHash)
     }
 
     async getINJPrice() {
@@ -956,9 +957,9 @@ class TokenUtils {
 
                                 if (toRefund < 0) toRefund = 0
 
-                                if (sender == "inj18xsczx27lanjt40y9v79q0v57d76j2s8ctj85x") {
-                                    console.log("HERE BITCH", totalSent - toRefund)
-                                }
+                                // if (sender == "inj18xsczx27lanjt40y9v79q0v57d76j2s8ctj85x") {
+                                //     console.log("HERE BITCH", totalSent - toRefund)
+                                // }
 
                                 preSaleAmounts.set(sender, {
                                     ...entry,
@@ -1560,9 +1561,9 @@ class TokenUtils {
         return allPools
     }
 
-    async getPoolAmounts(pair) {
+    async getPoolAmounts(address) {
         const poolQuery = Buffer.from(JSON.stringify({ pool: {} })).toString('base64');
-        const poolInfo = await this.chainGrpcWasmApi.fetchSmartContractState(pair.contract_addr, poolQuery)
+        const poolInfo = await this.chainGrpcWasmApi.fetchSmartContractState(address, poolQuery)
         const poolDecoded = JSON.parse(new TextDecoder().decode(poolInfo.data))
         return poolDecoded
     }
@@ -1581,7 +1582,7 @@ class TokenUtils {
         // console.log("base asset meta", baseTokenMeta)
         // console.log("meme token meta", memeTokenMeta)
 
-        const poolDecoded = await this.getPoolAmounts(pair);
+        const poolDecoded = await this.getPoolAmounts(pair.contract_addr);
         const baseAssetPriceUsd = await this.getBaseAssetPrice(baseTokenMeta);
         // console.log("base asset price", baseAssetPriceUsd)
 
@@ -1626,7 +1627,7 @@ class TokenUtils {
         // console.log("base asset meta", baseTokenMeta)
         // console.log("meme token meta", memeTokenMeta)
 
-        const poolDecoded = await this.getPoolAmounts(pair);
+        const poolDecoded = await this.getPoolAmounts(pair.contract_addr);
         const baseAssetPriceUsd = await this.getBaseAssetPrice(baseTokenMeta);
         // console.log("base asset price", baseAssetPriceUsd)
 
@@ -1694,6 +1695,21 @@ class TokenUtils {
         return markets
     }
 
+    async fetchMitoVault(address) {
+        let endpoint = "";
+        if (this.endpoints.chainId.includes("888")) {
+            endpoint = 'https://k8s.testnet.mito.grpc-web.injective.network';
+        } else {
+            endpoint = 'https://k8s.mainnet.mito.grpc-web.injective.network';
+        }
+        const mitoApi = new IndexerGrpcMitoApi(endpoint);
+
+        const vault = await mitoApi.fetchVault({ contractAddress: address })
+
+        console.log(vault)
+        return vault
+    }
+
     async fetchMitoVaults() {
         let endpoint = "";
         if (this.endpoints.chainId.includes("888")) {
@@ -1701,7 +1717,7 @@ class TokenUtils {
         } else {
             endpoint = 'https://k8s.mainnet.mito.grpc-web.injective.network';
         }
-        this.mitoApi = new IndexerGrpcMitoApi(endpoint);
+        const mitoApi = new IndexerGrpcMitoApi(endpoint);
 
         const limit = 100;
         let pageIndex = 0;
@@ -1709,7 +1725,7 @@ class TokenUtils {
         let total = 0;
 
         do {
-            const response = await this.mitoApi.fetchVaults({
+            const response = await mitoApi.fetchVaults({
                 limit: limit,
                 pageIndex: pageIndex
             });
@@ -1734,7 +1750,7 @@ class TokenUtils {
         } else {
             endpoint = 'https://k8s.mainnet.mito.grpc-web.injective.network';
         }
-        this.mitoApi = new IndexerGrpcMitoApi(endpoint);
+        const mitoApi = new IndexerGrpcMitoApi(endpoint);
 
         const limit = 100;
         let pageIndex = 0;
@@ -1742,7 +1758,7 @@ class TokenUtils {
         let total = 0;
 
         do {
-            const response = await this.mitoApi.fetchLPHolders({
+            const response = await mitoApi.fetchLPHolders({
                 limit: limit,
                 skip: pageIndex,
                 vaultAddress,
@@ -2308,6 +2324,41 @@ class TokenUtils {
         } catch (error) {
             console.error(`Error fetching transactions:`, error);
         }
+    }
+
+    async queryOrderBookSwap(inputDenom: string, outputDenom: string, inputAmount: number) {
+        const CW20_ADAPTER_ADDRESS = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
+        const ORDERBOOK_SWAP_ADDRESS = "inj1zs848zsjla0l8x3junp03x3eanm3apjynkzaru"
+
+        const contractAddress = ORDERBOOK_SWAP_ADDRESS
+
+        let inputToken = inputDenom
+        let outputToken = outputDenom
+        if (inputToken.startsWith("inj") && inputToken !== "inj") {
+            inputToken = `factory/${CW20_ADAPTER_ADDRESS}/${inputToken}`
+        }
+        if (outputToken.startsWith("inj") && outputToken !== "inj") {
+            outputToken = `factory/${CW20_ADAPTER_ADDRESS}/${outputToken}`
+        }
+
+        const query = Buffer.from(
+            JSON.stringify({
+                get_output_quantity: {
+                    from_quantity: inputAmount.toLocaleString('fullwide', { useGrouping: false }),
+                    source_denom: inputToken,
+                    target_denom: outputToken,
+                }
+            })
+        ).toString("base64");
+
+        const info = await this.chainGrpcWasmApi.fetchSmartContractState(
+            contractAddress,
+            query
+        );
+
+        const r = JSON.parse(new TextDecoder().decode(info.data))
+
+        return r
     }
 }
 

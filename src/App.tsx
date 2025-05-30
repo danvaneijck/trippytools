@@ -36,7 +36,7 @@ const App = () => {
               <Route path="/sushi-tool" element={<SushiTool />} />
               <Route path="/token-liquidity" element={<TokenLiquidity />} />
               <Route path="/token-launch" element={<TokenLaunch />} />
-              <Route path="/trippy-distribution" element={<TrippyDistribution />} />
+              {/* <Route path="/trippy-distribution" element={<TrippyDistribution />} /> */}
               <Route path="/manage-tokens" element={<MyTokens />} />
               <Route path="/airdrop" element={<Airdrop />} />
               <Route path="/airdrop-history" element={<AirdropHistory />} />
@@ -49,7 +49,6 @@ const App = () => {
               <Route path="/shroom-hub" element={<ShroomHub />} />
               <Route path="/qunt-unwrap" element={<QuntUnwrap />} />
               <Route path="/wallet-export" element={<WalletExport />} />
-
               <Route path="/" element={<Home />} />
             </Routes>
           </Router>

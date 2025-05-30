@@ -23,7 +23,7 @@ export function processAccountTx(data, walletAddress) {
                     let added = false
 
                     transaction.logs.forEach(log => {
-                        const msgIndex = log.msg_index
+                        const msgIndex = log.msg_index || 0
                         log.events.forEach(event => {
                             if (event.type === "coin_received") {
                                 const receiverAttribute = event.attributes.find(attr => attr.key === "receiver");
@@ -1014,7 +1014,7 @@ export function processAccountTx(data, walletAddress) {
 
                     if (!added) {
                         transaction.logs.forEach(log => {
-                            const msgIndex = log.msg_index
+                            const msgIndex = log.msg_index || 0
                             log.events.forEach(event => {
                                 if (event.type === "coin_received") {
                                     const receiverAttribute = event.attributes.find(attr => attr.key === "receiver");
@@ -3876,7 +3876,7 @@ export function processAccountTx(data, walletAddress) {
 
                     // Iterate through transaction logs
                     transaction.logs.forEach(log => {
-                        const msgIndex = log.msg_index
+                        const msgIndex = log.msg_index || 0
                         log.events.forEach(event => {
                             if (event.type === "wasm") {
                                 const actionAttribute = event.attributes.find(attr => attr.key === "action");
@@ -4273,6 +4273,58 @@ export function processAccountTx(data, walletAddress) {
                         console.log(JSON.stringify(transaction.hash, null, 2));
                     }
                 }
+
+                else if (message.type === "/injective.tokenfactory.v1beta1.MsgSetDenomMetadata") {
+                    let added = false;
+                    try {
+                        const messageData = message.message;
+                        const sender = messageData.sender;
+                        const metadata = messageData.metadata;
+
+                        const description = metadata.description || null;
+                        const baseDenom = metadata.base || null;
+                        const displayDenom = metadata.display || null;
+                        const name = metadata.name || null;
+                        const symbol = metadata.symbol || null;
+                        const decimals = metadata.decimals || null;
+
+                        // Extract additional details from logs
+                        transaction.logs.forEach(log => {
+                            log.events.forEach(event => {
+                                if (event.type === "injective.tokenfactory.v1beta1.EventSetTFDenomMetadata") {
+                                    const denom = event.attributes.find(attr => attr.key === "denom")?.value;
+                                    const metadataRaw = event.attributes.find(attr => attr.key === "metadata")?.value;
+                                    const metadataParsed = metadataRaw ? JSON.parse(metadataRaw) : null;
+
+                                    added = true;
+                                    taxData.push({
+                                        type: "Token Factory Metadata Update",
+                                        blockNumber: transaction.blockNumber,
+                                        blockTimestamp: transaction.blockTimestamp,
+                                        transactionHash: transaction.hash,
+                                        sender: sender,
+                                        description: description,
+                                        baseDenom: baseDenom,
+                                        displayDenom: displayDenom,
+                                        name: name,
+                                        symbol: symbol,
+                                        decimals: decimals,
+                                        metadata: metadataParsed,
+                                        signed: signed,
+                                    });
+                                }
+                            });
+                        });
+                    } catch (error) {
+                        console.error("Failed to parse token factory metadata transaction:", error);
+                    }
+
+                    if (!added) {
+                        console.log("Token Factory Metadata Update - Unprocessed Transaction");
+                        console.log(JSON.stringify(transaction, null, 2));
+                    }
+                }
+
 
 
 

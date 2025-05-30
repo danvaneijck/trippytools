@@ -53,6 +53,7 @@ function extractFundsSent(tx) {
             return tx.isSender ? `${tx.amount} ${tx.contractAddress}` : "N/A"
         case 'IBC Token Transfer':
             return tx.isSender ? `${tx.amount} ${tx.denom}` : "N/A"
+
         default:
             return 'N/A';
     }
