@@ -807,14 +807,19 @@ const ShroomHub = () => {
         console.log("Spent:", coinSpent);
         console.log("Received:", coinReceived);
 
+        const escapeRegExp = (str) =>
+            str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
         const parseAmount = (amountStr, token) => {
-            let num = 0;
-            if (amountStr.includes(token.address)) {
-                num = Number(amountStr.match(/^(\d+)/)[0]);
-            } else {
-                num = Number(0);
-            }
-            return num / Math.pow(10, token.decimals);
+            const denom = token.address; // e.g. "inj" or "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
+            const re = new RegExp(`^(\\d+)${escapeRegExp(denom)}$`);
+            const m = amountStr.match(re);
+
+            // if it doesn’t match exactly, bail out
+            if (!m) return 0;
+
+            const raw = m[1]; // the numeric part
+            return Number(raw) / Math.pow(10, token.decimals);
         };
 
         // Sum all maximum amounts from each log.
