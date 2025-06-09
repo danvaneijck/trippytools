@@ -57,7 +57,7 @@ const CW20_ADAPTER = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
 const SHROOM_BANK_DENOM = `factory/${CW20_ADAPTER}/${SHROOM_TOKEN_ADDRESS}`
 const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
 const HELIX_MARKET_ID = "0xc6b6d6627aeed8b9c29810163bed47d25c695d51a2aa8599fc5e39b2d88ef934"
-const ORDERBOOK_SWAP_ADDRESS = "inj1zs848zsjla0l8x3junp03x3eanm3apjynkzaru"
+const ORDERBOOK_SWAP_ADDRESS = "inj1tcl59pywlnkjgx33pempyluy8fyunmp02jdn6a"
 const MITO_VAULT_ADDRESS = "inj1g89dl74lyre9q6rjua9l37pcc7psnw66capurp"
 
 
