@@ -2328,7 +2328,7 @@ class TokenUtils {
 
     async queryOrderBookSwap(inputDenom: string, outputDenom: string, inputAmount: number) {
         const CW20_ADAPTER_ADDRESS = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
-        const ORDERBOOK_SWAP_ADDRESS = "inj1zs848zsjla0l8x3junp03x3eanm3apjynkzaru"
+        const ORDERBOOK_SWAP_ADDRESS = "inj1tcl59pywlnkjgx33pempyluy8fyunmp02jdn6a"
 
         const contractAddress = ORDERBOOK_SWAP_ADDRESS
 

@@ -283,7 +283,12 @@ const TokenHolders = () => {
     }, [progressData, refetch]);
 
     useEffect(() => {
-        if (!data) return;
+        if (!data) {
+            setHoldersLastUpdated(null)
+            return;
+        }
+
+        console.log(data)
 
         const BURN_ADDRESSES = [
             dojoBurnAddress,
