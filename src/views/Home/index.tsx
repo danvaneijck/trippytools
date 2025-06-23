@@ -3,6 +3,7 @@ import shroom from "../../assets/shroom.jpg"
 import { FaDiscord, FaTelegram, FaTwitter } from 'react-icons/fa';
 import Footer from '../../components/App/Footer';
 import { FaArrowRight } from "react-icons/fa";
+import choice from "../../assets/choice.svg"
 
 const Home = () => {
 
@@ -58,19 +59,19 @@ const Home = () => {
                             <div
                                 className='text-base font-sans text-sm'
                             >
-                                SHROOM is a meme coin with utility on the Injective blockchain. SHROOM is available to trade via two liquidity pools: Mito Finance and DojoSwap. It's designed for more than just fun - SHROOM allows users to pay for completing airdrops to communities such as token holders, holders of NFT collections, governance proposal voters, Mito vault stakers, and custom CSV airdrop file uploads.
+                                SHROOM is a meme coin with utility on the Injective blockchain. SHROOM is available to trade via three liquidity pools: Choice Exchange, Mito Finance and DojoSwap. It's designed for more than just fun - SHROOM allows users to pay for completing airdrops to communities such as token holders, holders of NFT collections, governance proposal voters, Mito vault stakers, and custom CSV airdrop file uploads.
                                 There is also a pre sale function, which allows anyone to complete a pre sale with zero dev knowledge. This allows for anyone to launch their own token and makes distribution easy.
                                 <br />
                                 <br />
-                                The web tool also offers insights into token holders and liquidity providers on DojoSwap and Astroport, highlighting whether liquidity is burned. With its strong integration into Injective's DeFi ecosystem, SHROOM is a practical tool for managing tokens, performing airdrops and viewing token / liquidity holders in a transparent and efficient way.
+                                The web tool also offers insights into token holders and liquidity providers on Choice Exchange, DojoSwap and Astroport, highlighting whether liquidity is burned. With its strong integration into Injective's DeFi ecosystem, SHROOM is a practical tool for managing tokens, performing airdrops and viewing token / liquidity holders in a transparent and efficient way.
                             </div>
                             <Link
-                                to={'/shroom-hub'}
+                                to={'https://choice.exchange/swap?input=inj&output=inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8&volumeSplitting=true'}
                                 className='flex items-center justify-center border-2 border-white px-3 py-2 rounded-lg w-full text-center text-lg hover:cursor-pointer hover:font-semibold mt-5'
                             >
-                                Trade on Trippy Tools
+                                Trade on Choice Exchange <img src={choice} className="w-6 ml-4" />
                             </Link>
-                            <div
+                            {/* <div
                                 className='flex flex-row mt-5'
                             >
                                 <a
@@ -85,7 +86,7 @@ const Home = () => {
                                 >
                                     Trade on Helix
                                 </a>
-                            </div>
+                            </div> */}
                             <a
                                 href='https://mito.fi/vault/inj1g89dl74lyre9q6rjua9l37pcc7psnw66capurp/'
                                 className='mt-5 text-center flex flex-row justify-center items-center w-full text-lg hover:cursor-pointer hover:font-semibold'
