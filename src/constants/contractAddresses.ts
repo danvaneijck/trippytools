@@ -1,5 +1,10 @@
 export const LIQUIDITY_POOLS = [
     {
+        value: "inj1uyjjnykz0slq0w4n6k2xgleykqk9k5qkfctmw5",
+        label: "SHROOM / INJ Choice",
+        img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg",
+    },
+    {
         value: "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl",
         label: "SHROOM / INJ DojoSwap",
         img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg",
@@ -212,6 +217,11 @@ export const LIQUIDITY_POOLS = [
 ];
 
 export const LIQUIDITY_TOKENS = [
+    {
+        value: "factory/inj1uyjjnykz0slq0w4n6k2xgleykqk9k5qkfctmw5/lp",
+        label: "SHROOM / INJ Choice LP",
+        img: "https://bafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link/shroom.jpg",
+    },
     {
         value: "inj1e8ng0tn23yqdlp6mvv4zc9q3phkg40mlsxrwzx",
         label: "SHROOM / INJ DOJO LP",

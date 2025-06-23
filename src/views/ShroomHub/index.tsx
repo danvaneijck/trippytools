@@ -6,7 +6,6 @@ import Footer from "../../components/App/Footer";
 import { humanReadableAmount } from "../../utils/helpers";
 import { getKeplrOfflineSigner, handleSendTx } from "../../utils/keplr";
 import { FaArrowRight, FaExchangeAlt } from "react-icons/fa";
-import { CircleLoader } from "react-spinners";
 import { SiConvertio } from "react-icons/si";
 import ConvertModal from "./ConvertModal";
 import DisclaimerModal from "../../components/Modals/DisclaimerModal";
@@ -18,6 +17,8 @@ import dojoLogo from "../../assets/dojo.svg"
 import helixLogo from "../../assets/helix.svg"
 import { toast, ToastContainer } from "react-toastify";
 import { sendTelegramMessage } from "../../modules/telegram";
+import { Link } from "react-router-dom";
+import choice from "../../assets/choice.svg"
 
 const HOLDER_QUERY = gql`
 query getTokenHolders($address: String!, $addresses: [String!], $balanceMin: float8) {
@@ -56,6 +57,8 @@ const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 const CW20_ADAPTER = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
 const SHROOM_BANK_DENOM = `factory/${CW20_ADAPTER}/${SHROOM_TOKEN_ADDRESS}`
 const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
+const SHROOM_CHOICE_PAIR_ADDRESS = "inj1uyjjnykz0slq0w4n6k2xgleykqk9k5qkfctmw5"
+
 const HELIX_MARKET_ID = "0xc6b6d6627aeed8b9c29810163bed47d25c695d51a2aa8599fc5e39b2d88ef934"
 const ORDERBOOK_SWAP_ADDRESS = "inj1tcl59pywlnkjgx33pempyluy8fyunmp02jdn6a"
 const MITO_VAULT_ADDRESS = "inj1g89dl74lyre9q6rjua9l37pcc7psnw66capurp"
@@ -124,6 +127,8 @@ const ShroomHub = () => {
     const [marketCap, setMarketCap] = useState(0)
     const [mitoLiquidity, setMitoLiquidity] = useState(0)
     const [dojoLiquidity, setDojoLiquidity] = useState(0)
+    const [choiceLiquidity, setChoiceLiquidity] = useState(0)
+
     const [numHolders, setNumHolders] = useState(0)
     const [burnedAmount, setBurnedAmount] = useState(0)
 
@@ -286,13 +291,14 @@ const ShroomHub = () => {
             setMitoLiquidity(mitoVault.currentTvl)
         }
 
-        const [baseAssetPrice, pairInfo, poolAmounts] = await Promise.all([
+        const [baseAssetPrice, pairInfo, poolAmountsDojo, poolAmountsChoice] = await Promise.all([
             module.getINJPrice(),
             module.getPairInfo(SHROOM_PAIR_ADDRESS),
-            module.getPoolAmounts(SHROOM_PAIR_ADDRESS)
+            module.getPoolAmounts(SHROOM_PAIR_ADDRESS),
+            module.getPoolAmounts(SHROOM_CHOICE_PAIR_ADDRESS)
         ]);
-        console.log(poolAmounts)
-        const baseAssetAmount = poolAmounts.assets.find(asset => {
+
+        const baseAssetAmountDojo = poolAmountsDojo.assets.find(asset => {
             if (asset.info.native_token) {
                 return asset.info.native_token.denom === INJ_DENOM;
             } else if (asset.info.token) {
@@ -301,10 +307,23 @@ const ShroomHub = () => {
             return false;
         })?.amount || 0;
 
-        const injAmount = baseAssetAmount / Math.pow(10, 18)
-        const dojoLiquidity = injAmount * baseAssetPrice
-        console.log(injAmount, baseAssetPrice)
+        const baseAssetAmountChoice = poolAmountsChoice.assets.find(asset => {
+            if (asset.info.native_token) {
+                return asset.info.native_token.denom === INJ_DENOM;
+            } else if (asset.info.token) {
+                return asset.info.token.contract_addr === INJ_DENOM;
+            }
+            return false;
+        })?.amount || 0;
+
+        const injAmountDojo = baseAssetAmountDojo / Math.pow(10, 18)
+        const dojoLiquidity = injAmountDojo * baseAssetPrice
         setDojoLiquidity(dojoLiquidity * 2)
+
+        const injAmountChoice = baseAssetAmountChoice / Math.pow(10, 18)
+        const choiceLiquidity = injAmountChoice * baseAssetPrice
+        setChoiceLiquidity(choiceLiquidity * 2)
+
         const quote = await module.getSellQuoteRouter(pairInfo, 1 + "0".repeat(18));
         const returnAmount = Number(quote.amount) / Math.pow(10, 18);
         const totalUsdValue = (returnAmount * baseAssetPrice);
@@ -640,58 +659,58 @@ const ShroomHub = () => {
         }
     }, [networkConfig]);
 
-    useEffect(() => {
-        // Conditions to call getRoute (e.g., valid swapAmount and 'to' token)
-        if (swapAmount > 0 && to && networkConfig) {
-            // Cancel any previous ongoing getRoute operation
-            if (getRouteAbortControllerRef.current) {
-                getRouteAbortControllerRef.current.abort();
-                console.log("Previous getRoute call aborted.");
-            }
+    // useEffect(() => {
+    //     // Conditions to call getRoute (e.g., valid swapAmount and 'to' token)
+    //     if (swapAmount > 0 && to && networkConfig) {
+    //         // Cancel any previous ongoing getRoute operation
+    //         if (getRouteAbortControllerRef.current) {
+    //             getRouteAbortControllerRef.current.abort();
+    //             console.log("Previous getRoute call aborted.");
+    //         }
 
-            // Create a new AbortController for the current operation
-            const controller = new AbortController();
-            getRouteAbortControllerRef.current = controller;
+    //         // Create a new AbortController for the current operation
+    //         const controller = new AbortController();
+    //         getRouteAbortControllerRef.current = controller;
 
-            setGettingRoute(true);
-            setError(null);
-            // Optionally reset states immediately for better UX
-            setOutputAmount(0);
-            setRouteDisplay(null);
-            setRoute(null);
+    //         setGettingRoute(true);
+    //         setError(null);
+    //         // Optionally reset states immediately for better UX
+    //         setOutputAmount(0);
+    //         setRouteDisplay(null);
+    //         setRoute(null);
 
-            getRoute(swapAmount, to, controller.signal)
-                .finally(() => {
-                    // Only set gettingRoute to false if this controller is still the current one
-                    // (i.e., not aborted by a newer call)
-                    if (getRouteAbortControllerRef.current === controller) {
-                        setGettingRoute(false);
-                        getRouteAbortControllerRef.current = null; // Clear the ref once done
-                    }
-                });
-        } else {
-            // If inputs are not valid, cancel any ongoing request and clear states
-            if (getRouteAbortControllerRef.current) {
-                getRouteAbortControllerRef.current.abort();
-                getRouteAbortControllerRef.current = null;
-            }
-            setGettingRoute(false);
-            setOutputAmount(0);
-            setRouteDisplay(null);
-            setRoute(null);
-            setError(null);
-        }
+    //         getRoute(swapAmount, to, controller.signal)
+    //             .finally(() => {
+    //                 // Only set gettingRoute to false if this controller is still the current one
+    //                 // (i.e., not aborted by a newer call)
+    //                 if (getRouteAbortControllerRef.current === controller) {
+    //                     setGettingRoute(false);
+    //                     getRouteAbortControllerRef.current = null; // Clear the ref once done
+    //                 }
+    //             });
+    //     } else {
+    //         // If inputs are not valid, cancel any ongoing request and clear states
+    //         if (getRouteAbortControllerRef.current) {
+    //             getRouteAbortControllerRef.current.abort();
+    //             getRouteAbortControllerRef.current = null;
+    //         }
+    //         setGettingRoute(false);
+    //         setOutputAmount(0);
+    //         setRouteDisplay(null);
+    //         setRoute(null);
+    //         setError(null);
+    //     }
 
-        // Cleanup function for when the component unmounts or dependencies change
-        // This ensures that if the component unmounts while a request is in flight, it's cancelled.
-        return () => {
-            if (getRouteAbortControllerRef.current) {
-                console.log("Effect cleanup: Aborting active getRoute call.");
-                getRouteAbortControllerRef.current.abort();
-                getRouteAbortControllerRef.current = null;
-            }
-        };
-    }, [swapAmount, to, networkConfig, refreshKey, getRoute]); // getRoute is now a dependency
+    //     // Cleanup function for when the component unmounts or dependencies change
+    //     // This ensures that if the component unmounts while a request is in flight, it's cancelled.
+    //     return () => {
+    //         if (getRouteAbortControllerRef.current) {
+    //             console.log("Effect cleanup: Aborting active getRoute call.");
+    //             getRouteAbortControllerRef.current.abort();
+    //             getRouteAbortControllerRef.current = null;
+    //         }
+    //     };
+    // }, [swapAmount, to, networkConfig, refreshKey, getRoute]); 
 
     const handleRefreshPrices = useCallback(() => {
         if (!networkConfig) {
@@ -1167,7 +1186,7 @@ const ShroomHub = () => {
                                 </div>
                                 <div className="bg-black bg-opacity-50 p-4 rounded-lg">
                                     <div className="text-sm text-white">Total Liquidity</div>
-                                    <div className="text-xl font-semibold text-trippyYellow">${humanReadableAmount(dojoLiquidity + mitoLiquidity)}</div>
+                                    <div className="text-xl font-semibold text-trippyYellow">${humanReadableAmount(dojoLiquidity + mitoLiquidity + choiceLiquidity)}</div>
                                 </div>
                                 <div className="bg-black bg-opacity-50 p-4 rounded-lg">
                                     <a
@@ -1188,10 +1207,19 @@ const ShroomHub = () => {
                                     <div className="text-xl font-semibold text-trippyYellow">${humanReadableAmount(dojoLiquidity)}</div>
                                 </div>
                                 <div className="bg-black bg-opacity-50 p-4 rounded-lg">
+                                    <a
+                                        className="text-sm text-white hover:cursor-pointer"
+                                        href="https://choice.exchange/swap?input=inj&output=inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8&volumeSplitting=true"
+                                    >
+                                        Choice Liquidity
+                                    </a>
+                                    <div className="text-xl font-semibold text-trippyYellow">${humanReadableAmount(choiceLiquidity)}</div>
+                                </div>
+                                <div className="bg-black bg-opacity-50 p-4 rounded-lg col-span-1">
                                     <div className="text-sm text-white">Total Holders</div>
                                     <div className="text-xl font-semibold text-trippyYellow">{humanReadableAmount(numHolders)}</div>
                                 </div>
-                                <div className="bg-black bg-opacity-50 p-4 rounded-lg col-span-full">
+                                <div className="bg-black bg-opacity-50 p-4 rounded-lg col-span-1">
                                     <div className="text-sm text-white">Tokens Burned</div>
                                     <div className="text-xl font-semibold text-trippyYellow">
                                         {humanReadableAmount(burnedAmount)} (${humanReadableAmount(burnedAmount * shroomPrice)})
@@ -1200,8 +1228,18 @@ const ShroomHub = () => {
                             </div>
                         </div>
 
+                        <div className="m-auto text-center mt-5 text-2xl font-semibold">
+                            <Link
+                                className="text-center hover:underline flex justify-center"
+                                to={'https://choice.exchange/swap?input=inj&output=inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8&volumeSplitting=true'}
+                            >
+                                Trade on Choice Exchange <img src={choice} className="w-6 ml-4" />
+                            </Link>
+                        </div>
+
+
                         {/** Swap */}
-                        <div
+                        {/* <div
                             className="lg:w-1/2 m-auto"
                         >
                             <div className="font-magic text-center text-3xl mt-5">
@@ -1298,11 +1336,11 @@ const ShroomHub = () => {
                                     {error}
                                 </div>
                             }
-                        </div>
+                        </div> */}
 
                         {/** Balances */}
                         <div
-                            className="bg-black bg-opacity-50 lg:w-1/2 m-auto p-4 rounded-lg mt-10"
+                            className="bg-black bg-opacity-50 lg:w-1/2 m-auto p-4 rounded-lg mt-5"
                         >
                             <div className="text-center mb-2 text-lg font-bold text-ellipsis  overflow-hidden m-auto">
                                 {connectedAddress !== null ? `${connectedAddress.slice(0, 8)}...${connectedAddress.slice(-8)}` : "Connect your wallet"}
