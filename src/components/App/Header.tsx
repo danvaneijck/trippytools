@@ -27,12 +27,12 @@ const Header = () => {
                         $SHROOM
                     </Link>
                     <Link to="/shroom-hub" className={getLinkStyle('/shroom-hub')}>
-                        Trade
+                        Info
                     </Link>
                     <Link to="/token-holders" className={getLinkStyle('/token-holders')}>
                         Holders
                     </Link>
-                    <Link to="/token-liquidity?address=inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl" className={getLinkStyle('/token-liquidity')}>
+                    <Link to="/token-liquidity?address=inj1uyjjnykz0slq0w4n6k2xgleykqk9k5qkfctmw5" className={getLinkStyle('/token-liquidity')}>
                         Liquidity
                     </Link>
                     <Link to="/manage-tokens" className={getLinkStyle('/manage-tokens')}>
@@ -72,7 +72,7 @@ const Header = () => {
                         $SHROOM
                     </Link>
                     <Link to="/shroom-hub" className={getLinkStyle('/shroom-hub')}>
-                        Trade
+                        Info
                     </Link>
                 </div>
 
@@ -103,12 +103,12 @@ const Header = () => {
                         $SHROOM
                     </Link>
                     <Link to="/shroom-hub" className={getLinkStyle('/shroom-hub')} onClick={toggleMenu}>
-                        Trade SHROOM
+                        Info
                     </Link>
                     <Link to="/token-holders" className={getLinkStyle('/token-holders')} onClick={toggleMenu}>
                         Holder tool
                     </Link>
-                    <Link to="/token-liquidity?address=inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl" className={getLinkStyle('/token-liquidity')} onClick={toggleMenu}>
+                    <Link to="/token-liquidity?address=inj1uyjjnykz0slq0w4n6k2xgleykqk9k5qkfctmw5" className={getLinkStyle('/token-liquidity')} onClick={toggleMenu}>
                         Liquidity tool
                     </Link>
                     <Link to="/token-launch" className={getLinkStyle('/token-launch')} onClick={toggleMenu}>

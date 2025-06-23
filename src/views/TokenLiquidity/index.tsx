@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { GridLoader } from "react-spinners";
-import { Link } from "react-router-dom";
 import { Holder, MarketingInfo, PairInfo, TokenInfo } from "../../constants/types";
 import { useSearchParams } from 'react-router-dom';
 import { IoIosWarning } from "react-icons/io";
 import { useSelector } from "react-redux";
-import ConnectKeplr from "../../components/App/ConnectKeplr";
 import IPFSImage from "../../components/App/IpfsImage";
 import { WALLET_LABELS } from "../../constants/walletLabels";
 import TokenSelect from "../../components/Inputs/TokenSelect";
@@ -83,8 +81,15 @@ const TokenLiquidity = () => {
             }
 
             const liquidityToken = pairInfo.liquidity_token;
-            const holders = await module.getCW20TokenHolders(liquidityToken, setProgress);
-            setHolders(holders);
+            if (liquidityToken.includes("factory")) {
+                const holders = await module.getTokenFactoryTokenHolders(liquidityToken, setProgress);
+                setHolders(holders);
+            }
+            else {
+                const holders = await module.getCW20TokenHolders(liquidityToken, setProgress);
+                setHolders(holders);
+            }
+
         } catch (e) {
             console.log(e);
             if (e && e.message) {
