@@ -3,17 +3,17 @@ import {
     MsgExecuteContractCompat,
     MsgMultiSend,
 } from "@injectivelabs/sdk-ts";
-import { BigNumber, BigNumberInBase, BigNumberInWei } from "@injectivelabs/utils";
-import { Buffer } from "buffer";
+import { BigNumberInBase, BigNumberInWei } from "@injectivelabs/utils";
 import { useCallback, useState } from "react";
-import { useSelector } from "react-redux";
 import { useNavigate } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
 import { WALLET_LABELS } from "../../constants/walletLabels";
 import { sendTelegramMessage } from "../../modules/telegram";
 import { gql, useMutation } from '@apollo/client';
 import moment from "moment";
-import { getKeplrOfflineSigner, handleSendTx } from "../../utils/keplr";
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
+import { performTransaction } from "../../utils/walletStrategy";
 
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
@@ -79,9 +79,9 @@ const AirdropConfirmModal = (props: {
     description: string;
 }) => {
 
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork } = useNetworkStore()
+
     const navigate = useNavigate();
 
     const [progress, setProgress] = useState("")
@@ -100,9 +100,8 @@ const AirdropConfirmModal = (props: {
     const [insertTokenDropped] = useMutation(INSERT_TOKEN_MUTATION)
 
     const sendAirdrops = useCallback(async (denom: any, decimals: number | undefined, airdropDetails: any[]) => {
-        const { key, offlineSigner } = await getKeplrOfflineSigner(networkConfig.chainId);
-        const pubKey = Buffer.from(key.pubKey).toString("base64");
-        const injectiveAddress = key.bech32Address;
+
+        const injectiveAddress = connectedAddress
 
         if (injectiveAddress !== connectedAddress) {
             throw new Error("You are connected to the wrong address")
@@ -207,7 +206,7 @@ const AirdropConfirmModal = (props: {
                     console.log("gas", gas)
                     console.log("msg", msg)
 
-                    const response = await handleSendTx(networkConfig, pubKey, msg, injectiveAddress, offlineSigner, gas);
+                    const response = await performTransaction(injectiveAddress, [msg]);
                     filteredChunk.forEach(record => successfullyProcessed.add(record.address));
 
                     success = true;
@@ -225,12 +224,11 @@ const AirdropConfirmModal = (props: {
             }
         }
         return transactions
-    }, [connectedAddress, props.tokenDecimals, networkConfig]);
+    }, [connectedAddress, props.tokenDecimals]);
 
     const payFee = useCallback(async () => {
-        const { key, offlineSigner } = await getKeplrOfflineSigner(networkConfig.chainId);
-        const pubKey = Buffer.from(key.pubKey).toString("base64");
-        const injectiveAddress = key.bech32Address;
+
+        const injectiveAddress = connectedAddress;
 
         const totalAmount = props.shroomCost * Math.pow(10, 18);
         const feeCollectionAmount = (totalAmount * 0.9).toLocaleString('fullwide', { useGrouping: false }); // 90%
@@ -261,8 +259,8 @@ const AirdropConfirmModal = (props: {
         console.log("send shroom fee", feeMsg);
         console.log("send shroom burn", burnMsg);
 
-        return await handleSendTx(networkConfig, pubKey, [feeMsg, burnMsg], injectiveAddress, offlineSigner);
-    }, [networkConfig, props.shroomCost]);
+        return await performTransaction(connectedAddress, [feeMsg, burnMsg]);
+    }, [props.shroomCost, connectedAddress]);
 
     const startAirdrop = useCallback(async () => {
         setError(null)

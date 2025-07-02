@@ -9,22 +9,21 @@ import {
     getTxRawFromTxRawOrDirectSignResponse,
     MsgInstantBinaryOptionsMarketLaunch,
     TxRaw,
-    TxRestClient,
     MsgAdminUpdateBinaryOptionsMarket
 } from "@injectivelabs/sdk-ts";
 import { TransactionException } from "@injectivelabs/exceptions";
 import { BigNumberInBase, DEFAULT_BLOCK_TIMEOUT_HEIGHT, getStdFee } from "@injectivelabs/utils";
 import { Buffer } from "buffer";
-import { useSelector } from "react-redux";
 import { CircleLoader } from "react-spinners";
 import moment from 'moment';
 import TokenUtils from '../../modules/tokenUtils';
+import useWalletStore from '../../store/useWalletStore';
+import useNetworkStore from '../../store/useNetworkStore';
 
 const MarketAdminModal = (props: { setShowModal: (show: boolean) => void, market: any, setLoaded: any }) => {
 
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
     const [progress, setProgress] = useState("")
     const [txLoading, setTxLoading] = useState(false)

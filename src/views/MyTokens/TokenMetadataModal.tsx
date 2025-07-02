@@ -8,27 +8,25 @@ import {
     getTxRawFromTxRawOrDirectSignResponse,
     MsgSetDenomMetadata,
     TxRaw,
-    TxRestClient,
 } from "@injectivelabs/sdk-ts";
 import { TransactionException } from "@injectivelabs/exceptions";
 import { BigNumberInBase, DEFAULT_BLOCK_TIMEOUT_HEIGHT, getStdFee } from "@injectivelabs/utils";
 import { Buffer } from "buffer";
 import { useCallback, useState } from "react";
-import { useSelector } from "react-redux";
 import { MdImageNotSupported } from "react-icons/md";
 import { useNavigate } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
 import IPFSImage from "../../components/App/IpfsImage";
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
 
 
 const TokenMetadataModal = (props: {
     token: any
 }) => {
 
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
     const navigate = useNavigate();
 
     const [tokenName, setTokenName] = useState("token-name");

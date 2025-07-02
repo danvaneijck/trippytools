@@ -1,16 +1,16 @@
 import { useCallback, useState } from "react";
-import { useSelector } from "react-redux";
 import { CircleLoader } from "react-spinners";
 import { WALLET_LABELS } from "../../constants/walletLabels";
 import { getKeplrOfflineSigner, handleSendTx } from "../../utils/keplr";
 import { MsgMultiSend } from "@injectivelabs/sdk-ts";
 import { BigNumberInBase, BigNumberInWei } from "@injectivelabs/utils";
 import { Buffer } from "buffer";
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
 
 const RefundModal = (props) => {
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
     const [progress, setProgress] = useState("")
     const [txLoading, setTxLoading] = useState(false)

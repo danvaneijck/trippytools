@@ -3,10 +3,8 @@ import { useCallback, useEffect, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { GridLoader } from "react-spinners";
 import { Link } from "react-router-dom";
-import ConnectKeplr from "../../components/App/ConnectKeplr";
-import { useSelector } from "react-redux";
 import { MdImageNotSupported } from "react-icons/md";
-import { BaseAccount, BroadcastModeKeplr, ChainRestAuthApi, ChainRestTendermintApi, CosmosTxV1Beta1Tx, createTransaction, getTxRawFromTxRawOrDirectSignResponse, MsgChangeAdmin, MsgSetDenomMetadata, TxRaw, TxRestClient } from "@injectivelabs/sdk-ts";
+import { BaseAccount, BroadcastModeKeplr, ChainRestAuthApi, ChainRestTendermintApi, CosmosTxV1Beta1Tx, createTransaction, getTxRawFromTxRawOrDirectSignResponse, MsgChangeAdmin, MsgSetDenomMetadata, TxRaw } from "@injectivelabs/sdk-ts";
 import { BigNumberInBase, DEFAULT_BLOCK_TIMEOUT_HEIGHT, getStdFee } from "@injectivelabs/utils";
 import { Buffer } from "buffer";
 import { TransactionException } from "@injectivelabs/exceptions";
@@ -17,14 +15,17 @@ import MintModal from "./MintModal";
 import CreateMitoVault from "./CreateMitoVault";
 import IPFSImage from "../../components/App/IpfsImage";
 import Footer from "../../components/App/Footer";
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
 
 
 const MyTokens = () => {
 
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
+
     const [tokens, setTokens] = useState([]);
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+
     const [showMetaDataModel, setShowMetadataModal] = useState(null);
     const [showSpotMarketModal, setShowSpotMarketModal] = useState(null);
     const [showMint, setShowMint] = useState(null);

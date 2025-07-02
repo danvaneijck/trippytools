@@ -1,17 +1,16 @@
-import { useSelector } from "react-redux";
 import { useCallback, useEffect, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { MsgExecuteContractCompat } from "@injectivelabs/sdk-ts";
 import { Buffer } from "buffer";
 import Footer from "../../components/App/Footer";
 import { getKeplrOfflineSigner, handleSendTx } from "../../utils/keplr";
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
 
 
 const QuntUnwrap = () => {
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
     const [quntWrappedContract] = useState("inj1u8a7878lnk469s9jel84fvd67jrtj3rj5cv8kx")
     const [tokenInfo, setTokenInfo] = useState(null)

@@ -1,27 +1,18 @@
 import {
-    BaseAccount,
-    BroadcastModeKeplr,
-    ChainRestAuthApi,
-    ChainRestTendermintApi,
-    CosmosTxV1Beta1Tx,
-    createTransaction,
-    getTxRawFromTxRawOrDirectSignResponse,
     MsgCreateDenom,
     MsgMint,
     MsgSetDenomMetadata,
-    TxRaw,
-    TxRestClient,
 } from "@injectivelabs/sdk-ts";
-import { TransactionException } from "@injectivelabs/exceptions";
-import { BigNumberInBase, DEFAULT_BLOCK_TIMEOUT_HEIGHT, getStdFee } from "@injectivelabs/utils";
-import { Buffer } from "buffer";
+import { BigNumberInBase } from "@injectivelabs/utils";
 import { useCallback, useState } from "react";
-import { useSelector } from "react-redux";
 import { MdImageNotSupported } from "react-icons/md";
 import { useNavigate } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
 import IPFSImage from "../../components/App/IpfsImage";
 import { sendTelegramMessage } from "../../modules/telegram";
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
+import { performTransaction } from "../../utils/walletStrategy";
 
 
 const TokenConfirmModal = (props: {
@@ -34,10 +25,9 @@ const TokenConfirmModal = (props: {
     setShowModal: (arg0: boolean) => void;
 }) => {
 
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
+    const { connectedWallet } = useWalletStore()
+    const { networkKey } = useNetworkStore()
 
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
     const navigate = useNavigate();
 
     const [progress, setProgress] = useState("")
@@ -45,80 +35,12 @@ const TokenConfirmModal = (props: {
 
     const [error, setError] = useState(null)
 
-    const getKeplr = useCallback(async () => {
-        await window.keplr.enable(networkConfig.chainId);
-        const offlineSigner = window.keplr.getOfflineSigner(networkConfig.chainId);
-        const accounts = await offlineSigner.getAccounts();
-        const key = await window.keplr.getKey(networkConfig.chainId);
-        return { offlineSigner, accounts, key };
-    }, [networkConfig]);
-
-    const broadcastTx = useCallback(async (chainId: string, txRaw: TxRaw) => {
-        await getKeplr();
-        const result = await window.keplr.sendTx(
-            chainId,
-            CosmosTxV1Beta1Tx.TxRaw.encode(txRaw).finish(),
-            BroadcastModeKeplr.Sync
-        );
-
-        if (!result || result.length === 0) {
-            throw new TransactionException(
-                new Error("Transaction failed to be broadcasted"),
-                { contextModule: "Keplr" }
-            );
-        }
-
-        return Buffer.from(result).toString("hex");
-    }, [getKeplr]);
-
-    const handleSendTx = useCallback(async (pubKey: any, msg: any, injectiveAddress: string, offlineSigner: { signDirect: (arg0: any, arg1: CosmosTxV1Beta1Tx.SignDoc) => any; }, gas: any = null) => {
-        setTxLoading(true)
-        const chainRestAuthApi = new ChainRestAuthApi(networkConfig.rest);
-        const chainRestTendermintApi = new ChainRestTendermintApi(networkConfig.rest);
-
-        const latestBlock = await chainRestTendermintApi.fetchLatestBlock();
-        const latestHeight = latestBlock.header.height;
-        const timeoutHeight = new BigNumberInBase(latestHeight).plus(
-            DEFAULT_BLOCK_TIMEOUT_HEIGHT
-        );
-
-        const accountDetailsResponse = await chainRestAuthApi.fetchAccount(
-            injectiveAddress
-        );
-        const baseAccount = BaseAccount.fromRestApi(accountDetailsResponse);
-
-        const { signDoc } = createTransaction({
-            pubKey: pubKey,
-            chainId: networkConfig.chainId,
-            fee: gas ?? getStdFee({}),
-            message: msg,
-            sequence: baseAccount.sequence,
-            timeoutHeight: timeoutHeight.toNumber(),
-            accountNumber: baseAccount.accountNumber,
-        });
-
-        const directSignResponse = await offlineSigner.signDirect(
-            injectiveAddress,
-            signDoc
-        );
-
-        const txRaw = getTxRawFromTxRawOrDirectSignResponse(directSignResponse);
-        const txHash = await broadcastTx(networkConfig.chainId, txRaw);
-        const response = await new TxRestClient(networkConfig.rest).fetchTxPoll(txHash);
-
-        console.log(response);
-        setTxLoading(false)
-        return response
-    }, [broadcastTx, networkConfig])
-
     const createAndMint = useCallback(async () => {
+        if (!connectedWallet) return
         setError(null)
-        const { key, offlineSigner } = await getKeplr(networkConfig.chainId);
-        const pubKey = Buffer.from(key.pubKey).toString("base64");
-        const injectiveAddress = key.bech32Address;
 
         const subdenom = props.tokenSymbol
-        const denom = `factory/${injectiveAddress}/${subdenom}`;
+        const denom = `factory/${connectedWallet}/${subdenom}`;
         const amount = props.tokenSupply
         const description = props.tokenDescription
         const image = props.tokenImage
@@ -127,13 +49,13 @@ const TokenConfirmModal = (props: {
 
         const msgCreateDenom = MsgCreateDenom.fromJSON({
             subdenom,
-            sender: injectiveAddress,
+            sender: connectedWallet,
         });
 
         const msgMint = MsgMint.fromJSON({
-            sender: injectiveAddress,
+            sender: connectedWallet,
             amount: {
-                denom: `factory/${injectiveAddress}/${subdenom}`,
+                denom: `factory/${connectedWallet}/${subdenom}`,
                 amount: new BigNumberInBase(amount)
                     .toWei(props.tokenDecimals)
                     .toFixed()
@@ -141,7 +63,7 @@ const TokenConfirmModal = (props: {
         });
 
         const msgSetDenomMetadata = MsgSetDenomMetadata.fromJSON({
-            sender: injectiveAddress,
+            sender: connectedWallet,
             metadata: {
                 base: denom,
                 description: description,
@@ -169,23 +91,23 @@ const TokenConfirmModal = (props: {
         // create denom
         console.log("create denom")
         setProgress("Create new denom")
-        await handleSendTx(pubKey, msgCreateDenom, injectiveAddress, offlineSigner)
+        await performTransaction(connectedWallet, [msgCreateDenom])
         // mint supply
         console.log("mint")
         setProgress("Mint supply")
-        await handleSendTx(pubKey, msgMint, injectiveAddress, offlineSigner)
+        await performTransaction(connectedWallet, [msgMint])
         // set metadata
         console.log("metadata")
         setProgress("Upload denom metadata")
-        await handleSendTx(pubKey, msgSetDenomMetadata, injectiveAddress, offlineSigner)
+        await performTransaction(connectedWallet, [msgSetDenomMetadata])
 
         setProgress("Done...")
 
-        if (networkConfig.chainId == "injective-1") await sendTelegramMessage(`wallet ${injectiveAddress} created a new token on trippyinj!\nname: ${props.tokenName}\nsymbol: ${props.tokenSymbol}\ndenom: ${denom}`)
+        if (networkKey == "mainnet") await sendTelegramMessage(`wallet ${connectedWallet} created a new token on trippyinj!\nname: ${props.tokenName}\nsymbol: ${props.tokenSymbol}\ndenom: ${denom}`)
 
         navigate('/manage-tokens');
 
-    }, [getKeplr, networkConfig.chainId, props.tokenSymbol, props.tokenSupply, props.tokenDecimals, props.tokenDescription, props.tokenName, props.tokenImage, handleSendTx, navigate])
+    }, [connectedWallet, networkKey, props.tokenSymbol, props.tokenSupply, props.tokenDecimals, props.tokenDescription, props.tokenName, props.tokenImage, navigate])
 
     return (
         <>
@@ -196,38 +118,41 @@ const TokenConfirmModal = (props: {
                     <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-slate-800 outline-none focus:outline-none">
                         <div className="flex items-start justify-between p-4 border-b border-solid border-blueGray-900 rounded-t">
                             <h3 className="text-xl font-semibold">
-                                Launch on {currentNetwork}
+                                Launch on {networkKey}
                             </h3>
                         </div>
-                        <div className="relative p-6 flex-auto">
-                            <div className="flex flex-col md:flex-row">
-                                <div>
-                                    <div>Name: {props.tokenName}</div>
-                                    <div>Symbol: {props.tokenSymbol}</div>
-                                    <div>Supply: {props.tokenSupply}</div>
-                                    <div>Decimals: {props.tokenDecimals}</div>
-                                    <div>Admin address: {connectedAddress}</div>
-                                    <div>Token denom: {`factory/${connectedAddress}/${props.tokenSymbol}`}</div>
-                                    <div>Tokens to your wallet: {(props.tokenSupply).toFixed(props.tokenDecimals)}</div>
-                                </div>
-                                <div className="ml-0 mt-5 md:ml-10 md:mt-0">
-                                    token image
-                                    {props.tokenImage ?
-                                        <IPFSImage
-                                            width={100}
-                                            className={'rounded'}
-                                            ipfsPath={props.tokenImage}
+                        {connectedWallet &&
+                            <div className="relative p-6 flex-auto">
+                                <div className="flex flex-col md:flex-row">
+                                    <div>
+                                        <div>Name: {props.tokenName}</div>
+                                        <div>Symbol: {props.tokenSymbol}</div>
+                                        <div>Supply: {props.tokenSupply}</div>
+                                        <div>Decimals: {props.tokenDecimals}</div>
+                                        <div>Admin address: {connectedWallet}</div>
+                                        <div>Token denom: {`factory/${connectedWallet}/${props.tokenSymbol}`}</div>
+                                        <div>Tokens to your wallet: {(props.tokenSupply).toFixed(props.tokenDecimals)}</div>
+                                    </div>
+                                    <div className="ml-0 mt-5 md:ml-10 md:mt-0">
+                                        token image
+                                        {props.tokenImage ?
+                                            <IPFSImage
+                                                width={100}
+                                                className={'rounded'}
+                                                ipfsPath={props.tokenImage}
 
-                                        />
-                                        :
-                                        <MdImageNotSupported className="text-5xl text-slate-500" />
-                                    }
+                                            />
+                                            :
+                                            <MdImageNotSupported className="text-5xl text-slate-500" />
+                                        }
+                                    </div>
                                 </div>
+                                {progress && <div className="mt-5">progress: {progress}</div>}
+                                {txLoading && <CircleLoader color="#36d7b7" className="mt-2 m-auto" />}
+                                {error && <div className="text-red-500 mt-5">{error}</div>}
                             </div>
-                            {progress && <div className="mt-5">progress: {progress}</div>}
-                            {txLoading && <CircleLoader color="#36d7b7" className="mt-2 m-auto" />}
-                            {error && <div className="text-red-500 mt-5">{error}</div>}
-                        </div>
+                        }
+
                         <div className="flex items-center justify-end p-4 border-t border-solid border-blueGray-200 rounded-b">
                             <button
                                 className="text-slate-500 background-transparent font-bold uppercase px-6 py-2 text-sm outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"

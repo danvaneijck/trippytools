@@ -1,21 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ConnectKeplr from "../../components/App/ConnectKeplr";
-import { useSelector } from "react-redux";
 import TokenUtils from "../../modules/tokenUtils";
 import moment from "moment";
 import OrderPanel from "./OrderPanel";
 import { useNavigate, useLocation } from 'react-router-dom';
 import MarketAdminModal from "./MarketAdminModal";
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
 
 
 
 const MarketDetails = (props: {
     marketId: string
 }) => {
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
     const [loading, setLoading] = useState(false);
     const [loaded, setLoaded] = useState(false);

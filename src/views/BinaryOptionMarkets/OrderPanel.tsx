@@ -1,6 +1,5 @@
 // src/OrderPanel.js
 import { useCallback, useEffect, useState } from 'react';
-import { useSelector } from "react-redux";
 import {
     BaseAccount,
     BroadcastModeKeplr,
@@ -13,7 +12,6 @@ import {
     MsgCreateBinaryOptionsLimitOrder,
     MsgCreateBinaryOptionsMarketOrder,
     TxRaw,
-    TxRestClient,
     IndexerGrpcAccountApi
 } from "@injectivelabs/sdk-ts";
 import { BigNumber, BigNumberInBase, BigNumberInWei, DEFAULT_BLOCK_TIMEOUT_HEIGHT, getStdFee } from "@injectivelabs/utils";
@@ -21,6 +19,8 @@ import { TransactionException } from "@injectivelabs/exceptions";
 import { InjectiveExchangeV1Beta1Tx, InjectiveExchangeV1Beta1Exchange } from '@injectivelabs/core-proto-ts';
 import { Buffer } from "buffer";
 import TokenUtils from '../../modules/tokenUtils';
+import useWalletStore from '../../store/useWalletStore';
+import useNetworkStore from '../../store/useNetworkStore';
 
 const OrderPanel = (props: {
     marketId: string,
@@ -31,9 +31,8 @@ const OrderPanel = (props: {
     const [price, setPrice] = useState(0.5);
     const [orderType, setOrderType] = useState('market');
 
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
     const [progress, setProgress] = useState("")
     const [txLoading, setTxLoading] = useState(false)

@@ -4,13 +4,14 @@ import { GridLoader } from "react-spinners";
 import { Holder, MarketingInfo, PairInfo, TokenInfo } from "../../constants/types";
 import { useSearchParams } from 'react-router-dom';
 import { IoIosWarning } from "react-icons/io";
-import { useSelector } from "react-redux";
 import IPFSImage from "../../components/App/IpfsImage";
 import { WALLET_LABELS } from "../../constants/walletLabels";
 import TokenSelect from "../../components/Inputs/TokenSelect";
 import { LIQUIDITY_POOLS } from "../../constants/contractAddresses";
 import { CSVLink } from 'react-csv';
 import Footer from "../../components/App/Footer";
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
 
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
 const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
@@ -18,8 +19,8 @@ const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
 const TokenLiquidity = () => {
     const [searchParams, setSearchParams] = useSearchParams();
 
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
     const [contractAddress, setContractAddress] = useState(
         searchParams.get("address") ?? LIQUIDITY_POOLS[0]

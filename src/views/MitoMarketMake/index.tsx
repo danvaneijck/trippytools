@@ -1,24 +1,23 @@
-import { useSelector } from "react-redux";
 import { useCallback, useEffect, useState } from "react";
 import ShroomBalance from "../../components/App/ShroomBalance";
 import TokenUtils from "../../modules/tokenUtils";
-import { BaseAccount, BroadcastModeKeplr, ChainRestAuthApi, ChainRestTendermintApi, CosmosTxV1Beta1Tx, createTransaction, getTxRawFromTxRawOrDirectSignResponse, MsgExecuteContract, MsgExecuteContractCompat, TxRaw, TxRestClient } from "@injectivelabs/sdk-ts";
+import { BaseAccount, BroadcastModeKeplr, ChainRestAuthApi, ChainRestTendermintApi, CosmosTxV1Beta1Tx, createTransaction, getTxRawFromTxRawOrDirectSignResponse, MsgExecuteContract, MsgExecuteContractCompat, TxRaw } from "@injectivelabs/sdk-ts";
 import { BigNumberInBase, DEFAULT_BLOCK_TIMEOUT_HEIGHT, getStdFee } from "@injectivelabs/utils";
 import { Buffer } from "buffer";
 import { TransactionException } from "@injectivelabs/exceptions";
 import Footer from "../../components/App/Footer";
 import Select from "react-select"
 import { humanReadableAmount } from "../../utils/helpers";
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
 
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
 const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
 
 const MitoMarketMake = () => {
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
     const [vaultOptions, setVaultOptions] = useState([])
 

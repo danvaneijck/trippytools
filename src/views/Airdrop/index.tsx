@@ -3,7 +3,6 @@ import TokenUtils from "../../modules/tokenUtils";
 import { GridLoader } from "react-spinners";
 import { Link } from "react-router-dom";
 import ConnectKeplr from "../../components/App/ConnectKeplr";
-import { useSelector } from "react-redux";
 import ShroomBalance from "../../components/App/ShroomBalance";
 import { WALLET_LABELS } from "../../constants/walletLabels";
 import IPFSImage from "../../components/App/IpfsImage";
@@ -18,6 +17,8 @@ const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
 import parachute from "../../assets/parachute.webp"
 import Select from "react-select"
 import Footer from "../../components/App/Footer";
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
 
 const STAKING_CONTRACT_ADDRESS = 'inj1gtze7qm07nky47n7mwgj4zatf2s77xqvh3k2n8'
 const INJ_CW20_ADAPTER = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
@@ -43,9 +44,8 @@ function humanReadableAmount(number) {
 
 const Airdrop = () => {
 
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
     const [tokenAddress, setTokenAddress] = useState(null);
     const [tokenInfo, setTokenInfo] = useState(null);

@@ -1,27 +1,26 @@
-import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { BeatLoader, CircleLoader, GridLoader, MoonLoader } from "react-spinners";
 import ConnectKeplr from "../../components/App/ConnectKeplr";
 import { useCallback, useEffect, useState } from "react";
 import ShroomBalance from "../../components/App/ShroomBalance";
 import TokenUtils from "../../modules/tokenUtils";
-import { BaseAccount, BroadcastModeKeplr, ChainRestAuthApi, ChainRestTendermintApi, CosmosTxV1Beta1Tx, createTransaction, getTxRawFromTxRawOrDirectSignResponse, MsgChangeAdmin, MsgExecuteContractCompat, TxRaw, TxRestClient } from "@injectivelabs/sdk-ts";
+import { BaseAccount, BroadcastModeKeplr, ChainRestAuthApi, ChainRestTendermintApi, CosmosTxV1Beta1Tx, createTransaction, getTxRawFromTxRawOrDirectSignResponse, MsgChangeAdmin, MsgExecuteContractCompat, TxRaw } from "@injectivelabs/sdk-ts";
 import { BigNumberInBase, DEFAULT_BLOCK_TIMEOUT_HEIGHT, getStdFee } from "@injectivelabs/utils";
 import { Buffer } from "buffer";
 import { TransactionException } from "@injectivelabs/exceptions";
 import myceliumLogo from "../../assets/mycelium.jpeg"
 import farmBackground from "../../assets/farmBackground.webp"
 import Footer from "../../components/App/Footer";
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
 
 const ASTRO_GENERATOR = "inj164pyppndppdmazfjrvecajnwcs3hmq06agn4ka"
 const SPORE_SHROOM_LP = "inj16qksf53k0n07cvpgzqs4q6kvpzh5aw2c6f9589"
 const SHROOM_INJ_LP = "inj1yr2vl9vkwhw0g3tuhhm5jujpx2kzfmpp6lurrm"
 
 const MyceliumFarm = () => {
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
     const [loading, setLoading] = useState(false);
     const [txLoading, setTxLoading] = useState(false);

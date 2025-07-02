@@ -8,7 +8,6 @@ import {
     getTxRawFromTxRawOrDirectSignResponse,
     TxGrpcApi,
     TxRaw,
-    TxRestClient,
 } from "@injectivelabs/sdk-ts";
 import { TransactionException } from "@injectivelabs/exceptions";
 import {

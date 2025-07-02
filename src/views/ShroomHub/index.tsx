@@ -1,4 +1,3 @@
-import { useSelector } from "react-redux";
 import { useCallback, useEffect, useRef, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { Buffer } from "buffer";
@@ -19,6 +18,8 @@ import { toast, ToastContainer } from "react-toastify";
 import { sendTelegramMessage } from "../../modules/telegram";
 import { Link } from "react-router-dom";
 import choice from "../../assets/choice.svg"
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
 
 const HOLDER_QUERY = gql`
 query getTokenHolders($address: String!, $addresses: [String!], $balanceMin: float8) {
@@ -112,10 +113,8 @@ const TokenView = ({ token, setSwapAmount, inputDisabled, swapAmount, outputAmou
 };
 
 const ShroomHub = () => {
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
     const [injPrice, setInjPrice] = useState(0)
     const [shroomPrice, setShroomPrice] = useState(0)

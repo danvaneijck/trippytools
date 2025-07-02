@@ -4,7 +4,6 @@ import { GridLoader } from "react-spinners";
 import { Link } from "react-router-dom";
 import { Holder, MarketingInfo, TokenInfo } from "../../constants/types";
 import { useSearchParams } from 'react-router-dom';
-import { useSelector } from "react-redux";
 import IPFSImage from "../../components/App/IpfsImage";
 import { WALLET_LABELS } from "../../constants/walletLabels";
 import TokenSelect from "../../components/Inputs/TokenSelect";
@@ -20,6 +19,8 @@ import { Bounce, ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { GrStatusUnknown } from "react-icons/gr";
 import TokenHoldersTable from "./TokenHolderTable";
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
 
 const INJ_CW20_ADAPTER = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
@@ -117,8 +118,8 @@ const ProgressBar = ({ queryProgress, saveProgress }) => {
 const TokenHolders = () => {
     const [searchParams, setSearchParams] = useSearchParams();
 
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
     const [contractAddress, setContractAddress] = useState(() => {
         const address = searchParams.get("address");

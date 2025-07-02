@@ -1,23 +1,22 @@
-/* eslint-disable @typescript-eslint/ban-types */
-/* eslint-disable @typescript-eslint/no-unused-vars */
+import useWalletStore from "../../store/useWalletStore";
 import Button from "./Button";
-import { useWalletStore } from "../../store/wallet";
 
 
 const WalletConnect = () => {
-  const { injectiveAddress, connectWallet } = useWalletStore();
+  const { connectedWallet, setShowWallets, showWallets } = useWalletStore();
 
-  const formattedAddress = `${injectiveAddress.slice(
+  const formattedAddress = `${connectedWallet.slice(
     0,
     5
-  )}...${injectiveAddress.slice(-5)}`;
+  )}...${connectedWallet.slice(-5)}`;
 
   function handleConnectWallet() {
-    connectWallet().catch(() => alert("Error"));
+    setShowWallets(!showWallets)
   }
+
   return (
     <Button onClick={handleConnectWallet}>
-      {injectiveAddress ? formattedAddress : "Connect Wallet"}
+      {connectedWallet ? formattedAddress : "Connect Wallet"}
     </Button>
   );
 };
