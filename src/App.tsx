@@ -20,6 +20,8 @@ import ShroomHub from './views/ShroomHub';
 import QuntUnwrap from './views/QuntUnwrap';
 import WalletExport from './views/WalletExport';
 import WalletSelectModal from './components/Modals/WalletSelectModal';
+import TokenInitializer from './components/DataInit/Tokens';
+import PoolInitializer from './components/DataInit/Pools';
 
 const App = () => {
   return (
@@ -28,6 +30,9 @@ const App = () => {
       <Router>
 
         <WalletSelectModal />
+
+        <TokenInitializer />
+        <PoolInitializer />
 
         <Header />
         <Routes>

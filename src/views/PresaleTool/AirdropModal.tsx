@@ -1,21 +1,20 @@
 import { useCallback, useState } from "react";
 import { CircleLoader } from "react-spinners";
 import { WALLET_LABELS } from "../../constants/walletLabels";
-import { getKeplrOfflineSigner, handleSendTx } from "../../utils/keplr";
-import { Buffer } from "buffer";
 import { BigNumberInBase, BigNumberInWei } from "@injectivelabs/utils";
 import { MsgExecuteContract, MsgMultiSend } from "@injectivelabs/sdk-ts";
 import { useNavigate } from 'react-router-dom';
 import { humanReadableAmount } from "../../utils/helpers";
 import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
+import { performTransaction } from "../../utils/walletStrategy";
 
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
 
 const AirdropModal = (props) => {
     const { connectedWallet: connectedAddress } = useWalletStore()
-    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
+    const { networkKey: currentNetwork } = useNetworkStore()
 
     const navigate = useNavigate()
 
@@ -29,9 +28,8 @@ const AirdropModal = (props) => {
     const [error, setError] = useState(null)
 
     const payFee = useCallback(async () => {
-        const { key, offlineSigner } = await getKeplrOfflineSigner(networkConfig.chainId, true);
-        const pubKey = Buffer.from(key.pubKey).toString("base64");
-        const injectiveAddress = key.bech32Address;
+
+        const injectiveAddress = connectedAddress
 
         if (injectiveAddress !== connectedAddress) {
             throw new Error("You are connected to the wrong wallet address")
@@ -52,13 +50,12 @@ const AirdropModal = (props) => {
         });
 
         console.log("send shroom fee", msg)
-        return await handleSendTx(networkConfig, pubKey, msg, injectiveAddress, offlineSigner)
-    }, [shroomFee, networkConfig, connectedAddress])
+        return await performTransaction(injectiveAddress, [msg])
+    }, [shroomFee, connectedAddress])
 
     const sendAirdrops = useCallback(async (denom: any) => {
-        const { key, offlineSigner } = await getKeplrOfflineSigner(networkConfig.chainId, true);
-        const pubKey = Buffer.from(key.pubKey).toString("base64");
-        const injectiveAddress = key.bech32Address;
+
+        const injectiveAddress = connectedAddress
 
         if (injectiveAddress !== connectedAddress) {
             throw new Error("You are connected to the wrong wallet address")
@@ -145,7 +142,7 @@ const AirdropModal = (props) => {
 
                 setMsgPreview(msg)
 
-                const response = await handleSendTx(networkConfig, pubKey, msg, injectiveAddress, offlineSigner, gas);
+                const response = await performTransaction(injectiveAddress, [msg]);
                 filteredChunk.forEach(record => successfullyProcessed.add(record.address));
                 transactions.push(response.txHash)
 
@@ -155,7 +152,7 @@ const AirdropModal = (props) => {
         }
 
         return transactions
-    }, [connectedAddress, networkConfig, props.airdropDetails]);
+    }, [connectedAddress, props.airdropDetails]);
 
     const handleSendAirdrops = useCallback(async () => {
         if (currentNetwork == "mainnet" && !feePayed) {

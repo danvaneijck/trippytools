@@ -1,25 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
-import { Buffer } from "buffer";
 import Footer from "../../components/App/Footer";
 import { humanReadableAmount } from "../../utils/helpers";
-import { getKeplrOfflineSigner, handleSendTx } from "../../utils/keplr";
-import { FaArrowRight, FaExchangeAlt } from "react-icons/fa";
 import { SiConvertio } from "react-icons/si";
 import ConvertModal from "./ConvertModal";
 import DisclaimerModal from "../../components/Modals/DisclaimerModal";
 import { MsgExecuteContractCompat } from "@injectivelabs/sdk-ts";
 import { INJ_DENOM } from "@injectivelabs/utils";
-import { TokenInfo } from "../../constants/types";
 import { gql, useQuery } from "@apollo/client";
-import dojoLogo from "../../assets/dojo.svg"
-import helixLogo from "../../assets/helix.svg"
 import { toast, ToastContainer } from "react-toastify";
-import { sendTelegramMessage } from "../../modules/telegram";
 import { Link } from "react-router-dom";
 import choice from "../../assets/choice.svg"
 import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
+import { performTransaction } from "../../utils/walletStrategy";
 
 const HOLDER_QUERY = gql`
 query getTokenHolders($address: String!, $addresses: [String!], $balanceMin: float8) {
@@ -134,19 +128,13 @@ const ShroomHub = () => {
     const [isSwappingToFrom, setIsSwappingToFrom] = useState(false);
     const [gettingRoute, setGettingRoute] = useState(false)
 
-    const [route, setRoute] = useState(null)
-    const [routeDisplay, setRouteDisplay] = useState(null)
-
     const [swapAmount, setSwapAmount] = useState(1)
-    const [outputAmount, setOutputAmount] = useState(0)
 
     const [error, setError] = useState(null);
     const [convertModal, setConvertModal] = useState(false)
 
     const [txHash, setTxHash] = useState()
 
-    const getRouteAbortControllerRef = useRef<AbortController | null>(null)
-    const [refreshKey, setRefreshKey] = useState<number>(0);
 
     const [dropdownList, setDropdownList] = useState([{
         imgSrc: "https://wsrv.nl/?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcosmos%2Fchain-registry%2Fmaster%2Finjective%2Fimages%2Finj.svg&n=-1&w=64&h=64",
@@ -414,9 +402,7 @@ const ShroomHub = () => {
     }, [dropdownList, from.denom])
 
     const convertToBank = useCallback(async (amount) => {
-        const { key, offlineSigner } = await getKeplrOfflineSigner(networkConfig.chainId);
-        const pubKey = Buffer.from(key.pubKey).toString("base64");
-        const injectiveAddress = key.bech32Address;
+        const injectiveAddress = connectedAddress
 
         const module = new TokenUtils(networkConfig)
         const msg = module.constructCW20ToBankMsg(
@@ -427,12 +413,10 @@ const ShroomHub = () => {
         )
 
         setTxHash(null)
-        const result = await handleSendTx(
-            networkConfig,
-            pubKey,
-            [msg],
+        const result = await performTransaction(
             injectiveAddress,
-            offlineSigner,
+            [msg]
+
         )
         setTxHash(result['txHash'])
 
@@ -458,12 +442,10 @@ const ShroomHub = () => {
 
         setConvertModal(false)
         await loadBalance()
-    }, [networkConfig, loadBalance])
+    }, [networkConfig, loadBalance, connectedAddress])
 
     const convertToCw20 = useCallback(async (amount) => {
-        const { key, offlineSigner } = await getKeplrOfflineSigner(networkConfig.chainId);
-        const pubKey = Buffer.from(key.pubKey).toString("base64");
-        const injectiveAddress = key.bech32Address;
+        const injectiveAddress = connectedAddress
 
         const module = new TokenUtils(networkConfig)
         const msg = module.constructBankToCW20Msg(
@@ -474,12 +456,9 @@ const ShroomHub = () => {
         )
 
         setTxHash(null)
-        const result = await handleSendTx(
-            networkConfig,
-            pubKey,
-            [msg],
+        const result = await performTransaction(
             injectiveAddress,
-            offlineSigner,
+            [msg]
         )
         setTxHash(result['txHash'])
 
@@ -505,160 +484,7 @@ const ShroomHub = () => {
 
         setConvertModal(false)
         await loadBalance()
-    }, [networkConfig, loadBalance])
-
-    const getRoute = useCallback(async (currentSwapAmount: number, currentTo: TokenInfo, signal: AbortSignal) => {
-        if (!networkConfig) {
-            setError("Network configuration not available.");
-            return;
-        }
-        console.log("getRoute called with amount:", currentSwapAmount, "to:", currentTo.symbol);
-
-        const module = new TokenUtils(networkConfig);
-
-        const spotMarket = await module.getSpotMarket(HELIX_MARKET_ID)
-        // console.log("min quantity", spotMarket.minQuantityTickSize)
-
-        try {
-            // Example: Pass signal to your async methods
-            const pairInfo = await module.getPairInfo(SHROOM_PAIR_ADDRESS);
-            if (signal.aborted) return;
-
-            let bestOutputAmount = 0;
-            let bestRoute = null;
-
-            for (let ratio = 0; ratio <= 1; ratio += 0.1) {
-                if (signal.aborted) return;
-
-                const dojoPortion = currentSwapAmount * ratio; // Number, potential precision issues
-
-                const helixPortionNumber = currentSwapAmount * (1 - ratio); // Still a Number initially
-                const helixPortionScaledNumber = helixPortionNumber * Math.pow(10, 18);
-
-                let helixPortionBigInt = BigInt(Math.trunc(helixPortionScaledNumber)); // Use Math.trunc to ensure integer before BigInt
-
-                const minQuantityTickString = spotMarket.minQuantityTickSize;
-                const minQuantityTickBigIntValue = BigInt(minQuantityTickString);
-
-
-                if (minQuantityTickBigIntValue > 0n) {
-                    helixPortionBigInt = (helixPortionBigInt / minQuantityTickBigIntValue) * minQuantityTickBigIntValue;
-                }
-
-                const formattedDojoPortion = (dojoPortion * Math.pow(10, 18))
-                    .toLocaleString('fullwide', { useGrouping: false });
-
-                const formattedHelixPortion = helixPortionBigInt.toString(); // Convert BigInt to string
-
-                console.log("Dojo (approx):", formattedDojoPortion, "Helix (tick-adjusted BigInt):", formattedHelixPortion);
-
-                let dojoQuote, helixQuote;
-
-                if (currentTo.denom === 'inj') {
-                    dojoQuote = await module.getSellQuoteRouter(pairInfo, formattedDojoPortion);
-                    if (signal.aborted) return;
-                    if (helixPortionBigInt > 0) {
-                        helixQuote = await module.queryOrderBookSwap(SHROOM_TOKEN_ADDRESS, "inj", formattedHelixPortion);
-                    }
-                    else {
-                        helixQuote = { "result_quantity": 0 }
-                    }
-                } else {
-                    dojoQuote = await module.getBuyQuoteRouter(pairInfo, formattedDojoPortion);
-                    if (signal.aborted) return;
-                    if (helixPortionBigInt > 0) {
-                        helixQuote = await module.queryOrderBookSwap("inj", SHROOM_TOKEN_ADDRESS, formattedHelixPortion);
-                    }
-                    else {
-                        helixQuote = { "result_quantity": 0 }
-                    }
-                }
-                if (signal.aborted) return;
-
-                const dojoAmount = Number(dojoQuote.amount) / Math.pow(10, 18);
-                const helixAmount = Number(helixQuote.result_quantity) / Math.pow(10, 18);
-                const combinedOutput = dojoAmount + helixAmount;
-
-                if (combinedOutput > bestOutputAmount) {
-                    bestOutputAmount = combinedOutput;
-                    bestRoute = {
-                        dojo: {
-                            inputReadable: dojoPortion,
-                            inputAmount: (dojoPortion * Math.pow(10, 18)).toLocaleString("fullwide", { useGrouping: false }),
-                            amount: Number(dojoQuote.amount),
-                            ratio: (ratio * 100).toFixed(0)
-                        },
-                        helix: {
-                            inputReadable: helixPortionNumber,
-                            inputAmount: formattedHelixPortion,
-                            amount: Number(helixQuote.result_quantity),
-                            min_output_quantity: Number(helixQuote.result_quantity).toLocaleString("fullwide", { useGrouping: false }),
-                            ratio: ((1 - ratio) * 100).toFixed(0)
-                        }
-                    };
-                }
-            }
-
-            if (signal.aborted) return;
-
-            setOutputAmount(bestOutputAmount);
-
-            const inputSymbol = currentTo.symbol == "INJ" ? "SHROOM" : "INJ"
-            const outputSymbol = currentTo.symbol
-
-            console.log(bestRoute)
-
-            const display = (
-                <div className="grid grid-cols-3 sm:grid-cols-5 gap-4  text-white text-sm items-center">
-                    {/* DojoSwap row */}
-                    <div>{bestRoute['dojo']['ratio']}%</div>
-                    <div className="flex items-center">
-                        DojoSwap <img className="w-6 h-4 ml-2" src={dojoLogo} />
-                    </div>
-                    <div className="text-right hidden sm:inline">
-                        {humanReadableAmount(bestRoute['dojo']['inputReadable'])}
-                        <span className=""> {inputSymbol}</span>
-                    </div>
-
-                    {/* Arrow cell */}
-                    <div className="hidden sm:flex justify-center items-center">
-                        <FaArrowRight />
-                    </div>
-
-                    <div className="text-right">{humanReadableAmount(Number(bestRoute['dojo']['amount']) / Math.pow(10, 18))} {outputSymbol}</div>
-
-                    {/* Helix row */}
-                    <div>{bestRoute['helix']['ratio']}%</div>
-                    <div className="flex items-center">
-                        Orderbook <img className="w-4 h-4 ml-2" src={helixLogo} />
-                    </div>
-                    <div className="text-right hidden sm:inline">
-                        {humanReadableAmount(bestRoute['helix']['inputReadable'])}
-                        <span className=""> {inputSymbol}</span>
-                    </div>
-
-                    {/* Arrow cell */}
-                    <div className="hidden sm:flex justify-center items-center">
-                        <FaArrowRight />
-                    </div>
-
-                    <div className="text-right">{humanReadableAmount(Number(bestRoute['helix']['amount']) / Math.pow(10, 18))} {outputSymbol}</div>
-                </div>
-            );
-            setRouteDisplay(display);
-            setRoute(bestRoute);
-
-        } catch (err: any) {
-            if (err.name === 'AbortError') {
-                console.log('getRoute aborted');
-            } else {
-                console.error("Error in getRoute:", err);
-                setError(err.message || 'Failed to get route');
-            }
-        }
-    }, [networkConfig]);
-
-    // useEffect(() => {
+    }, [connectedAddress, loadBalance, networkConfig])
     //     // Conditions to call getRoute (e.g., valid swapAmount and 'to' token)
     //     if (swapAmount > 0 && to && networkConfig) {
     //         // Cancel any previous ongoing getRoute operation
@@ -729,373 +555,9 @@ const ShroomHub = () => {
         setRefreshKey(prevKey => prevKey + 1); // Incrementing the key
     }, [gettingRoute, networkConfig, swapAmount]);
 
-    const parseSwapTx = useCallback(async (txHash, connectedWallet, inputToken, outputToken, route) => {
-        if (!txHash) return;
-
-        const api = new TokenUtils(networkConfig)
-
-        const tx = await api.getTx(txHash);
-        const wallet = connectedWallet;
-
-        const coinSpent = [];
-        const coinReceived = [];
-
-        // Loop over each log entry
-        tx.logs.forEach((log) => {
-            const localSpent = [];
-            const localReceived = [];
-            log.events.forEach((event) => {
-                // For native tokens, using coin_spent and coin_received events.
-                if (event.type === "coin_spent") {
-                    const spenderAttr = event.attributes.find(attr => attr.key === "spender");
-                    if (spenderAttr && spenderAttr.value === wallet) {
-                        const amountAttr = event.attributes.find(attr => attr.key === "amount");
-                        if (amountAttr) {
-                            localSpent.push(amountAttr.value);
-                        }
-                    }
-                } else if (event.type === "coin_received") {
-                    const receiverAttr = event.attributes.find(attr => attr.key === "receiver");
-                    if (receiverAttr && receiverAttr.value === wallet) {
-                        const amountAttr = event.attributes.find(attr => attr.key === "amount");
-                        if (amountAttr) {
-                            localReceived.push(amountAttr.value);
-                        }
-                    }
-                }
-                // For CW20 tokens, look at wasm events.
-                else if (event.type === "wasm") {
-                    const actionAttr = event.attributes.find(attr => attr.key === "action");
-                    if (actionAttr) {
-                        // When spending CW20 tokens, we expect the action to be "send"
-                        if (actionAttr.value === "send") {
-                            const contractAttr = event.attributes.find(attr => attr.key === "_contract_address");
-                            const amountAttr = event.attributes.find(attr => attr.key === "amount");
-                            if (contractAttr && amountAttr) {
-                                // Check if inputToken is CW20 (using info.token) and the contract address matches.
-                                if (inputToken.info.token && contractAttr.value === inputToken.address) {
-                                    localSpent.push(amountAttr.value + inputToken.address);
-                                }
-                            }
-                        }
-                        // When receiving CW20 tokens, look for the "receive_cw20" action.
-                        else if (actionAttr.value === "transfer") {
-                            const toAttr = event.attributes.find(attr => attr.key === "to");
-
-                            const contractAttr = event.attributes.find(attr => attr.key === "_contract_address");
-                            const amountAttr = event.attributes.find(attr => attr.key === "amount");
-                            if (contractAttr && amountAttr && toAttr) {
-                                // Check if outputToken is CW20 (using info.token) and the contract address matches.
-                                if (outputToken.info.token && contractAttr.value === outputToken.address && toAttr.value == connectedWallet) {
-                                    localReceived.push(amountAttr.value + outputToken.address);
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            if (localSpent.length > 0) {
-                // Filter out items that don't include the input token address.
-                const validSpent = localSpent.filter(item => item.includes(inputToken.address));
-                if (validSpent.length > 0) {
-                    const maxSpent = validSpent.reduce((max, current) => {
-                        const maxVal = Number(max.match(/^(\d+)/)[0]);
-                        const currentVal = Number(current.match(/^(\d+)/)[0]);
-                        return currentVal > maxVal ? current : max;
-                    });
-                    coinSpent.push(maxSpent);
-                }
-            }
-
-            if (localReceived.length > 0) {
-                // Filter out items that don't include the output token address.
-                const validReceived = localReceived.filter(item => item.includes(outputToken.address));
-                if (validReceived.length > 0) {
-                    const maxReceived = validReceived.reduce((max, current) => {
-                        const maxVal = Number(max.match(/^(\d+)/)[0]);
-                        const currentVal = Number(current.match(/^(\d+)/)[0]);
-                        return currentVal > maxVal ? current : max;
-                    });
-                    coinReceived.push(maxReceived);
-                }
-            }
-        });
-
-        console.log("Spent:", coinSpent);
-        console.log("Received:", coinReceived);
-
-        const escapeRegExp = (str) =>
-            str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-        const parseAmount = (amountStr, token) => {
-            const denom = token.address; // e.g. "inj" or "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
-            const re = new RegExp(`^(\\d+)${escapeRegExp(denom)}$`);
-            const m = amountStr.match(re);
-
-            // if it doesn’t match exactly, bail out
-            if (!m) return 0;
-
-            const raw = m[1]; // the numeric part
-            return Number(raw) / Math.pow(10, token.decimals);
-        };
-
-        // Sum all maximum amounts from each log.
-        const totalSpent = coinSpent.reduce((sum, s) => sum + parseAmount(s, inputToken), 0);
-
-        const totalReceived = coinReceived.reduce((sum, s) => sum + parseAmount(s, outputToken), 0);
-
-        const content = (
-            <div>
-                Successfully swapped {humanReadableAmount(totalSpent)} {inputToken?.symbol} for {humanReadableAmount(totalReceived)} {outputToken?.symbol}
-                <br />
-                <a
-                    href={`https://injscan.com/transaction/${txHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline text-blue-500 text-sm"
-                >
-                    View transaction on explorer
-                </a>
-            </div>
-        );
-
-        toast.success(content, {
-            autoClose: 5000,
-            theme: "dark"
-        });
-
-        const tgMessage = (
-            `${connectedWallet} swapped ${humanReadableAmount(totalSpent)} ${inputToken?.symbol} for ${humanReadableAmount(totalReceived)} ${outputToken?.symbol} on trippy tools!\n` +
-            `${route['helix']['ratio']}% Orderbook\n` +
-            `${route['dojo']['ratio']}% DojoSwap\n`
-        )
-        await sendTelegramMessage(tgMessage)
-    }, [networkConfig]);
-
-    const sendTx = useCallback(async () => {
-        try {
-            console.log(route)
-
-            if (from.symbol == "SHROOM" && cw20Balance + bankBalance < swapAmount) {
-                setError("You do not have enough tokens")
-                return
-            }
-            else {
-                setError(null)
-            }
-
-            if (from.symbol == "INJ" && injBalance < swapAmount) {
-                setError("You do not have enough tokens")
-                return
-            }
-            else {
-                setError(null)
-            }
-
-            const { key, offlineSigner } = await getKeplrOfflineSigner(networkConfig.chainId);
-            const pubKey = Buffer.from(key.pubKey).toString("base64");
-            const injectiveAddress = key.bech32Address;
-
-            if (connectedAddress != injectiveAddress) {
-                toast.error("Wrong wallet connected", {
-                    autoClose: 5000,
-                    theme: "dark"
-                });
-                return
-            }
-
-            const module = new TokenUtils(networkConfig);
-
-            const INJ = { native_token: { denom: 'inj' } }
-            const SHROOM = { token: { contract_addr: "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8" } }
-
-            const txMessages = []
-
-            let msgDojoSwap = null
-            let msgOrderBookSwap = null
-
-            if (to.symbol == 'SHROOM') {
-                console.log("construct buy")
-
-                console.log("helix", route['helix'])
-
-                msgOrderBookSwap = MsgExecuteContractCompat.fromJSON({
-                    sender: injectiveAddress,
-                    contractAddress: ORDERBOOK_SWAP_ADDRESS,
-                    msg: {
-                        swap_min_output: {
-                            target_denom: SHROOM_BANK_DENOM,
-                            min_output_quantity: route['helix'].min_output_quantity
-                        }
-                    },
-                    funds: [
-                        {
-                            denom: "inj",
-                            amount: route['helix'].inputAmount
-                        }
-                    ]
-                })
-
-                console.log(msgOrderBookSwap)
-                if (route['helix'].ratio > 0) {
-                    console.log("add order book message")
-                    txMessages.push(msgOrderBookSwap)
-                    // always convert to cw20
-                    txMessages.push(
-                        MsgExecuteContractCompat.fromJSON({
-                            sender: injectiveAddress,
-                            contractAddress: CW20_ADAPTER,
-                            msg: {
-                                redeem_and_transfer: {
-                                    recipient: injectiveAddress,
-                                },
-                            },
-                            funds: [{
-                                denom: SHROOM_BANK_DENOM,
-                                amount: route['helix'].min_output_quantity,
-                            }],
-                        })
-                    );
-                }
-
-                const injToBaseAsset = [
-                    {
-                        address: SHROOM_PAIR_ADDRESS,
-                        offerAsset: INJ,
-                        returnAsset: SHROOM
-                    },
-                ]
-
-                msgDojoSwap = module.constructExecuteRouteMessage(
-                    injectiveAddress,
-                    injToBaseAsset,
-                    INJ,
-                    route['dojo'].inputAmount.toLocaleString('fullwide', { useGrouping: false }),
-                    ((route['dojo'].amount - (route['dojo'].amount * 0.000001))).toLocaleString('fullwide', { useGrouping: false }),
-                    { denom: 'inj', amount: (route['dojo'].inputAmount).toLocaleString('fullwide', { useGrouping: false }) }
-                )
-
-                console.log(msgDojoSwap)
-                if (route['dojo'].ratio > 0) {
-                    console.log("add dojo swap message")
-                    txMessages.push(msgDojoSwap)
-                }
-
-            }
-            else {
-                console.log("construct sell")
-
-                if (route['helix'].ratio > 0 && (Number(route['helix'].inputAmount) / Math.pow(10, 18)) > bankBalance) {
-                    console.log("need to convert cw20 to bank")
-                    const msgConvertToBank = module.constructCW20ToBankMsg(
-                        SHROOM_TOKEN_ADDRESS,
-                        (Number(route['helix'].inputAmount) / Math.pow(10, 18)) - bankBalance,
-                        18,
-                        injectiveAddress
-                    )
-                    txMessages.push(msgConvertToBank)
-                }
-
-                if (route['dojo'].ratio > 0 && (route['dojo'].inputAmount / Math.pow(10, 18)) > cw20Balance) {
-                    console.log("need to convert bank to cw20", route['dojo'].inputAmount)
-                    const msgConvertToCw20 = module.constructBankToCW20Msg(
-                        SHROOM_TOKEN_ADDRESS,
-                        (route['dojo'].inputAmount / Math.pow(10, 18)) - cw20Balance,
-                        18,
-                        injectiveAddress
-                    )
-                    txMessages.push(msgConvertToCw20)
-                }
-
-                msgOrderBookSwap = MsgExecuteContractCompat.fromJSON({
-                    sender: injectiveAddress,
-                    contractAddress: ORDERBOOK_SWAP_ADDRESS,
-                    msg: {
-                        swap_min_output: {
-                            target_denom: INJ_DENOM,
-                            min_output_quantity: route['helix'].min_output_quantity
-                        }
-                    },
-                    funds: [
-                        {
-                            denom: SHROOM_BANK_DENOM,
-                            amount: route['helix'].inputAmount
-                        }
-                    ]
-                })
-
-                if (route['helix'].ratio > 0) {
-                    console.log("add order book message")
-                    txMessages.push(msgOrderBookSwap)
-                }
-
-                const baseAssetToInj = [
-                    {
-                        address: SHROOM_PAIR_ADDRESS,
-                        offerAsset: SHROOM,
-                        returnAsset: INJ
-                    },
-                ]
-
-                msgDojoSwap = module.constructExecuteRouteMessage(
-                    injectiveAddress,
-                    baseAssetToInj,
-                    SHROOM,
-                    route['dojo'].inputAmount.toLocaleString('fullwide', { useGrouping: false }),
-                    (route['dojo'].amount - (route['dojo'].amount * 0.000001)).toLocaleString('fullwide', { useGrouping: false }),
-                    { denom: 'inj', amount: (route['dojo'].inputAmount).toLocaleString('fullwide', { useGrouping: false }) }
-                )
-
-                if (route['dojo'].ratio > 0) {
-                    console.log("add dojo swap message")
-                    txMessages.push(msgDojoSwap)
-                }
-            }
-
-            const gas = {
-                amount: [
-                    {
-                        denom: "inj",
-                        amount: '2000000'
-                    }
-                ],
-                gas: '2000000'
-            };
-
-            console.log(txMessages)
-
-            setTxHash(null)
-
-            const result = await handleSendTx(
-                networkConfig,
-                pubKey,
-                txMessages,
-                injectiveAddress,
-                offlineSigner,
-                gas
-            )
-
-            setTxHash(result['txHash'])
-            await parseSwapTx(result['txHash'], connectedAddress, from, to, route)
-            await loadBalance()
-            await loadLiquidity()
-            setSwapAmount(0)
-        }
-        catch (error) {
-            toast.error(error.message, {
-                autoClose: 5000,
-                theme: "dark"
-            });
-            console.error("Error performing swap:", error);
-        }
-
-    }, [route, from, cw20Balance, bankBalance, swapAmount, networkConfig, connectedAddress, to, injBalance, loadBalance, loadLiquidity, parseSwapTx])
-
     const sendMarketMake = useCallback(async () => {
-        const { key, offlineSigner } = await getKeplrOfflineSigner(networkConfig.chainId);
-        const pubKey = Buffer.from(key.pubKey).toString("base64");
-        const injectiveAddress = key.bech32Address;
+
+        const injectiveAddress = connectedAddress
 
         const msgMarketMake = MsgExecuteContractCompat.fromJSON({
             sender: injectiveAddress,
@@ -1106,13 +568,9 @@ const ShroomHub = () => {
         });
 
         setTxHash(null)
-        const result = await handleSendTx(
-            networkConfig,
-            pubKey,
-            msgMarketMake,
+        const result = await performTransaction(
             injectiveAddress,
-            offlineSigner,
-
+            [msgMarketMake]
         )
         setTxHash(result['txHash'])
 
@@ -1138,14 +596,12 @@ const ShroomHub = () => {
 
         await loadBalance()
         handleRefreshPrices()
-    }, [handleRefreshPrices, loadBalance, networkConfig])
+    }, [handleRefreshPrices, loadBalance, connectedAddress])
 
 
     return (
         <>
             <ToastContainer />
-            <DisclaimerModal />
-
             {convertModal &&
                 <ConvertModal
                     bankBalance={bankBalance}

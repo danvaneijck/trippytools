@@ -3,7 +3,7 @@ import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
 import { useCallback } from "react";
 
-const ConnectKeplr = (props: { hideNetwork?: boolean, button?: boolean }) => {
+const ConnectWallet = (props: { hideNetwork?: boolean, button?: boolean }) => {
 
     const { disconnect } = useWalletConnect()
 
@@ -63,4 +63,4 @@ const ConnectKeplr = (props: { hideNetwork?: boolean, button?: boolean }) => {
     );
 }
 
-export default ConnectKeplr
+export default ConnectWallet

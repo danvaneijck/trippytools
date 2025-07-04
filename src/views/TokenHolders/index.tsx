@@ -21,6 +21,7 @@ import { GrStatusUnknown } from "react-icons/gr";
 import TokenHoldersTable from "./TokenHolderTable";
 import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
+import useTokenStore from "../../store/useTokenStore";
 
 const INJ_CW20_ADAPTER = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
@@ -118,8 +119,9 @@ const ProgressBar = ({ queryProgress, saveProgress }) => {
 const TokenHolders = () => {
     const [searchParams, setSearchParams] = useSearchParams();
 
-    const { connectedWallet: connectedAddress } = useWalletStore()
     const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
+
+    const { tokens } = useTokenStore()
 
     const [contractAddress, setContractAddress] = useState(() => {
         const address = searchParams.get("address");
@@ -612,9 +614,9 @@ const TokenHolders = () => {
                 console.log(e)
                 setLastLoadedAddress(address);
             })
-            setContractAddress(address => TOKENS.find(v => v.value == address) ?? address)
+            setContractAddress(address => tokens.find(v => v.address == address) ?? address)
         }
-    }, [searchParams, lastLoadedAddress, getTokenHolders, loading])
+    }, [searchParams, lastLoadedAddress, getTokenHolders, loading, tokens])
 
     const headers = [
         { label: "Holder Address", key: "address" },
@@ -646,7 +648,13 @@ const TokenHolders = () => {
                                 options={[
                                     {
                                         label: "TOKENS",
-                                        options: TOKENS
+                                        options: tokens.filter(x => x.show_on_ui).map((t) => {
+                                            return {
+                                                value: t.address,
+                                                label: t.symbol,
+                                                img: t.icon
+                                            }
+                                        }).sort((a, b) => a.label.localeCompare(b.label))
                                     },
                                     {
                                         label: "CW404",

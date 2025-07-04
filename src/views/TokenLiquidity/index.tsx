@@ -7,11 +7,10 @@ import { IoIosWarning } from "react-icons/io";
 import IPFSImage from "../../components/App/IpfsImage";
 import { WALLET_LABELS } from "../../constants/walletLabels";
 import TokenSelect from "../../components/Inputs/TokenSelect";
-import { LIQUIDITY_POOLS } from "../../constants/contractAddresses";
 import { CSVLink } from 'react-csv';
 import Footer from "../../components/App/Footer";
-import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
+import useLiquidityPoolStore from "../../store/usePoolStore";
 
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
 const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
@@ -19,11 +18,18 @@ const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
 const TokenLiquidity = () => {
     const [searchParams, setSearchParams] = useSearchParams();
 
-    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { pools } = useLiquidityPoolStore()
+
     const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
     const [contractAddress, setContractAddress] = useState(
-        searchParams.get("address") ?? LIQUIDITY_POOLS[0]
+        searchParams.get("address") ?? pools.filter(p => p.liquidity_token !== null).map((p) => {
+            return {
+                value: p.contract_addr,
+                label: `${p.asset_1.symbol}/${p.asset_2.symbol} (${p.dex.name})`,
+                img: p.asset_1.icon,
+            }
+        }).find(x => x.contract_addr == "inj1uyjjnykz0slq0w4n6k2xgleykqk9k5qkfctmw5")
     );
 
     const [lastLoadedAddress, setLastLoadedAddress] = useState("")
@@ -32,6 +38,7 @@ const TokenLiquidity = () => {
     const [progress, setProgress] = useState<string>("");
     const [pairInfo, setPairInfo] = useState<PairInfo | null>(null);
     const [pairMarketing, setPairMarketing] = useState<MarketingInfo | null>(null);
+    const [liquidityToken, setLiquidityToken] = useState(null);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null)
@@ -59,6 +66,7 @@ const TokenLiquidity = () => {
 
         try {
             const pairInfo = await module.getPairInfo(address);
+            console.log(pairInfo)
             setPairInfo(pairInfo);
 
             const memeAddress =
@@ -67,8 +75,9 @@ const TokenLiquidity = () => {
                     : pairInfo.token0Meta.denom;
 
             try {
-                if (memeAddress.includes("factory") || memeAddress.includes("peggy") || memeAddress.includes("ibc")) {
+                if (memeAddress.includes("factory") || memeAddress.includes("peggy") || memeAddress.includes("ibc") || memeAddress == "inj") {
                     const denomMetadata = await module.getDenomExtraMetadata(memeAddress);
+                    console.log(denomMetadata)
                     setTokenInfo(denomMetadata);
                 } else {
                     const tokenInfo = await module.getTokenInfo(memeAddress);
@@ -82,12 +91,20 @@ const TokenLiquidity = () => {
             }
 
             const liquidityToken = pairInfo.liquidity_token;
-            if (liquidityToken.includes("factory")) {
-                const holders = await module.getTokenFactoryTokenHolders(liquidityToken, setProgress);
+            let liqAddress = pairInfo.liquidity_token
+            if (liquidityToken.native_token) {
+                liqAddress = liquidityToken.native_token.denom
+            }
+            if (liquidityToken.token) {
+                liqAddress = liquidityToken.token.contract_addr
+            }
+            setLiquidityToken(liqAddress)
+            if (liqAddress.includes("factory/")) {
+                const holders = await module.getTokenFactoryTokenHolders(liqAddress, setProgress);
                 setHolders(holders);
             }
             else {
-                const holders = await module.getCW20TokenHolders(liquidityToken, setProgress);
+                const holders = await module.getCW20TokenHolders(liqAddress, setProgress);
                 setHolders(holders);
             }
 
@@ -107,10 +124,15 @@ const TokenLiquidity = () => {
         const address = searchParams.get("address")
         if (address && address !== lastLoadedAddress) {
             getTokenHolders(address)
-            console.log(LIQUIDITY_POOLS.find(v => v.value == address) ?? address)
-            setContractAddress(address => LIQUIDITY_POOLS.find(v => v.value == address) ?? address)
+            setContractAddress(address => pools.map((p) => {
+                return {
+                    value: p.contract_addr,
+                    label: `${p.asset_1.symbol}/${p.asset_2.symbol} (${p.dex.name})`,
+                    img: p.asset_1.icon,
+                }
+            }).find(v => v.contract_addr == address) ?? address)
         }
-    }, [searchParams, lastLoadedAddress, getTokenHolders])
+    }, [searchParams, lastLoadedAddress, getTokenHolders, pools])
 
     const headers = [
         { label: "Holder Address", key: "address" },
@@ -138,7 +160,13 @@ const TokenLiquidity = () => {
                                 Pair address
                             </label>
                             <TokenSelect
-                                options={LIQUIDITY_POOLS}
+                                options={pools.filter(p => p.liquidity_token !== null).map((p) => {
+                                    return {
+                                        value: p.contract_addr,
+                                        label: `${p.asset_1.symbol}/${p.asset_2.symbol} (${p.dex.name})`,
+                                        img: p.asset_1.icon,
+                                    }
+                                })}
                                 selectedOption={contractAddress}
                                 setSelectedOption={setContractAddress}
                             />
@@ -215,12 +243,12 @@ const TokenLiquidity = () => {
                                 </div>
                             )}
                         </div>
-                        {pairInfo && <div className="mt-6 md:mt-0"><a href={"https://coinhall.org/injective/" + pairInfo.contract_addr}
+                        {/* {pairInfo && <div className="mt-6 md:mt-0"><a href={"https://coinhall.org/injective/" + pairInfo.contract_addr}
                             className="bg-gray-800 rounded-lg p-2 text-white border border-slate-800 shadow-lg font-bold "
                         >
                             Trade on coinhall
                         </a></div>
-                        }
+                        } */}
 
                         {pairInfo && (
                             <div className="mt-4 text-white text-sm">
@@ -228,7 +256,7 @@ const TokenLiquidity = () => {
                                     pair address: {pairInfo.contract_addr}
                                 </div>
                                 <div>
-                                    liquidity token: {pairInfo.liquidity_token}
+                                    liquidity token: {liquidityToken}
                                 </div>
                             </div>
                         )}

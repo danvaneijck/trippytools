@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { GridLoader } from "react-spinners";
 import { Link } from "react-router-dom";
-import ConnectKeplr from "../../components/App/ConnectKeplr";
+import ConnectWallet from "../../components/App/ConnectKeplr";
 import ShroomBalance from "../../components/App/ShroomBalance";
 import { WALLET_LABELS } from "../../constants/walletLabels";
 import IPFSImage from "../../components/App/IpfsImage";
@@ -2057,7 +2057,7 @@ const Airdrop = () => {
                                         alt="airdrop"
                                     />
                                     <div className="mb-5">Please connect wallet to plan a new airdrop</div>
-                                    <ConnectKeplr hideNetwork={true} button={true} />
+                                    <ConnectWallet hideNetwork={true} button={true} />
                                     <Link to="/airdrop-history" ><div className=" bg-slate-800 p-2 mt-10 rounded  text-sm">View airdrop history</div></Link>
                                 </div>
                             }
