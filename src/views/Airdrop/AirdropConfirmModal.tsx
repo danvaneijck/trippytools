@@ -267,12 +267,12 @@ const AirdropConfirmModal = (props: {
         if (props.airdropDetails !== null && props.airdropDetails.length > 0) {
 
             // pay fee
-            // if (currentNetwork == "mainnet" && props.shroomCost !== 0 && !feePayed) {
-            //     console.log("pay shroom fee")
-            //     setProgress("Pay shroom fee for airdrop")
-            //     const result = await payFee()
-            //     if (result) setFeePayed(true)
-            // }
+            if (currentNetwork == "mainnet" && props.shroomCost !== 0 && !feePayed) {
+                console.log("pay shroom fee")
+                setProgress("Pay shroom fee for airdrop")
+                const result = await payFee()
+                if (result) setFeePayed(true)
+            }
 
             console.log("airdrop")
             setProgress("Send airdrops")

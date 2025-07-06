@@ -155,12 +155,12 @@ const AirdropModal = (props) => {
     }, [connectedAddress, props.airdropDetails]);
 
     const handleSendAirdrops = useCallback(async () => {
-        // if (currentNetwork == "mainnet" && !feePayed) {
-        //     console.log("pay shroom fee")
-        //     setProgress("Pay shroom fee for airdrop")
-        //     const result = await payFee()
-        //     if (result) setFeePayed(true)
-        // }
+        if (currentNetwork == "mainnet" && !feePayed) {
+            console.log("pay shroom fee")
+            setProgress("Pay shroom fee for airdrop")
+            const result = await payFee()
+            if (result) setFeePayed(true)
+        }
         sendAirdrops(props.tokenInfo.denom).then((r) => {
             console.log("done", r)
             navigate(`/token-holders?address=${props.tokenInfo.denom}`);
