@@ -96,8 +96,6 @@ function extractFundsReceived(tx) {
             return tx.isSender ? "N/A" : `token id ${tx.tokenId} collection ${tx.collection}`
         case 'NFT Purchase':
             return tx.isSender ? "N/A" : `token id ${tx.tokenId} collection ${tx.collection}`
-        case 'MultiSend Receiver':
-            return `${tx.amount} ${tx.denom}`
         case 'NFT Minting':
             return `token id ${tx.tokenId} collection ${tx.contract}`
         case 'Staking Reward':
