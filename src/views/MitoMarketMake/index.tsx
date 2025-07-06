@@ -1,24 +1,22 @@
-import { useSelector } from "react-redux";
 import { useCallback, useEffect, useState } from "react";
 import ShroomBalance from "../../components/App/ShroomBalance";
 import TokenUtils from "../../modules/tokenUtils";
-import { BaseAccount, BroadcastModeKeplr, ChainRestAuthApi, ChainRestTendermintApi, CosmosTxV1Beta1Tx, createTransaction, getTxRawFromTxRawOrDirectSignResponse, MsgExecuteContract, MsgExecuteContractCompat, TxRaw, TxRestClient } from "@injectivelabs/sdk-ts";
-import { BigNumberInBase, DEFAULT_BLOCK_TIMEOUT_HEIGHT, getStdFee } from "@injectivelabs/utils";
-import { Buffer } from "buffer";
-import { TransactionException } from "@injectivelabs/exceptions";
 import Footer from "../../components/App/Footer";
 import Select from "react-select"
 import { humanReadableAmount } from "../../utils/helpers";
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
+import { performTransaction } from "../../utils/walletStrategy";
+import { MsgExecuteContract, MsgExecuteContractCompat } from "@injectivelabs/sdk-ts";
+import { Bounce, ToastContainer, toast } from 'react-toastify';
 
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
 const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
 
 const MitoMarketMake = () => {
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
     const [vaultOptions, setVaultOptions] = useState([])
 
@@ -26,10 +24,6 @@ const MitoMarketMake = () => {
 
     const shroomCost = 2500
     const [shroomPrice, setShroomPrice] = useState(null)
-
-
-    const [loading, setLoading] = useState(false);
-    const [txLoading, setTxLoading] = useState(false);
 
     useEffect(() => {
         const getShroomCost = async () => {
@@ -113,73 +107,6 @@ const MitoMarketMake = () => {
         }
     }, [getMitoMarketList, vaultOptions])
 
-    const getKeplr = useCallback(async () => {
-        await window.keplr.enable(networkConfig.chainId);
-        const offlineSigner = window.keplr.getOfflineSigner(networkConfig.chainId);
-        const accounts = await offlineSigner.getAccounts();
-        const key = await window.keplr.getKey(networkConfig.chainId);
-        return { offlineSigner, accounts, key };
-    }, [networkConfig]);
-
-    const broadcastTx = useCallback(async (chainId: string, txRaw: TxRaw) => {
-        await getKeplr();
-        const result = await window.keplr.sendTx(
-            chainId,
-            CosmosTxV1Beta1Tx.TxRaw.encode(txRaw).finish(),
-            BroadcastModeKeplr.Sync
-        );
-
-        if (!result || result.length === 0) {
-            throw new TransactionException(
-                new Error("Transaction failed to be broadcasted"),
-                { contextModule: "Keplr" }
-            );
-        }
-
-        return Buffer.from(result).toString("hex");
-    }, [getKeplr]);
-
-
-    const handleSendTx = useCallback(async (pubKey: any, msg: any, injectiveAddress: string, offlineSigner: { signDirect: (arg0: any, arg1: CosmosTxV1Beta1Tx.SignDoc) => any; }, gas: any = null) => {
-        setTxLoading(true)
-        const chainRestAuthApi = new ChainRestAuthApi(networkConfig.rest);
-        const chainRestTendermintApi = new ChainRestTendermintApi(networkConfig.rest);
-
-        const latestBlock = await chainRestTendermintApi.fetchLatestBlock();
-        const latestHeight = latestBlock.header.height;
-        const timeoutHeight = new BigNumberInBase(latestHeight).plus(
-            DEFAULT_BLOCK_TIMEOUT_HEIGHT
-        );
-
-        const accountDetailsResponse = await chainRestAuthApi.fetchAccount(
-            injectiveAddress
-        );
-        const baseAccount = BaseAccount.fromRestApi(accountDetailsResponse);
-
-        const { signDoc } = createTransaction({
-            pubKey: pubKey,
-            chainId: networkConfig.chainId,
-            fee: gas ?? getStdFee({}),
-            message: msg,
-            sequence: baseAccount.sequence,
-            timeoutHeight: timeoutHeight.toNumber(),
-            accountNumber: baseAccount.accountNumber,
-        });
-
-        const directSignResponse = await offlineSigner.signDirect(
-            injectiveAddress,
-            signDoc
-        );
-
-        const txRaw = getTxRawFromTxRawOrDirectSignResponse(directSignResponse);
-        const txHash = await broadcastTx(networkConfig.chainId, txRaw);
-        const response = await new TxRestClient(networkConfig.rest).fetchTxPoll(txHash);
-
-        console.log(response);
-        setTxLoading(false)
-        return response
-    }, [broadcastTx, networkConfig])
-
     const sendMarketMake = useCallback(async () => {
         if (!selectedVault) {
             return
@@ -187,9 +114,7 @@ const MitoMarketMake = () => {
         const address = selectedVault.value.matchingVault.contractAddress
         console.log(`send market make for vault ${address}`)
 
-        const { key, offlineSigner } = await getKeplr();
-        const pubKey = Buffer.from(key.pubKey).toString("base64");
-        const injectiveAddress = key.bech32Address;
+        const injectiveAddress = connectedAddress
 
         const feeMsg = MsgExecuteContract.fromJSON({
             contractAddress: SHROOM_TOKEN_ADDRESS,
@@ -211,27 +136,33 @@ const MitoMarketMake = () => {
         });
         console.log(feeMsg, msgMarketMake)
 
-        const gas = {
-            amount: [
-                {
-                    denom: "inj",
-                    amount: '3500000'
-                }
-            ],
-            gas: '3500000'
-        };
-
-        await handleSendTx(
-            pubKey,
+        const response = await performTransaction(
+            injectiveAddress,
             [
                 feeMsg,
                 msgMarketMake
-            ],
-            injectiveAddress,
-            offlineSigner,
-            gas
+            ]
         )
-    }, [getKeplr, handleSendTx, selectedVault])
+
+        const content = <div>
+            Sent mito market make for vault <span className="font-bold">{selectedVault.value.matchingVault.contractAddress}</span> <br />
+            <br />
+            <a
+                href={`${networkConfig.explorerUrl}/transaction/${response.txHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline text-blue-500 text-sm"
+            >
+                View transaction on explorer
+            </a>
+        </div>
+
+        toast.success(content, {
+            autoClose: 5000,
+            theme: "dark"
+        });
+
+    }, [connectedAddress, selectedVault, networkConfig])
 
     return (
         <div className="flex flex-col min-h-screen pb-10 bg-customGray">

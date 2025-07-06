@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from "react-router-dom";
-import ConnectKeplr from "./ConnectKeplr";
+import ConnectWallet from "./ConnectKeplr";
 import logo from '../../assets/trippy_blue_yellow.svg';
 import { FiMenu, FiX } from 'react-icons/fi'; // Import icons for burger and close
 
@@ -54,7 +54,7 @@ const Header = () => {
                 </div>
 
                 <div className="m-2 ml-auto flex items-center">
-                    <ConnectKeplr />
+                    <ConnectWallet />
                 </div>
             </header>
 
@@ -83,7 +83,7 @@ const Header = () => {
                     </div>
                 </div>
                 <div className="m-2 ml-auto flex items-center">
-                    <ConnectKeplr />
+                    <ConnectWallet />
                 </div>
             </header>
 

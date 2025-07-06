@@ -1,26 +1,14 @@
-// src/OrderPanel.js
 import { useCallback, useEffect, useState } from 'react';
-import { useSelector } from "react-redux";
 import {
-    BaseAccount,
-    BroadcastModeKeplr,
-    ChainRestAuthApi,
-    ChainRestTendermintApi,
-    CosmosTxV1Beta1Tx,
-    createTransaction,
-    getTxRawFromTxRawOrDirectSignResponse,
-    MsgInstantBinaryOptionsMarketLaunch,
     MsgCreateBinaryOptionsLimitOrder,
     MsgCreateBinaryOptionsMarketOrder,
-    TxRaw,
-    TxRestClient,
     IndexerGrpcAccountApi
 } from "@injectivelabs/sdk-ts";
-import { BigNumber, BigNumberInBase, BigNumberInWei, DEFAULT_BLOCK_TIMEOUT_HEIGHT, getStdFee } from "@injectivelabs/utils";
-import { TransactionException } from "@injectivelabs/exceptions";
-import { InjectiveExchangeV1Beta1Tx, InjectiveExchangeV1Beta1Exchange } from '@injectivelabs/core-proto-ts';
-import { Buffer } from "buffer";
+import { InjectiveExchangeV1Beta1Exchange } from '@injectivelabs/core-proto-ts';
 import TokenUtils from '../../modules/tokenUtils';
+import useWalletStore from '../../store/useWalletStore';
+import useNetworkStore from '../../store/useNetworkStore';
+import { performTransaction } from '../../utils/walletStrategy';
 
 const OrderPanel = (props: {
     marketId: string,
@@ -31,12 +19,10 @@ const OrderPanel = (props: {
     const [price, setPrice] = useState(0.5);
     const [orderType, setOrderType] = useState('market');
 
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { network: networkConfig } = useNetworkStore()
 
     const [progress, setProgress] = useState("")
-    const [txLoading, setTxLoading] = useState(false)
     const [error, setError] = useState(null)
 
     const [quoteBalance, setQuoteBalance] = useState(null)
@@ -64,72 +50,6 @@ const OrderPanel = (props: {
         }
     }, [getQuoteBalance, quoteBalance])
 
-    const getKeplr = useCallback(async () => {
-        await window.keplr.enable(networkConfig.chainId);
-        const offlineSigner = window.keplr.getOfflineSigner(networkConfig.chainId);
-        const accounts = await offlineSigner.getAccounts();
-        const key = await window.keplr.getKey(networkConfig.chainId);
-        return { offlineSigner, accounts, key };
-    }, [networkConfig]);
-
-    const broadcastTx = useCallback(async (chainId: string, txRaw: TxRaw) => {
-        await getKeplr();
-        const result = await window.keplr.sendTx(
-            chainId,
-            CosmosTxV1Beta1Tx.TxRaw.encode(txRaw).finish(),
-            BroadcastModeKeplr.Sync
-        );
-
-        if (!result || result.length === 0) {
-            throw new TransactionException(
-                new Error("Transaction failed to be broadcasted"),
-                { contextModule: "Keplr" }
-            );
-        }
-
-        return Buffer.from(result).toString("hex");
-    }, [getKeplr]);
-
-    const handleSendTx = useCallback(async (pubKey: any, msg: any, injectiveAddress: string, offlineSigner: { signDirect: (arg0: any, arg1: CosmosTxV1Beta1Tx.SignDoc) => any; }, gas: any = null) => {
-        setTxLoading(true)
-        const chainRestAuthApi = new ChainRestAuthApi(networkConfig.rest);
-        const chainRestTendermintApi = new ChainRestTendermintApi(networkConfig.rest);
-
-        const latestBlock = await chainRestTendermintApi.fetchLatestBlock();
-        const latestHeight = latestBlock.header.height;
-        const timeoutHeight = new BigNumberInBase(latestHeight).plus(
-            DEFAULT_BLOCK_TIMEOUT_HEIGHT
-        );
-
-        const accountDetailsResponse = await chainRestAuthApi.fetchAccount(
-            injectiveAddress
-        );
-        const baseAccount = BaseAccount.fromRestApi(accountDetailsResponse);
-
-        const { signDoc } = createTransaction({
-            pubKey: pubKey,
-            chainId: networkConfig.chainId,
-            fee: gas ?? getStdFee({}),
-            message: msg,
-            sequence: baseAccount.sequence,
-            timeoutHeight: timeoutHeight.toNumber(),
-            accountNumber: baseAccount.accountNumber,
-        });
-
-        const directSignResponse = await offlineSigner.signDirect(
-            injectiveAddress,
-            signDoc
-        );
-
-        const txRaw = getTxRawFromTxRawOrDirectSignResponse(directSignResponse);
-        const txHash = await broadcastTx(networkConfig.chainId, txRaw);
-        const response = await new TxRestClient(networkConfig.rest).fetchTxPoll(txHash);
-
-        console.log(response);
-        setTxLoading(false)
-        return response
-    }, [broadcastTx, networkConfig])
-
     const handleOrderTypeChange = (e) => {
         setOrderType(e.target.value);
     };
@@ -137,9 +57,7 @@ const OrderPanel = (props: {
     const handleBuy = useCallback(async () => {
         console.log('Buy', { quantity, price, orderType });
         setError(null)
-        const { key, offlineSigner } = await getKeplr(networkConfig.chainId);
-        const pubKey = Buffer.from(key.pubKey).toString("base64");
-        const injectiveAddress = key.bech32Address;
+        const injectiveAddress = connectedAddress
 
         if (connectedAddress !== injectiveAddress) {
             setError("Wrong wallet connected")
@@ -189,19 +107,18 @@ const OrderPanel = (props: {
         console.log("buy order", msgBuy)
         setProgress(`Place buy order`)
 
-        const result = await handleSendTx(pubKey, msgBuy, injectiveAddress, offlineSigner)
+        const result = await performTransaction(injectiveAddress, [msgBuy])
         if (result) {
             props.setLoaded(false)
             setQuoteBalance(null)
         }
-    }, [connectedAddress, getKeplr, getSubAccount, handleSendTx, networkConfig.chainId, orderType, price, props, quantity]);
+    }, [connectedAddress, getSubAccount, orderType, price, props, quantity]);
 
     const handleSell = useCallback(async () => {
         console.log('Sell', { quantity, price, orderType });
         setError(null)
-        const { key, offlineSigner } = await getKeplr(networkConfig.chainId);
-        const pubKey = Buffer.from(key.pubKey).toString("base64");
-        const injectiveAddress = key.bech32Address;
+
+        const injectiveAddress = connectedAddress
 
         if (connectedAddress !== injectiveAddress) {
             setError("Wrong wallet connected")
@@ -250,12 +167,12 @@ const OrderPanel = (props: {
         console.log("sell order", msgBuy)
         setProgress(`Place sell order`)
 
-        const result = await handleSendTx(pubKey, msgBuy, injectiveAddress, offlineSigner)
+        const result = await performTransaction(injectiveAddress, [msgBuy])
         if (result) {
             props.setLoaded(false)
             setQuoteBalance(null)
         }
-    }, [connectedAddress, getKeplr, getSubAccount, handleSendTx, networkConfig.chainId, orderType, price, props, quantity]);
+    }, [connectedAddress, getSubAccount, orderType, price, props, quantity]);
 
     return (
         <div className="p-4 max-w-md mx-auto bg-white rounded-xl shadow-md space-y-4 text-black">

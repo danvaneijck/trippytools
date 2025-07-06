@@ -1,33 +1,28 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import ConnectKeplr from "../../components/App/ConnectKeplr";
-import { useSelector } from "react-redux";
+import ConnectWallet from "../../components/App/ConnectKeplr";
 import TokenUtils from "../../modules/tokenUtils";
 import moment from "moment";
 import OrderPanel from "./OrderPanel";
 import { useNavigate, useLocation } from 'react-router-dom';
 import MarketAdminModal from "./MarketAdminModal";
+import useNetworkStore from "../../store/useNetworkStore";
 
 
 
 const MarketDetails = (props: {
     marketId: string
 }) => {
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { network: networkConfig } = useNetworkStore()
 
     const [loading, setLoading] = useState(false);
     const [loaded, setLoaded] = useState(false);
 
     const [showAdminModal, setShowAdminModal] = useState(false);
 
-    const [marketId, setMarketId] = useState("active");
     const [market, setMarket] = useState(null)
 
     const [orders, setOrders] = useState([])
-
-    const [error, setError] = useState(null)
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -83,7 +78,7 @@ const MarketDetails = (props: {
 
 
                     <div className="m-2">
-                        <ConnectKeplr />
+                        <ConnectWallet />
                     </div>
                 </header>
 

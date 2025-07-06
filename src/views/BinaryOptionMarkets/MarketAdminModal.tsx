@@ -1,30 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
-    BaseAccount,
-    BroadcastModeKeplr,
-    ChainRestAuthApi,
-    ChainRestTendermintApi,
-    CosmosTxV1Beta1Tx,
-    createTransaction,
-    getTxRawFromTxRawOrDirectSignResponse,
-    MsgInstantBinaryOptionsMarketLaunch,
-    TxRaw,
-    TxRestClient,
     MsgAdminUpdateBinaryOptionsMarket
 } from "@injectivelabs/sdk-ts";
-import { TransactionException } from "@injectivelabs/exceptions";
-import { BigNumberInBase, DEFAULT_BLOCK_TIMEOUT_HEIGHT, getStdFee } from "@injectivelabs/utils";
-import { Buffer } from "buffer";
-import { useSelector } from "react-redux";
 import { CircleLoader } from "react-spinners";
 import moment from 'moment';
-import TokenUtils from '../../modules/tokenUtils';
+import useWalletStore from '../../store/useWalletStore';
+import { performTransaction } from '../../utils/walletStrategy';
 
 const MarketAdminModal = (props: { setShowModal: (show: boolean) => void, market: any, setLoaded: any }) => {
 
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
 
     const [progress, setProgress] = useState("")
     const [txLoading, setTxLoading] = useState(false)
@@ -38,77 +23,10 @@ const MarketAdminModal = (props: { setShowModal: (show: boolean) => void, market
 
     const [error, setError] = useState(null)
 
-    const getKeplr = useCallback(async () => {
-        await window.keplr.enable(networkConfig.chainId);
-        const offlineSigner = window.keplr.getOfflineSigner(networkConfig.chainId);
-        const accounts = await offlineSigner.getAccounts();
-        const key = await window.keplr.getKey(networkConfig.chainId);
-        return { offlineSigner, accounts, key };
-    }, [networkConfig]);
-
-    const broadcastTx = useCallback(async (chainId: string, txRaw: TxRaw) => {
-        await getKeplr();
-        const result = await window.keplr.sendTx(
-            chainId,
-            CosmosTxV1Beta1Tx.TxRaw.encode(txRaw).finish(),
-            BroadcastModeKeplr.Sync
-        );
-
-        if (!result || result.length === 0) {
-            throw new TransactionException(
-                new Error("Transaction failed to be broadcasted"),
-                { contextModule: "Keplr" }
-            );
-        }
-
-        return Buffer.from(result).toString("hex");
-    }, [getKeplr]);
-
-    const handleSendTx = useCallback(async (pubKey: any, msg: any, injectiveAddress: string, offlineSigner: { signDirect: (arg0: any, arg1: CosmosTxV1Beta1Tx.SignDoc) => any; }, gas: any = null) => {
-        setTxLoading(true)
-        const chainRestAuthApi = new ChainRestAuthApi(networkConfig.rest);
-        const chainRestTendermintApi = new ChainRestTendermintApi(networkConfig.rest);
-
-        const latestBlock = await chainRestTendermintApi.fetchLatestBlock();
-        const latestHeight = latestBlock.header.height;
-        const timeoutHeight = new BigNumberInBase(latestHeight).plus(
-            DEFAULT_BLOCK_TIMEOUT_HEIGHT
-        );
-
-        const accountDetailsResponse = await chainRestAuthApi.fetchAccount(
-            injectiveAddress
-        );
-        const baseAccount = BaseAccount.fromRestApi(accountDetailsResponse);
-
-        const { signDoc } = createTransaction({
-            pubKey: pubKey,
-            chainId: networkConfig.chainId,
-            fee: gas ?? getStdFee({}),
-            message: msg,
-            sequence: baseAccount.sequence,
-            timeoutHeight: timeoutHeight.toNumber(),
-            accountNumber: baseAccount.accountNumber,
-        });
-
-        const directSignResponse = await offlineSigner.signDirect(
-            injectiveAddress,
-            signDoc
-        );
-
-        const txRaw = getTxRawFromTxRawOrDirectSignResponse(directSignResponse);
-        const txHash = await broadcastTx(networkConfig.chainId, txRaw);
-        const response = await new TxRestClient(networkConfig.rest).fetchTxPoll(txHash);
-
-        console.log(response);
-        setTxLoading(false)
-        return response
-    }, [broadcastTx, networkConfig])
-
     const updateMarket = useCallback(async () => {
         setError(null)
-        const { key, offlineSigner } = await getKeplr(networkConfig.chainId);
-        const pubKey = Buffer.from(key.pubKey).toString("base64");
-        const injectiveAddress = key.bech32Address;
+
+        const injectiveAddress = connectedAddress;
 
         const msgUpdateMarket = MsgAdminUpdateBinaryOptionsMarket.fromJSON({
             sender: injectiveAddress,
@@ -121,14 +39,14 @@ const MarketAdminModal = (props: { setShowModal: (show: boolean) => void, market
 
         console.log("msg", msgUpdateMarket)
         setProgress("Update binary options market")
-        const result = await handleSendTx(pubKey, msgUpdateMarket, injectiveAddress, offlineSigner)
+        const result = await performTransaction(injectiveAddress, [msgUpdateMarket])
 
         setProgress("Done...")
         if (result) {
             props.setShowModal(false)
             props.setLoaded(false)
         }
-    }, [getKeplr, networkConfig.chainId, props, market, handleSendTx])
+    }, [connectedAddress, props, market])
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;

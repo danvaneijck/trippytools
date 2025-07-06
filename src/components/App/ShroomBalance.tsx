@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useState } from "react"
 import TokenUtils from "../../modules/tokenUtils";
-import { useSelector } from "react-redux";
 import shroom from "../../assets/shroom.jpg"
 import { humanReadableAmount } from "../../utils/helpers";
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
 
 const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 
 const ShroomBalance = () => {
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet } = useWalletStore()
+    const { networkKey, network } = useNetworkStore()
 
     const [loading, setLoading] = useState(false)
     const [lastLoadedAddress, setLastLoadedAddress] = useState(null)
@@ -19,12 +19,12 @@ const ShroomBalance = () => {
     const [usd, setUsd] = useState(null)
 
     const getBalance = useCallback(async () => {
-        if (!connectedAddress) return
-        const module = new TokenUtils(networkConfig);
+        if (!connectedWallet) return
+        const module = new TokenUtils(network);
         try {
             const [baseAssetPrice, tokenBalance, pairInfo] = await Promise.all([
                 module.getINJPrice(),
-                module.queryTokenForBalance(SHROOM_TOKEN_ADDRESS, connectedAddress),
+                module.queryTokenForBalance(SHROOM_TOKEN_ADDRESS, connectedWallet),
                 module.getPairInfo(SHROOM_PAIR_ADDRESS)
             ]);
             const normalizedBalance = (tokenBalance.balance / Math.pow(10, 18)).toFixed(2);
@@ -33,17 +33,17 @@ const ShroomBalance = () => {
             const returnAmount = Number(quote.amount) / Math.pow(10, 18);
             const totalUsdValue = (returnAmount * baseAssetPrice).toFixed(2);
             setUsd(totalUsdValue);
-            setLastLoadedAddress(connectedAddress)
+            setLastLoadedAddress(connectedWallet)
             return normalizedBalance
         } catch (error) {
             console.error('Failed to update balance and USD value:', error);
         }
-    }, [connectedAddress, networkConfig]);
+    }, [connectedWallet, network]);
 
     useEffect(() => {
-        if (!connectedAddress) return
+        if (!connectedWallet) return
         if (loading) return
-        if (!balance || !usd || (!lastLoadedAddress || lastLoadedAddress !== connectedAddress)) {
+        if (!balance || !usd || (!lastLoadedAddress || lastLoadedAddress !== connectedWallet)) {
             setLoading(true)
             getBalance().then(r => {
 
@@ -53,15 +53,15 @@ const ShroomBalance = () => {
                 setLoading(false)
             })
         }
-    }, [balance, getBalance, usd, loading, connectedAddress, lastLoadedAddress])
+    }, [balance, getBalance, usd, loading, connectedWallet, lastLoadedAddress])
 
     useEffect(() => {
         setLastLoadedAddress(null)
-        if (!connectedAddress) {
+        if (!connectedWallet) {
             setBalance(null)
             setUsd(null)
         }
-    }, [connectedAddress])
+    }, [connectedWallet])
 
     return (
         <div className="flex self-end items-center text-sm w-full hover:cursor-pointer max-w-screen-sm" onClick={getBalance}>
