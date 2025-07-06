@@ -19,7 +19,7 @@ const IPFSImage = ({ ipfsPath, className, width }) => {
         src={imageUrl}
         style={{ width: width }}
         className={className}
-        alt="logo" alt="IPFS Image"
+        alt="logo"
     />;
 };
 

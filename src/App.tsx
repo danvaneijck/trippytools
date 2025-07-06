@@ -7,7 +7,6 @@ import Home from "./views/Home";
 import MyTokens from './views/MyTokens';
 import Airdrop from './views/Airdrop';
 import MyceliumFarm from './views/MyceliumFarm';
-import TokenScanner from './views/TokenScanner';
 import { ApolloProvider } from '@apollo/client';
 import client from './utils/apolloClient';
 import BinaryOptionMarkets from './views/BinaryOptionMarkets';
@@ -44,7 +43,6 @@ const App = () => {
           <Route path="/airdrop" element={<Airdrop />} />
           <Route path="/airdrop-history" element={<AirdropHistory />} />
           <Route path="/mycelium-farm" element={<MyceliumFarm />} />
-          <Route path="/token-scanner" element={<TokenScanner />} />
           <Route path="/binary-option-markets" element={<BinaryOptionMarkets />} />
           <Route path="/market-make" element={<MitoMarketMake />} />
           <Route path="/pre-sale-tool" element={<PreSaleTool />} />
