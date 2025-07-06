@@ -8,7 +8,7 @@ import { WALLET_LABELS } from "../../constants/walletLabels";
 import IPFSImage from "../../components/App/IpfsImage";
 import AirdropConfirmModal from "./AirdropConfirmModal";
 import { Holder, MarketingInfo } from "../../constants/types";
-import { CW404_TOKENS, LIQUIDITY_POOLS, LIQUIDITY_TOKENS, NFT_COLLECTIONS, TOKENS } from "../../constants/contractAddresses";
+import { CHOICE_FACTORY, CW404_TOKENS, NFT_COLLECTIONS } from "../../constants/contractAddresses";
 import TokenSelect from "../../components/Inputs/TokenSelect";
 import Papa from 'papaparse';
 import { ChainGrpcGovApi } from '@injectivelabs/sdk-ts'
@@ -19,6 +19,8 @@ import Select from "react-select"
 import Footer from "../../components/App/Footer";
 import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
+import useTokenStore from "../../store/useTokenStore";
+import useLiquidityPoolStore from "../../store/usePoolStore";
 
 const STAKING_CONTRACT_ADDRESS = 'inj1gtze7qm07nky47n7mwgj4zatf2s77xqvh3k2n8'
 const INJ_CW20_ADAPTER = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
@@ -50,6 +52,10 @@ const Airdrop = () => {
     const [tokenAddress, setTokenAddress] = useState(null);
     const [tokenInfo, setTokenInfo] = useState(null);
     const [pairMarketing, setPairMarketing] = useState<MarketingInfo | null>(null);
+
+    const { tokens } = useTokenStore()
+    const { pools } = useLiquidityPoolStore()
+
 
     const dropModeOptions = [
         {
@@ -90,7 +96,7 @@ const Airdrop = () => {
 
     const [nftCollection, setNftCollection] = useState(NFT_COLLECTIONS[0]);
     const [nftCollectionInfo, setNftCollectionInfo] = useState(null);
-    const [airdropTokenAddress, setAirdropTokenAddress] = useState(TOKENS[0]);
+    const [airdropTokenAddress, setAirdropTokenAddress] = useState();
     const [airdropTokenInfo, setAirdropTokenInfo] = useState(null);
 
     const [airdropDetails, setAirdropDetails] = useState([]);
@@ -625,8 +631,8 @@ const Airdrop = () => {
 
         let tokenInfo
 
-        const liquidityPoolAddresses = LIQUIDITY_POOLS.map(pool => pool.value);
-        const tokenAddresses = TOKENS.map(pool => pool.value);
+        const liquidityPoolAddresses = pools.map(pool => pool.contract_addr);
+        const tokenAddresses = tokens.map(token => token.address);
 
         const addressesToExclude = [
             INJ_CW20_ADAPTER,
@@ -736,7 +742,7 @@ const Airdrop = () => {
             setError(e.message)
             setLoading(false)
         }
-    }, [airdropTokenAddress, distMode, balanceToDrop, networkConfig]);
+    }, [airdropTokenAddress, distMode, balanceToDrop, networkConfig, tokens, pools]);
 
     const handleFileUpload = useCallback((event) => {
         const file = event.target.files[0];
@@ -861,7 +867,13 @@ const Airdrop = () => {
                                             options={[
                                                 {
                                                     label: "TOKENS",
-                                                    options: TOKENS
+                                                    options: tokens.filter(t => t.show_on_ui).map((t) => {
+                                                        return {
+                                                            label: t.name + " (" + t.symbol + ")",
+                                                            value: t.address,
+                                                            img: t.icon
+                                                        }
+                                                    })
                                                 },
                                                 {
                                                     label: "CW404",
@@ -1203,13 +1215,36 @@ const Airdrop = () => {
                                                             options={[
                                                                 {
                                                                     label: "Tokens",
-                                                                    options: TOKENS
+                                                                    options: tokens.filter(t => t.show_on_ui).map((t) => {
+                                                                        return {
+                                                                            label: t.name + " (" + t.symbol + ")",
+                                                                            value: t.address,
+                                                                            img: t.icon
+                                                                        }
+                                                                    })
                                                                 },
                                                                 {
                                                                     label: "LIQUIDITY tokens",
-                                                                    options: LIQUIDITY_TOKENS
-                                                                },
+                                                                    options:
+                                                                        pools.filter(p => p.liquidity_token !== null).sort((a, b) => {
+                                                                            const aChoice = a.dex.factory_address === CHOICE_FACTORY;
+                                                                            const bChoice = b.dex.factory_address === CHOICE_FACTORY;
 
+                                                                            if (aChoice === bChoice) {
+                                                                                return `${a.asset_1.symbol}/${a.asset_2.symbol}`.localeCompare(
+                                                                                    `${b.asset_1.symbol}/${b.asset_2.symbol}`
+                                                                                );
+                                                                            }
+                                                                            return aChoice ? -1 : 1;
+                                                                        }).map((p) => {
+                                                                            return {
+                                                                                value: p.liquidity_token.address,
+                                                                                label: `${p.asset_1.symbol}/${p.asset_2.symbol} (${p.dex.name}) LP`,
+                                                                                img: p.asset_1.icon,
+                                                                            }
+                                                                        })
+
+                                                                },
                                                             ]}
                                                             selectedOption={airdropTokenAddress}
                                                             setSelectedOption={setAirdropTokenAddress}

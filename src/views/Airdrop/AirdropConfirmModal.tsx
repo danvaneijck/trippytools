@@ -267,12 +267,12 @@ const AirdropConfirmModal = (props: {
         if (props.airdropDetails !== null && props.airdropDetails.length > 0) {
 
             // pay fee
-            if (currentNetwork == "mainnet" && props.shroomCost !== 0 && !feePayed) {
-                console.log("pay shroom fee")
-                setProgress("Pay shroom fee for airdrop")
-                const result = await payFee()
-                if (result) setFeePayed(true)
-            }
+            // if (currentNetwork == "mainnet" && props.shroomCost !== 0 && !feePayed) {
+            //     console.log("pay shroom fee")
+            //     setProgress("Pay shroom fee for airdrop")
+            //     const result = await payFee()
+            //     if (result) setFeePayed(true)
+            // }
 
             console.log("airdrop")
             setProgress("Send airdrops")
@@ -341,7 +341,7 @@ const AirdropConfirmModal = (props: {
                 className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none text-white text-sm"
             >
                 <div className="relative w-auto my-4 mx-auto max-w-4xl">
-                    <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-slate-800 outline-none focus:outline-none">
+                    <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-gray-800 outline-none focus:outline-none">
                         <div className="flex items-start justify-between p-4 border-b border-solid border-blueGray-900 rounded-t">
                             <h3 className="text-xl font-semibold">
                                 Airdrop on {currentNetwork}
@@ -424,7 +424,7 @@ const AirdropConfirmModal = (props: {
                         }
                         <div className="mx-5">If the airdrop TX fails, try increasing the gas fee in your wallet. Each tx will retry up to 3 times.</div>
                         {currentNetwork == "mainnet" && (props.airdropDetails.length > 0) && <div className="m-5">
-                            Fee for airdrop: {props.shroomCost} shroom <br />
+                            Fee for airdrop: {props.shroomCost} shroom (cw20)<br />
                             <a href="https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl" className="underline text-sm">buy here</a>
                             <br />
                             <div className="mt-2">Fee payed: {feePayed ? "True" : "False"}</div>
@@ -439,7 +439,7 @@ const AirdropConfirmModal = (props: {
                                 Back
                             </button>
                             <button
-                                className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                                className="bg-gray-600 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
                                 onClick={() => startAirdrop().then(() => console.log("done")).catch(e => {
                                     console.log(e)

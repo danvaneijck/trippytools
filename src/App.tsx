@@ -22,13 +22,13 @@ import WalletExport from './views/WalletExport';
 import WalletSelectModal from './components/Modals/WalletSelectModal';
 import TokenInitializer from './components/DataInit/Tokens';
 import PoolInitializer from './components/DataInit/Pools';
+import { ToastContainer } from 'react-toastify';
 
 const App = () => {
   return (
-
     <ApolloProvider client={client}>
       <Router>
-
+        <ToastContainer />
         <WalletSelectModal />
 
         <TokenInitializer />

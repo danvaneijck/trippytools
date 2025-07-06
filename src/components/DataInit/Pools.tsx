@@ -79,7 +79,7 @@ const PoolInitializer = () => {
             refetch({
                 yesterday: dayjs().subtract(24, "hour").toISOString(),
             });
-        }, 10000);
+        }, 100000);
 
         return () => clearInterval(id);
     }, [refetch]);

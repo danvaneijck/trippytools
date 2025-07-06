@@ -155,12 +155,12 @@ const AirdropModal = (props) => {
     }, [connectedAddress, props.airdropDetails]);
 
     const handleSendAirdrops = useCallback(async () => {
-        if (currentNetwork == "mainnet" && !feePayed) {
-            console.log("pay shroom fee")
-            setProgress("Pay shroom fee for airdrop")
-            const result = await payFee()
-            if (result) setFeePayed(true)
-        }
+        // if (currentNetwork == "mainnet" && !feePayed) {
+        //     console.log("pay shroom fee")
+        //     setProgress("Pay shroom fee for airdrop")
+        //     const result = await payFee()
+        //     if (result) setFeePayed(true)
+        // }
         sendAirdrops(props.tokenInfo.denom).then((r) => {
             console.log("done", r)
             navigate(`/token-holders?address=${props.tokenInfo.denom}`);
@@ -279,7 +279,7 @@ const AirdropModal = (props) => {
                         }
 
                         {currentNetwork == "mainnet" && (props.airdropDetails.length > 0) && <div className="m-5">
-                            Fee for airdrop: {humanReadableAmount(shroomFee)} shroom <br />
+                            Fee for airdrop: {humanReadableAmount(shroomFee)} shroom (cw20)<br />
                             <a href="https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl" className="underline text-sm">buy here</a>
                             <br />
                             <div className="mt-2">Fee payed: {feePayed ? "True" : "False"}</div>

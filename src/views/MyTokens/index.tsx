@@ -19,7 +19,8 @@ import { performTransaction } from "../../utils/walletStrategy";
 const MyTokens = () => {
 
     const { connectedWallet: connectedAddress } = useWalletStore()
-    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
+    const { networkKey: currentNetwork } = useNetworkStore()
+    const networkConfig = useNetworkStore((state) => state.network);
 
     const [tokens, setTokens] = useState([]);
 
@@ -45,10 +46,11 @@ const MyTokens = () => {
     }, [currentNetwork])
 
     const getTokens = useCallback(async () => {
-        console.log("get user tokens")
+        console.log("get user tokens", networkConfig)
         const module = new TokenUtils(networkConfig);
         try {
             const userTokens = await module.getUserTokens(connectedAddress);
+            console.log(userTokens)
             return userTokens;
         } catch (error) {
             console.error('Failed to fetch tokens:', error);
@@ -130,7 +132,7 @@ const MyTokens = () => {
                 try {
                     const spotMarkets = await getSpotMarkets();
                     const mitoVaults = await getMitoVaults();
-                    const balances = await getBalances()
+                    // const balances = await getBalances()
 
                     const extendedTokens = fetchedTokens.map(token => {
                         const market = spotMarkets.find(market => market.baseDenom.toString() === token.token.toString());
@@ -147,25 +149,25 @@ const MyTokens = () => {
                         };
                     });
 
-                    const extendedBalances = balances.map(balance => {
-                        const market = spotMarkets.find(market => (balance.token && market.baseDenom.toString() === balance.token.denom.toString()));
-                        let vault = null
-                        if (market) {
-                            vault = mitoVaults.find(vault => vault.marketId.toString() === market.marketId.toString());
-                        }
+                    // const extendedBalances = balances.map(balance => {
+                    //     const market = spotMarkets.find(market => (balance.token && market.baseDenom.toString() === balance.token.denom.toString()));
+                    //     let vault = null
+                    //     if (market) {
+                    //         vault = mitoVaults.find(vault => vault.marketId.toString() === market.marketId.toString());
+                    //     }
 
-                        return {
-                            ...balance,
-                            marketId: market ? market.marketId : null,
-                            mitoVaultContractAddress: vault ? vault.contractAddress : null,
-                            mitoVault: vault
-                        };
-                    });
+                    //     return {
+                    //         ...balance,
+                    //         marketId: market ? market.marketId : null,
+                    //         mitoVaultContractAddress: vault ? vault.contractAddress : null,
+                    //         mitoVault: vault
+                    //     };
+                    // });
 
                     setHelixSpotMarkets(spotMarkets);
                     setMitoVaults(mitoVaults)
                     setTokens(extendedTokens);
-                    setBalances(extendedBalances)
+                    // setBalances(extendedBalances)
 
                     await getINJPrice()
 
@@ -183,7 +185,8 @@ const MyTokens = () => {
             }
         };
 
-        fetchData();
+        console.log("call fetch data")
+        void fetchData();
     }, [getTokens, loaded, loading, connectedAddress, getSpotMarkets, getMitoVaults, getBalances, getINJPrice]);
 
 

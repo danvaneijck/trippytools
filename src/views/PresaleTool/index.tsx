@@ -304,7 +304,7 @@ const PreSaleTool = () => {
             }
             {airdropModal &&
                 <AirdropModal
-                    airdropDetails={airdropList}
+                    airdropDetails={airdropList.filter(record => record.amount != 0)}
                     tokenInfo={tokenInfo}
                     setShowModal={setAirdropModal}
                 />

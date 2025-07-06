@@ -7,6 +7,8 @@ import { humanReadableAmount } from "../../utils/helpers";
 import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
 import { performTransaction } from "../../utils/walletStrategy";
+import { MsgExecuteContract, MsgExecuteContractCompat } from "@injectivelabs/sdk-ts";
+import { Bounce, ToastContainer, toast } from 'react-toastify';
 
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
@@ -134,26 +136,33 @@ const MitoMarketMake = () => {
         });
         console.log(feeMsg, msgMarketMake)
 
-        const gas = {
-            amount: [
-                {
-                    denom: "inj",
-                    amount: '3500000'
-                }
-            ],
-            gas: '3500000'
-        };
-
-        await performTransaction(
+        const response = await performTransaction(
             injectiveAddress,
             [
                 feeMsg,
                 msgMarketMake
-            ],
-
-
+            ]
         )
-    }, [connectedAddress, selectedVault])
+
+        const content = <div>
+            Sent mito market make for vault <span className="font-bold">{selectedVault.value.matchingVault.contractAddress}</span> <br />
+            <br />
+            <a
+                href={`${networkConfig.explorerUrl}/transaction/${response.txHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline text-blue-500 text-sm"
+            >
+                View transaction on explorer
+            </a>
+        </div>
+
+        toast.success(content, {
+            autoClose: 5000,
+            theme: "dark"
+        });
+
+    }, [connectedAddress, selectedVault, networkConfig])
 
     return (
         <div className="flex flex-col min-h-screen pb-10 bg-customGray">

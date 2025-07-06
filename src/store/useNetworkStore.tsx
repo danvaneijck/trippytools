@@ -27,7 +27,6 @@ const useNetworkStore = create<NetworkState>()(
         }),
         {
             name: 'selected-network',          // localStorage key
-            partialize: ({ networkKey }) => ({ networkKey }), // only persist the key
         },
     ),
 );
