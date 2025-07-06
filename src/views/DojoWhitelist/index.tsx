@@ -1,15 +1,13 @@
-import { useSelector } from "react-redux";
-import { Link } from "react-router-dom";
-import ConnectKeplr from "../../components/App/ConnectKeplr";
 import { useCallback, useEffect, useState } from "react";
 import ShroomBalance from "../../components/App/ShroomBalance";
 import TokenUtils from "../../modules/tokenUtils";
 import { MsgExecuteContract, MsgSend } from "@injectivelabs/sdk-ts";
-import { Buffer } from "buffer";
 import Footer from "../../components/App/Footer";
 import { humanReadableAmount } from "../../utils/helpers";
-import { getKeplrOfflineSigner, handleSendTx } from "../../utils/keplr";
 import IPFSImage from "../../components/App/IpfsImage";
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
+import { performTransaction } from "../../utils/walletStrategy";
 
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
@@ -18,10 +16,8 @@ const DOJO_FACTORY = "inj1pc2vxcmnyzawnwkf03n2ggvt997avtuwagqngk"
 
 
 const DojoWhitelist = () => {
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
     const [denom, setDenom] = useState("factory/inj1sy2aad37tku3dz0353epczxd95hvuhzl0lhfqh/FUN")
     const [tokenInfo, setTokenInfo] = useState(null)
@@ -76,9 +72,7 @@ const DojoWhitelist = () => {
             return
         }
 
-        const { key, offlineSigner } = await getKeplrOfflineSigner(networkConfig.chainId);
-        const pubKey = Buffer.from(key.pubKey).toString("base64");
-        const injectiveAddress = key.bech32Address;
+        const injectiveAddress = connectedAddress;
 
         if (connectedAddress !== injectiveAddress) {
             setError("wrong address connected")
@@ -127,33 +121,19 @@ const DojoWhitelist = () => {
         console.log(msgSend)
         console.log(addTokenDecimals)
 
-        // const gas = {
-        //     amount: [
-        //         {
-        //             denom: "inj",
-        //             amount: '3500000'
-        //         }
-        //     ],
-        //     gas: '3500000'
-        // };
-
-        const result = await handleSendTx(
-            networkConfig,
-            pubKey,
+        const result = await performTransaction(
+            injectiveAddress,
             [
                 feeMsg,
                 msgSend,
                 addTokenDecimals
-            ],
-            injectiveAddress,
-            offlineSigner,
-            // gas
+            ]
         )
 
         if (result) {
             setSuccess(true)
         }
-    }, [denom, networkConfig, connectedAddress, tokenOwner, tokenInfo])
+    }, [denom, connectedAddress, tokenOwner, tokenInfo])
 
     return (
         <div className="flex flex-col min-h-screen pb-10 bg-customGray">

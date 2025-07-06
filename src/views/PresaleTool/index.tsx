@@ -4,16 +4,16 @@ import { useSearchParams } from "react-router-dom"
 import TokenSelect from "../../components/Inputs/TokenSelect"
 import { useCallback, useEffect, useState } from "react"
 import ShroomBalance from "../../components/App/ShroomBalance"
-import { useSelector } from "react-redux"
 import TokenUtils from "../../modules/tokenUtils"
 import RefundModal from "./RefundModal"
 import { humanReadableAmount } from "../../utils/helpers"
 import AirdropModal from "./AirdropModal"
 import DisclaimerModal from "../../components/Modals/DisclaimerModal"
-import { CSVLink } from 'react-csv';
 import moment from "moment"
 import { FaCheckCircle } from "react-icons/fa"
 import { ImCross } from "react-icons/im"
+import useWalletStore from "../../store/useWalletStore"
+import useNetworkStore from "../../store/useNetworkStore"
 
 
 const INJECTIVE_TOKEN = {
@@ -27,9 +27,8 @@ const PreSaleTool = () => {
 
     const [searchParams, setSearchParams] = useSearchParams();
 
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
     const [injPrice, setInjPrice] = useState(null)
     const [injBalance, setINJBalance] = useState(null)
@@ -305,7 +304,7 @@ const PreSaleTool = () => {
             }
             {airdropModal &&
                 <AirdropModal
-                    airdropDetails={airdropList}
+                    airdropDetails={airdropList.filter(record => record.amount != 0)}
                     tokenInfo={tokenInfo}
                     setShowModal={setAirdropModal}
                 />

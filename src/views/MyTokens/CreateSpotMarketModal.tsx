@@ -1,34 +1,22 @@
 import {
-    BaseAccount,
-    BroadcastModeKeplr,
-    ChainRestAuthApi,
-    ChainRestTendermintApi,
-    CosmosTxV1Beta1Tx,
-    createTransaction,
-    getTxRawFromTxRawOrDirectSignResponse,
     MsgInstantSpotMarketLaunch,
-    TxRaw,
-    TxRestClient,
 } from "@injectivelabs/sdk-ts";
-import { TransactionException } from "@injectivelabs/exceptions";
-import { BigNumberInBase, DEFAULT_BLOCK_TIMEOUT_HEIGHT, getStdFee } from "@injectivelabs/utils";
-import { Buffer } from "buffer";
+
 import { useCallback, useState } from "react";
-import { useSelector } from "react-redux";
 import { Link } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
 import SpotMarketConfigDropdownTable from "../../components/App/SpotMarketOptionsTable";
-import { getKeplrOfflineSigner, handleSendTx } from "../../utils/keplr";
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
+import { performTransaction } from "../../utils/walletStrategy";
 
 
 const CreateSpotMarketModal = (props: {
     token: any
 }) => {
 
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork } = useNetworkStore()
 
     const [priceTickSize, setPriceTickSize] = useState('0.0000001');
     const [quantityTickSize, setQuantityTickSize] = useState(100);
@@ -43,16 +31,9 @@ const CreateSpotMarketModal = (props: {
 
     const create = useCallback(async () => {
         setError(null)
-        const { key, offlineSigner } = await getKeplrOfflineSigner(networkConfig.chainId);
-        const pubKey = Buffer.from(key.pubKey).toString("base64");
-        const injectiveAddress = key.bech32Address;
-        if (connectedAddress !== injectiveAddress) {
-            setError("Wrong wallet connected")
-            return
-        }
-        else {
-            setError(null)
-        }
+
+        const injectiveAddress = connectedAddress;
+
         if (!props.token) return
         let minPriceTick
         const priceTickDecimals = (18 - props.token.metadata.decimals)
@@ -85,7 +66,7 @@ const CreateSpotMarketModal = (props: {
         console.log("spot market msg", msgCreateSpotMarket)
         setProgress(`Create instant spot market`)
 
-        const response = await handleSendTx(networkConfig, pubKey, msgCreateSpotMarket, injectiveAddress, offlineSigner)
+        const response = await performTransaction(injectiveAddress, [msgCreateSpotMarket])
         console.log(response)
         let market = null
         const contract = response['events']?.find(x => x.type === 'injective.exchange.v1beta1.EventSpotMarketUpdate')
@@ -99,7 +80,7 @@ const CreateSpotMarketModal = (props: {
         }
         setProgress("Spot market created! Go back and refresh")
 
-    }, [connectedAddress, props.token, quantityTickSize, priceTickSize, currentNetwork, networkConfig])
+    }, [connectedAddress, props.token, quantityTickSize, priceTickSize, currentNetwork])
 
     return (
         <>

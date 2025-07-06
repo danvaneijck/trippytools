@@ -1,4 +1,3 @@
-import { useSelector } from "react-redux";
 import { useCallback, useEffect, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import Footer from "../../components/App/Footer";
@@ -7,12 +6,13 @@ import { formatTransactionData } from "../../modules/formatTx";
 import moment from "moment";
 import { GridLoader } from "react-spinners";
 import { useSearchParams } from 'react-router-dom';
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
 
 
 const WalletExport = () => {
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
     const [searchParams, setSearchParams] = useSearchParams();
 

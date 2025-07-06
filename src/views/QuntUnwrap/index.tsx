@@ -1,17 +1,16 @@
-import { useSelector } from "react-redux";
 import { useCallback, useEffect, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { MsgExecuteContractCompat } from "@injectivelabs/sdk-ts";
 import { Buffer } from "buffer";
 import Footer from "../../components/App/Footer";
-import { getKeplrOfflineSigner, handleSendTx } from "../../utils/keplr";
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
+import { performTransaction } from "../../utils/walletStrategy";
 
 
 const QuntUnwrap = () => {
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
     const [quntWrappedContract] = useState("inj1u8a7878lnk469s9jel84fvd67jrtj3rj5cv8kx")
     const [tokenInfo, setTokenInfo] = useState(null)
@@ -40,14 +39,8 @@ const QuntUnwrap = () => {
             return
         }
 
-        const { key, offlineSigner } = await getKeplrOfflineSigner(networkConfig.chainId);
-        const pubKey = Buffer.from(key.pubKey).toString("base64");
-        const injectiveAddress = key.bech32Address;
+        const injectiveAddress = connectedAddress;
 
-        if (connectedAddress !== injectiveAddress) {
-            setError("wrong address connected")
-            return
-        }
         setError(null)
 
         const unwrap = Buffer.from(
@@ -69,21 +62,18 @@ const QuntUnwrap = () => {
 
         console.log(unwrapMsg)
 
-        const result = await handleSendTx(
-            networkConfig,
-            pubKey,
+        const result = await performTransaction(
+            injectiveAddress,
             [
                 unwrapMsg
-            ],
-            injectiveAddress,
-            offlineSigner,
+            ]
         )
 
         if (result) {
             setSuccess(true)
             void getTokenInfo()
         }
-    }, [quntWrappedContract, networkConfig, connectedAddress, amountToUnwrap, tokenInfo, getTokenInfo])
+    }, [quntWrappedContract, connectedAddress, amountToUnwrap, tokenInfo, getTokenInfo])
 
     return (
         <div className="flex flex-col min-h-screen pb-10 bg-customGray">

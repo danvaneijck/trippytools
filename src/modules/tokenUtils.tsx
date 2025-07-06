@@ -125,9 +125,7 @@ class TokenUtils {
         }
 
         this.baseAssets = [
-            this.injAssetInfo,
-            this.dojoAssetInfo
-
+            this.injAssetInfo
         ]
         this.factories = [
             {
@@ -137,8 +135,11 @@ class TokenUtils {
             {
                 name: "Astroport",
                 address: "inj19aenkaj6qhymmt746av8ck4r8euthq3zmxr2r6"
+            },
+            {
+                name: "Choice Exchange",
+                address: "inj1k9lcqtn3y92h4t3tdsu7z8qx292mhxhgsssmxg"
             }
-
         ]
 
         this.coinhallRouter = "inj16lkekzp36vj6a9zjl778a2s5nd9f6ft67w2e90"

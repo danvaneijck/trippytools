@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
-import { GridLoader } from "react-spinners";
+import { ClipLoader, GridLoader } from "react-spinners";
 import { Link } from "react-router-dom";
 import { Holder, MarketingInfo, TokenInfo } from "../../constants/types";
 import { useSearchParams } from 'react-router-dom';
-import { useSelector } from "react-redux";
 import IPFSImage from "../../components/App/IpfsImage";
 import { WALLET_LABELS } from "../../constants/walletLabels";
 import TokenSelect from "../../components/Inputs/TokenSelect";
-import { CW404_TOKENS, NFT_COLLECTIONS, TOKENS } from "../../constants/contractAddresses";
+import { CW404_TOKENS, NFT_COLLECTIONS } from "../../constants/contractAddresses";
 import { CSVLink } from 'react-csv';
 import HoldersChart from "../../components/App/HoldersChart";
 import { MdWarning } from "react-icons/md";
@@ -20,6 +19,8 @@ import { Bounce, ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { GrStatusUnknown } from "react-icons/gr";
 import TokenHoldersTable from "./TokenHolderTable";
+import useNetworkStore from "../../store/useNetworkStore";
+import useTokenStore from "../../store/useTokenStore";
 
 const INJ_CW20_ADAPTER = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
@@ -117,13 +118,24 @@ const ProgressBar = ({ queryProgress, saveProgress }) => {
 const TokenHolders = () => {
     const [searchParams, setSearchParams] = useSearchParams();
 
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
+
+    const { tokens } = useTokenStore()
+
+    const TOKENS = tokens.map((t) => {
+        return {
+            value: t.address,
+            label: t.symbol,
+            img: t.icon
+        }
+    })
+
+    const inFlight = useRef<AbortController | null>(null);
 
     const [contractAddress, setContractAddress] = useState(() => {
         const address = searchParams.get("address");
         if (!address) {
-            return TOKENS[0];
+            return TOKENS.find(x => x.value === "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8")
         }
         return TOKENS.find(x => x.value === address) || NFT_COLLECTIONS.find(x => x.value === address) || { label: address, value: address };
     });
@@ -410,117 +422,101 @@ const TokenHolders = () => {
         }
     }, [networkConfig]);
 
-    const findLiquidity = useCallback(async (signal) => {
-        let assetInfo = {};
-        if (tokenInfo?.denom.includes("factory")) {
-            assetInfo = {
-                native_token: {
-                    denom: tokenInfo.denom
+    const findLiquidity = useCallback(
+        async (signal: AbortSignal) => {
+            if (signal.aborted) return;
+
+            const assetInfo = tokenInfo?.denom.includes('factory')
+                ? { native_token: { denom: tokenInfo.denom } }
+                : { token: { contract_addr: tokenInfo!.denom } };
+
+            const module = new TokenUtils(networkConfig);
+            setFindingLiq(true);
+
+            try {
+                const denom = tokenInfo!.denom.includes('factory')
+                    ? tokenInfo!.denom
+                    : `factory/${INJ_CW20_ADAPTER}/${tokenInfo!.denom}`;
+
+                const [spotMarkets, mitoVaults] = await Promise.all([
+                    getSpotMarkets(),
+                    getMitoVaults()
+                ]);
+
+                if (signal.aborted) {
+                    console.log("findLiquidity aborted before processing markets");
+                    return;  // guard after awaited work
                 }
-            };
-        } else {
-            assetInfo = {
-                token: {
-                    contract_addr: tokenInfo.denom
+
+                const market = [...spotMarkets].reverse()
+                    .find(m => m.baseDenom === denom);
+                const vault = market
+                    ? [...mitoVaults].reverse().find(v => v.marketId === market.marketId)
+                    : null;
+
+                let price: number | null = null;
+
+                if (vault) {
+                    setMitoVault(vault);
+                    price = await module.getHelixMarketBestBuy(
+                        vault.marketId,
+                        18 - tokenInfo!.decimals,
+                    );
+                    if (signal.aborted) return;
+
+                    setTokenPrice(price);
                 }
-            };
-        }
-        const module = new TokenUtils(networkConfig);
-        setFindingLiq(true);
 
-        try {
-            let denom = tokenInfo.denom;
-            if (!denom.includes("factory")) {
-                denom = `factory/${INJ_CW20_ADAPTER}/${tokenInfo.denom}`;
-            }
+                console.log("check for liquidity")
+                const liq = await module.checkForLiquidity(assetInfo);
+                if (signal.aborted) return;
 
-            console.log("Fetching spot markets and mito vaults...");
-            const [spotMarkets, mitoVaults] = await Promise.all([
-                getSpotMarkets(),
-                getMitoVaults()
-            ]);
+                if (liq.length === 0) {
+                    setLiqError(true);
+                    return;
+                }
 
-            console.log("Matching spot market to vault");
+                setLiquidity(liq);
 
-            const market = spotMarkets.slice().reverse().find(market => market.baseDenom.toString() === denom.toString());
-            let vault = null;
-
-            if (market) {
-                vault = mitoVaults.slice().reverse().find(vault => vault.marketId.toString() === market.marketId.toString());
-            }
-
-            let currentMitoPrice = null;
-
-            if (vault) {
-                console.log("Found vault:", vault);
-                setMitoVault(vault);
-                currentMitoPrice = await module.getHelixMarketBestBuy(vault.marketId, 18 - tokenInfo?.decimals);
-
-                setTokenPrice(currentMitoPrice);
-            }
-
-            console.log("Got price from mito", currentMitoPrice);
-
-            if (currentMitoPrice) {
-                setHolders(prevHolders => prevHolders.map(holder => ({
-                    ...holder,
-                    usdValue: Number(holder.balance) * currentMitoPrice
-                })));
-            }
-
-            console.log("Checking liquidity...");
-
-            const liquidity = await module.checkForLiquidity(assetInfo);
-
-            console.log("Liquidity fetched:", liquidity);
-
-            if (liquidity.length === 0) {
+                const validPrice = price ?? liq[0].price;
+                setHolders(h =>
+                    h.map(x => ({ ...x, usdValue: Number(x.balance) * validPrice }))
+                );
+                setTokenPrice(validPrice);
                 setFindingLiq(false);
-                setLiqError(true);
-                return;
+            } catch (e: any) {
+                if (!signal.aborted) {
+                    console.error('Error during liquidity fetch:', e);
+                    setLiqError(true);
+                    setFindingLiq(false);
+                }
+            } finally {
+
+                inFlight.current = null;
             }
+        },
+        [tokenInfo, networkConfig, getSpotMarkets, getMitoVaults]
+    );
 
-            setLiquidity(liquidity);
-
-            if (!currentMitoPrice) {
-                setHolders(prevHolders => prevHolders.map(holder => ({
-                    ...holder,
-                    usdValue: Number(holder.balance) * liquidity[0]?.price
-                })));
-                setTokenPrice(liquidity[0]?.price);
-            }
-
-            setFindingLiq(false);
-            console.log("Liquidity finding process finished");
-
-        } catch (e) {
-            console.error("Error during liquidity fetch:", e);
-            if (!signal.aborted) {
-                setFindingLiq(false);
-                setLiqError(true);
-            }
-        }
-    }, [tokenInfo, networkConfig, getSpotMarkets, getMitoVaults]);
 
     useEffect(() => {
-        if (tokenInfo && holders.length > 0 && liquidity.length === 0 && !findingLiq && !liqError) {
-            const abortController = new AbortController();
-            const { signal } = abortController;
-
-            console.log("Starting liquidity fetch...");
-            findLiquidity(signal)
-                .then(() => {
-                    console.log("Finished getting liquidity");
-                })
-                .catch(e => {
-                    console.log("Error getting liquidity:", e);
-                });
-            return () => {
-                console.log("Aborting previous fetch...");
-                abortController.abort();
-            };
+        if (
+            !tokenInfo ||
+            liqError
+        ) {
+            return;
         }
-    }, [tokenInfo, holders, findLiquidity, liquidity, findingLiq, liqError]);
+
+        inFlight.current?.abort();
+
+        const ctrl = new AbortController();
+        inFlight.current = ctrl;
+
+        console.log("find liquidity for", tokenInfo.denom)
+        findLiquidity(ctrl.signal).catch(console.error).finally(() => setFindingLiq(false));
+
+        return () => ctrl.abort();
+    }, [liqError, findLiquidity, tokenInfo]);
 
 
     const getTokenHolders = useCallback(async (address: string) => {
@@ -579,13 +575,14 @@ const TokenHolders = () => {
                             console.error("Error with CW404 token info retrieval:", innerError);
                         }
                     }
-                    else if (error.message.includes("Error parsing into type talis_nft") || error.message.includes("Error parsing into type cw721_base")) {
+                    else if (error.message.includes("Error parsing into type talis_nft") || error.message.includes("Error parsing into type cw721_base") || error.message.includes("Error parsing into type common::talis_nft")) {
                         const tokenInfo = await module.getNFTCollectionInfo(address)
                         const holders = await module.getNFTHolders(address, setProgress)
                         setTokenInfo({ ...tokenInfo, denom: address });
                         if (holders) setHolders(holders);
                     }
                     else {
+                        console.log(error.message)
                         console.error("Error with token info retrieval:", error);
                     }
                 }
@@ -611,9 +608,9 @@ const TokenHolders = () => {
                 console.log(e)
                 setLastLoadedAddress(address);
             })
-            setContractAddress(address => TOKENS.find(v => v.value == address) ?? address)
+            setContractAddress(address => tokens.find(v => v.address == address) ?? address)
         }
-    }, [searchParams, lastLoadedAddress, getTokenHolders, loading])
+    }, [searchParams, lastLoadedAddress, getTokenHolders, loading, tokens])
 
     const headers = [
         { label: "Holder Address", key: "address" },
@@ -645,7 +642,13 @@ const TokenHolders = () => {
                                 options={[
                                     {
                                         label: "TOKENS",
-                                        options: TOKENS
+                                        options: tokens.filter(x => x.show_on_ui).map((t) => {
+                                            return {
+                                                value: t.address,
+                                                label: t.symbol,
+                                                img: t.icon
+                                            }
+                                        }).sort((a, b) => a.label.localeCompare(b.label))
                                     },
                                     {
                                         label: "CW404",
@@ -806,41 +809,43 @@ const TokenHolders = () => {
                                     ((tokenInfo.total_supply / Math.pow(10, tokenInfo.decimals)) - (totalBurned)) *
                                     (tokenPrice !== null ? tokenPrice : liquidity[0].price)
                                 )}`}
+
+                                {liquidity.length > 0 && <div>
+                                    Total liquidity: ${humanReadableAmount(mitoVault ? mitoVault.currentTvl + liquidity.reduce((acc, item) => acc + item.liquidity, 0) : liquidity.reduce((acc, item) => acc + item.liquidity, 0))}
+                                </div>}
                             </div>
                         )}
 
 
-                        <div className="flex flex-row justify-center mt-2">
+                        <div className="flex flex-row justify-center mt-2 items-center">
+                            {findingLiq && <ClipLoader size={20} color="white" />}
                             {liquidity.length > 0 && liquidity.map(({ infoDecoded, marketCap, price, factory, liquidity }, index) => {
-                                return <div key={index} className="text-sm mx-2 bg-slate-800 p-2 rounded-lg shadow-lg">
+                                return <div key={index} className="text-sm mx-2 bg-trippyYellow/10 p-2 rounded-lg shadow-lg">
                                     <a href={"https://coinhall.org/injective/" + infoDecoded.contract_addr}
                                         className="text-white hover:cursor-pointer font-bold"
                                     >
-                                        pool found on {factory.name}
+                                        {factory.name}
                                     </a>
                                     <br />
                                     price: ${price.toFixed(10)}
                                     <br />
                                     liquidity: ${liquidity.toFixed(2)}
                                     <br />
-                                    market cap: {marketCap.toFixed(2)}
-                                    <br />
                                     <Link to={`/token-liquidity?address=${infoDecoded.contract_addr}`} className="font-bold hover:underline mr-5">
-                                        view liquidity holders
+                                        view liquidity providers
                                     </Link>
-
                                 </div>
                             })}
 
                             {mitoVault !== null && tokenInfo &&
-                                <div className="text-sm mx-2 bg-slate-800 p-2 rounded-lg shadow-lg ">
+                                <div className="text-sm mx-2 bg-trippyYellow/10 p-2 rounded-lg shadow-lg ">
                                     <a href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}mito.fi/vault/${mitoVault.contractAddress}`}
                                         className="text-white hover:cursor-pointer font-bold"
                                     >
-                                        Mito vault found
+                                        Mito vault
                                     </a>
-                                    <br />
-                                    APY: {mitoVault.apy.toFixed(2)}%
+                                    {/* <br />
+                                    APY: {mitoVault.apy.toFixed(2)}% */}
                                     <br />
                                     liquidity: ${humanReadableAmount(mitoVault.currentTvl)}
                                     <br />

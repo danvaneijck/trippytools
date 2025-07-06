@@ -1,7 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import ConnectKeplr from "../../components/App/ConnectKeplr";
-import { useSelector } from "react-redux";
 import TokenUtils from "../../modules/tokenUtils";
 import moment from "moment";
 import ViewMarketModal from "./ViewMarketModal";
@@ -9,14 +6,15 @@ import NewMarketModal from "./NewMarketModal";
 import { useSearchParams } from 'react-router-dom';
 import MarketDetails from "./MarketDetails";
 import Footer from "../../components/App/Footer";
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
 
 
 const BinaryOptionMarkets = () => {
     const [searchParams, setSearchParams] = useSearchParams();
 
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
     const [markets, setMarkets] = useState([]);
     const [loading, setLoading] = useState(false);

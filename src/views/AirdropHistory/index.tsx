@@ -1,12 +1,12 @@
-import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import ConnectKeplr from "../../components/App/ConnectKeplr";
 import { useEffect, useState } from "react";
 import ShroomBalance from "../../components/App/ShroomBalance";
 import { gql, useQuery } from '@apollo/client';
 import moment from "moment";
 import { PiParachute } from "react-icons/pi";
 import Footer from "../../components/App/Footer";
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
 
 
 const AIRDROP_HISTORY_QUERY = gql`
@@ -48,10 +48,8 @@ function humanReadableAmount(number) {
 }
 
 const AirdropHistory = () => {
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
     const { data, loading } = useQuery(AIRDROP_HISTORY_QUERY, {
         fetchPolicy: "network-only",

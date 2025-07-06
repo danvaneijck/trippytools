@@ -1,16 +1,13 @@
 import { useCallback, useState } from "react";
-import { useSelector } from "react-redux";
 import { CircleLoader } from "react-spinners";
 import { WALLET_LABELS } from "../../constants/walletLabels";
-import { getKeplrOfflineSigner, handleSendTx } from "../../utils/keplr";
 import { MsgMultiSend } from "@injectivelabs/sdk-ts";
 import { BigNumberInBase, BigNumberInWei } from "@injectivelabs/utils";
-import { Buffer } from "buffer";
+import useWalletStore from "../../store/useWalletStore";
+import { performTransaction } from "../../utils/walletStrategy";
 
 const RefundModal = (props) => {
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
-    const networkConfig = useSelector(state => state.network.networks[currentNetwork]);
+    const { connectedWallet: connectedAddress } = useWalletStore()
 
     const [progress, setProgress] = useState("")
     const [txLoading, setTxLoading] = useState(false)
@@ -20,9 +17,8 @@ const RefundModal = (props) => {
     const [error, setError] = useState(null)
 
     const sendRefunds = useCallback(async (denom: any) => {
-        const { key, offlineSigner } = await getKeplrOfflineSigner(networkConfig.chainId);
-        const pubKey = Buffer.from(key.pubKey).toString("base64");
-        const injectiveAddress = key.bech32Address;
+
+        const injectiveAddress = connectedAddress
 
         if (injectiveAddress !== connectedAddress) {
             throw new Error("You are connected to the wrong wallet address")
@@ -126,7 +122,7 @@ const RefundModal = (props) => {
 
                 setMsgPreview(msg)
 
-                const response = await handleSendTx(networkConfig, pubKey, msg, injectiveAddress, offlineSigner, gas);
+                const response = await performTransaction(injectiveAddress, [msg]);
                 filteredChunk.forEach(record => successfullyProcessed.add(record.address));
                 transactions.push(response.txHash)
 
@@ -136,7 +132,7 @@ const RefundModal = (props) => {
         }
 
         return transactions
-    }, [connectedAddress, networkConfig, props.refundDetails]);
+    }, [connectedAddress, props.refundDetails]);
 
 
     const handleSendRefunds = useCallback(() => {

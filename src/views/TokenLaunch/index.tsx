@@ -1,14 +1,15 @@
 import { useState } from "react";
 import parachute from "../../assets/parachute.webp"
 import TokenConfirmModal from "./TokenConfirmModal";
-import { useSelector } from "react-redux";
 import ShroomBalance from "../../components/App/ShroomBalance";
 import Footer from "../../components/App/Footer";
+import useWalletStore from "../../store/useWalletStore";
+import useNetworkStore from "../../store/useNetworkStore";
 
 const TokenLaunch = () => {
 
-    const connectedAddress = useSelector(state => state.network.connectedAddress);
-    const currentNetwork = useSelector(state => state.network.currentNetwork);
+    const { connectedWallet } = useWalletStore()
+    const { networkKey } = useNetworkStore()
 
     const [tokenName, setTokenName] = useState("token-name");
     const [tokenSymbol, setTokenSymbol] = useState("token-symbol");
@@ -37,13 +38,13 @@ const TokenLaunch = () => {
             }
             <div className="flex flex-col min-h-screen bg-customGray">
                 <div className="pt-20 flex-grow mx-2">
-                    {currentNetwork == "mainnet" && <div className="flex "><ShroomBalance /></div>}
+                    {networkKey == "mainnet" && <div className="flex "><ShroomBalance /></div>}
                     <div className="flex justify-center items-center min-h-full">
                         <div className="w-full max-w-screen-sm px-2 pb-10">
                             <div className="flex flex-row justify-center items-center">
                                 <div>
                                     <div className="text-center text-3xl font-magic">Launch new token</div>
-                                    <div className="text-xs text-center">on Injective {currentNetwork}</div>
+                                    <div className="text-xs text-center">on Injective {networkKey}</div>
                                 </div>
                                 <img
                                     src={parachute}
@@ -159,7 +160,7 @@ const TokenLaunch = () => {
                                     Error: {error}
                                 </div>
                             }
-                            {connectedAddress &&
+                            {connectedWallet &&
                                 <div className="my-10">
                                     <button
                                         disabled={loading}
@@ -170,7 +171,7 @@ const TokenLaunch = () => {
                                     </button>
                                 </div>
                             }
-                            {!connectedAddress && <div className="text-center mt-5 bg-gray-800 rounded-lg p-2 mt-6">
+                            {!connectedWallet && <div className="text-center bg-gray-800 rounded-lg p-2 mt-6">
                                 Please connect your wallet to continue
                             </div>}
                         </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import ConnectKeplr from "../../components/App/ConnectKeplr";
+import ConnectWallet from "../../components/App/ConnectKeplr";
 import { processSushiData, getAllNfts, getMetaData, getSushiStats } from "./SushiUtils";
 import { GridLoader } from "react-spinners";
 import Footer from "../../components/App/Footer";
@@ -90,7 +90,7 @@ const SushiTool = () => {
                     </Link>
                 </div>
                 <div className="m-2">
-                    <ConnectKeplr />
+                    <ConnectWallet />
                 </div>
             </header>
 
