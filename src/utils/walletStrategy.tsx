@@ -1,71 +1,61 @@
 import { WalletStrategy } from '@injectivelabs/wallet-strategy'
-import { TxRaw } from '@injectivelabs/sdk-ts'
 import { Web3Exception } from '@injectivelabs/exceptions'
 import { EthereumChainId } from '@injectivelabs/ts-types'
 import { getNetworkEndpoints } from '@injectivelabs/networks'
 import { MsgBroadcaster } from '@injectivelabs/wallet-core'
 import { NETWORKS } from './constants'
 import useNetworkStore from '../store/useNetworkStore'
+import useWalletStore from '../store/useWalletStore'
+import { getInjectiveAddress } from '@injectivelabs/sdk-ts'
 
 const ethRpc = "https://1rpc.io/eth"
 
 export const getSelectedNetworkKey = () =>
     useNetworkStore.getState().networkKey
 
-/** …or the full network object, if that’s what you usually need */
 export const getSelectedNetwork = () =>
     NETWORKS[getSelectedNetworkKey()];
 
-export const walletStrategy = new WalletStrategy({
-    chainId: getSelectedNetwork().chainId,
-    ethereumOptions: {
-        ethereumChainId: EthereumChainId.Mainnet,
-        rpcUrl: ethRpc
-    },
-    strategies: {}
-})
+export const getSelectedWallet = () =>
+    useWalletStore.getState().selectedWalletType
 
-// Get wallet's addresses
+const buildWalletStrategy = () => {
+    const network = getSelectedNetworkKey()
+    let ethereumOptions = undefined
+    if (network === 'mainnet') {
+        ethereumOptions = {
+            ethereumChainId: EthereumChainId.Mainnet,
+            rpcUrl: ethRpc
+        }
+    }
+
+    const wallet = getSelectedWallet()
+    const chainId = getSelectedNetwork().chainId
+
+    return new WalletStrategy({
+        chainId: chainId,
+        wallet: wallet,
+        ethereumOptions: ethereumOptions,
+        strategies: {}
+    })
+}
+
 export const getAddresses = async (): Promise<string[]> => {
-    const addresses = await walletStrategy.getAddresses()
-
+    const walletStrategy = buildWalletStrategy()
+    let addresses = (await walletStrategy.getAddresses())
+    if (walletStrategy.getWallet() === 'metamask' || walletStrategy.getWallet() === 'phantom') {
+        addresses = addresses.map(getInjectiveAddress)
+    }
     if (addresses.length === 0) {
         throw new Web3Exception(new Error('There are no addresses linked in this wallet.'))
     }
-
     return addresses
 }
 
-// Sign an Injective transaction
-export const signTransaction = async (tx: TxRaw, address, accountNumber, chainId): Promise<string[]> => {
-    const response = await walletStrategy.signCosmosTransaction(
-        {
-            accountNumber: accountNumber,
-            address: address,
-            chainId: chainId,
-            txRaw: tx
-        }
-    )
+export const performTransaction = async (address: string, msgs: []) => {
+    if (!address || !msgs || msgs.length === 0) return
 
-    return response
-}
-
-// Send an Injective transaction
-export const sendTransaction = async (tx: TxRaw, address, chainId, endpoints): Promise<string[]> => {
-    const response = await walletStrategy.sendTransaction(
-        tx,
-        {
-            address: address,
-            chainId: chainId,
-            endpoints: endpoints,
-        }
-    )
-
-    return response
-}
-
-export const performTransaction = async (address, msgs) => {
-
+    const walletStrategy = buildWalletStrategy()
     const broadcaster = new MsgBroadcaster({
         walletStrategy,
         simulateTx: true,
@@ -74,14 +64,11 @@ export const performTransaction = async (address, msgs) => {
         gasBufferCoefficient: 1.1,
     });
 
-    try {
-        const result = await broadcaster.broadcastV2({
-            injectiveAddress: address,
-            msgs,
-        });
+    const result = await broadcaster.broadcastV2({
+        injectiveAddress: address,
+        msgs,
+    });
 
-        return result;
-    } catch (err) {
-        throw err;
-    }
+    return result;
+
 };

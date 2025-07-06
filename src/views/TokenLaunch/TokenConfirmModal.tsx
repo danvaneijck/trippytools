@@ -88,18 +88,9 @@ const TokenConfirmModal = (props: {
             }
         });
 
-        // create denom
-        console.log("create denom")
+
         setProgress("Create new denom")
-        await performTransaction(connectedWallet, [msgCreateDenom])
-        // mint supply
-        console.log("mint")
-        setProgress("Mint supply")
-        await performTransaction(connectedWallet, [msgMint])
-        // set metadata
-        console.log("metadata")
-        setProgress("Upload denom metadata")
-        await performTransaction(connectedWallet, [msgSetDenomMetadata])
+        await performTransaction(connectedWallet, [msgCreateDenom, msgMint, msgSetDenomMetadata])
 
         setProgress("Done...")
 

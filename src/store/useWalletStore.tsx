@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { walletStrategy } from '../utils/walletStrategy';
 
 export interface WalletStore {
 
@@ -13,7 +12,6 @@ export interface WalletStore {
     setSelectedWalletType: (
         t: "keplr" | "leap" | "metamask" | "phantom" | null
     ) => void;
-
 }
 
 const useWalletStore = create<WalletStore>()(
@@ -29,16 +27,10 @@ const useWalletStore = create<WalletStore>()(
                 set(() => ({ showWallets: show })),
 
             selectedWalletType: null,
-
             setSelectedWalletType: t => set({ selectedWalletType: t }),
         }),
         {
             name: 'wallet-storage',
-            onRehydrateStorage: () => (state) => {
-                if (state?.selectedWalletType) {
-                    walletStrategy.setWallet(state.selectedWalletType);
-                }
-            },
         }
     )
 );

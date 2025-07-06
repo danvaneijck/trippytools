@@ -1,15 +1,7 @@
-import { getAddresses, walletStrategy } from "../utils/walletStrategy";
+import { getAddresses } from "../utils/walletStrategy";
 import { toast } from "react-toastify";
-import { getInjectiveAddress } from '@injectivelabs/sdk-ts'
 import useWalletStore from "../store/useWalletStore";
 
-const getEthereum = () => {
-  if (!window.ethereum) {
-    throw new Error('Metamask extension not installed')
-  }
-
-  return window.ethereum
-}
 
 export function useWalletConnect() {
   const {
@@ -22,20 +14,11 @@ export function useWalletConnect() {
 
   async function connect(wallet: "keplr" | "leap" | "metamask" | "phantom"): Promise<void> {
     console.log("Connecting to wallet:", wallet);
-    walletStrategy.setWallet(wallet);
     setSelectedWalletType(wallet);
-    walletStrategy.setWallet(wallet);
     try {
-      let addresses: string[] = await getAddresses();
+      const addresses: string[] = await getAddresses();
       console.log("Fetched addresses:", addresses);
       if (addresses && addresses.length > 0) {
-        if (wallet == "metamask" || wallet == "phantom") {
-          const ethereum = getEthereum()
-          addresses = await ethereum.request({
-            method: 'eth_requestAccounts',
-          })
-          addresses = addresses.map(getInjectiveAddress)
-        }
         setConnectedWallet(addresses[0]);
         console.log("Wallet set to:", addresses[0]);
       } else {
