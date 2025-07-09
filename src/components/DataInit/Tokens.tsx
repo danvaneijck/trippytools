@@ -25,6 +25,9 @@ query ($yesterday: timestamptz!) {
     }
     liquidity_token_pool {
       contract_addr
+      dex {
+        name
+      }
       asset_1 {
         address
         name
@@ -165,7 +168,6 @@ const TokenInitializer = () => {
   const setTokens = useTokenStore(state => state.setTokens);
 
   useEffect(() => {
-    console.log(data)
     if (data && data.tokens_token) {
       setTokens(data.tokens_token.map((token: Token) => {
         const price = getTodayPrice(token)

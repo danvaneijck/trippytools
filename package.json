@@ -28,6 +28,7 @@
     "d3-array": "^3.2.4",
     "dayjs": "^1.11.13",
     "graphql": "^16.11.0",
+    "html-to-image": "^1.11.13",
     "json2csv": "^6.0.0-alpha.2",
     "lodash": "^4.17.21",
     "moment": "^2.30.1",
