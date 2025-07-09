@@ -270,14 +270,22 @@ const Airdrop = () => {
         let criteriaUpdate = ""
         let descriptionUpdate = ""
         const totalToDrop = airdropDetails.reduce((sum, airdrop) => sum + Number(airdrop.amountToAirdrop), 0).toFixed(2)
+        const targetToken = tokens.find((token => token.address === airdropTokenAddress.value))
+
+        const mode = distMode[0].toUpperCase() + distMode.slice(1)
 
         if (dropMode.value == "TOKEN") {
             criteriaUpdate = `Holders of ${airdropTokenInfo.symbol} token at ${moment().toISOString()}`
-            descriptionUpdate = `${distMode} drop of ${totalToDrop} ${tokenInfo.symbol} to holders of ${airdropTokenInfo.symbol} token`
+            descriptionUpdate = `${mode} drop of ${totalToDrop} ${tokenInfo.symbol} to holders of ${airdropTokenInfo.symbol} token`
+            if (targetToken?.liquidity_token_pool) {
+                const tokenLabel = `${targetToken?.liquidity_token_pool.asset_1.symbol}/${targetToken?.liquidity_token_pool.asset_2.symbol} on ${targetToken?.liquidity_token_pool.dex.name}`
+                descriptionUpdate = `${mode} drop of ${totalToDrop} ${tokenInfo.symbol} to liquidity providers of ${tokenLabel}`
+                criteriaUpdate = `Liquidity providers of ${tokenLabel} at ${moment().toISOString()}`
+            }
         }
         else if (dropMode.value == "NFT") {
             criteriaUpdate = `Holders of ${nftCollectionInfo.symbol} NFTs at ${moment().toISOString()}`
-            descriptionUpdate = `${distMode} drop of ${totalToDrop} ${tokenInfo.symbol} to holders of ${nftCollectionInfo.symbol} NFTs`
+            descriptionUpdate = `${mode} drop of ${totalToDrop} ${tokenInfo.symbol} to holders of ${nftCollectionInfo.symbol} NFTs`
         }
         else if (dropMode.value == "CSV") {
             criteriaUpdate = `Custom CSV airdrop file upload`
@@ -289,7 +297,7 @@ const Airdrop = () => {
         }
         else if (dropMode.value == "MITO") {
             criteriaUpdate = `Holders of ${mitoHolderType == "stake" ? "staked" : "all"} LP tokens in the ${selectedMitoVault.value.baseToken.name} mito vault at ${moment().toISOString()}`
-            descriptionUpdate = `${distMode} drop of ${totalToDrop} ${tokenInfo.symbol} to holders of ${selectedMitoVault.value.baseToken.name} mito vault tokens`
+            descriptionUpdate = `${mode} drop of ${totalToDrop} ${tokenInfo.symbol} to holders of ${selectedMitoVault.value.baseToken.name} mito vault tokens`
         }
 
         console.log(criteriaUpdate)
@@ -297,7 +305,7 @@ const Airdrop = () => {
 
         setCriteria(criteriaUpdate)
         setDescription(descriptionUpdate)
-    }, [dropMode, distMode, voteFilters, filterByVote, airdropDetails, tokenInfo, airdropTokenInfo, nftCollectionInfo, proposalNumber, selectedMitoVault, mitoHolderType])
+    }, [airdropTokenAddress, tokens, dropMode, distMode, voteFilters, filterByVote, airdropDetails, tokenInfo, airdropTokenInfo, nftCollectionInfo, proposalNumber, selectedMitoVault, mitoHolderType])
 
     async function fetchBlock(height) {
         const baseUrl = 'https://sentry.lcd.injective.network/cosmos/base/tendermint/v1beta1/blocks';

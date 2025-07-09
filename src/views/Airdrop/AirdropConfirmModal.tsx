@@ -206,7 +206,7 @@ const AirdropConfirmModal = (props: {
                     console.log("gas", gas)
                     console.log("msg", msg)
 
-                    const response = await performTransaction(injectiveAddress, [msg]);
+                    const response = await performTransaction(injectiveAddress, msg);
                     filteredChunk.forEach(record => successfullyProcessed.add(record.address));
 
                     success = true;
