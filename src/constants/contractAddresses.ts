@@ -531,6 +531,11 @@ export const NFT_COLLECTIONS = [
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/654e6a8374ace78b4c211065/miniaturePicture",
     },
     {
+        value: "inj19lsr0vk0h42k0mspgym552hl432a9et0nhd4nj",
+        label: "MASKED",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/68949c7132f290fbb855dbc3/miniaturePicture",
+    },
+    {
         value: "inj1t2dmc572y8yqmzcqvdhvaza69s5jfaa8xczsg0",
         label: "culd ob nonja",
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/672ce903906b4694a1f9f244/miniaturePicture",
