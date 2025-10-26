@@ -22,6 +22,8 @@ import WalletSelectModal from './components/Modals/WalletSelectModal';
 import TokenInitializer from './components/DataInit/Tokens';
 import PoolInitializer from './components/DataInit/Pools';
 import { ToastContainer } from 'react-toastify';
+import ReflectionTokenLaunch from './views/ReflectionToken';
+import BurnTokens from './views/BurnTokens';
 
 const App = () => {
   return (
@@ -39,6 +41,9 @@ const App = () => {
           <Route path="/sushi-tool" element={<SushiTool />} />
           <Route path="/token-liquidity" element={<TokenLiquidity />} />
           <Route path="/token-launch" element={<TokenLaunch />} />
+          <Route path="/reflection-token-launch" element={<ReflectionTokenLaunch />} />
+          <Route path="/burn" element={<BurnTokens />} />
+
           <Route path="/manage-tokens" element={<MyTokens />} />
           <Route path="/airdrop" element={<Airdrop />} />
           <Route path="/airdrop-history" element={<AirdropHistory />} />

@@ -123,12 +123,15 @@ const Header = () => {
                     <Link to="/pre-sale-tool" className={getLinkStyle('/pre-sale-tool')} onClick={toggleMenu}>
                         Plan Presale
                     </Link>
+                    <Link to="/burn" className={getLinkStyle('/burn')} onClick={toggleMenu}>
+                        Burn Tokens 🔥
+                    </Link>
                     <Link to="/market-make" className={getLinkStyle('/market-make')} onClick={toggleMenu}>
                         Mito Market Make
                     </Link>
-                    <Link to="/dojo-whitelist" className={getLinkStyle('/dojo-whitelist')} onClick={toggleMenu}>
+                    {/* <Link to="/dojo-whitelist" className={getLinkStyle('/dojo-whitelist')} onClick={toggleMenu}>
                         Dojo Whitelist
-                    </Link>
+                    </Link> */}
                     <Link to="/wallet-export" className={getLinkStyle('/wallet-export')} onClick={toggleMenu}>
                         Wallet Export (beta)
                     </Link>
