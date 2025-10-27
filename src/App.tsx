@@ -40,8 +40,10 @@ const App = () => {
           <Route path="/token-holders" element={<TokenHolders />} />
           <Route path="/sushi-tool" element={<SushiTool />} />
           <Route path="/token-liquidity" element={<TokenLiquidity />} />
+
           <Route path="/token-launch" element={<TokenLaunch />} />
-          <Route path="/reflection-token-launch" element={<ReflectionTokenLaunch />} />
+          <Route path="/cw20-reflection" element={<ReflectionTokenLaunch />} />
+
           <Route path="/burn" element={<BurnTokens />} />
 
           <Route path="/manage-tokens" element={<MyTokens />} />
