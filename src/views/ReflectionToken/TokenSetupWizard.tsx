@@ -1,7 +1,7 @@
 // src/pages/cw20-reflection/TokenSetupWizard.tsx
 
 import { ChainGrpcWasmApi, MsgExecuteContract } from "@injectivelabs/sdk-ts";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import useWalletStore from "../../store/useWalletStore";
 import { performTransaction } from "../../utils/walletStrategy";
 import useNetworkStore from "../../store/useNetworkStore";
@@ -26,10 +26,11 @@ interface TokenSetupWizardProps {
 
 const MAINNET_DEX_FACTORY_ADDRESS = "inj1k9lcqtn3y92h4t3tdsu7z8qx292mhxhgsssmxg";
 const MAINNET_DEX_ADAPTER_ADDRESS = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk";
-
+const MAINNET_SEND_AUCTION_ADDRESS = "inj1yr7srge0lku4h3gd473qdlpdfw63ejdjwkh4c0";
 const TESTNET_DEX_FACTORY_ADDRESS = "inj150qeu7h9ktn2aqz94tepsh089u63nasfc2t6sw";
 const TESTNET_DEX_ADAPTER_ADDRESS = "inj1kjmmqkl3jrgzq70026xhcvfxeysgjs0mr44pp4";
-const TESTNET_AGGREGATOR_ADDRESS = "inj1kqw2gl7zsawyj3x89l2ze3fmqu29fshvcw8207";
+const TESTNET_AGGREGATOR_ADDRESS = "inj1sw8yrju07xe59v60xcs76tej5svwc3fwgzqc7t";
+const TESTNET_SEND_AUCTION_ADDRESS = "inj1xdc0n3jljz4uupwjjmlz76c3dtc3cpma8vr6f8";
 
 const INJ_DENOM = "inj";
 const INJ_DECIMALS = 18;
@@ -48,13 +49,18 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
         createPair: false,
         setTax: false,
         registerAdapter: false,
-        configureTreasury: false
+        configureTreasury: false,
+        addAggregator: false,
+        addTransferRecipient: false,
     });
 
     // --- State for Step 2 (Whitelist) ---
     const getInitialWhitelist = () => networkKey === 'mainnet'
-        ? [MAINNET_DEX_FACTORY_ADDRESS, MAINNET_DEX_ADAPTER_ADDRESS]
-        : [TESTNET_DEX_FACTORY_ADDRESS, TESTNET_DEX_ADAPTER_ADDRESS, TESTNET_AGGREGATOR_ADDRESS];
+        ? [MAINNET_DEX_FACTORY_ADDRESS, MAINNET_DEX_ADAPTER_ADDRESS, MAINNET_SEND_AUCTION_ADDRESS]
+        : [TESTNET_DEX_FACTORY_ADDRESS, TESTNET_DEX_ADAPTER_ADDRESS, TESTNET_SEND_AUCTION_ADDRESS];
+
+    const [aggregatorAddress, setAggregatorAddress] = useState(TESTNET_AGGREGATOR_ADDRESS);
+
 
     const [whitelistAddresses, setWhitelistAddresses] = useState<string[]>(getInitialWhitelist);
     const [currentWhitelistInput, setCurrentWhitelistInput] = useState("");
@@ -101,7 +107,6 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
                     const feeQuery = Buffer.from(JSON.stringify({ new_denom_fee: {} })).toString("base64");
                     const feeInfo = await wasmApi.fetchSmartContractState(adapterAddress, feeQuery);
                     const feeData = JSON.parse(Buffer.from(feeInfo.data).toString('utf8'));
-                    console.log(feeData)
 
                     setAdapterFee(feeData[0]); // The fee is returned as an array with one Coin object
                 }
@@ -146,7 +151,7 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
     }, [connectedWallet, network, tokenAddress]);
 
     // --- A new function to handle a batch of messages ---
-    const handleExecuteBatch = async (msgs, successCallback?: (result: any) => void) => {
+    const handleExecuteBatch = useCallback(async (msgs, successCallback?: (result: any) => void) => {
         if (!connectedWallet || msgs.length === 0) return;
         setLoading(true);
         setError(null);
@@ -154,18 +159,33 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
         try {
             const result = await performTransaction(connectedWallet, msgs);
             setProgress(`Transaction successful!`);
-            toast.success("Transaction successful!");
+            toast.success("Transaction successful!", { theme: "dark" });
             if (successCallback) successCallback(result);
         } catch (e: any) {
             setError(e.message);
-            toast.error(e.message);
+            toast.error(e.message, { theme: "dark" });
             setProgress("");
         } finally {
             setLoading(false);
         }
+    }, [connectedWallet]);
+
+    const handleAddAggregator = () => {
+        if (!connectedWallet || !aggregatorAddress) {
+            setError("Wallet not connected or aggregator address is missing.");
+            return;
+        }
+
+        const msg = MsgExecuteContract.fromJSON({
+            contractAddress: tokenAddress,
+            sender: connectedWallet,
+            msg: { add_aggregator: { address: aggregatorAddress } },
+        });
+
+        void handleExecuteBatch([msg], () => setStepSuccess(prev => ({ ...prev, addAggregator: true })));
     };
 
-    const handleRegisterOnAdapter = async () => {
+    const handleRegisterOnAdapter = useCallback(async () => {
         if (!connectedWallet || !adapterFee) {
             setError("Cannot register: Wallet not connected or fee not loaded.");
             return;
@@ -183,10 +203,10 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
             setNeedsAdapterRegistration(false);
             setStepSuccess(prev => ({ ...prev, registerAdapter: true }));
         });
-    };
+    }, [adapterFee, connectedWallet, handleExecuteBatch, networkKey, tokenAddress]);
 
     // Handler for setting tax rates (no changes needed)
-    const handleSetTaxRates = () => {
+    const handleSetTaxRates = useCallback(() => {
         if (!connectedWallet) {
             setError("Wallet not connected.");
             return;
@@ -209,7 +229,8 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
 
         // Use the primary batch execution function with the success callback
         void handleExecuteBatch([msg], () => setStepSuccess(prev => ({ ...prev, setTax: true })));
-    };
+    }, [connectedWallet, handleExecuteBatch, initialTaxRates.antiwhaleRate, initialTaxRates.burnRate,
+        initialTaxRates.globalRate, initialTaxRates.reflectionRate, tokenAddress]);
 
     // --- UI handlers for managing the whitelist input ---
     const handleAddWhitelistAddress = () => {
@@ -224,7 +245,7 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
     };
 
     // --- Updated handler to submit the entire list of whitelist addresses ---
-    const handleSetWhitelist = () => {
+    const handleSetWhitelist = useCallback(() => {
         if (whitelistAddresses.length === 0) {
             setError("Please add at least one address to whitelist.");
             return;
@@ -239,9 +260,9 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
         });
 
         void handleExecuteBatch(whitelistMsgs, () => setStepSuccess(prev => ({ ...prev, whitelistInfra: true })));
-    };
+    }, [connectedWallet, handleExecuteBatch, tokenAddress, whitelistAddresses]);
 
-    const handleApproveAllowance = () => {
+    const handleApproveAllowance = useCallback(() => {
         const factoryAddress = networkKey === 'mainnet' ? MAINNET_DEX_FACTORY_ADDRESS : TESTNET_DEX_FACTORY_ADDRESS;
         const amount = new BigNumberInBase(baseAmount).toWei(tokenDecimals).toFixed();
 
@@ -252,9 +273,9 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
         });
 
         void handleExecuteBatch([msg], () => setAllowanceApproved(true));
-    };
+    }, [baseAmount, connectedWallet, handleExecuteBatch, networkKey, tokenAddress, tokenDecimals]);
 
-    const handleCreatePair = async () => {
+    const handleCreatePair = useCallback(async () => {
         const factoryAddress = networkKey === 'mainnet' ? MAINNET_DEX_FACTORY_ADDRESS : TESTNET_DEX_FACTORY_ADDRESS;
         const baseTokenAmount = new BigNumberInBase(baseAmount).toWei(tokenDecimals).toFixed();
         const quoteTokenAmount = new BigNumberInBase(quoteAmount).toWei(INJ_DECIMALS).toFixed();
@@ -305,13 +326,28 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
                 }
             } catch (e: any) {
                 setError(e.message);
-                toast.error("Pair created, but failed to parse its address automatically.");
+                toast.error("Pair created, but failed to parse its address automatically.", { theme: "dark" });
             }
         });
-    };
+    }, [baseAmount, connectedWallet, handleExecuteBatch, networkKey, quoteAmount, tokenAddress, tokenDecimals]);
+
+    const handleAddTransferFromRecipient = useCallback(() => {
+        if (!connectedWallet || !newPairAddress) {
+            setError("Wallet not connected or the pair address has not been set.");
+            return;
+        }
+
+        const msg = MsgExecuteContract.fromJSON({
+            contractAddress: tokenAddress,
+            sender: connectedWallet,
+            msg: { add_transfer_from_recipient: { address: newPairAddress } },
+        });
+
+        void handleExecuteBatch([msg], () => setStepSuccess(prev => ({ ...prev, addTransferRecipient: true })));
+    }, [connectedWallet, handleExecuteBatch, newPairAddress, tokenAddress]);
 
     // --- Step 4 Handler ---
-    const handleSetPairs = () => {
+    const handleSetPairs = useCallback(() => {
         if (!treasuryAddress || !newPairAddress || !reflectionPairAddress) {
             setError("The liquidity and reflection pair addresses must be set.");
             return;
@@ -338,7 +374,7 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
         ];
 
         void handleExecuteBatch(msgs, () => setStepSuccess(prev => ({ ...prev, configureTreasury: true })));
-    };
+    }, [connectedWallet, handleExecuteBatch, newPairAddress, reflectionPairAddress, tokenAddress, treasuryAddress]);
 
 
     return (
@@ -351,19 +387,16 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
             {progress && <div className="my-4 text-green-400 text-center">{progress}</div>}
             {error && <div className="my-4 text-red-500 text-center">{error}</div>}
 
-            {/* Step 1: Set Tax Rate (Updated with display) */}
+            {/* Step 1: Set Tax Rate */}
             <div className={`p-4 rounded-md mt-4 ${stepSuccess.setTax ? 'bg-green-900' : 'bg-slate-700'}`}>
                 <h3 className="font-bold">Step 1: Set Tax Rates</h3>
                 <p className="text-xs mb-2">Confirm the tax rates you selected during launch.</p>
-
-                {/* --- DISPLAY FOR TAX RATES --- */}
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm bg-slate-700 p-3 rounded-md my-3">
                     <div><span className="font-semibold">Global Tax:</span> {(initialTaxRates.globalRate * 100).toFixed(2)}%</div>
                     <div><span className="font-semibold">Reflection:</span> {(initialTaxRates.reflectionRate * 100).toFixed(2)}%</div>
                     <div><span className="font-semibold">Burn:</span> {(initialTaxRates.burnRate * 100).toFixed(2)}%</div>
                     <div><span className="font-semibold">Anti-Whale:</span> {(initialTaxRates.antiwhaleRate * 100).toFixed(2)}%</div>
                 </div>
-
                 <button
                     onClick={handleSetTaxRates}
                     disabled={loading || stepSuccess.setTax}
@@ -373,13 +406,14 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
                 </button>
             </div>
 
-            {/* Step 2: Whitelist Addresses (Updated with conditional disabling) */}
+            {/* Step 2: Whitelist Addresses */}
             <div className={`p-4 rounded-md mt-4 transition-opacity ${stepSuccess.setTax ? 'opacity-100' : 'opacity-50 cursor-not-allowed'}  ${stepSuccess.whitelistInfra ? 'bg-green-900' : 'bg-slate-700'}`}>
                 <h3 className="font-bold">Step 2: Whitelist DEX Contracts</h3>
                 {!stepSuccess.setTax && <p className="text-xs text-yellow-400">Complete Step 1 to enable this step.</p>}
-
                 <div className={`${!stepSuccess.setTax || stepSuccess.whitelistInfra ? 'pointer-events-none opacity-60' : ''}`}>
-                    <p className="text-xs mb-2">Whitelist addresses like the DEX factory and adapter to exempt them from taxes.</p>
+                    <p className="text-xs mb-2">
+                        Whitelist addresses like the DEX factory, cw20 adapter and send to auction contracts to exempt them from taxes.
+                    </p>
                     <div className="flex items-center space-x-2">
                         <input
                             type="text"
@@ -395,7 +429,6 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
                             Add
                         </button>
                     </div>
-
                     {whitelistAddresses.length > 0 && (
                         <div className="mt-3 space-y-1">
                             {whitelistAddresses.map((addr) => (
@@ -408,7 +441,6 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
                             ))}
                         </div>
                     )}
-
                     <button
                         onClick={handleSetWhitelist}
                         disabled={loading || whitelistAddresses.length === 0}
@@ -420,21 +452,44 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
                 {stepSuccess.whitelistInfra && <div className="text-center text-green-400 mt-2">✓ Addresses Whitelisted.</div>}
             </div>
 
-            {/* NEW Step 3: Register on CW20 Adapter */}
-            <div className={`p-4 rounded-md mt-4 transition-opacity ${stepSuccess.whitelistInfra ? 'opacity-100' : 'opacity-50 cursor-not-allowed'} ${stepSuccess.registerAdapter ? 'bg-green-900' : 'bg-slate-700'}`}>
-                <h3 className="font-bold">Step 3: Register on CW20 Adapter</h3>
+            {/* Step 3: Register Aggregation Contract */}
+            <div className={`p-4 rounded-md mt-4 transition-opacity ${stepSuccess.whitelistInfra ? 'opacity-100' : 'opacity-50 cursor-not-allowed'} ${stepSuccess.addAggregator ? 'bg-green-900' : 'bg-slate-700'}`}>
+                <h3 className="font-bold">Step 3: Register Aggregation Contract</h3>
                 {!stepSuccess.whitelistInfra && <p className="text-xs text-yellow-400">Complete Step 2 to enable this step.</p>}
+                <div className={`${!stepSuccess.whitelistInfra || stepSuccess.addAggregator ? 'pointer-events-none opacity-60' : ''}`}>
+                    <p className="text-xs mb-2">Register a trusted aggregator contract for tax-free swaps. This is required for Choice DEX integration.</p>
+                    <input
+                        type="text"
+                        placeholder="Enter aggregator address"
+                        className="text-black w-full rounded p-2 text-sm"
+                        value={aggregatorAddress}
+                        onChange={(e) => setAggregatorAddress(e.target.value)}
+                    />
+                    <button
+                        onClick={handleAddAggregator}
+                        disabled={loading || !aggregatorAddress}
+                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-500 rounded-lg p-2 w-full text-white mt-2 shadow-lg transition-colors"
+                    >
+                        Register Aggregator
+                    </button>
+                </div>
+                {stepSuccess.addAggregator && <div className="text-center text-green-400 mt-2">✓ Aggregator Registered.</div>}
+            </div>
 
-                <div className={`${!stepSuccess.whitelistInfra || stepSuccess.registerAdapter ? 'pointer-events-none opacity-60' : ''}`}>
+            {/* Step 4: Register on CW20 Adapter */}
+            <div className={`p-4 rounded-md mt-4 transition-opacity ${stepSuccess.addAggregator ? 'opacity-100' : 'opacity-50 cursor-not-allowed'} ${stepSuccess.registerAdapter ? 'bg-green-900' : 'bg-slate-700'}`}>
+                <h3 className="font-bold">Step 4: Register on CW20 Adapter</h3>
+                {!stepSuccess.addAggregator && <p className="text-xs text-yellow-400">Complete Step 3 to enable this step.</p>}
+                <div className={`${!stepSuccess.addAggregator || stepSuccess.registerAdapter ? 'pointer-events-none opacity-60' : ''}`}>
                     {checkingAdapter ? (
                         <p className="text-xs text-slate-300 mt-2">Checking registration status...</p>
                     ) : needsAdapterRegistration ? (
                         <>
                             <p className="text-xs text-yellow-400 mt-2 mb-2">
                                 Your token must be registered on the Injective CW20 Adapter before creating a pool.
-                                {adapterFee && ` The one-time fee is ${new BigNumberInWei(adapterFee.amount).toBase(INJ_DECIMALS)} ${adapterFee.denom.toUpperCase()}.`}
+                                {adapterFee && ` The one-time fee is ${new BigNumberInWei((adapterFee as any).amount).toBase(INJ_DECIMALS)} ${((adapterFee as any).denom).toUpperCase()}.`}
                             </p>
-                            <button onClick={handleRegisterOnAdapter} disabled={loading || !adapterFee} className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-500 rounded-lg p-2 w-full text-white mt-2 shadow-lg transition-colors">
+                            <button onClick={() => void handleRegisterOnAdapter()} disabled={loading || !adapterFee} className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-500 rounded-lg p-2 w-full text-white mt-2 shadow-lg transition-colors">
                                 Register Token
                             </button>
                         </>
@@ -443,12 +498,11 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
                 {stepSuccess.registerAdapter && !needsAdapterRegistration && <div className="text-center text-green-400 mt-2">✓ Token is registered on the CW20 Adapter.</div>}
             </div>
 
-
-            {/* Step 4: Create Liquidity Pool */}
-            <div className={`p-4 rounded-md mt-4 transition-opacity ${stepSuccess.whitelistInfra ? 'opacity-100' : 'opacity-50 cursor-not-allowed'} ${stepSuccess.createPair ? 'bg-green-900' : 'bg-slate-700'}`}>
-                <h3 className="font-bold">Step 4: Create Liquidity Pool</h3>
-                {!stepSuccess.registerAdapter && <p className="text-xs text-yellow-400">Complete Step 3 to enable this step.</p>}
-                <div className={`space-y-4 mt-2 ${!stepSuccess.whitelistInfra || stepSuccess.createPair ? 'pointer-events-none opacity-60' : ''}`}>
+            {/* Step 5: Create Liquidity Pool */}
+            <div className={`p-4 rounded-md mt-4 transition-opacity ${stepSuccess.registerAdapter ? 'opacity-100' : 'opacity-50 cursor-not-allowed'} ${stepSuccess.createPair ? 'bg-green-900' : 'bg-slate-700'}`}>
+                <h3 className="font-bold">Step 5: Create Liquidity Pool</h3>
+                {!stepSuccess.registerAdapter && <p className="text-xs text-yellow-400">Complete Step 4 to enable this step.</p>}
+                <div className={`space-y-4 mt-2 ${!stepSuccess.registerAdapter || stepSuccess.createPair ? 'pointer-events-none opacity-60' : ''}`}>
                     <div>
                         <label className="text-base font-bold">Your Token Amount</label>
                         <span className="text-xs block">
@@ -468,7 +522,6 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
                             className="text-black w-full rounded p-2 text-sm"
                         />
                     </div>
-
                     {!allowanceApproved ? (
                         <button
                             onClick={handleApproveAllowance} disabled={loading || !baseAmount}
@@ -478,7 +531,6 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
                     ) : (
                         <p className="text-green-400 text-center">✓ Token spending approved</p>
                     )}
-
                     <button
                         onClick={() => void handleCreatePair()} disabled={loading || !allowanceApproved || !baseAmount || !quoteAmount}
                         className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-500 rounded-lg p-2 w-full text-white mt-2 shadow-lg transition-colors">
@@ -488,24 +540,40 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
                 {stepSuccess.createPair && <div className="text-center text-green-400 mt-2">✓ Pool created successfully at: <code className="text-xs">{newPairAddress}</code></div>}
             </div>
 
-            {/* Step 5: Configure Treasury (Updated UI) */}
-            <div className={`p-4 rounded-md mt-4 transition-opacity ${stepSuccess.createPair ? 'opacity-100' : 'opacity-50 cursor-not-allowed'} ${stepSuccess.configureTreasury ? 'bg-green-900' : 'bg-slate-700'}`}>
-                <h3 className="font-bold">Step 5: Configure Treasury</h3>
-                {!stepSuccess.createPair && <p className="text-xs text-yellow-400">Complete Step 4 to enable this step.</p>}
+            {/* Step 6: Enable Tax-Free Liquidity Provision */}
+            <div className={`p-4 rounded-md mt-4 transition-opacity ${stepSuccess.createPair ? 'opacity-100' : 'opacity-50 cursor-not-allowed'} ${stepSuccess.addTransferRecipient ? 'bg-green-900' : 'bg-slate-700'}`}>
+                <h3 className="font-bold">Step 6: Enable Tax-Free Liquidity Provision</h3>
+                {!stepSuccess.createPair && <p className="text-xs text-yellow-400">Complete Step 5 to enable this step.</p>}
+                <div className={`${!stepSuccess.createPair || stepSuccess.addTransferRecipient ? 'pointer-events-none opacity-60' : ''}`}>
+                    <p className="text-xs mb-2">
+                        Whitelist the newly created pair for tax free "transfer_from" messages to allow tax-free liquidity provision.
+                    </p>
+                    <button
+                        onClick={handleAddTransferFromRecipient}
+                        disabled={loading || !newPairAddress}
+                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-500 rounded-lg p-2 w-full text-white mt-2 shadow-lg transition-colors"
+                    >
+                        Enable Tax-Free Liquidity
+                    </button>
+                </div>
+                {stepSuccess.addTransferRecipient && <div className="text-center text-green-400 mt-2">✓ Tax-free liquidity provision enabled for the pair.</div>}
+            </div>
 
-                <div className={`space-y-4 mt-2 ${!stepSuccess.createPair || stepSuccess.configureTreasury ? 'pointer-events-none opacity-60' : ''}`}>
-                    {/* --- LIQUIDITY PAIR (STATIC) --- */}
+            {/* Step 7: Configure Treasury */}
+            <div className={`p-4 rounded-md mt-4 transition-opacity ${stepSuccess.addTransferRecipient ? 'opacity-100' : 'opacity-50 cursor-not-allowed'} ${stepSuccess.configureTreasury ? 'bg-green-900' : 'bg-slate-700'}`}>
+                <h3 className="font-bold">Step 7: Configure Treasury</h3>
+                {!stepSuccess.addTransferRecipient && <p className="text-xs text-yellow-400">Complete Step 6 to enable this step.</p>}
+
+                <div className={`space-y-4 mt-2 ${!stepSuccess.addTransferRecipient || stepSuccess.configureTreasury ? 'pointer-events-none opacity-60' : ''}`}>
                     <div>
                         <label className="block text-base font-bold text-white">Liquidity Pair Address</label>
                         <span className="text-xs text-slate-300">
-                            This is automatically set to the pool you created in Step 3.
+                            This is automatically set to the pool you created in Step 5.
                         </span>
                         <div className="bg-slate-700 p-2 rounded mt-1">
-                            <code className="text-sm text-slate-300">{newPairAddress || "Complete previous step"}</code>
+                            <code className="text-sm text-slate-300">{newPairAddress || "Complete previous steps"}</code>
                         </div>
                     </div>
-
-                    {/* --- REFLECTION PAIR (EDITABLE) --- */}
                     <div>
                         <label className="block text-base font-bold text-white">Reflection Pair Address</label>
                         <span className="text-xs text-slate-300">
@@ -519,7 +587,6 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
                             onChange={(e) => setReflectionPairAddress(e.target.value)}
                         />
                     </div>
-
                     <button
                         onClick={handleSetPairs}
                         disabled={loading || !newPairAddress || !reflectionPairAddress}

@@ -52,7 +52,7 @@ export const getAddresses = async (): Promise<string[]> => {
     return addresses
 }
 
-export const performTransaction = async (address: string, msgs: []) => {
+export const performTransaction = async (address: string, msgs: any[]) => {
     if (!address || !msgs || msgs.length === 0) return
 
     const walletStrategy = buildWalletStrategy()

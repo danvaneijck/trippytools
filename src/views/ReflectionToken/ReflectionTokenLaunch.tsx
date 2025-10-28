@@ -18,9 +18,9 @@ const ReflectionTokenLaunch = () => {
     const [tokenDescription, setTokenDescription] = useState("A cool reflection token.");
 
     const [globalRate, setGlobalRate] = useState(0.05); // 5%
-    const [reflectionRate, setReflectionRate] = useState(0.5); // 50% of tax
-    const [burnRate, setBurnRate] = useState(0.1); // 10% of tax
-    const [antiwhaleRate, setAntiwhaleRate] = useState(0.01); // 1% of total supply
+    const [reflectionRate, setReflectionRate] = useState(1); // 100% of tax
+    const [burnRate, setBurnRate] = useState(0); // 0% of tax
+    const [antiwhaleRate, setAntiwhaleRate] = useState(0.05); // 5% of total supply
 
     const [showConfirm, setShowConfirm] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -164,7 +164,7 @@ const ReflectionTokenLaunch = () => {
                                             </div>
                                         </div>
                                         <div className="text-xs mt-4">
-                                            * The remaining portion of the tax will be sent to the treasury for liquidity.
+                                            * The remaining portion of the tax (100% - reflection rate - burn rate) will be added as liquidity to the pool
                                         </div>
                                     </div>
 

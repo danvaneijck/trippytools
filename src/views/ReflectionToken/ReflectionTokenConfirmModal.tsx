@@ -10,8 +10,8 @@ import IPFSImage from "../../components/App/IpfsImage";
 import { MdImageNotSupported } from "react-icons/md";
 
 // NOTE: Replace with your mainnet code IDs when available
-const TESTNET_REFLECTION_TOKEN_CODE_ID = 38905
-const TESTNET_TREASURY_CODE_ID = 38906
+const TESTNET_REFLECTION_TOKEN_CODE_ID = 38909
+const TESTNET_TREASURY_CODE_ID = 38910
 const TESTNET_ROUTER_ADDRESS = "inj1tmzr3d0whrdgrgl08fu3kggqaesaazww247rd2"
 
 const MAINNET_REFLECTION_TOKEN_CODE_ID = 0; // Replace with actual

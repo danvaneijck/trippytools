@@ -9,7 +9,7 @@ const Header = () => {
     const [menuOpen, setMenuOpen] = useState(false);
 
     const getLinkStyle = (path) => {
-        return location.pathname === path
+        return (location.pathname.startsWith(path) && path !== "/") || location.pathname === path
             ? 'font-bold mx-5 pb-1 border-b-2 border-rose-400 text-trippyYellow'
             : 'font-bold mx-5 pb-1 hover:underline';
     };
@@ -115,7 +115,7 @@ const Header = () => {
                         Create token
                     </Link>
                     <Link to="/manage-tokens" className={getLinkStyle('/manage-tokens')} onClick={toggleMenu}>
-                        Mange tokens
+                        Manage tokens
                     </Link>
                     <Link to="/airdrop" className={getLinkStyle('/airdrop')} onClick={toggleMenu}>
                         Perform Airdrops
@@ -125,6 +125,9 @@ const Header = () => {
                     </Link>
                     <Link to="/burn" className={getLinkStyle('/burn')} onClick={toggleMenu}>
                         Burn Tokens 🔥
+                    </Link>
+                    <Link to="/cw20-reflection" className={getLinkStyle('/cw20-reflection')} onClick={toggleMenu}>
+                        CW20-reflection
                     </Link>
                     <Link to="/market-make" className={getLinkStyle('/market-make')} onClick={toggleMenu}>
                         Mito Market Make
