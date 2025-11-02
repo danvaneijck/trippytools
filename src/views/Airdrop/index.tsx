@@ -270,11 +270,12 @@ const Airdrop = () => {
         let criteriaUpdate = ""
         let descriptionUpdate = ""
         const totalToDrop = airdropDetails.reduce((sum, airdrop) => sum + Number(airdrop.amountToAirdrop), 0).toFixed(2)
-        const targetToken = tokens.find((token => token.address === airdropTokenAddress.value))
+
 
         const mode = distMode[0].toUpperCase() + distMode.slice(1)
 
-        if (dropMode.value == "TOKEN") {
+        if (dropMode.value == "TOKEN" && airdropTokenAddress) {
+            const targetToken = tokens.find((token => token.address === airdropTokenAddress.value))
             criteriaUpdate = `Holders of ${airdropTokenInfo.symbol} token at ${moment().toISOString()}`
             descriptionUpdate = `${mode} drop of ${totalToDrop} ${tokenInfo.symbol} to holders of ${airdropTokenInfo.symbol} token`
             if (targetToken?.liquidity_token_pool) {
@@ -456,7 +457,8 @@ const Airdrop = () => {
         if (
             tokenAddress.value.includes("factory") ||
             tokenAddress.value.includes("peggy") ||
-            tokenAddress.value.includes("ibc")
+            tokenAddress.value.includes("ibc") ||
+            tokenAddress.value == "inj"
         ) {
             module
                 .getDenomExtraMetadata(tokenAddress.value)
