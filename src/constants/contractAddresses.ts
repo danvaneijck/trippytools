@@ -541,9 +541,19 @@ export const NFT_COLLECTIONS = [
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/672ce903906b4694a1f9f244/miniaturePicture",
     },
     {
+        value: "inj1nm3wr7fxxy68tnwxw0awuaqzzevcae238qd0ud",
+        label: "sacks",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/6904e2f4d3996c3c1537e468/miniaturePicture",
+    },
+    {
         value: "inj1jq4k20s97zy6d66x9mp2xxrftwhkynz64tjegj",
         label: "Galactic Syndicate",
         img: "https://talis-protocol.mo.cloudinary.net/inj/families/66fbb4a4d5978b6944b0a760/miniaturePicture",
+    },
+    {
+        value: "inj10r5vya3z6f7llw3emuvzpq2v07p3hu3tuzne39",
+        label: "$DRUGS -Neon Saints",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/68fa955fd3996c3c156a891b/miniaturePicture",
     },
     {
         value: "inj1rrrc7qe2sg93j2zj4dv8j5wv0nwsfx29hzxngq",

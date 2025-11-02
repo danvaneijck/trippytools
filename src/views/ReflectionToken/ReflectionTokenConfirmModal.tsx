@@ -14,9 +14,9 @@ const TESTNET_REFLECTION_TOKEN_CODE_ID = 38909
 const TESTNET_TREASURY_CODE_ID = 38910
 const TESTNET_ROUTER_ADDRESS = "inj1tmzr3d0whrdgrgl08fu3kggqaesaazww247rd2"
 
-const MAINNET_REFLECTION_TOKEN_CODE_ID = 0; // Replace with actual
-const MAINNET_TREASURY_CODE_ID = 0; // Replace with actual
-const MAINNET_ROUTER_ADDRESS = "inj1ne2durmsx2jurvy4wgnhegv3xt6789up8xgum3" // Replace with actual if different
+const MAINNET_REFLECTION_TOKEN_CODE_ID = 1893;
+const MAINNET_TREASURY_CODE_ID = 1894;
+const MAINNET_ROUTER_ADDRESS = "inj1ne2durmsx2jurvy4wgnhegv3xt6789up8xgum3"
 
 interface ReflectionTokenConfirmModalProps {
     setShowModal: (show: boolean) => void;
@@ -111,7 +111,7 @@ const ReflectionTokenConfirmModal = (props: ReflectionTokenConfirmModalProps) =>
             router: routerAddress,
             mint: null,
             marketing: {
-                project: "Reflection Token",
+                project: props.tokenName,
                 description: props.tokenDescription,
                 marketing: connectedWallet,
                 logo: props.tokenImage ? { url: props.tokenImage } : null,

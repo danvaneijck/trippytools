@@ -27,6 +27,8 @@ interface TokenSetupWizardProps {
 const MAINNET_DEX_FACTORY_ADDRESS = "inj1k9lcqtn3y92h4t3tdsu7z8qx292mhxhgsssmxg";
 const MAINNET_DEX_ADAPTER_ADDRESS = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk";
 const MAINNET_SEND_AUCTION_ADDRESS = "inj1yr7srge0lku4h3gd473qdlpdfw63ejdjwkh4c0";
+const MAINNET_AGGREGATOR_ADDRESS = "inj1a4qvqym6ajewepa7v8y2rtxuz9f92kyq2zsg26";
+
 const TESTNET_DEX_FACTORY_ADDRESS = "inj150qeu7h9ktn2aqz94tepsh089u63nasfc2t6sw";
 const TESTNET_DEX_ADAPTER_ADDRESS = "inj1kjmmqkl3jrgzq70026xhcvfxeysgjs0mr44pp4";
 const TESTNET_AGGREGATOR_ADDRESS = "inj1sw8yrju07xe59v60xcs76tej5svwc3fwgzqc7t";
@@ -59,7 +61,7 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
         ? [MAINNET_DEX_FACTORY_ADDRESS, MAINNET_DEX_ADAPTER_ADDRESS, MAINNET_SEND_AUCTION_ADDRESS]
         : [TESTNET_DEX_FACTORY_ADDRESS, TESTNET_DEX_ADAPTER_ADDRESS, TESTNET_SEND_AUCTION_ADDRESS];
 
-    const [aggregatorAddress, setAggregatorAddress] = useState(TESTNET_AGGREGATOR_ADDRESS);
+    const [aggregatorAddress, setAggregatorAddress] = useState(networkKey === 'mainnet' ? MAINNET_AGGREGATOR_ADDRESS : TESTNET_AGGREGATOR_ADDRESS);
 
 
     const [whitelistAddresses, setWhitelistAddresses] = useState<string[]>(getInitialWhitelist);

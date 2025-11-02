@@ -390,6 +390,15 @@ class TokenUtils {
 
     async getDenomExtraMetadata(denom: string) {
         console.log("get extra meta")
+
+        if (denom === "inj") {
+            return {
+                name: "Injective",
+                denom: "inj",
+                symbol: "INJ",
+                decimals: 18,
+            }
+        }
         try {
 
             const data = await this.chainGrpcBankApi.fetchDenomMetadata(denom);
