@@ -1,7 +1,6 @@
 import { MsgInstantiateContract } from "@injectivelabs/sdk-ts";
 import { BigNumberInBase } from "@injectivelabs/utils";
 import { useCallback, useState } from "react";
-import { useNavigate } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
 import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
@@ -11,16 +10,17 @@ import IPFSImage from "../../components/App/IpfsImage";
 import { MdImageNotSupported } from "react-icons/md";
 
 // NOTE: Replace with your mainnet code IDs when available
-const TESTNET_REFLECTION_TOKEN_CODE_ID = 35062
-const TESTNET_TREASURY_CODE_ID = 35064
+const TESTNET_REFLECTION_TOKEN_CODE_ID = 38909
+const TESTNET_TREASURY_CODE_ID = 38910
 const TESTNET_ROUTER_ADDRESS = "inj1tmzr3d0whrdgrgl08fu3kggqaesaazww247rd2"
 
-const MAINNET_REFLECTION_TOKEN_CODE_ID = 0; // Replace with actual
-const MAINNET_TREASURY_CODE_ID = 0; // Replace with actual
-const MAINNET_ROUTER_ADDRESS = "inj1ne2durmsx2jurvy4wgnhegv3xt6789up8xgum3" // Replace with actual if different
+const MAINNET_REFLECTION_TOKEN_CODE_ID = 1893;
+const MAINNET_TREASURY_CODE_ID = 1894;
+const MAINNET_ROUTER_ADDRESS = "inj1ne2durmsx2jurvy4wgnhegv3xt6789up8xgum3"
 
 interface ReflectionTokenConfirmModalProps {
     setShowModal: (show: boolean) => void;
+    onLaunchSuccess: (addresses: { tokenAddress: string; treasuryAddress: string }) => void;
     tokenName: string;
     tokenSymbol: string;
     tokenSupply: number;
@@ -33,10 +33,54 @@ interface ReflectionTokenConfirmModalProps {
     antiwhaleRate: number;
 }
 
+/**
+ * Parses the transaction result to find the instantiated contract address.
+ * @param txResult The result object from the transaction.
+ * @returns The new contract address or null if not found.
+ */
+const parseInstantiationAddresses = (
+    txResult: any,
+    tokenCodeId: number,
+    treasuryCodeId: number
+): { tokenAddress: string; treasuryAddress: string } | null => {
+    try {
+        const events = txResult?.events || (txResult?.rawLog && JSON.parse(txResult.rawLog)[0].events);
+        if (!events) {
+            console.error("No events found in transaction result");
+            return null;
+        }
+
+        let tokenAddress: string | null = null;
+        let treasuryAddress: string | null = null;
+
+        for (const event of events) {
+            if (event.type === 'instantiate' || event.type === 'instantiate_contract') {
+                const addressAttr = event.attributes.find((attr: any) => attr.key === '_contract_address' || attr.key === 'contract_address');
+                const codeIdAttr = event.attributes.find((attr: any) => attr.key === 'code_id');
+
+                if (addressAttr && codeIdAttr) {
+                    const codeId = parseInt(codeIdAttr.value, 10);
+                    if (codeId === tokenCodeId) {
+                        tokenAddress = addressAttr.value;
+                    } else if (codeId === treasuryCodeId) {
+                        treasuryAddress = addressAttr.value;
+                    }
+                }
+            }
+        }
+
+        if (tokenAddress && treasuryAddress) {
+            return { tokenAddress, treasuryAddress };
+        }
+    } catch (e) {
+        console.error("Error parsing transaction result for contract addresses:", e);
+    }
+    return null;
+};
+
 const ReflectionTokenConfirmModal = (props: ReflectionTokenConfirmModalProps) => {
     const { connectedWallet } = useWalletStore();
     const { networkKey } = useNetworkStore();
-    const navigate = useNavigate();
 
     const [progress, setProgress] = useState("");
     const [txLoading, setTxLoading] = useState(false);
@@ -67,7 +111,7 @@ const ReflectionTokenConfirmModal = (props: ReflectionTokenConfirmModalProps) =>
             router: routerAddress,
             mint: null,
             marketing: {
-                project: "Reflection Token",
+                project: props.tokenName,
                 description: props.tokenDescription,
                 marketing: connectedWallet,
                 logo: props.tokenImage ? { url: props.tokenImage } : null,
@@ -80,29 +124,27 @@ const ReflectionTokenConfirmModal = (props: ReflectionTokenConfirmModalProps) =>
             codeId: reflectionTokenCodeId,
             label: `${props.tokenSymbol}-reflection-token`,
             msg: instantiateMsg,
-            funds: [], // No funds needed for instantiation
         });
 
         setProgress("Please sign the transaction in your wallet...");
         try {
-            await performTransaction(connectedWallet, msg);
-            setProgress("Transaction successful! Token created.");
+            const txResult = await performTransaction(connectedWallet, msg);
 
-            // Set initial tax rates
-            // In a real scenario, you would query the new contract address from the tx result
-            // and then send a follow-up `SetTaxRate` message. This part is complex
-            // and often requires indexing or parsing tx logs.
-            // For now, we assume the token is created with default (0) rates.
+            setProgress("Transaction successful! Parsing contract address...");
+            const addresses = parseInstantiationAddresses(txResult, reflectionTokenCodeId, treasuryCodeId);
 
-            if (networkKey === "mainnet") {
-                await sendTelegramMessage(
-                    `New Reflection Token created by ${connectedWallet}!\nName: ${props.tokenName}, Symbol: ${props.tokenSymbol}`
-                );
+            if (addresses) {
+                setProgress(`Token & Treasury created successfully!`);
+                if (networkKey === "mainnet") {
+                    await sendTelegramMessage(
+                        `New Reflection Token created!\nName: ${props.tokenName}\nAddress: ${addresses.tokenAddress}`
+                    );
+                }
+                // Use the new callback to notify the parent with both addresses
+                props.onLaunchSuccess(addresses);
+            } else {
+                throw new Error("Could not parse the new contract address from the transaction. Please check the transaction on an explorer.");
             }
-
-            // setTimeout(() => {
-            //     navigate('/manage-tokens'); // Or a new success page
-            // }, 2000)
 
         } catch (e: any) {
             console.error(e);
@@ -112,7 +154,7 @@ const ReflectionTokenConfirmModal = (props: ReflectionTokenConfirmModalProps) =>
             setTxLoading(false);
         }
 
-    }, [connectedWallet, networkKey, props, navigate]);
+    }, [connectedWallet, networkKey, props]);
 
     return (
         <>
@@ -157,7 +199,7 @@ const ReflectionTokenConfirmModal = (props: ReflectionTokenConfirmModalProps) =>
                                 className="bg-blue-600 text-white active:bg-blue-700 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
                                 disabled={txLoading}
-                                onClick={createReflectionToken}
+                                onClick={() => void createReflectionToken()}
                             >
                                 {txLoading ? "Launching..." : "Launch Token"}
                             </button>

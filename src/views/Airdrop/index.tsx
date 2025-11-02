@@ -457,7 +457,8 @@ const Airdrop = () => {
         if (
             tokenAddress.value.includes("factory") ||
             tokenAddress.value.includes("peggy") ||
-            tokenAddress.value.includes("ibc")
+            tokenAddress.value.includes("ibc") ||
+            tokenAddress.value == "inj"
         ) {
             module
                 .getDenomExtraMetadata(tokenAddress.value)

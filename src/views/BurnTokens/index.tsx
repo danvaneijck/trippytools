@@ -94,6 +94,8 @@ const BurnTokens = () => {
             burnFromAddress: injectiveAddress
         });
 
+        console.log(burnMsg)
+
         try {
             const result = await performTransaction(injectiveAddress, [burnMsg]);
             console.log(result)
