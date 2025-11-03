@@ -114,8 +114,15 @@ const AirdropConfirmModal = (props: {
             }
         });
 
-        const chunkSize = denom.includes("factory") ? 500 : 500;
-        const gasPerRecord = denom.includes("factory") ? 40000 : 80000;
+        const isNative = (
+            denom.includes("factory") ||
+            denom.includes("peggy") ||
+            denom.includes("ibc") ||
+            denom == "inj"
+        )
+
+        const chunkSize = isNative ? 500 : 500;
+        const gasPerRecord = isNative ? 40000 : 80000;
         const chunks = [];
 
         for (let i = 0; i < records.length; i += chunkSize) {
@@ -140,7 +147,7 @@ const AirdropConfirmModal = (props: {
                     }
 
                     let msg;
-                    if (!denom.includes("factory")) {
+                    if (!isNative) {
                         msg = filteredChunk.map((record) => {
                             return MsgExecuteContractCompat.fromJSON({
                                 contractAddress: denom,
