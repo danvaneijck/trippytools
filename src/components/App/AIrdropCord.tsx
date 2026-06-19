@@ -6,6 +6,7 @@ import shroomi from "../../assets/mush_sticker.png";
 import shroomlogo from "../../assets/shroom.jpg";
 
 import useTokenStore from "../../store/useTokenStore";
+import { humanReadableAmount } from "../../utils/format";
 
 type Props = {
     log: {
@@ -20,17 +21,6 @@ type Props = {
         wallet: { address: string };
     };
 };
-
-function humanReadableAmount(n: number | string) {
-    const units = ["", "k", "m", "b", "t"];
-    let num = Number(n);
-    let i = 0;
-    while (num >= 1000 && i < units.length - 1) {
-        num /= 1000;
-        i++;
-    }
-    return `${num.toFixed(num >= 10 ? 0 : 2)}${units[i]}`;
-}
 
 const AirdropCard = ({ log }: Props) => {
     const cardRef = useRef<HTMLDivElement>(null);

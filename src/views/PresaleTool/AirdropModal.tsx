@@ -1,18 +1,33 @@
 import { useCallback, useState } from "react";
 import { CircleLoader } from "react-spinners";
 import { WALLET_LABELS } from "../../constants/walletLabels";
-import { BigNumberInBase, BigNumberInWei } from "@injectivelabs/utils";
-import { MsgExecuteContract, MsgMultiSend } from "@injectivelabs/sdk-ts";
+import { MsgExecuteContract } from "@injectivelabs/sdk-ts";
 import { useNavigate } from 'react-router-dom';
 import { humanReadableAmount } from "../../utils/helpers";
 import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
 import { performTransaction } from "../../utils/walletStrategy";
+import { sendNativeMultiSend } from "../../utils/multiSend";
 
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
 
-const AirdropModal = (props) => {
+interface AirdropRecord {
+    address: string;
+    amount: number;
+    amountFormatted: number;
+    percent: number;
+    contribution: number;
+    contributionFormatted: number;
+}
+
+interface AirdropModalProps {
+    airdropDetails: AirdropRecord[];
+    tokenInfo: { denom: string; symbol: string; decimals: number };
+    setShowModal: (show: boolean) => void;
+}
+
+const AirdropModal = (props: AirdropModalProps) => {
     const { connectedWallet: connectedAddress } = useWalletStore()
     const { networkKey: currentNetwork } = useNetworkStore()
 
@@ -53,123 +68,44 @@ const AirdropModal = (props) => {
         return await performTransaction(injectiveAddress, [msg])
     }, [shroomFee, connectedAddress])
 
-    const sendAirdrops = useCallback(async (denom: any) => {
-
-        const injectiveAddress = connectedAddress
-
-        if (injectiveAddress !== connectedAddress) {
-            throw new Error("You are connected to the wrong wallet address")
+    const sendAirdrops = useCallback(async (denom: string) => {
+        if (!connectedAddress) {
+            throw new Error("Please connect your wallet to continue")
         }
-        else {
-            setError(null)
-        }
+        setError(null)
 
-        const records = props.airdropDetails.map((record) => {
-            return {
-                address: record.address,
-                amount: record.amount
-            }
+        const records = props.airdropDetails.map((record) => ({
+            address: record.address,
+            amount: record.amount,
+        }));
+
+        return sendNativeMultiSend(connectedAddress, denom, records, {
+            chunkSize: 1200,
+            retries: 3,
+            onPreview: setMsgPreview,
+            onProgress: (done, total) => setProgress(`Sent ${done}/${total} transactions`),
         });
-
-        const chunkSize = 1200
-        const gasPerRecord = 40000
-        const chunks = [];
-
-        for (let i = 0; i < records.length; i += chunkSize) {
-            chunks.push(records.slice(i, i + chunkSize));
-        }
-
-        const successfullyProcessed = new Set();
-        const transactions = []
-
-        for (const chunk of chunks) {
-            try {
-                const filteredChunk = chunk.filter(record => !successfullyProcessed.has(record.address));
-
-                if (filteredChunk.length === 0) {
-                    break;
-                }
-
-                const totalChunkToSend = filteredChunk.reduce((acc, record) => {
-                    return acc.plus(new BigNumberInBase(record.amount));
-                }, new BigNumberInWei(0));
-
-                const msg = MsgMultiSend.fromJSON({
-                    inputs: [
-                        {
-                            address: injectiveAddress,
-                            coins: [
-                                {
-                                    denom,
-                                    amount: totalChunkToSend.toFixed(),
-                                },
-                            ],
-                        },
-                    ],
-                    outputs: filteredChunk.map((record: { address: any; amount: BigNumber.Value; }) => {
-                        return {
-                            address: record.address,
-                            coins: [
-                                {
-                                    amount: new BigNumberInBase(record.amount).toFixed(),
-                                    denom,
-                                },
-                            ],
-                        };
-                    }),
-                });
-
-                let calculatedGas = filteredChunk.length * gasPerRecord;
-                if (calculatedGas < 500000) {
-                    calculatedGas = 500000;
-                }
-
-                const fee = (calculatedGas * Number(160000000)) / Math.pow(10, 18)
-                const feeFormatted = Math.round(((fee * 1.05) * Math.pow(10, 18))).toString()
-
-                const gas = {
-                    amount: [
-                        {
-                            denom: "inj",
-                            amount: feeFormatted
-                        }
-                    ],
-                    gas: calculatedGas
-                };
-
-                console.log("gas", gas)
-                console.log("msg", msg)
-
-                setMsgPreview(msg)
-
-                const response = await performTransaction(injectiveAddress, [msg]);
-                filteredChunk.forEach(record => successfullyProcessed.add(record.address));
-                transactions.push(response.txHash)
-
-            } catch (error) {
-                console.error("Transaction failed, retrying...", error);
-            }
-        }
-
-        return transactions
     }, [connectedAddress, props.airdropDetails]);
 
     const handleSendAirdrops = useCallback(async () => {
-        if (currentNetwork == "mainnet" && !feePayed) {
-            console.log("pay shroom fee")
-            setProgress("Pay shroom fee for airdrop")
-            const result = await payFee()
-            if (result) setFeePayed(true)
-        }
-        sendAirdrops(props.tokenInfo.denom).then((r) => {
+        setTxLoading(true)
+        try {
+            if (currentNetwork == "mainnet" && !feePayed) {
+                setProgress("Pay shroom fee for airdrop")
+                const result = await payFee()
+                if (result) setFeePayed(true)
+            }
+            setProgress("Send airdrops")
+            const r = await sendAirdrops(props.tokenInfo.denom)
             console.log("done", r)
+            setTxLoading(false)
             navigate(`/token-holders?address=${props.tokenInfo.denom}`);
-        }).catch(e => {
+        } catch (e: any) {
             console.log(e)
             setError(e.message)
             setProgress("")
             setTxLoading(false)
-        })
+        }
     }, [currentNetwork, feePayed, navigate, payFee, props.tokenInfo.denom, sendAirdrops])
 
     return (
@@ -213,7 +149,7 @@ const AirdropModal = (props) => {
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {props.airdropDetails.filter(x => Number(Number(x.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0).map((holder, index) => (
+                                                        {props.airdropDetails.filter((x) => Number(x.amount) !== 0).map((holder, index) => (
                                                             <tr key={index} className="text-white border-b text-xs">
                                                                 <td className="px-4 py-1 whitespace-nowrap">
                                                                     <a
@@ -297,12 +233,7 @@ const AirdropModal = (props) => {
                             <button
                                 className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded-sm shadow-sm hover:shadow-lg outline-hidden focus:outline-hidden mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
-                                onClick={() => handleSendAirdrops().then(() => console.log("done")).catch(e => {
-                                    console.log(e)
-                                    setError(e.message)
-                                    setProgress("")
-                                    setTxLoading(false)
-                                })}
+                                onClick={() => handleSendAirdrops()}
                             >
                                 Send Airdrops
                             </button>

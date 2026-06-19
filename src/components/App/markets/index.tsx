@@ -15,6 +15,8 @@ const INTERVALS = [
     { key: '1h', label: '1H', limit: 72 },
     { key: '4h', label: '4H', limit: 90 },
     { key: '1d', label: '1D', limit: 120 },
+    { key: '1w', label: '1W', limit: 60 },
+    { key: '1M', label: '1M', limit: 24 },
 ] as const;
 
 type IntervalKey = (typeof INTERVALS)[number]['key'];
@@ -204,10 +206,12 @@ const pickDefault = (ms: MarketDescriptor[]): MarketDescriptor | undefined =>
             m.quote.symbol === 'INJ',
     ) ?? ms[0];
 
-const labelFor = (iso: string, interval: IntervalKey) =>
-    interval === '1d'
-        ? dayjs(iso).format('MMM D')
-        : dayjs(iso).format('MMM D HH:mm');
+const labelFor = (ms: number, interval: IntervalKey) => {
+    const d = dayjs(ms);
+    if (interval === '1M') return d.format("MMM 'YY");
+    if (interval === '1w' || interval === '1d') return d.format('MMM D');
+    return d.format('MMM D HH:mm');
+};
 
 // ---- component -----------------------------------------------------------
 
@@ -265,7 +269,7 @@ const ShroomMarkets = () => {
 
     const candles = useMemo<Candle[]>(() => {
         const rows = candleData?.candles ?? [];
-        return rows
+        const parsed = rows
             .map((r): Candle | null => {
                 const open = denom === 'USD' ? r.open_usd : r.open;
                 const high = denom === 'USD' ? r.high_usd : r.high;
@@ -275,9 +279,10 @@ const ShroomMarkets = () => {
                     return null;
                 }
                 if (!(Number(high) > 0)) return null;
+                const t = dayjs(r.bucket_start).valueOf();
                 return {
-                    t: dayjs(r.bucket_start).valueOf(),
-                    label: labelFor(r.bucket_start, interval),
+                    t,
+                    label: labelFor(t, interval),
                     open: Number(open),
                     high: Number(high),
                     low: Number(low),
@@ -287,6 +292,19 @@ const ShroomMarkets = () => {
             })
             .filter((c): c is Candle => c !== null)
             .sort((a, b) => a.t - b.t);
+
+        // Chain each candle's open to the previous candle's close so the chart
+        // reads continuously — illiquid markets skip empty buckets, which
+        // otherwise leaves the next candle's open detached from the prior close
+        // (the "gappy" look). Widen the wick to cover the pinned open so the
+        // body never spills past it.
+        return parsed.map((c, i) => {
+            if (i === 0) return c;
+            const open = parsed[i - 1].close;
+            const high = Math.max(c.high, open);
+            const low = Math.min(c.low, open);
+            return { ...c, open, high, low, highLow: [low, high] };
+        });
     }, [candleData, denom, interval]);
 
     const stats = useMemo(() => {

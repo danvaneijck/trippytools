@@ -1,11 +1,19 @@
 import { useState } from 'react';
 import { SiConvertio } from "react-icons/si";
 
-const ConvertModal = ({ onClose, cw20Balance, bankBalance, convertToBank, convertToCW20 }) => {
+interface ConvertModalProps {
+    onClose: () => void;
+    cw20Balance: number;
+    bankBalance: number;
+    convertToBank: (amount: string) => Promise<void> | void;
+    convertToCW20: (amount: string) => Promise<void> | void;
+}
+
+const ConvertModal = ({ onClose, cw20Balance, bankBalance, convertToBank, convertToCW20 }: ConvertModalProps) => {
     const [amount, setAmount] = useState('');
     const [conversionDirection, setConversionDirection] = useState('cw20ToBank');
 
-    const handleAmountChange = (e) => {
+    const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setAmount(e.target.value);
     };
 
@@ -22,9 +30,8 @@ const ConvertModal = ({ onClose, cw20Balance, bankBalance, convertToBank, conver
         }
     };
 
-    const outputAmount = conversionDirection === 'cw20ToBank'
-        ? (amount)
-        : (amount);
+    // 1:1 conversion, so the output simply mirrors the input amount.
+    const outputAmount = amount;
 
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 ">
@@ -47,7 +54,7 @@ const ConvertModal = ({ onClose, cw20Balance, bankBalance, convertToBank, conver
                         />
                         <button
                             onClick={() => {
-                                setAmount(conversionDirection === 'cw20ToBank' ? cw20Balance - (cw20Balance * 0.00000000001) : bankBalance - (bankBalance * 0.00000000001));
+                                setAmount(String(conversionDirection === 'cw20ToBank' ? cw20Balance - (cw20Balance * 0.00000000001) : bankBalance - (bankBalance * 0.00000000001)));
                             }}
                             className="bg-gray-700 text-white border px-4 py-2 rounded-r hover:bg-gray-800 transition"
                         >
@@ -82,7 +89,7 @@ const ConvertModal = ({ onClose, cw20Balance, bankBalance, convertToBank, conver
 
                 <button
                     onClick={handleConvert}
-                    disabled={!amount || amount <= 0}
+                    disabled={!amount || Number(amount) <= 0}
                     className="w-full bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition disabled:bg-gray-300"
                 >
                     Convert

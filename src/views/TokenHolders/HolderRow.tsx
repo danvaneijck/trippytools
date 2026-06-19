@@ -1,6 +1,19 @@
+import { ListChildComponentProps } from 'react-window';
 import { ClipLoader } from "react-spinners";
+import { shortAddress } from "../../utils/format";
+import type { TokenHolderRow, WalletLabelMap } from "./TokenHolderTable";
 
-const HolderRow = ({ index, style, data }) => {
+interface HolderRowData {
+    holders: TokenHolderRow[];
+    startIndex: number;
+    hasSplitBalances: boolean;
+    WALLET_LABELS: WalletLabelMap;
+    lastLoadedAddress: string;
+    liquidity: any[];
+    findingLiq: boolean;
+}
+
+const HolderRow = ({ index, style, data }: ListChildComponentProps<HolderRowData>) => {
     const holder = data.holders[index];
     const { startIndex, hasSplitBalances, WALLET_LABELS, lastLoadedAddress, liquidity, findingLiq } = data;
 
@@ -16,11 +29,11 @@ const HolderRow = ({ index, style, data }) => {
                     className="hover:text-indigo-900"
                     href={`https://explorer.injective.network/account/${holder.address}`}
                 >
-                    {holder.address.slice(0, 5) + '...' + holder.address.slice(-5)}
+                    {shortAddress(holder.address)}
                 </a>
                 {WALLET_LABELS[holder.address] && (
-                    <span className={`${WALLET_LABELS[holder.address].bgColor} ${WALLET_LABELS[holder.address].textColor} ml-2`}>
-                        {WALLET_LABELS[holder.address].label}
+                    <span className={`${WALLET_LABELS[holder.address]!.bgColor} ${WALLET_LABELS[holder.address]!.textColor} ml-2`}>
+                        {WALLET_LABELS[holder.address]!.label}
                     </span>
                 )}
                 {holder.address == lastLoadedAddress && (
@@ -35,11 +48,11 @@ const HolderRow = ({ index, style, data }) => {
                 )}
             </div>
             <div className="col-span-1 overflow-hidden text-ellipsis">
-                {hasSplitBalances ? holder.cw20Balance.toFixed(2) : holder.balance.toFixed(2)}
+                {hasSplitBalances ? (holder.cw20Balance ?? 0).toFixed(2) : holder.balance.toFixed(2)}
             </div>
             {hasSplitBalances && (
                 <div className="col-span-1 overflow-hidden text-ellipsis">
-                    {holder.bankBalance.toFixed(2)}
+                    {(holder.bankBalance ?? 0).toFixed(2)}
                 </div>
             )}
             <div className="col-span-1 overflow-hidden text-ellipsis">

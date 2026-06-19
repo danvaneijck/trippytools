@@ -9,12 +9,33 @@ import TokenMetadataModal from "./TokenMetadataModal";
 import CreateSpotMarketModal from "./CreateSpotMarketModal";
 import MintModal from "./MintModal";
 import CreateMitoVault from "./CreateMitoVault";
-import IPFSImage from "../../components/App/IpfsImage";
 import Footer from "../../components/App/Footer";
 import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
 import { performTransaction } from "../../utils/walletStrategy";
+import { MsgChangeAdmin } from "@injectivelabs/sdk-ts";
+import { shortAddress } from "../../utils/format";
 
+// tokenfactory "burn" admin — assigning admin here renounces mint authority.
+const BURN_ADMIN_ADDRESS = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
+
+interface TokenMetadata {
+    name?: string;
+    symbol?: string;
+    description?: string;
+    logo?: string;
+    total_supply?: number;
+    decimals: number;
+    admin?: string;
+}
+
+interface FactoryToken {
+    token: string;
+    metadata: TokenMetadata;
+    marketId?: string | null;
+    mitoVaultContractAddress?: string | null;
+    mitoVault?: any;
+}
 
 const MyTokens = () => {
 
@@ -22,22 +43,20 @@ const MyTokens = () => {
     const { networkKey: currentNetwork } = useNetworkStore()
     const networkConfig = useNetworkStore((state) => state.network);
 
-    const [tokens, setTokens] = useState([]);
+    const netPrefix = currentNetwork === 'testnet' ? 'testnet.' : '';
+    const explorerBase = `https://${netPrefix}explorer.injective.network`;
 
-    const [showMetaDataModel, setShowMetadataModal] = useState(null);
-    const [showSpotMarketModal, setShowSpotMarketModal] = useState(null);
-    const [showMint, setShowMint] = useState(null);
-    const [showMitoVault, setShowMitoVault] = useState(null);
+    const [tokens, setTokens] = useState<FactoryToken[]>([]);
+
+    const [showMetaDataModel, setShowMetadataModal] = useState<FactoryToken | null>(null);
+    const [showSpotMarketModal, setShowSpotMarketModal] = useState<FactoryToken | null>(null);
+    const [showMint, setShowMint] = useState<FactoryToken | null>(null);
+    const [showMitoVault, setShowMitoVault] = useState<FactoryToken | null>(null);
 
     const [injPrice, setInjPrice] = useState(null)
     const [injBalance, setINJBalance] = useState(null)
 
-    const [helixSpotMarkets, setHelixSpotMarkets] = useState([])
-    const [mitoVaults, setMitoVaults] = useState([])
-    const [balances, setBalances] = useState([])
-
     const [loading, setLoading] = useState(false);
-    const [txLoading, setTxLoading] = useState(false)
 
     const [loaded, setLoaded] = useState(false);
 
@@ -46,11 +65,9 @@ const MyTokens = () => {
     }, [currentNetwork])
 
     const getTokens = useCallback(async () => {
-        console.log("get user tokens", networkConfig)
         const module = new TokenUtils(networkConfig);
         try {
             const userTokens = await module.getUserTokens(connectedAddress);
-            console.log(userTokens)
             return userTokens;
         } catch (error) {
             console.error('Failed to fetch tokens:', error);
@@ -59,7 +76,6 @@ const MyTokens = () => {
     }, [networkConfig, connectedAddress]);
 
     const getSpotMarkets = useCallback(async () => {
-        console.log("get spot markets")
         const module = new TokenUtils(networkConfig);
         try {
             const markets = await module.fetchSpotMarkets();
@@ -71,7 +87,6 @@ const MyTokens = () => {
     }, [networkConfig]);
 
     const getMitoVaults = useCallback(async () => {
-        console.log("get mito vaults")
         const module = new TokenUtils(networkConfig);
         try {
             const markets = await module.fetchMitoVaults();
@@ -83,12 +98,10 @@ const MyTokens = () => {
     }, [networkConfig]);
 
     const getINJPrice = useCallback(async () => {
-        console.log("get INJ price")
         const module = new TokenUtils(networkConfig);
         try {
             const price = await module.getINJDerivativesPrice();
             const balance = await module.getBalanceOfToken('inj', connectedAddress)
-            console.log(balance)
             setINJBalance(Number(balance.amount) / Math.pow(10, 18))
             setInjPrice(price)
             return price;
@@ -97,20 +110,6 @@ const MyTokens = () => {
             throw error;
         }
     }, [connectedAddress, networkConfig]);
-
-    const getBalances = useCallback(async () => {
-        console.log("get balances")
-        const module = new TokenUtils(networkConfig);
-        try {
-            const balances = await module.getBalances(connectedAddress);
-            console.log(balances)
-            return balances
-        } catch (error) {
-            console.error('Failed to fetch balances:', error);
-            throw error;
-        }
-    }, [connectedAddress, networkConfig]);
-
 
     useEffect(() => {
         setLoaded(false)
@@ -132,7 +131,6 @@ const MyTokens = () => {
                 try {
                     const spotMarkets = await getSpotMarkets();
                     const mitoVaults = await getMitoVaults();
-                    // const balances = await getBalances()
 
                     const extendedTokens = fetchedTokens.map(token => {
                         const market = spotMarkets.find(market => market.baseDenom.toString() === token.token.toString());
@@ -149,28 +147,9 @@ const MyTokens = () => {
                         };
                     });
 
-                    // const extendedBalances = balances.map(balance => {
-                    //     const market = spotMarkets.find(market => (balance.token && market.baseDenom.toString() === balance.token.denom.toString()));
-                    //     let vault = null
-                    //     if (market) {
-                    //         vault = mitoVaults.find(vault => vault.marketId.toString() === market.marketId.toString());
-                    //     }
-
-                    //     return {
-                    //         ...balance,
-                    //         marketId: market ? market.marketId : null,
-                    //         mitoVaultContractAddress: vault ? vault.contractAddress : null,
-                    //         mitoVault: vault
-                    //     };
-                    // });
-
-                    setHelixSpotMarkets(spotMarkets);
-                    setMitoVaults(mitoVaults)
-                    setTokens(extendedTokens);
-                    // setBalances(extendedBalances)
+                    setTokens(extendedTokens as FactoryToken[]);
 
                     await getINJPrice()
-
 
                     setLoaded(true);
                 } catch (e) {
@@ -185,19 +164,18 @@ const MyTokens = () => {
             }
         };
 
-        console.log("call fetch data")
         void fetchData();
-    }, [getTokens, loaded, loading, connectedAddress, getSpotMarkets, getMitoVaults, getBalances, getINJPrice]);
+    }, [getTokens, loaded, loading, connectedAddress, getSpotMarkets, getMitoVaults, getINJPrice]);
 
 
 
-    const burnAdmin = useCallback(async (subdenom) => {
+    const burnAdmin = useCallback(async (token: FactoryToken) => {
         const injectiveAddress = connectedAddress;
 
         const msgChangeAdmin = MsgChangeAdmin.fromJSON({
-            denom: `factory/${injectiveAddress}/${subdenom}`,
+            denom: token.token,
             sender: injectiveAddress,
-            newAdmin: 'inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49'
+            newAdmin: BURN_ADMIN_ADDRESS
         });
         await performTransaction(injectiveAddress, [msgChangeAdmin])
         setLoaded(false)
@@ -295,8 +273,8 @@ const MyTokens = () => {
                                                                     <td className="px-4 py-2 text-xs underline">
                                                                         <a
                                                                             target="_blank"
-                                                                            href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}explorer.injective.network/asset/?denom=${token.token}&tokenType=tokenFactory`}>
-                                                                            {token.token.slice(0, 5)}...{token.token.slice(-5)}
+                                                                            href={`${explorerBase}/asset/?denom=${token.token}&tokenType=tokenFactory`}>
+                                                                            {shortAddress(token.token)}
                                                                         </a>
                                                                     </td>
                                                                     <td className="px-4 py-2 text-xs">{(token.metadata.total_supply / Math.pow(10, token.metadata.decimals)).toLocaleString()}</td>
@@ -305,9 +283,9 @@ const MyTokens = () => {
                                                                         {token.metadata.admin == connectedAddress ?
                                                                             <div className="bg-blue-600 rounded-lg text-center px-2  w-auto inline-block">You</div> :
                                                                             <div>
-                                                                                {token.metadata.admin == "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49" ?
+                                                                                {token.metadata.admin == BURN_ADMIN_ADDRESS ?
                                                                                     <div className="bg-red-600 rounded-lg text-center px-2  w-auto inline-block">burned</div> :
-                                                                                    <div>token.metadata.admin{ }</div>}
+                                                                                    <div>{shortAddress(token.metadata.admin)}</div>}
                                                                             </div>
                                                                         }
                                                                     </td>
@@ -322,7 +300,7 @@ const MyTokens = () => {
                                                                     <td className="px-4 py-2 text-xs underline">
                                                                         <Link
                                                                             target="_blank"
-                                                                            to={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}helixapp.com/spot/?marketId=${token.marketId}`}
+                                                                            to={`https://${netPrefix}helixapp.com/spot/?marketId=${token.marketId}`}
                                                                         >
                                                                             {token.marketId ? token.marketId.slice(0, 5) + "..." : "none"}
                                                                         </Link>
@@ -330,7 +308,7 @@ const MyTokens = () => {
                                                                     <td className="px-4 py-2 text-xs underline">
                                                                         <Link
                                                                             target="_blank"
-                                                                            to={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}mito.fi/vault/${token.mitoVaultContractAddress}`}
+                                                                            to={`https://${netPrefix}mito.fi/vault/${token.mitoVaultContractAddress}`}
                                                                         >
                                                                             {token.mitoVaultContractAddress ? token.mitoVaultContractAddress.slice(0, 5) + "..." : "none"}
                                                                         </Link>
@@ -340,7 +318,7 @@ const MyTokens = () => {
                                                                             <> <button onClick={() => { setShowMint(token) }} className="my-2 bg-slate-800 shadow-lg p-2 rounded-lg text-xs">
                                                                                 Mint
                                                                             </button>
-                                                                                <button onClick={() => { burnAdmin(token.metadata.symbol) }} className="my-2 ml-2 bg-slate-800 shadow-lg p-2 rounded-lg text-xs">
+                                                                                <button onClick={() => { burnAdmin(token) }} className="my-2 ml-2 bg-slate-800 shadow-lg p-2 rounded-lg text-xs">
                                                                                     Burn admin
                                                                                 </button>
                                                                                 <button onClick={() => { setShowMetadataModal(token) }} className="my-2 ml-2 bg-slate-800 shadow-lg p-2 rounded-lg text-xs">
@@ -357,97 +335,6 @@ const MyTokens = () => {
                                                                                     </button>
                                                                                 }
                                                                             </>
-                                                                        }
-                                                                    </td>
-                                                                </tr>
-                                                            ))}
-                                                        </tbody>
-                                                    </table>
-                                                ) : (
-                                                    <div className="text-center mt-5">
-                                                        You have no tokens on {currentNetwork}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <div className="text-2xl my-2">Your Token Balances</div>
-                                                {balances && balances.length > 0 ? (
-                                                    <table className="table-auto w-full">
-                                                        <thead>
-                                                            <tr className="bg-slate-800 text-white text-left">
-                                                                <th className="px-4 py-2">Logo</th>
-                                                                <th className="px-4 py-2">Name</th>
-                                                                <th className="px-4 py-2">Symbol</th>
-                                                                <th className="px-4 py-2">Description</th>
-                                                                <th className="px-4 py-2">Denom</th>
-                                                                <th className="px-4 py-2">Balance</th>
-                                                                <th className="px-4 py-2">Holders</th>
-                                                                <th className="px-4 py-2">Spot Market</th>
-                                                                <th className="px-4 py-2">Mito Vault</th>
-                                                                <th className="px-4 py-2">Actions</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {balances.map((balance) => (
-                                                                <tr key={balance.token.denom} className="bg-slate-700 rounded-lg m-2 shadow-lg">
-                                                                    <td className="px-4 py-2">
-                                                                        {(balance.metadata.logo && balance.metadata.logo.length > 0) || (balance.metadata.logo.url) ? (
-                                                                            <IPFSImage
-                                                                                className="rounded-lg"
-                                                                                ipfsPath={
-                                                                                    balance.metadata.logo.url ? balance.metadata.logo.url : balance.metadata.logo
-                                                                                }
-                                                                                alt="Token Logo" width={50} />
-                                                                        ) : (
-                                                                            <MdImageNotSupported className="text-5xl text-slate-500" />
-                                                                        )}
-                                                                    </td>
-                                                                    <td className="px-4 py-2 text-xs">{balance.metadata.name || "-"}</td>
-                                                                    <td className="px-4 py-2 text-xs">{balance.metadata.symbol || "-"}</td>
-                                                                    <td className="px-4 py-2 text-xs">{balance.metadata.description || "-"}</td>
-                                                                    <td className="px-4 py-2 text-xs underline">
-                                                                        <a
-                                                                            target="_blank"
-                                                                            href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}explorer.injective.network/asset/?denom=${balance.token.denom}&tokenType=tokenFactory`}>
-                                                                            {balance.token.denom.slice(0, 5)}...{balance.token.denom.slice(-5)}
-                                                                        </a>
-                                                                    </td>
-                                                                    <td className="px-4 py-2 text-xs">{(Number(balance.token.amount) / Math.pow(10, balance.metadata.decimals)) || "-"}</td>
-
-                                                                    <td className="px-4 py-2 text-xs ">
-                                                                        <Link
-                                                                            target="_blank"
-                                                                            to={`/token-holders?address=${balance.token.denom}`}
-                                                                        >
-                                                                            view holders
-                                                                        </Link>
-                                                                    </td>
-                                                                    <td className="px-4 py-2 text-xs underline">
-                                                                        <Link
-                                                                            target="_blank"
-                                                                            to={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}helixapp.com/spot/?marketId=${balance.marketId}`}
-                                                                        >
-                                                                            {balance.marketId ? balance.marketId.slice(0, 5) + "..." : "none"}
-                                                                        </Link>
-                                                                    </td>
-                                                                    <td className="px-4 py-2 text-xs underline">
-                                                                        <Link
-                                                                            target="_blank"
-                                                                            to={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}mito.fi/vault/${balance.mitoVaultContractAddress}`}
-                                                                        >
-                                                                            {balance.mitoVaultContractAddress ? balance.mitoVaultContractAddress.slice(0, 5) + "..." : "none"}
-                                                                        </Link>
-                                                                    </td>
-                                                                    <td className="px-4 py-2 text-xs">
-                                                                        {balance.marketId == null &&
-                                                                            <button onClick={() => { setShowSpotMarketModal({ ...balance, token: balance.token.denom }) }} className="my-2 ml-2 bg-slate-800 shadow-lg p-2 rounded-lg text-xs">
-                                                                                Create helix market
-                                                                            </button>
-                                                                        }
-                                                                        {balance.mitoVaultContractAddress == null && balance.marketId !== null &&
-                                                                            <button onClick={() => { setShowMitoVault({ ...balance, token: balance.token.denom }) }} className="my-2 ml-2 bg-slate-800 shadow-lg p-2 rounded-lg text-xs">
-                                                                                Create mito vault
-                                                                            </button>
                                                                         }
                                                                     </td>
                                                                 </tr>

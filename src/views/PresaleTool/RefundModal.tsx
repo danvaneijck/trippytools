@@ -1,12 +1,23 @@
 import { useCallback, useState } from "react";
 import { CircleLoader } from "react-spinners";
 import { WALLET_LABELS } from "../../constants/walletLabels";
-import { MsgMultiSend } from "@injectivelabs/sdk-ts";
-import { BigNumberInBase, BigNumberInWei } from "@injectivelabs/utils";
 import useWalletStore from "../../store/useWalletStore";
-import { performTransaction } from "../../utils/walletStrategy";
+import { sendNativeMultiSend } from "../../utils/multiSend";
 
-const RefundModal = (props) => {
+interface RefundRecord {
+    address: string;
+    amount: number | string;
+}
+
+interface RefundModalProps {
+    refundDetails: RefundRecord[];
+    tokenAddress: string;
+    decimals: number;
+    setShowModal: (show: boolean) => void;
+    collectWallets: () => void;
+}
+
+const RefundModal = (props: RefundModalProps) => {
     const { connectedWallet: connectedAddress } = useWalletStore()
 
     const [progress, setProgress] = useState("")
@@ -16,136 +27,41 @@ const RefundModal = (props) => {
 
     const [error, setError] = useState(null)
 
-    const sendRefunds = useCallback(async (denom: any) => {
-
-        const injectiveAddress = connectedAddress
-
-        if (injectiveAddress !== connectedAddress) {
-            throw new Error("You are connected to the wrong wallet address")
+    const sendRefunds = useCallback(async (denom: string) => {
+        if (!connectedAddress) {
+            throw new Error("Please connect your wallet to continue")
         }
-        else {
-            setError(null)
-        }
+        setError(null)
 
-        const records = props.refundDetails.map((record) => {
-            return {
-                address: record.address,
-                amount: record.amount
-            }
+        const records = props.refundDetails.map((record) => ({
+            address: record.address,
+            amount: record.amount,
+        }));
+
+        return sendNativeMultiSend(connectedAddress, denom, records, {
+            chunkSize: 1200,
+            retries: 3,
+            onPreview: setMsgPreview,
+            onProgress: (done, total) => setProgress(`Sent ${done}/${total} transactions`),
         });
-
-        console.log(records)
-
-        const chunkSize = 1200
-        const gasPerRecord = 40000
-        const chunks = [];
-
-        for (let i = 0; i < records.length; i += chunkSize) {
-            chunks.push(records.slice(i, i + chunkSize));
-        }
-
-        const successfullyProcessed = new Set();
-        const transactions = []
-
-        for (const chunk of chunks) {
-            try {
-                const filteredChunk = chunk.filter(record => !successfullyProcessed.has(record.address));
-
-                if (filteredChunk.length === 0) {
-                    break;
-                }
-
-                const totalChunkToSend = filteredChunk.reduce((acc, record) => {
-                    return acc.plus(new BigNumberInBase(record.amount));
-                }, new BigNumberInWei(0));
-
-                const msg = MsgMultiSend.fromJSON({
-                    inputs: [
-                        {
-                            address: injectiveAddress,
-                            coins: [
-                                {
-                                    denom,
-                                    amount: totalChunkToSend.toFixed(),
-                                },
-                            ],
-                        },
-                    ],
-                    outputs: filteredChunk.map((record: { address: any; amount: BigNumber.Value; }) => {
-                        return {
-                            address: record.address,
-                            coins: [
-                                {
-                                    amount: new BigNumberInBase(record.amount).toFixed(),
-                                    denom,
-                                },
-                            ],
-                        };
-                    }),
-                });
-
-                // let calculatedGas = filteredChunk.length * gasPerRecord;
-                // if (calculatedGas < 500000) {
-                //     calculatedGas = 500000;
-                // }
-
-                // const fee = (calculatedGas * Number(160000000)) / Math.pow(10, 18)
-                // const feeFormatted = Math.round(((fee * 1.05) * Math.pow(10, 18))).toString()
-
-                // const gas = {
-                //     amount: [
-                //         {
-                //             denom: "inj",
-                //             amount: feeFormatted
-                //         }
-                //     ],
-                //     gas: calculatedGas
-                // };
-
-                let calculatedGas = filteredChunk.length * gasPerRecord;
-                if (calculatedGas < 5000000) {
-                    calculatedGas = 5000000;
-                }
-
-                const gas = {
-                    amount: [
-                        {
-                            denom: "inj",
-                            amount: calculatedGas.toString()
-                        }
-                    ],
-                    gas: calculatedGas.toString()
-                };
-
-                console.log("gas", gas)
-                console.log("msg", msg)
-
-                setMsgPreview(msg)
-
-                const response = await performTransaction(injectiveAddress, [msg]);
-                filteredChunk.forEach(record => successfullyProcessed.add(record.address));
-                transactions.push(response.txHash)
-
-            } catch (error) {
-                console.error("Transaction failed, retrying...", error);
-            }
-        }
-
-        return transactions
     }, [connectedAddress, props.refundDetails]);
 
 
-    const handleSendRefunds = useCallback(() => {
-        sendRefunds("inj").then((r) => {
+    const handleSendRefunds = useCallback(async () => {
+        setTxLoading(true)
+        try {
+            setProgress("Send refunds")
+            const r = await sendRefunds("inj")
             console.log("done", r)
+            setTxLoading(false)
             props.collectWallets()
             props.setShowModal(false)
-        }).catch(e => {
+        } catch (e: any) {
             console.log(e)
             setError(e.message)
             setProgress("")
             setTxLoading(false)
-        })
+        }
     }, [props, sendRefunds])
 
 
@@ -192,7 +108,7 @@ const RefundModal = (props) => {
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {props.refundDetails.filter(x => Number(Number(x.amount).toFixed(props.tokenDecimals)) !== 0).map((holder, index) => (
+                                                        {props.refundDetails.filter((x) => Number(x.amount) !== 0).map((holder, index) => (
                                                             <tr key={index} className="text-white border-b text-xs">
                                                                 <td className="px-6 py-1 whitespace-nowrap">
                                                                     <a

@@ -14,6 +14,7 @@ import { FaCheckCircle } from "react-icons/fa"
 import { ImCross } from "react-icons/im"
 import useWalletStore from "../../store/useWalletStore"
 import useNetworkStore from "../../store/useNetworkStore"
+import { arrayToCsv, downloadCsv } from "../../utils/csv"
 
 
 const INJECTIVE_TOKEN = {
@@ -34,7 +35,6 @@ const PreSaleTool = () => {
     const [injBalance, setINJBalance] = useState(null)
 
     const [presaleToken, setPresaleToken] = useState(INJECTIVE_TOKEN)
-    // const [walletAddress, setWalletAddress] = useState(connectedAddress ?? "")
 
     const [walletAddress, setWalletAddress] = useState(
         searchParams.get("walletAddress") || "inj1u5tqjvvffun8ld35kq860sw9rpvcmmr2adeucg"
@@ -284,10 +284,11 @@ const PreSaleTool = () => {
         setAirdropModal(true)
     }, [])
 
-    const CsvHeaders = [
-        { label: "address", key: "address" },
-        { label: "amount", key: "amountFormatted" },
-    ];
+    const handleDownloadCsv = useCallback(() => {
+        if (!airdropList) return
+        const rows = airdropList.map((h) => ({ address: h.address, amount: h.amountFormatted }))
+        downloadCsv(`presale-airdrop-${tokenInfo?.symbol ?? "token"}.csv`, arrayToCsv(rows, ["address", "amount"]))
+    }, [airdropList, tokenInfo])
 
 
     return (
@@ -694,11 +695,12 @@ const PreSaleTool = () => {
                                         >
                                             Review Airdrop
                                         </button>
-                                        {/* <CSVLink data={airdropList} headers={CsvHeaders} filename={"airdrop.csv"}>
-                                            <button className="p-2 rounded-lg text-center bg-slate-700 hover:bg-slate-800 ml-5">
-                                                Download CSV
-                                            </button>
-                                        </CSVLink> */}
+                                        <button
+                                            onClick={handleDownloadCsv}
+                                            className="p-2 rounded-lg text-center bg-slate-700 hover:bg-slate-800 ml-5"
+                                        >
+                                            Download CSV
+                                        </button>
                                     </div>
                                 </div>
                             }
