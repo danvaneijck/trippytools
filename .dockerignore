@@ -1,0 +1,20 @@
+# Keep the build context small + secrets out of the image.
+node_modules
+dist
+dist-ssr
+.git
+.github
+.vscode
+.idea
+
+# Local env / secrets — the bundle's VITE_* config comes from Docker build-args,
+# not from a copied .env (which would otherwise override them).
+.env
+.env.*
+
+# Logs / misc
+logs
+*.log
+*.local
+.DS_Store
+README.md
