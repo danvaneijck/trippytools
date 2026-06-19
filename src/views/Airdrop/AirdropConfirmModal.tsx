@@ -4,7 +4,7 @@ import {
     MsgMultiSend,
 } from "@injectivelabs/sdk-ts";
 import { BigNumberInBase, BigNumberInWei } from "@injectivelabs/utils";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
 import { WALLET_LABELS } from "../../constants/walletLabels";
@@ -14,6 +14,9 @@ import dayjs from "dayjs";
 import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
 import { performTransaction } from "../../utils/walletStrategy";
+import { CHUNK_SIZE } from "./distribution";
+import { isValidInjAddress } from "./csv";
+import { humanReadableAmount } from "./format";
 
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
@@ -70,9 +73,10 @@ mutation insertToken($objects: [token_tracker_token_insert_input!]!) {
 `
 
 const AirdropConfirmModal = (props: {
-    airdropDetails: unknown;
+    airdropDetails: any;
     tokenAddress: string;
     tokenDecimals: number;
+    tokenSymbol?: string;
     shroomCost: number
     setShowModal: (arg0: boolean) => void;
     criteria: string;
@@ -99,6 +103,30 @@ const AirdropConfirmModal = (props: {
     const [insertWallets] = useMutation(INSERT_WALLETS_MUTATION)
     const [insertTokenDropped] = useMutation(INSERT_TOKEN_MUTATION)
 
+    // A recipient is actually paid only if it's included AND rounds to a
+    // non-zero amount at the token's decimals. (CSV excludes keep their amount,
+    // so checking includeInDrop here matters — not just amount > 0.)
+    const isPayable = useCallback(
+        (record: any) =>
+            record.includeInDrop &&
+            Number(Number(record.amountToAirdrop).toFixed(props.tokenDecimals)) > 0,
+        [props.tokenDecimals],
+    );
+
+    const payable = useMemo(
+        () => (props.airdropDetails || []).filter(isPayable),
+        [props.airdropDetails, isPayable],
+    );
+    const totalOut = useMemo(
+        () => payable.reduce((sum: number, r: any) => sum + Number(Number(r.amountToAirdrop).toFixed(props.tokenDecimals)), 0),
+        [payable, props.tokenDecimals],
+    );
+    const invalidAddressCount = useMemo(
+        () => payable.filter((r: any) => !isValidInjAddress(r.address)).length,
+        [payable],
+    );
+    const txCount = Math.ceil(payable.length / CHUNK_SIZE);
+
     const sendAirdrops = useCallback(async (denom: any, decimals: number | undefined, airdropDetails: any[]) => {
 
         const injectiveAddress = connectedAddress
@@ -107,12 +135,19 @@ const AirdropConfirmModal = (props: {
             throw new Error("You are connected to the wrong address")
         }
 
-        const records = airdropDetails.filter(record => (Number(Number(record.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0)).map((record: { address: any; amountToAirdrop: any; }) => {
-            return {
-                address: record.address,
-                amount: Number(record.amountToAirdrop).toFixed(props.tokenDecimals)
-            }
-        });
+        const records = airdropDetails
+            .filter(isPayable)
+            .filter((record: { address: string }) => isValidInjAddress(record.address))
+            .map((record: { address: any; amountToAirdrop: any; }) => {
+                return {
+                    address: record.address,
+                    amount: Number(record.amountToAirdrop).toFixed(props.tokenDecimals)
+                }
+            });
+
+        if (records.length === 0) {
+            throw new Error("No valid recipients to airdrop to")
+        }
 
         const isNative = (
             denom.includes("factory") ||
@@ -121,7 +156,7 @@ const AirdropConfirmModal = (props: {
             denom == "inj"
         )
 
-        const chunkSize = isNative ? 500 : 500;
+        const chunkSize = CHUNK_SIZE;
         const gasPerRecord = isNative ? 40000 : 80000;
         const chunks = [];
 
@@ -231,7 +266,7 @@ const AirdropConfirmModal = (props: {
             }
         }
         return transactions
-    }, [connectedAddress, props.tokenDecimals]);
+    }, [connectedAddress, props.tokenDecimals, isPayable]);
 
     const payFee = useCallback(async () => {
 
@@ -289,7 +324,7 @@ const AirdropConfirmModal = (props: {
 
             if (currentNetwork == "mainnet") await sendTelegramMessage(
                 `wallet ${connectedAddress} performed an airdrop on trippyinj!\ntoken dropped: ${props.tokenAddress}\n` +
-                `num participants: ${props.airdropDetails ? props.airdropDetails.filter(record => (Number(Number(record.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0)).length : "n/a"}\n` +
+                `num participants: ${payable.length}\n` +
                 `${props.criteria}\n${props.description}`
             )
 
@@ -303,7 +338,7 @@ const AirdropConfirmModal = (props: {
 
                     await insertWallets({
                         variables: {
-                            objects: props.airdropDetails.map(wallet => ({
+                            objects: payable.map(wallet => ({
                                 address: wallet.address,
                                 burn_address: false
                             }))
@@ -315,9 +350,9 @@ const AirdropConfirmModal = (props: {
                             "time": dayjs(),
                             "token_dropped_id": props.tokenAddress,
                             "wallet_id": connectedAddress,
-                            "amount_dropped": props.airdropDetails.reduce((sum, airdrop) => sum + Number(airdrop.amountToAirdrop), 0),
-                            "total_participants": props.airdropDetails.filter(record => (Number(Number(record.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0)).length,
-                            "participants": props.airdropDetails.filter(record => (Number(Number(record.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0)).map((wallet) => {
+                            "amount_dropped": totalOut,
+                            "total_participants": payable.length,
+                            "participants": payable.map((wallet) => {
                                 return {
                                     "wallet_id": wallet.address
                                 }
@@ -340,7 +375,7 @@ const AirdropConfirmModal = (props: {
 
             navigate('/airdrop-history');
         }
-    }, [props.airdropDetails, props.shroomCost, props.tokenAddress, props.tokenDecimals, feePayed, currentNetwork, sendAirdrops, connectedAddress, navigate, payFee, insertAirdropLog, props.criteria, props.description, insertWallets, insertTokenDropped])
+    }, [props.airdropDetails, props.shroomCost, props.tokenAddress, props.tokenDecimals, feePayed, currentNetwork, sendAirdrops, connectedAddress, navigate, payFee, insertAirdropLog, props.criteria, props.description, insertWallets, insertTokenDropped, payable, totalOut])
 
     return (
         <>
@@ -361,10 +396,31 @@ const AirdropConfirmModal = (props: {
                                 <p>
                                     Airdropping token <br />{props.tokenAddress}
                                 </p>
+
+                                <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-2">
+                                    <div className="rounded-md bg-slate-900 p-2">
+                                        <div className="text-[11px] uppercase tracking-wide text-slate-400">Recipients</div>
+                                        <div className="text-sm font-bold">{payable.length.toLocaleString()}</div>
+                                    </div>
+                                    <div className="rounded-md bg-slate-900 p-2">
+                                        <div className="text-[11px] uppercase tracking-wide text-slate-400">Total out</div>
+                                        <div className="text-sm font-bold">{humanReadableAmount(totalOut)} {props.tokenSymbol ?? ""}</div>
+                                    </div>
+                                    <div className="rounded-md bg-slate-900 p-2">
+                                        <div className="text-[11px] uppercase tracking-wide text-slate-400">Transactions</div>
+                                        <div className="text-sm font-bold">{txCount}{currentNetwork == "mainnet" ? " + fee" : ""}</div>
+                                    </div>
+                                </div>
+                                {invalidAddressCount > 0 &&
+                                    <div className="text-amber-400 text-xs mt-2">
+                                        {invalidAddressCount} recipient{invalidAddressCount === 1 ? "" : "s"} with an invalid address will be skipped.
+                                    </div>
+                                }
+
                                 {props.airdropDetails !== null && props.airdropDetails.length > 0 &&
                                     <div className="mt-5">
                                         <div className="max-h-80 overflow-y-scroll overflow-x-auto">
-                                            <div>Total participants: {props.airdropDetails.filter(x => x.includeInDrop).length}</div>
+                                            <div>Total participants: {payable.length}</div>
                                             <div className="text-xs">You should exclude addresses such as burn addresses, the pair contract etc..</div>
                                             <div className="mt-2">
                                                 <table className="table-auto w-full">
@@ -383,7 +439,7 @@ const AirdropConfirmModal = (props: {
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {props.airdropDetails.filter(x => Number(Number(x.amountToAirdrop).toFixed(props.tokenDecimals)) !== 0).map((holder, index) => (
+                                                        {payable.map((holder, index) => (
                                                             <tr key={index} className="text-white border-b text-xs">
                                                                 <td className="px-6 py-1 whitespace-nowrap">
                                                                     <a
