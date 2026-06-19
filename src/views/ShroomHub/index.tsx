@@ -61,7 +61,7 @@ const MITO_VAULT_ADDRESS = "inj1g89dl74lyre9q6rjua9l37pcc7psnw66capurp"
 
 const TokenView = ({ token, setSwapAmount, inputDisabled, swapAmount, outputAmount }) => {
     return (
-        <div className="flex flex-col sm:flex-row p-4 rounded-md bg-black bg-opacity-30 justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-col sm:flex-row p-4 rounded-md bg-black/30 justify-between items-start sm:items-center gap-4">
             {/* Token Info */}
             <div className="flex flex-row w-full sm:w-1/2 items-center">
                 <img
@@ -85,7 +85,7 @@ const TokenView = ({ token, setSwapAmount, inputDisabled, swapAmount, outputAmou
                         placeholder="0.0"
                         disabled={inputDisabled}
                         step={0.0001}
-                        className={`text-left sm:text-right  text-lg font-semibold text-white bg-black bg-opacity-0 rounded-md w-full sm:w-36 ${inputDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`text-left sm:text-right  text-lg font-semibold text-white bg-black/0 rounded-md w-full sm:w-36 ${inputDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                         onChange={(e) => setSwapAmount(parseFloat(e.target.value) || 0)}
                         value={inputDisabled ? outputAmount.toFixed(5) : swapAmount}
                     />
@@ -626,7 +626,7 @@ const ShroomHub = () => {
                         {/** Token Stats */}
                         <div className="p-2 rounded-2xl shadow-md">
                             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-center">
-                                <div className="bg-black bg-opacity-50 p-4 rounded-lg">
+                                <div className="bg-black/50 p-4 rounded-lg">
                                     <a
                                         className="text-sm text-white hover:cursor-pointer"
                                         href="https://dexscreener.com/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
@@ -635,15 +635,15 @@ const ShroomHub = () => {
                                     </a>
                                     <div className="text-xl font-semibold text-trippyYellow">${shroomPrice.toFixed(6)}</div>
                                 </div>
-                                <div className="bg-black bg-opacity-50 p-4 rounded-lg">
+                                <div className="bg-black/50 p-4 rounded-lg">
                                     <div className="text-sm text-white">Market Cap</div>
                                     <div className="text-xl font-semibold text-trippyYellow">${humanReadableAmount(marketCap)}</div>
                                 </div>
-                                <div className="bg-black bg-opacity-50 p-4 rounded-lg">
+                                <div className="bg-black/50 p-4 rounded-lg">
                                     <div className="text-sm text-white">Total Liquidity</div>
                                     <div className="text-xl font-semibold text-trippyYellow">${humanReadableAmount(dojoLiquidity + mitoLiquidity + choiceLiquidity)}</div>
                                 </div>
-                                <div className="bg-black bg-opacity-50 p-4 rounded-lg">
+                                <div className="bg-black/50 p-4 rounded-lg">
                                     <a
                                         className="text-sm text-white hover:cursor-pointer"
                                         href="https://mito.fi/vault/inj1g89dl74lyre9q6rjua9l37pcc7psnw66capurp/"
@@ -652,7 +652,7 @@ const ShroomHub = () => {
                                     </a>
                                     <div className="text-xl font-semibold text-trippyYellow">${humanReadableAmount(mitoLiquidity)}</div>
                                 </div>
-                                <div className="bg-black bg-opacity-50 p-4 rounded-lg">
+                                <div className="bg-black/50 p-4 rounded-lg">
                                     <a
                                         className="text-sm text-white hover:cursor-pointer"
                                         href="https://dojo.trading/swap?type=swap&from=inj&to=inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
@@ -661,7 +661,7 @@ const ShroomHub = () => {
                                     </a>
                                     <div className="text-xl font-semibold text-trippyYellow">${humanReadableAmount(dojoLiquidity)}</div>
                                 </div>
-                                <div className="bg-black bg-opacity-50 p-4 rounded-lg">
+                                <div className="bg-black/50 p-4 rounded-lg">
                                     <a
                                         className="text-sm text-white hover:cursor-pointer"
                                         href="https://choice.exchange/swap?input=inj&output=inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8&volumeSplitting=true"
@@ -670,11 +670,11 @@ const ShroomHub = () => {
                                     </a>
                                     <div className="text-xl font-semibold text-trippyYellow">${humanReadableAmount(choiceLiquidity)}</div>
                                 </div>
-                                <div className="bg-black bg-opacity-50 p-4 rounded-lg col-span-1">
+                                <div className="bg-black/50 p-4 rounded-lg col-span-1">
                                     <div className="text-sm text-white">Total Holders</div>
                                     <div className="text-xl font-semibold text-trippyYellow">{humanReadableAmount(numHolders)}</div>
                                 </div>
-                                <div className="bg-black bg-opacity-50 p-4 rounded-lg col-span-1">
+                                <div className="bg-black/50 p-4 rounded-lg col-span-1">
                                     <div className="text-sm text-white">Tokens Burned</div>
                                     <div className="text-xl font-semibold text-trippyYellow">
                                         {humanReadableAmount(burnedAmount)} (${humanReadableAmount(burnedAmount * shroomPrice)})
@@ -795,7 +795,7 @@ const ShroomHub = () => {
 
                         {/** Balances */}
                         <div
-                            className="bg-black bg-opacity-50 lg:w-1/2 m-auto p-4 rounded-lg mt-5"
+                            className="bg-black/50 lg:w-1/2 m-auto p-4 rounded-lg mt-5"
                         >
                             <div className="text-center mb-2 text-lg font-bold text-ellipsis  overflow-hidden m-auto">
                                 {connectedAddress !== null ? `${connectedAddress.slice(0, 8)}...${connectedAddress.slice(-8)}` : "Connect your wallet"}

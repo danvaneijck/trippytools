@@ -3,7 +3,7 @@ import {
     MsgAdminUpdateBinaryOptionsMarket
 } from "@injectivelabs/sdk-ts";
 import { CircleLoader } from "react-spinners";
-import moment from 'moment';
+import dayjs from 'dayjs';
 import useWalletStore from '../../store/useWalletStore';
 import { performTransaction } from '../../utils/walletStrategy';
 
@@ -15,8 +15,8 @@ const MarketAdminModal = (props: { setShowModal: (show: boolean) => void, market
     const [txLoading, setTxLoading] = useState(false)
 
     const [market, setMarket] = useState({
-        expirationTimestamp: moment.unix(props.market.expirationTimestamp).format(),
-        settlementTimestamp: moment.unix(props.market.settlementTimestamp).format(),
+        expirationTimestamp: dayjs.unix(props.market.expirationTimestamp).format(),
+        settlementTimestamp: dayjs.unix(props.market.settlementTimestamp).format(),
         settlementPrice: 1,
         marketStatus: props.market.marketStatus
     });
@@ -32,8 +32,8 @@ const MarketAdminModal = (props: { setShowModal: (show: boolean) => void, market
             sender: injectiveAddress,
             marketId: props.market.marketId,
             settlementPrice: market.settlementPrice,
-            expirationTimestamp: moment(market.expirationTimestamp).unix(),
-            settlementTimestamp: moment(market.settlementTimestamp).unix(),
+            expirationTimestamp: dayjs(market.expirationTimestamp).unix(),
+            settlementTimestamp: dayjs(market.settlementTimestamp).unix(),
             status: market.marketStatus
         });
 
@@ -56,10 +56,10 @@ const MarketAdminModal = (props: { setShowModal: (show: boolean) => void, market
     return (
         <>
             <div
-                className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none text-white text-sm "
+                className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-hidden focus:outline-hidden text-white text-sm "
             >
                 <div className="relative w-auto my-4 mx-auto w-full md:w-1/2">
-                    <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-slate-800 outline-none focus:outline-none">
+                    <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-slate-800 outline-hidden focus:outline-hidden">
                         <div className="flex items-start justify-between p-4 border-b border-solid border-blueGray-900 rounded-t">
                             <h3 className="text-xl font-semibold">
                                 Update Binary Options Market
@@ -71,22 +71,22 @@ const MarketAdminModal = (props: { setShowModal: (show: boolean) => void, market
                                 <div className='mt-1'>
                                     <label>Expiration Timestamp </label>
                                     <br />
-                                    <input className='text-black w-full p-1 rounded-sm' type="text" name="expirationTimestamp" value={market.expirationTimestamp} onChange={handleInputChange} />
+                                    <input className='text-black w-full p-1 rounded-xs' type="text" name="expirationTimestamp" value={market.expirationTimestamp} onChange={handleInputChange} />
                                 </div>
                                 <div className='mt-1'>
                                     <label>Settlement Timestamp</label>
                                     <br />
-                                    <input className='text-black w-full p-1 rounded-sm' type="text" name="settlementTimestamp" value={market.settlementTimestamp} onChange={handleInputChange} />
+                                    <input className='text-black w-full p-1 rounded-xs' type="text" name="settlementTimestamp" value={market.settlementTimestamp} onChange={handleInputChange} />
                                 </div>
                                 <div className='mt-1'>
                                     <label>Settlement Price</label>
                                     <br />
-                                    <input className='text-black w-full p-1 rounded-sm' type="text" name="settlementPrice" value={market.settlementPrice} onChange={handleInputChange} />
+                                    <input className='text-black w-full p-1 rounded-xs' type="text" name="settlementPrice" value={market.settlementPrice} onChange={handleInputChange} />
                                 </div>
                                 <div className='mt-1'>
                                     <label>Market Status</label>
                                     <br />
-                                    <input className='text-black w-full p-1 rounded-sm' type="text" name="marketStatus" value={market.marketStatus} onChange={handleInputChange} />
+                                    <input className='text-black w-full p-1 rounded-xs' type="text" name="marketStatus" value={market.marketStatus} onChange={handleInputChange} />
                                 </div>
                             </form>
                             {progress && <div className="mt-5">Progress: {progress}</div>}
@@ -95,14 +95,14 @@ const MarketAdminModal = (props: { setShowModal: (show: boolean) => void, market
                         </div>
                         <div className="flex items-center justify-end p-4 border-t border-solid border-blueGray-200 rounded-b">
                             <button
-                                className="text-slate-500 background-transparent font-bold uppercase px-6 py-2 text-sm outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                                className="text-slate-500 background-transparent font-bold uppercase px-6 py-2 text-sm outline-hidden focus:outline-hidden mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
                                 onClick={() => props.setShowModal(false)}
                             >
                                 Back
                             </button>
                             <button
-                                className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                                className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded-sm shadow-sm hover:shadow-lg outline-hidden focus:outline-hidden mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
                                 onClick={() => updateMarket().then(() => console.log("done")).catch(e => {
                                     console.log(e)

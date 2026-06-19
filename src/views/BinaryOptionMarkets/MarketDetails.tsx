@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ConnectWallet from "../../components/App/ConnectKeplr";
 import TokenUtils from "../../modules/tokenUtils";
-import moment from "moment";
+import dayjs from "dayjs";
 import OrderPanel from "./OrderPanel";
 import { useNavigate, useLocation } from 'react-router-dom';
 import MarketAdminModal from "./MarketAdminModal";
@@ -82,11 +82,11 @@ const MarketDetails = (props: {
                     </div>
                 </header>
 
-                <div className="pt-14 flex-grow mx-2 pb-20">
+                <div className="pt-14 grow mx-2 pb-20">
 
 
                     <div className="flex justify-center items-center min-h-full">
-                        <div className="w-full max-w-screen-xl px-2 py-5">
+                        <div className="w-full max-w-(--breakpoint-xl) px-2 py-5">
                             {market &&
                                 <>
                                     <button
@@ -100,9 +100,9 @@ const MarketDetails = (props: {
                                         Ticker: {market.ticker}
                                     </div>
                                     <div>
-                                        Expiration time: {moment.unix(market.expirationTimestamp).format()} ({moment.unix(market.expirationTimestamp).fromNow()})
+                                        Expiration time: {dayjs.unix(market.expirationTimestamp).format()} ({dayjs.unix(market.expirationTimestamp).fromNow()})
                                         <br />
-                                        Settlement time: {moment.unix(market.settlementTimestamp).format()} ({moment.unix(market.settlementTimestamp).fromNow()})
+                                        Settlement time: {dayjs.unix(market.settlementTimestamp).format()} ({dayjs.unix(market.settlementTimestamp).fromNow()})
                                         <br />
                                         Status: {market.marketStatus}
                                         <br />
@@ -155,7 +155,7 @@ const MarketDetails = (props: {
                                                         className="text-white border-b text-left"
                                                     >
                                                         <td className="py-1">
-                                                            {moment(order.createdAt).fromNow()}
+                                                            {dayjs(order.createdAt).fromNow()}
                                                         </td>
                                                         <td className="py-1">
                                                             {order.subaccountId.slice(0, 8)}...

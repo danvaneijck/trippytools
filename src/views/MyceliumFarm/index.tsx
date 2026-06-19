@@ -104,13 +104,13 @@ const MyceliumFarm = () => {
                                 <div className="flex flex-row justify-between">
                                     <div
                                         onClick={() => setSelectedPool("SPORE")}
-                                        className={`p-2 ${selectedPool == "SPORE" ? 'bg-slate-900' : 'bg-slate-600'} text-white rounded hover:cursor-pointer shadow-lg`}
+                                        className={`p-2 ${selectedPool == "SPORE" ? 'bg-slate-900' : 'bg-slate-600'} text-white rounded-sm hover:cursor-pointer shadow-lg`}
                                     >
                                         SPORE / SHROOM
                                     </div>
                                     <div
                                         onClick={() => setSelectedPool("SHROOM")}
-                                        className={`p-2 ${selectedPool == "SHROOM" ? 'bg-slate-900' : 'bg-slate-600'}  text-white rounded hover:cursor-pointer shadow-lg`}
+                                        className={`p-2 ${selectedPool == "SHROOM" ? 'bg-slate-900' : 'bg-slate-600'}  text-white rounded-sm hover:cursor-pointer shadow-lg`}
                                     >
                                         SHROOM / INJ
                                     </div>
@@ -138,14 +138,14 @@ const MyceliumFarm = () => {
                                 <div className="font-bold text-lg ">
                                     {rewardInfo && <div className="mt-2 flex flex-row items-center">
                                         pool RPS: {rewardInfo}
-                                        <img src={myceliumLogo} style={{ borderRadius: '50%', width: 30 }} className="animate-3dspin ml-2 mr-2" alt="Spinning Image" />
+                                        <img src={myceliumLogo} style={{ borderRadius: '50%', width: 30 }} className="animate-spin3d ml-2 mr-2" alt="Spinning Image" />
                                         / s
                                     </div>}
                                     {pendingRewards && <div
                                         className="mt-2 flex flex-row items-center "
                                     >
                                         <span className="text-2xl mr-1">{pendingRewards.toFixed(2)}</span>
-                                        <img src={myceliumLogo} style={{ borderRadius: '50%', width: 30 }} className="animate-3dspin ml-2" alt="Spinning Image" />
+                                        <img src={myceliumLogo} style={{ borderRadius: '50%', width: 30 }} className="animate-spin3d ml-2" alt="Spinning Image" />
                                     </div>}
                                 </div>
                                 <button

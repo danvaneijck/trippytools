@@ -194,9 +194,9 @@ const TokenLiquidity = () => {
 
     return (
         <div className="flex flex-col min-h-screen bg-customGray">
-            <div className="pt-14 flex-grow mx-2 pb-20">
+            <div className="pt-14 grow mx-2 pb-20">
                 <div className="flex justify-center items-center w-full py-10">
-                    <div className="w-full max-w-screen-lg px-2">
+                    <div className="w-full max-w-(--breakpoint-lg) px-2">
                         <div className="text-center text-white font-magic">
                             <div className="text-3xl">
                                 Liquidity holders
@@ -365,7 +365,7 @@ const TokenLiquidity = () => {
                         {holders.length > 0 && (
                             <div className="mt-2 overflow-x-auto text-sm">
                                 <CSVLink data={holders} headers={headers} filename={"holders.csv"}>
-                                    <button className="p-2 bg-gray-800 hover:bg-gray-900 rounded mb-2 mt-2 font-semibold">Download CSV</button>
+                                    <button className="p-2 bg-gray-800 hover:bg-gray-900 rounded-sm mb-2 mt-2 font-semibold">Download CSV</button>
                                 </CSVLink>
                                 <div>Total liquidity holders: {holders.length}</div>
                                 <table className="min-w-full divide-y divide-gray-200">

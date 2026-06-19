@@ -94,9 +94,9 @@ const SushiTool = () => {
                 </div>
             </header>
 
-            <div className="pt-14 flex-grow mx-2 pb-20">
+            <div className="pt-14 grow mx-2 pb-20">
                 <div className="flex justify-center items-center min-h-full">
-                    <div className="w-full max-w-screen-lg px-2 py-10">
+                    <div className="w-full max-w-(--breakpoint-lg) px-2 py-10">
                         <div className="text-center">
                             <div className="text-xl">
                                 sushi holder tool

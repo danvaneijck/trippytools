@@ -27,7 +27,7 @@ import {
     MsgExecuteContractCompat,
 } from "@injectivelabs/sdk-ts";
 import { Buffer } from "buffer";
-import moment from "moment";
+import dayjs from "dayjs";
 import { TokenInfo } from "../constants/types";
 import { Coin } from "@injectivelabs/ts-types";
 import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
@@ -749,7 +749,7 @@ class TokenUtils {
             }
 
             const blockNumber = tx.blockNumber;
-            const blockTimestamp = moment(
+            const blockTimestamp = dayjs(
                 tx.blockTimestamp,
                 "YYYY-MM-DD HH:mm:ss.SSS Z"
             );
@@ -1817,15 +1817,26 @@ class TokenUtils {
         const indexerGrpcOracleApi = new IndexerGrpcOracleApi(this.endpoints.indexer)
         const markets = await marketsAPI.fetchMarkets()
 
-        const market = markets.reverse().find((market) => market.ticker === 'INJ/USDT PERP')
-        const baseSymbol = market.oracleBase
-        const quoteSymbol = market.oracleQuote
-        const oracleType = market.oracleType
+        // Helix migrated the INJ perp from USDT -> USDC, so the old
+        // 'INJ/USDT PERP' ticker no longer exists. Prefer the new USDC market,
+        // tolerate the old USDT one, then fall back to any listed INJ perp so a
+        // ticker/quote change can't crash this again.
+        const market =
+            markets.find((m) => m.ticker === 'INJ/USDC PERP') ??
+            markets.find((m) => m.ticker === 'INJ/USDT PERP') ??
+            markets.find((m) => m.oracleBase === 'INJ' && /\bPERP$/.test(m.ticker ?? ''))
 
+        if (!market) {
+            // No INJ perp listed at all — use the AMM spot price rather than throw.
+            return await this.getINJPrice()
+        }
+
+        // The INJ/USDC perp is priced off the Pyth oracle; read the feed params
+        // straight from the market so this works for whatever oracle it uses.
         const oraclePrice = await indexerGrpcOracleApi.fetchOraclePriceNoThrow({
-            baseSymbol,
-            quoteSymbol,
-            oracleType,
+            baseSymbol: market.oracleBase,
+            quoteSymbol: market.oracleQuote,
+            oracleType: market.oracleType,
         })
 
         return oraclePrice['price']

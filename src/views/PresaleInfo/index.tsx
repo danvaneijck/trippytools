@@ -105,9 +105,9 @@ const PreSaleInfo = () => {
             <div className='text-center text-xl md:text-3xl '>
                 on injective
             </div>
-            <div className='flex-grow'>
+            <div className='grow'>
                 <div className='flex justify-center'>
-                    <div className='mt-2 text-center py-4 text-2xl md:text-4xl md:w-1/2 rounded-xl p-2 mb-2 bg-gradient-to-br from-transparent to-black mx-2'>
+                    <div className='mt-2 text-center py-4 text-2xl md:text-4xl md:w-1/2 rounded-xl p-2 mb-2 bg-linear-to-br from-transparent to-black mx-2'>
                         <div className='flex flex-row items-center justify-center mb-2 '>
                             <div className='text-base md:text-xl flex flex-col'>
                                 <div className=''>
@@ -187,9 +187,9 @@ const PreSaleInfo = () => {
                 </div>
             </div>
             <div className='flex flex-row justify-center'>
-                <div className='mt-3 text-center py-5 text-2xl md:text-4xl md:w-1/2  m-auto rounded-xl p-2 mb-2 bg-gradient-to-br from-transparent to-black mx-2'>
+                <div className='mt-3 text-center py-5 text-2xl md:text-4xl md:w-1/2  m-auto rounded-xl p-2 mb-2 bg-linear-to-br from-transparent to-black mx-2'>
                     <div className='flex flex-row items-center justify-between'>
-                        <img src={shroom} style={{ borderRadius: '50%', width: 40, height: 40 }} className="animate-3dspin" alt="Spinning Image" />
+                        <img src={shroom} style={{ borderRadius: '50%', width: 40, height: 40 }} className="animate-spin3d" alt="Spinning Image" />
                         <a
                             className='hover:cursor-pointer hover:text-4xl'
                             href='https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl'
@@ -197,7 +197,7 @@ const PreSaleInfo = () => {
                             SHROOM multiplier
                         </a>
 
-                        <img src={shroom} style={{ borderRadius: '50%', width: 40, height: 40 }} className="animate-3dspin" alt="Spinning Image" />
+                        <img src={shroom} style={{ borderRadius: '50%', width: 40, height: 40 }} className="animate-spin3d" alt="Spinning Image" />
                     </div>
 
                     <div className='text-xs md:text-sm mx-2 mt-2 mb-2'>

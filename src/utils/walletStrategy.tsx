@@ -1,6 +1,6 @@
 import { WalletStrategy } from '@injectivelabs/wallet-strategy'
 import { Web3Exception } from '@injectivelabs/exceptions'
-import { EthereumChainId } from '@injectivelabs/ts-types'
+import { EvmChainId } from '@injectivelabs/ts-types'
 import { getNetworkEndpoints } from '@injectivelabs/networks'
 import { MsgBroadcaster } from '@injectivelabs/wallet-core'
 import { NETWORKS } from './constants'
@@ -24,7 +24,7 @@ const buildWalletStrategy = () => {
     let ethereumOptions = undefined
     if (network === 'mainnet') {
         ethereumOptions = {
-            ethereumChainId: EthereumChainId.Mainnet,
+            ethereumChainId: EvmChainId.Mainnet,
             rpcUrl: ethRpc
         }
     }

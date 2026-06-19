@@ -1,7 +1,7 @@
 // import { gql, useQuery } from '@apollo/client';
 // import tokenScannerImg from "../../assets/token.png"
 // import serverDownImg from "../../assets/serverdown.png"
-// import moment from "moment";
+// import dayjs from "dayjs";
 // import { useCallback, useEffect, useState } from 'react';
 // import Slider, { SliderThumb, SliderValueLabelProps } from '@mui/material/Slider';
 // import { MenuItem, FormControl } from '@mui/material';
@@ -194,7 +194,7 @@
 
 
 // const TokenScanner = () => {
-//   const [currentTime, setCurrentTime] = useState(moment().format('LTS'));
+//   const [currentTime, setCurrentTime] = useState(dayjs().format('LTS'));
 //   const [orderBy, setOrderBy] = useState("total_liquidity");
 //   const [liquidityRange, setLiquidityRange] = useState([420, 69000]);
 //   const [mcRange, setMcRange] = useState([420, 69000]);
@@ -214,7 +214,7 @@
 
 //   useEffect(() => {
 //     const interval = setInterval(() => {
-//       setCurrentTime(moment().format('LTS'));
+//       setCurrentTime(dayjs().format('LTS'));
 //     }, 1000);
 //     return () => clearInterval(interval);
 //   }, []);
@@ -300,17 +300,17 @@
 //                         <p className='text-sm'>{`${token.address.slice(0, 5)}...${token.address.slice(-5)}`}</p>
 //                         <p>Total Supply: {humanReadableAmount(token.total_supply / Math.pow(10, token.decimals))}</p>
 //                         <p>Circ Supply: {humanReadableAmount(token.circulating_supply)}</p>
-//                         {/* <p>Total Liquidity: ${humanReadableAmount(token.total_liquidity)} {moment(token.liquidity_last_updated).fromNow()}</p> */}
+//                         {/* <p>Total Liquidity: ${humanReadableAmount(token.total_liquidity)} {dayjs(token.liquidity_last_updated).fromNow()}</p> */}
 //                         <p>Total Pooled INJ: {token.total_pooled_inj.toFixed(2)}</p>
 //                         <p>Holders: {token.holder_count.aggregate.count.toFixed(2)}</p>
 
 //                       </div>
 //                       <div>
 //                         <MoneyValueField value={Number(token.prices[0]?.price)} />
-//                         {/* <p className='text-xs'>{moment(token.prices[0]?.time).fromNow()}</p> */}
+//                         {/* <p className='text-xs'>{dayjs(token.prices[0]?.time).fromNow()}</p> */}
 //                         <MarketCapField value={Number(token.market_cap)} />
 //                         <LiquidityField value={Number(token.total_liquidity)} />
-//                         <p className='text-xs'>{moment(token.prices[0]?.time).fromNow()}</p>
+//                         <p className='text-xs'>{dayjs(token.prices[0]?.time).fromNow()}</p>
 //                       </div>
 //                     </div>
 //                     <div className="mt-2">
@@ -320,7 +320,7 @@
 //                           <div key={index} className="bg-slate-900 px-2 py-1 my-1 rounded-lg text-sm">
 //                             <p>{pool.name}</p>
 //                             <p>${Number(pool.price).toFixed(10)}</p>
-//                             <p>${humanReadableAmount(pool.liquidity)} {moment(pool.priceTime).fromNow()}</p>
+//                             <p>${humanReadableAmount(pool.liquidity)} {dayjs(pool.priceTime).fromNow()}</p>
 //                           </div>
 //                         ))}
 //                       </div>

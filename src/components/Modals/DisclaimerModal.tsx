@@ -17,8 +17,8 @@ export default function DisclaimerModal() {
     return (
         <div>
             {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-75">
-                    <div className="bg-gradient-to-b from-black to-slate-700 w-96 p-6 rounded-lg shadow-lg mx-2 md:min-w-[500px]">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800/75">
+                    <div className="bg-linear-to-b from-black to-slate-700 w-96 p-6 rounded-lg shadow-lg mx-2 md:min-w-[500px]">
                         <h2 className="text-2xl font-bold mb-4">Terms and Conditions</h2>
                         <p className="text-sm mb-4">
                             Please read and accept the terms and conditions before proceeding

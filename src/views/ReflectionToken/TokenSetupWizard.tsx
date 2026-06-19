@@ -382,8 +382,8 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
     return (
         <div className="bg-slate-800 p-6 rounded-lg shadow-lg mb-6">
             <h2 className="text-xl font-bold mb-2 text-white">Post-Launch Setup Wizard</h2>
-            <p className="text-xs mb-4">Token: <code className="bg-slate-700 p-1 rounded">{tokenAddress}</code></p>
-            <p className="text-xs mb-4">Treasury: <code className="bg-slate-700 p-1 rounded">{treasuryAddress}</code></p>
+            <p className="text-xs mb-4">Token: <code className="bg-slate-700 p-1 rounded-sm">{tokenAddress}</code></p>
+            <p className="text-xs mb-4">Treasury: <code className="bg-slate-700 p-1 rounded-sm">{treasuryAddress}</code></p>
 
             {loading && <div className="text-center"><CircleLoader color="#36d7b7" className="mt-4 m-auto" /></div>}
             {progress && <div className="my-4 text-green-400 text-center">{progress}</div>}
@@ -420,7 +420,7 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
                         <input
                             type="text"
                             placeholder="Enter address (e.g., inj1...)"
-                            className="text-black w-full rounded p-2 text-sm"
+                            className="text-black w-full rounded-sm p-2 text-sm"
                             value={currentWhitelistInput}
                             onChange={(e) => setCurrentWhitelistInput(e.target.value)}
                         />
@@ -434,7 +434,7 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
                     {whitelistAddresses.length > 0 && (
                         <div className="mt-3 space-y-1">
                             {whitelistAddresses.map((addr) => (
-                                <div key={addr} className="flex items-center justify-between bg-slate-600 p-2 rounded">
+                                <div key={addr} className="flex items-center justify-between bg-slate-600 p-2 rounded-sm">
                                     <code className="text-xs">{addr}</code>
                                     <button onClick={() => handleRemoveWhitelistAddress(addr)}>
                                         <FaTimesCircle className="h-5 w-5 text-red-400 hover:text-red-500" />
@@ -463,7 +463,7 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
                     <input
                         type="text"
                         placeholder="Enter aggregator address"
-                        className="text-black w-full rounded p-2 text-sm"
+                        className="text-black w-full rounded-sm p-2 text-sm"
                         value={aggregatorAddress}
                         onChange={(e) => setAggregatorAddress(e.target.value)}
                     />
@@ -511,7 +511,7 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
                             Balance: {new BigNumberInWei(baseBalance).toBase(tokenDecimals).toFixed(4)}
                         </span>
                         <input type="number" value={baseAmount} onChange={e => setBaseAmount(e.target.value)}
-                            className="text-black w-full rounded p-2 text-sm" />
+                            className="text-black w-full rounded-sm p-2 text-sm" />
                     </div>
                     <div>
                         <label className="text-base font-bold">INJ Amount</label>
@@ -521,7 +521,7 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
                         <input
                             type="number" value={quoteAmount}
                             onChange={e => setQuoteAmount(e.target.value)}
-                            className="text-black w-full rounded p-2 text-sm"
+                            className="text-black w-full rounded-sm p-2 text-sm"
                         />
                     </div>
                     {!allowanceApproved ? (
@@ -572,7 +572,7 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
                         <span className="text-xs text-slate-300">
                             This is automatically set to the pool you created in Step 5.
                         </span>
-                        <div className="bg-slate-700 p-2 rounded mt-1">
+                        <div className="bg-slate-700 p-2 rounded-sm mt-1">
                             <code className="text-sm text-slate-300">{newPairAddress || "Complete previous steps"}</code>
                         </div>
                     </div>
@@ -584,7 +584,7 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
                         <input
                             type="text"
                             placeholder="Enter Reflection Pair Address"
-                            className="text-black w-full rounded p-2 text-sm mt-1"
+                            className="text-black w-full rounded-sm p-2 text-sm mt-1"
                             value={reflectionPairAddress}
                             onChange={(e) => setReflectionPairAddress(e.target.value)}
                         />

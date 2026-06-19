@@ -12,7 +12,7 @@ import { CHOICE_FACTORY, CW404_TOKENS, NFT_COLLECTIONS } from "../../constants/c
 import TokenSelect from "../../components/Inputs/TokenSelect";
 import Papa from 'papaparse';
 import { ChainGrpcGovApi } from '@injectivelabs/sdk-ts'
-import moment from "moment";
+import dayjs from "dayjs";
 const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
 import parachute from "../../assets/parachute.webp"
 import Select from "react-select"
@@ -276,16 +276,16 @@ const Airdrop = () => {
 
         if (dropMode.value == "TOKEN" && airdropTokenAddress) {
             const targetToken = tokens.find((token => token.address === airdropTokenAddress.value))
-            criteriaUpdate = `Holders of ${airdropTokenInfo.symbol} token at ${moment().toISOString()}`
+            criteriaUpdate = `Holders of ${airdropTokenInfo.symbol} token at ${dayjs().toISOString()}`
             descriptionUpdate = `${mode} drop of ${totalToDrop} ${tokenInfo.symbol} to holders of ${airdropTokenInfo.symbol} token`
             if (targetToken?.liquidity_token_pool) {
                 const tokenLabel = `${targetToken?.liquidity_token_pool.asset_1.symbol}/${targetToken?.liquidity_token_pool.asset_2.symbol} on ${targetToken?.liquidity_token_pool.dex.name}`
                 descriptionUpdate = `${mode} drop of ${totalToDrop} ${tokenInfo.symbol} to liquidity providers of ${tokenLabel}`
-                criteriaUpdate = `Liquidity providers of ${tokenLabel} at ${moment().toISOString()}`
+                criteriaUpdate = `Liquidity providers of ${tokenLabel} at ${dayjs().toISOString()}`
             }
         }
         else if (dropMode.value == "NFT") {
-            criteriaUpdate = `Holders of ${nftCollectionInfo.symbol} NFTs at ${moment().toISOString()}`
+            criteriaUpdate = `Holders of ${nftCollectionInfo.symbol} NFTs at ${dayjs().toISOString()}`
             descriptionUpdate = `${mode} drop of ${totalToDrop} ${tokenInfo.symbol} to holders of ${nftCollectionInfo.symbol} NFTs`
         }
         else if (dropMode.value == "CSV") {
@@ -293,11 +293,11 @@ const Airdrop = () => {
             descriptionUpdate = `Drop of ${totalToDrop} ${tokenInfo.symbol} to custom list of participants`
         }
         else if (dropMode.value == "GOV") {
-            criteriaUpdate = filterByVote ? `${Object.keys(voteFilters).filter(key => voteFilters[key])} voters on proposal ${proposalNumber} at ${moment().toISOString()}` : `All voters on proposal ${proposalNumber} at ${moment().toISOString()}`
+            criteriaUpdate = filterByVote ? `${Object.keys(voteFilters).filter(key => voteFilters[key])} voters on proposal ${proposalNumber} at ${dayjs().toISOString()}` : `All voters on proposal ${proposalNumber} at ${dayjs().toISOString()}`
             descriptionUpdate = `Drop of ${totalToDrop} ${tokenInfo.symbol} to voters on proposal ${proposalNumber}`
         }
         else if (dropMode.value == "MITO") {
-            criteriaUpdate = `Holders of ${mitoHolderType == "stake" ? "staked" : "all"} LP tokens in the ${selectedMitoVault.value.baseToken.name} mito vault at ${moment().toISOString()}`
+            criteriaUpdate = `Holders of ${mitoHolderType == "stake" ? "staked" : "all"} LP tokens in the ${selectedMitoVault.value.baseToken.name} mito vault at ${dayjs().toISOString()}`
             descriptionUpdate = `${mode} drop of ${totalToDrop} ${tokenInfo.symbol} to holders of ${selectedMitoVault.value.baseToken.name} mito vault tokens`
         }
 
@@ -383,7 +383,7 @@ const Airdrop = () => {
 
         const proposal = await api.fetchProposal(proposalNumber)
         console.log(proposal)
-        const endVoteTime = moment.unix(proposal.votingEndTime)
+        const endVoteTime = dayjs.unix(proposal.votingEndTime)
         console.log(endVoteTime)
 
         const closestBlock = await findBlockBeforeTime(endVoteTime);
@@ -848,11 +848,11 @@ const Airdrop = () => {
                 />
             }
             <div className="flex flex-col min-h-screen pb-10 bg-customGray">
-                <div className="pt-24 flex-grow mx-2 pb-20">
+                <div className="pt-24 grow mx-2 pb-20">
                     {currentNetwork == "mainnet" && <div className=""><ShroomBalance /></div>}
 
                     <div className="flex justify-center items-center min-h-full ">
-                        <div className="w-full max-w-screen-lg px-2 ">
+                        <div className="w-full max-w-(--breakpoint-lg) px-2 ">
                             {connectedAddress ?
                                 <div>
 
@@ -863,7 +863,7 @@ const Airdrop = () => {
                                         <div className="text-sm">on Injective {currentNetwork}</div>
                                     </div>
                                     <Link to="/airdrop-history" >
-                                        <div className="mt-2 bg-slate-800 p-2 my-4 rounded text-center text-sm w-1/2 mx-auto">
+                                        <div className="mt-2 bg-slate-800 p-2 my-4 rounded-sm text-center text-sm w-1/2 mx-auto">
                                             View airdrop history
                                         </div>
                                     </Link>
@@ -974,7 +974,7 @@ const Airdrop = () => {
                                                     </label>
                                                     <input
                                                         type="number"
-                                                        className="text-black w-full rounded p-1 text-sm"
+                                                        className="text-black w-full rounded-sm p-1 text-sm"
                                                         onChange={(e) => {
                                                             setBalanceToDrop(e.target.value)
                                                             updateList(distMode, walletLimit, e.target.value)
@@ -1036,7 +1036,7 @@ const Airdrop = () => {
                                                         }}>
                                                             <input
                                                                 type="checkbox"
-                                                                className="text-black w-full rounded p-1 text-sm"
+                                                                className="text-black w-full rounded-sm p-1 text-sm"
                                                                 onChange={() => {
                                                                     setDistMode("fair")
                                                                     updateList("fair", walletLimit, balanceToDrop)
@@ -1056,7 +1056,7 @@ const Airdrop = () => {
                                                         }}>
                                                             <input
                                                                 type="checkbox"
-                                                                className="text-black w-full rounded p-1 text-sm"
+                                                                className="text-black w-full rounded-sm p-1 text-sm"
                                                                 onChange={() => {
                                                                     setDistMode("proportionate")
                                                                     updateList("proportionate", walletLimit, balanceToDrop)
@@ -1098,7 +1098,7 @@ const Airdrop = () => {
                                                                     </label>
                                                                     <input
                                                                         type="checkbox"
-                                                                        className="text-black rounded p-1 text-sm ml-2"
+                                                                        className="text-black rounded-sm p-1 text-sm ml-2"
                                                                         onChange={() => {
                                                                             setLimitSwitch(limit => !limit)
                                                                         }}
@@ -1109,14 +1109,14 @@ const Airdrop = () => {
                                                                     <div className="mt-2 mb-1">
                                                                         <input
                                                                             type="number"
-                                                                            className="text-black w-full rounded p-1 text-sm w-14"
+                                                                            className="text-black w-full rounded-sm p-1 text-sm w-14"
                                                                             onChange={(e) => {
                                                                                 setWalletLimit(e.target.value)
                                                                             }}
                                                                             value={walletLimit}
                                                                         />
                                                                         <button
-                                                                            className="bg-slate-700 p-1 mt-2 rounded ml-2 text-sm"
+                                                                            className="bg-slate-700 p-1 mt-2 rounded-sm ml-2 text-sm"
                                                                             onClick={() => {
                                                                                 const d = [...airdropDetails]
                                                                                 updateAirdropAmounts(d, distMode, walletLimit, balanceToDrop)
@@ -1134,7 +1134,7 @@ const Airdrop = () => {
                                                                                 updateAirdropAmounts(d, distMode, null, balanceToDrop)
                                                                                 setAirdropDetails(d)
                                                                             }}
-                                                                            className="bg-slate-700 p-1 mt-2 rounded ml-2 text-sm"
+                                                                            className="bg-slate-700 p-1 mt-2 rounded-sm ml-2 text-sm"
                                                                         >
                                                                             reset
                                                                         </button>
@@ -1273,7 +1273,7 @@ const Airdrop = () => {
                                                             }}>
                                                                 <input
                                                                     type="checkbox"
-                                                                    className="text-black w-full rounded p-1"
+                                                                    className="text-black w-full rounded-sm p-1"
                                                                     onChange={() => {
                                                                         setDistMode("fair")
                                                                         updateList("fair", walletLimit, balanceToDrop)
@@ -1292,7 +1292,7 @@ const Airdrop = () => {
                                                             }}>
                                                                 <input
                                                                     type="checkbox"
-                                                                    className="text-black w-full rounded p-1"
+                                                                    className="text-black w-full rounded-sm p-1"
                                                                     onChange={() => {
                                                                         setDistMode("proportionate")
                                                                         updateList("proportionate", walletLimit, balanceToDrop)
@@ -1330,7 +1330,7 @@ const Airdrop = () => {
                                                                         </label>
                                                                         <input
                                                                             type="checkbox"
-                                                                            className="text-black rounded p-1 text-sm ml-2"
+                                                                            className="text-black rounded-sm p-1 text-sm ml-2"
                                                                             onChange={() => {
                                                                                 setLimitSwitch(limit => !limit)
                                                                             }}
@@ -1341,14 +1341,14 @@ const Airdrop = () => {
                                                                         <div className="mt-2 mb-1">
                                                                             <input
                                                                                 type="number"
-                                                                                className="text-black w-full rounded p-1 text-sm w-14"
+                                                                                className="text-black w-full rounded-sm p-1 text-sm w-14"
                                                                                 onChange={(e) => {
                                                                                     setWalletLimit(e.target.value)
                                                                                 }}
                                                                                 value={walletLimit}
                                                                             />
                                                                             <button
-                                                                                className="bg-slate-700 p-1 mt-2 rounded ml-2 text-sm"
+                                                                                className="bg-slate-700 p-1 mt-2 rounded-sm ml-2 text-sm"
                                                                                 onClick={() => {
                                                                                     const d = [...airdropDetails]
                                                                                     updateAirdropAmounts(d, distMode, walletLimit, balanceToDrop)
@@ -1366,7 +1366,7 @@ const Airdrop = () => {
                                                                                     updateAirdropAmounts(d, distMode, null, balanceToDrop)
                                                                                     setAirdropDetails(d)
                                                                                 }}
-                                                                                className="bg-slate-700 p-1 mt-2 rounded ml-2 text-sm"
+                                                                                className="bg-slate-700 p-1 mt-2 rounded-sm ml-2 text-sm"
                                                                             >
                                                                                 reset
                                                                             </button>
@@ -1473,7 +1473,7 @@ const Airdrop = () => {
                                                                     </label>
                                                                     <input
                                                                         type="checkbox"
-                                                                        className="text-black rounded p-1 text-sm ml-2"
+                                                                        className="text-black rounded-sm p-1 text-sm ml-2"
                                                                         onChange={() => {
                                                                             setLimitSwitch(limit => !limit)
                                                                         }}
@@ -1484,14 +1484,14 @@ const Airdrop = () => {
                                                                     <div className="mt-2 mb-1">
                                                                         <input
                                                                             type="number"
-                                                                            className="text-black w-full rounded p-1 text-sm w-14"
+                                                                            className="text-black w-full rounded-sm p-1 text-sm w-14"
                                                                             onChange={(e) => {
                                                                                 setWalletLimit(e.target.value)
                                                                             }}
                                                                             value={walletLimit}
                                                                         />
                                                                         <button
-                                                                            className="bg-slate-700 p-1 mt-2 rounded ml-2 text-sm"
+                                                                            className="bg-slate-700 p-1 mt-2 rounded-sm ml-2 text-sm"
                                                                             onClick={() => {
                                                                                 const d = [...airdropDetails]
                                                                                 updateAirdropAmounts(d, distMode, walletLimit, balanceToDrop)
@@ -1509,7 +1509,7 @@ const Airdrop = () => {
                                                                                 updateAirdropAmounts(d, distMode, null, balanceToDrop)
                                                                                 setAirdropDetails(d)
                                                                             }}
-                                                                            className="bg-slate-700 p-1 mt-2 rounded ml-2 text-sm"
+                                                                            className="bg-slate-700 p-1 mt-2 rounded-sm ml-2 text-sm"
                                                                         >
                                                                             reset
                                                                         </button>
@@ -1633,7 +1633,7 @@ const Airdrop = () => {
                                                                     </label>
                                                                     <input
                                                                         type="checkbox"
-                                                                        className="text-black rounded p-1 text-sm ml-2"
+                                                                        className="text-black rounded-sm p-1 text-sm ml-2"
                                                                         onChange={() => {
                                                                             setFilterByVote(filter => !filter)
                                                                         }}
@@ -1725,7 +1725,7 @@ const Airdrop = () => {
                                                                             </div>
                                                                         </div>
                                                                         <button
-                                                                            className="bg-slate-700 p-1 mt-2 rounded ml-2 text-sm"
+                                                                            className="bg-slate-700 p-1 mt-2 rounded-sm ml-2 text-sm"
                                                                             onClick={() => {
                                                                                 const d = [...airdropDetails]
                                                                                 updateAirdropAmounts(d, distMode, walletLimit, balanceToDrop, voteFilters)
@@ -1749,7 +1749,7 @@ const Airdrop = () => {
                                                                                 updateAirdropAmounts(d, distMode, null, balanceToDrop)
                                                                                 setAirdropDetails(d)
                                                                             }}
-                                                                            className="bg-slate-700 p-1 mt-2 rounded ml-2 text-sm"
+                                                                            className="bg-slate-700 p-1 mt-2 rounded-sm ml-2 text-sm"
                                                                         >
                                                                             reset
                                                                         </button>
@@ -1866,7 +1866,7 @@ const Airdrop = () => {
                                                                 }}>
                                                                     <input
                                                                         type="checkbox"
-                                                                        className="text-black w-full rounded p-1 text-sm"
+                                                                        className="text-black w-full rounded-sm p-1 text-sm"
                                                                         onChange={() => {
                                                                             setDistMode("fair")
                                                                             updateList("fair", walletLimit, balanceToDrop)
@@ -1886,7 +1886,7 @@ const Airdrop = () => {
                                                                 }}>
                                                                     <input
                                                                         type="checkbox"
-                                                                        className="text-black w-full rounded p-1 text-sm"
+                                                                        className="text-black w-full rounded-sm p-1 text-sm"
                                                                         onChange={() => {
                                                                             setDistMode("proportionate")
                                                                             updateList("proportionate", walletLimit, balanceToDrop)
@@ -1914,7 +1914,7 @@ const Airdrop = () => {
                                                                 }}>
                                                                     <input
                                                                         type="checkbox"
-                                                                        className="text-black rounded p-1 text-sm"
+                                                                        className="text-black rounded-sm p-1 text-sm"
                                                                         onChange={() => {
                                                                             setMitoHolderType("non-stake")
                                                                             // updateList("non-stake", walletLimit, balanceToDrop)
@@ -1934,7 +1934,7 @@ const Airdrop = () => {
                                                                 }}>
                                                                     <input
                                                                         type="checkbox"
-                                                                        className="text-black rounded p-1 text-sm"
+                                                                        className="text-black rounded-sm p-1 text-sm"
                                                                         onChange={() => {
                                                                             setMitoHolderType("stake")
                                                                             // updateList("stake", walletLimit, balanceToDrop)
@@ -1971,7 +1971,7 @@ const Airdrop = () => {
                                                                     </label>
                                                                     <input
                                                                         type="checkbox"
-                                                                        className="text-black rounded p-1 text-sm ml-2"
+                                                                        className="text-black rounded-sm p-1 text-sm ml-2"
                                                                         onChange={() => {
                                                                             setLimitSwitch(limit => !limit)
                                                                         }}
@@ -1982,14 +1982,14 @@ const Airdrop = () => {
                                                                     <div className="mt-2 mb-1">
                                                                         <input
                                                                             type="number"
-                                                                            className="text-black w-full rounded p-1 text-sm w-14"
+                                                                            className="text-black w-full rounded-sm p-1 text-sm w-14"
                                                                             onChange={(e) => {
                                                                                 setWalletLimit(e.target.value)
                                                                             }}
                                                                             value={walletLimit}
                                                                         />
                                                                         <button
-                                                                            className="bg-slate-700 p-1 mt-2 rounded ml-2 text-sm"
+                                                                            className="bg-slate-700 p-1 mt-2 rounded-sm ml-2 text-sm"
                                                                             onClick={() => {
                                                                                 const d = [...airdropDetails]
                                                                                 updateAirdropAmounts(d, distMode, walletLimit, balanceToDrop)
@@ -2007,7 +2007,7 @@ const Airdrop = () => {
                                                                                 updateAirdropAmounts(d, distMode, null, balanceToDrop)
                                                                                 setAirdropDetails(d)
                                                                             }}
-                                                                            className="bg-slate-700 p-1 mt-2 rounded ml-2 text-sm"
+                                                                            className="bg-slate-700 p-1 mt-2 rounded-sm ml-2 text-sm"
                                                                         >
                                                                             reset
                                                                         </button>
@@ -2103,7 +2103,7 @@ const Airdrop = () => {
                                     />
                                     <div className="mb-5">Please connect wallet to plan a new airdrop</div>
                                     <ConnectWallet hideNetwork={true} button={true} />
-                                    <Link to="/airdrop-history" ><div className=" bg-slate-800 p-2 mt-10 rounded  text-sm">View airdrop history</div></Link>
+                                    <Link to="/airdrop-history" ><div className=" bg-slate-800 p-2 mt-10 rounded-sm  text-sm">View airdrop history</div></Link>
                                 </div>
                             }
                             {error && <div className="text-red-500 mt-2">

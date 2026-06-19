@@ -157,7 +157,7 @@ const DojoWhitelist = () => {
                         </label>
                         <input
                             type="text"
-                            className="text-black w-full rounded p-1 text-sm"
+                            className="text-black w-full rounded-sm p-1 text-sm"
                             onChange={(e) =>
                                 setDenom(e.target.value)
                             }
@@ -204,7 +204,7 @@ const DojoWhitelist = () => {
                     }
                     {tokenInfo !== null &&
                         <div
-                            className="bg-slate-800 w-40 m-auto mt-5 p-2 text-center rounded shadow-lg hover:cursor-pointer"
+                            className="bg-slate-800 w-40 m-auto mt-5 p-2 text-center rounded-sm shadow-lg hover:cursor-pointer"
                             onClick={sendWhitelist}
                         >
                             Whitelist token

@@ -62,7 +62,7 @@ const Header = () => {
             <header className="flex flex-row bg-customGray text-white shadow-lg fixed top-0 left-0 right-0 z-10 h-16 items-center ">
                 <div className="flex items-center p-2">
                     {/* Burger Icon */}
-                    <button onClick={toggleMenu} className="text-white focus:outline-none">
+                    <button onClick={toggleMenu} className="text-white focus:outline-hidden">
                         {menuOpen ? <FiX size={24} /> : <FiMenu size={24} className='' />}
                     </button>
                 </div>
@@ -147,7 +147,7 @@ const Header = () => {
             {/* Overlay for closing menu */}
             {menuOpen && (
                 <div
-                    className="fixed inset-0 bg-black bg-opacity-50 z-10"
+                    className="fixed inset-0 bg-black/50 z-10"
                     onClick={toggleMenu}
                 />
             )}

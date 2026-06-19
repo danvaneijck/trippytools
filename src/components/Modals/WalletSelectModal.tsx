@@ -42,13 +42,13 @@ export default function WalletSelectModal() {
             <img src={keplrLogo} className='h-8 ' alt="" /><span>Keplr Wallet</span>
           </div>
           <div onClick={handleLeapClick} className='flex border border-gray-600 rounded-md w-full p-4 gap-3 items-center cursor-pointer hover:border-trippyYellow'>
-            <img src={leapLogo} className='h-8 rounded' alt="" /><span>Leap Wallet</span>
+            <img src={leapLogo} className='h-8 rounded-sm' alt="" /><span>Leap Wallet</span>
           </div>
           <div onClick={handleMetamaskClick} className='flex border border-gray-600 rounded-md w-full p-4 gap-3 items-center cursor-pointer hover:border-trippyYellow'>
             <img src={metamask} className='h-8' alt="" /><span>Metamask Wallet</span>
           </div>
           <div onClick={handlePhantomClick} className='flex border border-gray-600 rounded-md w-full p-4 gap-3 items-center cursor-pointer hover:border-trippyYellow'>
-            <img src={phantom} className='h-8 rounded' alt="" /><span>Phantom Wallet</span>
+            <img src={phantom} className='h-8 rounded-sm' alt="" /><span>Phantom Wallet</span>
           </div>
         </div>
 

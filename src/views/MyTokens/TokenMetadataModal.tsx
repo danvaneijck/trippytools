@@ -55,10 +55,10 @@ const TokenMetadataModal = (props: {
     return (
         <>
             <div
-                className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none text-white text-sm"
+                className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-hidden focus:outline-hidden text-white text-sm"
             >
                 <div className="relative w-auto my-4 mx-auto max-w-4xl">
-                    <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-slate-800 outline-none focus:outline-none">
+                    <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-slate-800 outline-hidden focus:outline-hidden">
                         <div className="flex items-start justify-between p-4 border-b border-solid border-blueGray-900 rounded-t">
                             <h3 className="text-xl font-semibold">
                                 Update token metadata
@@ -78,7 +78,7 @@ const TokenMetadataModal = (props: {
                                         </label>
                                         <input
                                             type="text"
-                                            className="text-black w-full rounded p-1 text-sm"
+                                            className="text-black w-full rounded-sm p-1 text-sm"
                                             onChange={(e) =>
                                                 setTokenDescription(e.target.value)
                                             }
@@ -94,7 +94,7 @@ const TokenMetadataModal = (props: {
                                         <span className="text-xs">the logo of your token, should be hosted on IPFS and should be a small webp image</span>
                                         <input
                                             type="text"
-                                            className="text-black w-full rounded p-1 text-sm"
+                                            className="text-black w-full rounded-sm p-1 text-sm"
                                             onChange={(e) =>
                                                 setTokenImageUrl(e.target.value)
                                             }
@@ -107,7 +107,7 @@ const TokenMetadataModal = (props: {
                                     {tokenImage ?
                                         <IPFSImage
                                             width={100}
-                                            className={'rounded'}
+                                            className={'rounded-sm'}
                                             ipfsPath={tokenImage}
 
                                         />
@@ -122,14 +122,14 @@ const TokenMetadataModal = (props: {
                         </div>
                         <div className="flex items-center justify-end p-4 border-t border-solid border-blueGray-200 rounded-b">
                             <button
-                                className="text-slate-500 background-transparent font-bold uppercase px-6 py-2 text-sm outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                                className="text-slate-500 background-transparent font-bold uppercase px-6 py-2 text-sm outline-hidden focus:outline-hidden mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
                                 onClick={() => props.setShowModal(null)}
                             >
                                 Back
                             </button>
                             <button
-                                className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                                className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded-sm shadow-sm hover:shadow-lg outline-hidden focus:outline-hidden mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
                                 onClick={() => updateMetadata().then(() => console.log("done")).catch(e => {
                                     console.log(e)

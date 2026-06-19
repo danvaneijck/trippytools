@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import moment from "moment";
+import dayjs from "dayjs";
 import { PiParachute } from "react-icons/pi";
 import { toPng } from "html-to-image";
 import shroomi from "../../assets/mush_sticker.png";
@@ -88,7 +88,7 @@ const AirdropCard = ({ log }: Props) => {
                 onClick={copyPng}
                 className="no-export absolute top-40 right-2 flex items-center gap-1
                    rounded-md bg-white/10 hover:bg-white/20 px-2 py-1
-                   text-[11px] font-medium backdrop-blur"
+                   text-[11px] font-medium backdrop-blur-sm"
             >
                 {/* <ClipboardIcon className="w-4 h-4" /> */}
                 Copy img
@@ -115,7 +115,7 @@ const AirdropCard = ({ log }: Props) => {
 
             </a>
 
-            <p>Time: {moment(log.time).fromNow()}</p>
+            <p>Time: {dayjs(log.time).fromNow()}</p>
 
             <p className="mt-2 whitespace-pre-line text-lg font-semibold">
                 {log.criteria.toLocaleUpperCase()}
