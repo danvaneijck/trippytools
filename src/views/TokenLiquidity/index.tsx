@@ -7,7 +7,6 @@ import { IoIosWarning } from "react-icons/io";
 import IPFSImage from "../../components/App/IpfsImage";
 import { WALLET_LABELS } from "../../constants/walletLabels";
 import TokenSelect from "../../components/Inputs/TokenSelect";
-import { CSVLink } from 'react-csv';
 import Footer from "../../components/App/Footer";
 import useNetworkStore from "../../store/useNetworkStore";
 import useLiquidityPoolStore from "../../store/usePoolStore";
@@ -17,6 +16,8 @@ import dojologo from "../../assets/dojo.svg"
 import whitewhale from "../../assets/whitewhale.svg"
 import PoolReserves from "../../components/App/PoolReserves";
 import { formatNumber } from "../../utils/helpers";
+import { shortAddress } from "../../utils/format";
+import { arrayToCsv, downloadCsv } from "../../utils/csv";
 import { CHOICE_FACTORY } from "../../constants/contractAddresses";
 
 
@@ -39,7 +40,7 @@ const TokenLiquidity = () => {
                 label: `${p.asset_1.symbol}/${p.asset_2.symbol} (${p.dex.name})`,
                 img: p.asset_1.icon,
             }
-        }).find(x => x.value == searchParams.get("address") ?? "inj1uyjjnykz0slq0w4n6k2xgleykqk9k5qkfctmw5")
+        }).find(x => x.value == (searchParams.get("address") ?? "inj1uyjjnykz0slq0w4n6k2xgleykqk9k5qkfctmw5"))
     );
 
     const [lastLoadedAddress, setLastLoadedAddress] = useState("")
@@ -84,13 +85,11 @@ const TokenLiquidity = () => {
 
         try {
             const pairInfo = await module.getPairInfo(address);
-            console.log(pairInfo)
             setPairInfo(pairInfo);
             setSelectedPool(pools.find(x => x.contract_addr == address) ?? null);
 
             try {
                 const reserves = await module.getPoolAmounts(address);
-                console.log(reserves)
                 setPoolReserves(reserves)
             }
             catch (e) {
@@ -106,7 +105,6 @@ const TokenLiquidity = () => {
             try {
                 if (memeAddress.includes("factory") || memeAddress.includes("peggy") || memeAddress.includes("ibc") || memeAddress == "inj") {
                     const denomMetadata = await module.getDenomExtraMetadata(memeAddress);
-                    console.log(denomMetadata)
                     setTokenInfo(denomMetadata);
                 } else {
                     const tokenInfo = await module.getTokenInfo(memeAddress);
@@ -186,11 +184,14 @@ const TokenLiquidity = () => {
         )
     }
 
-    const headers = [
-        { label: "Holder Address", key: "address" },
-        { label: "Balance", key: "balance" },
-        { label: "Percentage Held", key: "percentageHeld" }
-    ];
+    const downloadHoldersCsv = () => {
+        const rows = holders.map(h => ({
+            "Holder Address": h.address,
+            "Balance": h.balance,
+            "Percentage Held": h.percentageHeld,
+        }));
+        downloadCsv("holders.csv", arrayToCsv(rows, ["Holder Address", "Balance", "Percentage Held"]));
+    };
 
     return (
         <div className="flex flex-col min-h-screen bg-customGray">
@@ -238,14 +239,6 @@ const TokenLiquidity = () => {
                             />
                         </div>
 
-                        {/* <button
-                            disabled={loading}
-                            onClick={setAddress}
-                            className="bg-gray-800 hover:bg-gray-900 rounded-lg p-2 mt-5 w-full text-white border border-slate-800 shadow-lg font-bold"
-                        >
-                            Get token liquidity
-                        </button> */}
-
                         {error && <div className="text-red-500 mt-2">
                             {error}
                         </div>}
@@ -277,7 +270,7 @@ const TokenLiquidity = () => {
 
                                     />
                                     <a href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}explorer.injective.network/account/${tokenInfo.admin}`}>
-                                        admin: {tokenInfo.admin.slice(0, 5) + '...' + tokenInfo.admin.slice(-5)}
+                                        admin: {shortAddress(tokenInfo.admin)}
                                         {
                                             WALLET_LABELS[tokenInfo.admin] ? (
                                                 <span className={`${WALLET_LABELS[tokenInfo.admin].bgColor} ${WALLET_LABELS[tokenInfo.admin].textColor} ml-2`}>
@@ -313,13 +306,6 @@ const TokenLiquidity = () => {
                                 </div>
                             )}
                         </div>
-                        {/* {pairInfo && <div className="mt-6 md:mt-0"><a href={"https://coinhall.org/injective/" + pairInfo.contract_addr}
-                            className="bg-gray-800 rounded-lg p-2 text-white border border-slate-800 shadow-lg font-bold "
-                        >
-                            Trade on coinhall
-                        </a></div>
-                        } */}
-
                         {pairInfo && (
                             <div className="mt-4 text-white text-sm">
                                 <div className="text-xl">Liquidity Info</div>
@@ -364,9 +350,7 @@ const TokenLiquidity = () => {
                         }
                         {holders.length > 0 && (
                             <div className="mt-2 overflow-x-auto text-sm">
-                                <CSVLink data={holders} headers={headers} filename={"holders.csv"}>
-                                    <button className="p-2 bg-gray-800 hover:bg-gray-900 rounded-sm mb-2 mt-2 font-semibold">Download CSV</button>
-                                </CSVLink>
+                                <button onClick={downloadHoldersCsv} className="p-2 bg-gray-800 hover:bg-gray-900 rounded-sm mb-2 mt-2 font-semibold">Download CSV</button>
                                 <div>Total liquidity holders: {holders.length}</div>
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="">

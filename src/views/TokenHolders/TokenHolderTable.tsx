@@ -3,8 +3,29 @@ import HolderRow from './HolderRow';
 
 const ROW_HEIGHT = 30;
 
+export interface TokenHolderRow {
+    address: string;
+    balance: number;
+    percentageHeld: number;
+    cw20Balance?: number;
+    bankBalance?: number;
+    usdValue?: number | null;
+}
 
-const TokenHoldersTable = ({ holders, startIndex, hasSplitBalances, WALLET_LABELS, lastLoadedAddress, liquidity, findingLiq }) => {
+export type WalletLabel = { label: string; bgColor: string; textColor: string };
+export type WalletLabelMap = Record<string, WalletLabel | undefined>;
+
+export interface TokenHoldersTableProps {
+    holders: TokenHolderRow[];
+    startIndex: number;
+    hasSplitBalances: boolean;
+    WALLET_LABELS: WalletLabelMap;
+    lastLoadedAddress: string;
+    liquidity: any[];
+    findingLiq: boolean;
+}
+
+const TokenHoldersTable = ({ holders, startIndex, hasSplitBalances, WALLET_LABELS, lastLoadedAddress, liquidity, findingLiq }: TokenHoldersTableProps) => {
     const totalHolders = holders.length;
 
     return (

@@ -8,11 +8,12 @@ import IPFSImage from "../../components/App/IpfsImage";
 import { WALLET_LABELS } from "../../constants/walletLabels";
 import TokenSelect from "../../components/Inputs/TokenSelect";
 import { CW404_TOKENS, NFT_COLLECTIONS } from "../../constants/contractAddresses";
-import { CSVLink } from 'react-csv';
 import HoldersChart from "../../components/App/HoldersChart";
 import { MdWarning } from "react-icons/md";
 import Footer from "../../components/App/Footer";
 import { humanReadableAmount } from "../../utils/helpers";
+import { shortAddress } from "../../utils/format";
+import { arrayToCsv, downloadCsv } from "../../utils/csv";
 import { gql, useMutation, useQuery } from "@apollo/client";
 import dayjs from "dayjs";
 import { Bounce, ToastContainer, toast } from 'react-toastify';
@@ -86,7 +87,12 @@ mutation updateTokenHolders($address: String!){
 
 const ITEMS_PER_PAGE = 50;
 
-const ProgressBar = ({ queryProgress, saveProgress }) => {
+interface ProgressBarProps {
+    queryProgress: number | null;
+    saveProgress: number | null;
+}
+
+const ProgressBar = ({ queryProgress, saveProgress }: ProgressBarProps) => {
     const [progress, setProgress] = useState(0);
     const prevProgress = useRef(0);
     const label = saveProgress !== null ? 'Holders Saving to Database' : 'Update Query Progress';
@@ -122,23 +128,19 @@ const TokenHolders = () => {
 
     const { tokens } = useTokenStore()
 
-    const TOKENS = tokens.map((t) => {
-        return {
-            value: t.address,
-            label: t.symbol,
-            img: t.icon
-        }
-    })
-
     const inFlight = useRef<AbortController | null>(null);
 
     const [contractAddress, setContractAddress] = useState(() => {
+        const tokenOptions = tokens.map((t) => ({ value: t.address, label: t.symbol, img: t.icon }));
         const address = searchParams.get("address");
         if (!address) {
-            return TOKENS.find(x => x.value === "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8")
+            return tokenOptions.find(x => x.value === "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8")
         }
-        return TOKENS.find(x => x.value === address) || NFT_COLLECTIONS.find(x => x.value === address) || { label: address, value: address };
+        return tokenOptions.find(x => x.value === address) || NFT_COLLECTIONS.find(x => x.value === address) || { label: address, value: address };
     });
+
+    const netPrefix = currentNetwork === 'testnet' ? 'testnet.' : '';
+    const explorerBase = `https://${netPrefix}explorer.injective.network`;
 
     const { data, loading: queryLoading, refetch } = useQuery(HOLDER_QUERY, {
         skip: !contractAddress || !contractAddress.value,
@@ -239,8 +241,14 @@ const TokenHolders = () => {
         }
     }, [contractAddress, setSearchParams])
 
+    // Reset to the first page whenever a new token is selected, otherwise we can
+    // land on a stale page index past the new token's holder count (empty table
+    // showing e.g. "Page 8 of 1" until the user manually navigates back).
     useEffect(() => {
-        console.log("clear last loaded address")
+        setCurrentPage(1);
+    }, [contractAddress?.value])
+
+    useEffect(() => {
         setLastLoadedAddress("")
     }, [networkConfig])
 
@@ -249,8 +257,7 @@ const TokenHolders = () => {
             variables: {
                 address: contractAddress.value ? contractAddress.value : contractAddress
             }
-        }).then(r => {
-            console.log(r)
+        }).then(() => {
             toast.success('Request sent to update holders. May take a few minutes...', {
                 position: "top-center",
                 autoClose: 5000,
@@ -289,8 +296,6 @@ const TokenHolders = () => {
         setQueryProgress(minQueryProgress);
         setSaveProgress(minSaveProgress);
 
-        console.log(minQueryProgress, minSaveProgress)
-
         if (!minQueryProgress && !minSaveProgress) refetch();
     }, [progressData, refetch]);
 
@@ -299,8 +304,6 @@ const TokenHolders = () => {
             setHoldersLastUpdated(null)
             return;
         }
-
-        console.log(data)
 
         const BURN_ADDRESSES = [
             dojoBurnAddress,
@@ -399,7 +402,6 @@ const TokenHolders = () => {
     }, [data, tokenPrice]);
 
     const getSpotMarkets = useCallback(async () => {
-        console.log("get spot markets")
         const module = new TokenUtils(networkConfig);
         try {
             const markets = await module.fetchSpotMarkets();
@@ -411,7 +413,6 @@ const TokenHolders = () => {
     }, [networkConfig]);
 
     const getMitoVaults = useCallback(async () => {
-        console.log("get mito vaults")
         const module = new TokenUtils(networkConfig);
         try {
             const markets = await module.fetchMitoVaults();
@@ -444,7 +445,6 @@ const TokenHolders = () => {
                 ]);
 
                 if (signal.aborted) {
-                    console.log("findLiquidity aborted before processing markets");
                     return;  // guard after awaited work
                 }
 
@@ -467,7 +467,6 @@ const TokenHolders = () => {
                     setTokenPrice(price);
                 }
 
-                console.log("check for liquidity")
                 const liq = await module.checkForLiquidity(assetInfo);
                 if (signal.aborted) return;
 
@@ -512,7 +511,6 @@ const TokenHolders = () => {
         const ctrl = new AbortController();
         inFlight.current = ctrl;
 
-        console.log("find liquidity for", tokenInfo.denom)
         findLiquidity(ctrl.signal).catch(console.error).finally(() => setFindingLiq(false));
 
         return () => ctrl.abort();
@@ -523,8 +521,6 @@ const TokenHolders = () => {
         if (loading) return
         if (lastLoadedAddress == address) return
         const module = new TokenUtils(networkConfig);
-
-        console.log("get token holders")
 
         setLoading(true);
         setError(null);
@@ -582,7 +578,6 @@ const TokenHolders = () => {
                         if (holders) setHolders(holders);
                     }
                     else {
-                        console.log(error.message)
                         console.error("Error with token info retrieval:", error);
                     }
                 }
@@ -604,19 +599,22 @@ const TokenHolders = () => {
     useEffect(() => {
         const address = searchParams.get("address")
         if (address && address !== lastLoadedAddress && !loading) {
-            getTokenHolders(address).then(() => console.log("got token holders")).catch(e => {
-                console.log(e)
+            getTokenHolders(address).catch(e => {
+                console.error(e)
                 setLastLoadedAddress(address);
             })
             setContractAddress(address => tokens.find(v => v.address == address) ?? address)
         }
     }, [searchParams, lastLoadedAddress, getTokenHolders, loading, tokens])
 
-    const headers = [
-        { label: "Holder Address", key: "address" },
-        { label: "Balance", key: "balance" },
-        { label: "Percentage Held", key: "percentageHeld" }
-    ];
+    const downloadHoldersCsv = () => {
+        const rows = holders.map(h => ({
+            "Holder Address": h.address,
+            "Balance": h.balance,
+            "Percentage Held": h.percentageHeld,
+        }));
+        downloadCsv("holders.csv", arrayToCsv(rows, ["Holder Address", "Balance", "Percentage Held"]));
+    };
 
     return (
         <div className="flex flex-col min-h-screen pb-10 bg-customGray">
@@ -674,7 +672,7 @@ const TokenHolders = () => {
                                         {!queryProgress && !saveProgress &&
                                             <div
                                                 onClick={handleUpdateTokenHolders}
-                                                className="ml-5 p-2 rounded-sm shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-lg hover:cursor-pointer text-center font-magic"
+                                                className="ml-5 p-2 shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-lg hover:cursor-pointer text-center font-magic"
                                             >
                                                 Refresh
                                             </div>
@@ -688,7 +686,7 @@ const TokenHolders = () => {
                                         {!queryProgress && !saveProgress &&
                                             <div
                                                 onClick={handleUpdateTokenHolders}
-                                                className="ml-5 p-2 rounded-sm shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-lg hover:cursor-pointer text-center font-magic"
+                                                className="ml-5 p-2 shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-lg hover:cursor-pointer text-center font-magic"
                                             >
                                                 Refresh
                                             </div>
@@ -740,8 +738,8 @@ const TokenHolders = () => {
                                         />
                                     }
                                     {tokenInfo.admin &&
-                                        <a href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}explorer.injective.network/account/${tokenInfo.admin}`}>
-                                            admin: {tokenInfo.admin.slice(0, 5) + '...' + tokenInfo.admin.slice(-5)}
+                                        <a href={`${explorerBase}/account/${tokenInfo.admin}`}>
+                                            admin: {shortAddress(tokenInfo.admin)}
                                             {
                                                 WALLET_LABELS[tokenInfo.admin] ? (
                                                     <span className={`${WALLET_LABELS[tokenInfo.admin].bgColor} ${WALLET_LABELS[tokenInfo.admin].textColor} ml-2`}>
@@ -768,8 +766,8 @@ const TokenHolders = () => {
                                     <div>description: {pairMarketing.description}</div>
                                     {pairMarketing.marketing &&
                                         <div>
-                                            marketing: <a href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}explorer.injective.network/account/${pairMarketing.marketing}`}>
-                                                {pairMarketing.marketing.slice(0, 5) + '...' + pairMarketing.marketing.slice(-5)}
+                                            marketing: <a href={`${explorerBase}/account/${pairMarketing.marketing}`}>
+                                                {shortAddress(pairMarketing.marketing)}
                                             </a>
                                             {
                                                 WALLET_LABELS[pairMarketing.marketing] ? (
@@ -839,13 +837,11 @@ const TokenHolders = () => {
 
                             {mitoVault !== null && tokenInfo &&
                                 <div className="text-sm mx-2 bg-trippyYellow/10 p-2 rounded-lg shadow-lg ">
-                                    <a href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}mito.fi/vault/${mitoVault.contractAddress}`}
+                                    <a href={`https://${netPrefix}mito.fi/vault/${mitoVault.contractAddress}`}
                                         className="text-white hover:cursor-pointer font-bold"
                                     >
                                         Mito vault
                                     </a>
-                                    {/* <br />
-                                    APY: {mitoVault.apy.toFixed(2)}% */}
                                     <br />
                                     liquidity: ${humanReadableAmount(mitoVault.currentTvl)}
                                     <br />
@@ -857,7 +853,7 @@ const TokenHolders = () => {
                                     <Link
                                         className="underline"
                                         target="_blank"
-                                        to={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}mito.fi/vault/${mitoVault.contractAddress}`}
+                                        to={`https://${netPrefix}mito.fi/vault/${mitoVault.contractAddress}`}
                                     >
                                         mito vault url
                                     </Link>
@@ -865,7 +861,7 @@ const TokenHolders = () => {
                                     <Link
                                         className="underline"
                                         target="_blank"
-                                        to={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}helixapp.com/spot/?marketId=${mitoVault.marketId}`}
+                                        to={`https://${netPrefix}helixapp.com/spot/?marketId=${mitoVault.marketId}`}
                                     >
                                         helix market url
                                     </Link>
@@ -889,9 +885,7 @@ const TokenHolders = () => {
                                 <HoldersChart data={holders} />
                                 <div className="flex flex-col md:flex-row items-center justify-between">
                                     <div>
-                                        <CSVLink data={holders} headers={headers} filename={"holders.csv"}>
-                                            <button className="p-1 bg-slate-700 hover:bg-slate-800 rounded-sm mb-2">Download Holders CSV</button>
-                                        </CSVLink>
+                                        <button onClick={downloadHoldersCsv} className="p-1 bg-slate-700 hover:bg-slate-800 rounded-sm mb-2">Download Holders CSV</button>
                                         <div>Total token holders: {totalHolderCount}</div>
                                     </div>
                                     <div>

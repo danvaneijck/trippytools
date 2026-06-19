@@ -36,6 +36,22 @@
   }
 }
 
+/*
+  The page is dark (body bg-gray-900). Inputs across the app use `text-black`
+  assuming a light field background, but Tailwind v4's Preflight no longer
+  forces one, so they rendered black-on-dark and were unreadable. Give any
+  `text-black` input/textarea/select a white background. Scoped to elements
+  that carry `text-black` so it never touches react-select's inner input
+  (text-black sits on its container, not the field) or checkboxes/radios.
+*/
+@layer base {
+  input.text-black:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  textarea.text-black,
+  select.text-black {
+    background-color: #fff;
+  }
+}
+
 body {
   @apply bg-gray-900 text-white;
 }

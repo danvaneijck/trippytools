@@ -2,6 +2,7 @@
 
 import Papa from "papaparse";
 import type { AirdropRecipient } from "./types";
+export { downloadCsv } from "../../utils/csv";
 
 // bech32 charset excludes 1, b, i and o. Injective account addresses are 42
 // chars (`inj1` + 38); 32-byte contract addresses are 62. Accept the range so
@@ -74,15 +75,3 @@ export function recipientsToCsv(recipients: AirdropRecipient[], decimals: number
     return Papa.unparse(rows, { columns: ["address", "amount"] });
 }
 
-/** Trigger a client-side download of the given text content. */
-export function downloadCsv(filename: string, content: string): void {
-    const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-}
