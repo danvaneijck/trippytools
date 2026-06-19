@@ -4,22 +4,11 @@ import { FaDiscord, FaTelegram, FaTwitter } from 'react-icons/fa';
 import Footer from '../../components/App/Footer';
 import { FaArrowRight } from "react-icons/fa";
 import choice from "../../assets/choice.svg"
+import ShroomMarkets from '../../components/App/markets';
 
 const Home = () => {
 
-    const divStyle = {
-        position: 'relative',
-        width: '100%',
-        paddingBottom: '10%',
-    };
-
-    const iframeStyle = {
-        width: 1000,
-        height: 500,
-        border: 0,
-    };
-
-    return <div className='overflow-hidden min-h-screen text-stone-100 bg-customGray font-magic'>
+    return<div className='overflow-hidden min-h-screen text-stone-100 bg-customGray font-magic'>
         <div className='grow'>
             <div className='flex justify-center'>
                 <div className="pt-20 md:pt-44 pb-20 flex flex-col justify-center items-start text-left py-4 lg:w-3/4 mx-3 text-white">
@@ -132,16 +121,8 @@ const Home = () => {
             </div>
         </div>
 
-        <div
-            id="dexscreener-embed"
-            style={divStyle}
-            className='mt-2 flex justify-center flex-row bg-black pt-10 pb-20'
-        >
-            <iframe
-                src="https://dexscreener.com/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl?embed=1&theme=dark&trades=0"
-                style={iframeStyle}
-                title="dexscreener-embed"
-            ></iframe>
+        <div className='mt-2 flex justify-center bg-black px-3 pt-10 pb-20'>
+            <ShroomMarkets />
         </div>
         <Footer />
     </div>
