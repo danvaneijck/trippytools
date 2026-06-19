@@ -178,7 +178,7 @@ const TokenInitializer = () => {
           percentChange: percentChange,
           marketCap: marketCap,
           price: price,
-          info: (token.address == ("inj") || token.address.includes("peggy") || token.address.includes("factory/") || token.address.includes("ibc/")) ?
+          info: (token.address == ("inj") || token.address.includes("peggy") || token.address.includes("factory/") || token.address.includes("ibc/") || token.address.includes("erc20:")) ?
             {
               native_token: {
                 denom: token.address
