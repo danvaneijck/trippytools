@@ -93,7 +93,7 @@ const QuntUnwrap = () => {
                     <div className="flex flex-col justify-center mt-5">
                         <label className="text-center">Amount to unwrap</label>
                         <input
-                            className="text-black m-auto p-1 rounded"
+                            className="text-black m-auto p-1 rounded-sm"
                             value={amountToUnwrap}
                             onChange={(e) => setAmountToUnwrap(e.target.value)}
                         />
@@ -101,7 +101,7 @@ const QuntUnwrap = () => {
 
                     {tokenInfo !== null &&
                         <div
-                            className="bg-slate-800 w-40 m-auto mt-5 p-2 text-center rounded shadow-lg hover:cursor-pointer"
+                            className="bg-slate-800 w-40 m-auto mt-5 p-2 text-center rounded-sm shadow-lg hover:cursor-pointer"
                             onClick={sendUnwrap}
                         >
                             Unwrap token

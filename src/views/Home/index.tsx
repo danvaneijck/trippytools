@@ -20,7 +20,7 @@ const Home = () => {
     };
 
     return <div className='overflow-hidden min-h-screen text-stone-100 bg-customGray font-magic'>
-        <div className='flex-grow'>
+        <div className='grow'>
             <div className='flex justify-center'>
                 <div className="pt-20 md:pt-44 pb-20 flex flex-col justify-center items-start text-left py-4 lg:w-3/4 mx-3 text-white">
                     <div className='flex flex-col md:flex-row items-center'>

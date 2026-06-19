@@ -14,7 +14,7 @@ import { MdWarning } from "react-icons/md";
 import Footer from "../../components/App/Footer";
 import { humanReadableAmount } from "../../utils/helpers";
 import { gql, useMutation, useQuery } from "@apollo/client";
-import moment from "moment";
+import dayjs from "dayjs";
 import { Bounce, ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { GrStatusUnknown } from "react-icons/gr";
@@ -621,9 +621,9 @@ const TokenHolders = () => {
     return (
         <div className="flex flex-col min-h-screen pb-10 bg-customGray">
             <ToastContainer />
-            <div className="pt-14 flex-grow mx-2 pb-20">
+            <div className="pt-14 grow mx-2 pb-20">
                 <div className="flex justify-center items-center min-h-full">
-                    <div className="w-full max-w-screen-lg px-2 py-10">
+                    <div className="w-full max-w-(--breakpoint-lg) px-2 py-10">
                         <div className="text-center text-white font-magic">
                             <div className="text-3xl">
                                 Token holders
@@ -669,12 +669,12 @@ const TokenHolders = () => {
                                 {holdersLastUpdated ?
                                     <div className="mt-4 flex flex-row items-center">
                                         <div>
-                                            Holders last updated: {moment(holdersLastUpdated).fromNow()}
+                                            Holders last updated: {dayjs(holdersLastUpdated).fromNow()}
                                         </div>
                                         {!queryProgress && !saveProgress &&
                                             <div
                                                 onClick={handleUpdateTokenHolders}
-                                                className="ml-5 p-2 rounded shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-lg hover:cursor-pointer text-center font-magic"
+                                                className="ml-5 p-2 rounded-sm shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-lg hover:cursor-pointer text-center font-magic"
                                             >
                                                 Refresh
                                             </div>
@@ -688,7 +688,7 @@ const TokenHolders = () => {
                                         {!queryProgress && !saveProgress &&
                                             <div
                                                 onClick={handleUpdateTokenHolders}
-                                                className="ml-5 p-2 rounded shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-lg hover:cursor-pointer text-center font-magic"
+                                                className="ml-5 p-2 rounded-sm shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-lg hover:cursor-pointer text-center font-magic"
                                             >
                                                 Refresh
                                             </div>
@@ -890,7 +890,7 @@ const TokenHolders = () => {
                                 <div className="flex flex-col md:flex-row items-center justify-between">
                                     <div>
                                         <CSVLink data={holders} headers={headers} filename={"holders.csv"}>
-                                            <button className="p-1 bg-slate-700 hover:bg-slate-800 rounded mb-2">Download Holders CSV</button>
+                                            <button className="p-1 bg-slate-700 hover:bg-slate-800 rounded-sm mb-2">Download Holders CSV</button>
                                         </CSVLink>
                                         <div>Total token holders: {totalHolderCount}</div>
                                     </div>
@@ -903,11 +903,11 @@ const TokenHolders = () => {
                                                 value={pageInput}
                                                 onChange={handlePageInput}
                                                 placeholder="Enter page number"
-                                                className="px-4 py-2 border border-gray-300 rounded text-black"
+                                                className="px-4 py-2 border border-gray-300 rounded-sm text-black"
                                             />
                                             <button
                                                 type="submit"
-                                                className="ml-2 px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded"
+                                                className="ml-2 px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-sm"
                                             >
                                                 Go
                                             </button>

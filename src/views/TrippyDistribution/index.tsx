@@ -162,7 +162,7 @@ const TrippyDistribution = () => {
                     {/* <img
                         src={logo}
                         style={{ borderRadius: "50%", width: 50, height: 50 }}
-                        className="animate-3dspin ml-4"
+                        className="animate-spin3d ml-4"
                         alt="Spinning Image"
                     /> */}
                 </div>
@@ -197,7 +197,7 @@ const TrippyDistribution = () => {
                     </div>
                 )}
                 <div className="mt-2 overflow-x-scroll md:overflow-x-none w-full pb-10 pl-5 pr-10">
-                    <div className="mx-auto max-w-screen-xl">
+                    <div className="mx-auto max-w-(--breakpoint-xl)">
                         <table className="w-full ">
                             <thead>
                                 <tr className="text-left">
@@ -231,7 +231,7 @@ const TrippyDistribution = () => {
                                                     </a>
                                                     {amount.address ==
                                                         "inj1lq9wn94d49tt7gc834cxkm0j5kwlwu4gm65lhe" && (
-                                                            <div className="rounded bg-red-500 p-1 ml-2 text-xs">
+                                                            <div className="rounded-sm bg-red-500 p-1 ml-2 text-xs">
                                                                 trippykiwi
                                                             </div>
                                                         )}

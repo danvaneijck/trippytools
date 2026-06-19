@@ -1,6 +1,40 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  --animate-spin3d: spin3d 5s linear infinite;
+
+  --font-magic: MagicMushroom, sans-serif;
+
+  --color-customGray: #001319;
+  --color-trippyYellow: #f9d73f;
+
+  @keyframes spin3d {
+    0% {
+      transform: rotateY(0deg);
+    }
+    100% {
+      transform: rotateY(360deg);
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
 
 body {
   @apply bg-gray-900 text-white;

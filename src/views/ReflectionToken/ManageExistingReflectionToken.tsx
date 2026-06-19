@@ -170,9 +170,9 @@ const ManageExistingReflectionToken = () => {
 
     return (
         <div className="flex flex-col min-h-screen bg-customGray">
-            <div className="pt-20 flex-grow mx-2">
+            <div className="pt-20 grow mx-2">
                 <div className="flex justify-center items-center min-h-full">
-                    <div className="w-full max-w-screen-md px-2 pb-10">
+                    <div className="w-full max-w-(--breakpoint-md) px-2 pb-10">
                         <div className="text-center text-3xl font-magic mb-6">Manage Reflection Token</div>
 
                         {/* Token Input Section */}
@@ -182,7 +182,7 @@ const ManageExistingReflectionToken = () => {
                                 <input
                                     type="text"
                                     placeholder="Enter your CW20 token address (inj1...)"
-                                    className="text-black w-full rounded p-2 text-sm"
+                                    className="text-black w-full rounded-sm p-2 text-sm"
                                     value={tokenAddress}
                                     onChange={(e) => setTokenAddress(e.target.value)}
                                 />
@@ -222,7 +222,7 @@ const ManageExistingReflectionToken = () => {
                                         </div>
                                     </div>
                                 </div>
-                                <p className="text-xs mt-4">Treasury Address: <code className="bg-slate-700 p-1 rounded">{treasuryAddress}</code></p>
+                                <p className="text-xs mt-4">Treasury Address: <code className="bg-slate-700 p-1 rounded-sm">{treasuryAddress}</code></p>
                             </div>
                         )}
 
@@ -236,7 +236,7 @@ const ManageExistingReflectionToken = () => {
                                     <input
                                         type="text"
                                         placeholder="Enter address to check or manage (inj1...)"
-                                        className="text-black w-full rounded p-2 text-sm"
+                                        className="text-black w-full rounded-sm p-2 text-sm"
                                         value={manageAddress}
                                         onChange={(e) => {
                                             setManageAddress(e.target.value);

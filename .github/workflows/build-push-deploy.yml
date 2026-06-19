@@ -4,10 +4,13 @@ name: Build, Push & Deploy
 # SSHes the trippy box to pull + (re)start the `trippytools` service that lives
 # in the trippinj_docker_env compose stack.
 #
-# Mirrors the choice_exchange_app pipeline, minus the ESLint/typecheck gate:
-# this repo's lint baseline is red (Vercel only ever ran `vite build`), so the
-# Docker build's own `yarn build` is the gate — a broken build can't produce an
-# image and the deploy job is skipped.
+# The Docker build's own `yarn build` is the hard gate — a broken build can't
+# produce an image and the deploy job is skipped.
+#
+# A separate `quality` job runs `yarn typecheck` + `yarn lint` for visibility but
+# is NON-BLOCKING (continue-on-error): this repo carries a large pre-existing
+# type/lint debt (Vercel only ever ran `vite build`). Ratchet those counts down
+# over time, then flip continue-on-error off to make it a real gate.
 #
 # Required repo secrets:
 #   REMOTE_HOST / REMOTE_USER / SSH_PRIVATE_KEY  — same trippy box + deploy user
@@ -27,6 +30,25 @@ env:
   IMAGE_NAME: ${{ github.repository_owner }}/trippytools
 
 jobs:
+  quality:
+    # Non-blocking type/lint visibility. Does NOT gate build-and-push or deploy.
+    # --ignore-scripts skips the wallet-strategy native postinstall (usb/node-hid
+    # node-gyp) — tsc/eslint only need the published type defs, not native bins.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+      - run: yarn install --frozen-lockfile --ignore-scripts --network-timeout 600000
+      - name: Typecheck (non-blocking)
+        continue-on-error: true
+        run: yarn typecheck
+      - name: Lint (non-blocking)
+        continue-on-error: true
+        run: yarn lint
+
   build-and-push:
     runs-on: ubuntu-latest
     permissions:

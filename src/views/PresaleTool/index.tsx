@@ -9,7 +9,7 @@ import RefundModal from "./RefundModal"
 import { humanReadableAmount } from "../../utils/helpers"
 import AirdropModal from "./AirdropModal"
 import DisclaimerModal from "../../components/Modals/DisclaimerModal"
-import moment from "moment"
+import dayjs from "dayjs"
 import { FaCheckCircle } from "react-icons/fa"
 import { ImCross } from "react-icons/im"
 import useWalletStore from "../../store/useWalletStore"
@@ -311,7 +311,7 @@ const PreSaleTool = () => {
             }
             <div className="flex flex-col min-h-screen pb-10 bg-customGray">
                 <ToastContainer />
-                <div className="pt-16 md:pt-24 flex-grow mx-2 pb-20">
+                <div className="pt-16 md:pt-24 grow mx-2 pb-20">
                     {currentNetwork == "mainnet" &&
                         <div className="mb-2 flex flex-row justify-between">
                             <ShroomBalance />
@@ -327,7 +327,7 @@ const PreSaleTool = () => {
                     }
 
                     <div className="flex justify-center items-center min-h-full">
-                        <div className="w-full max-w-screen-lg px-2 ">
+                        <div className="w-full max-w-(--breakpoint-lg) px-2 ">
                             <div className="text-center text-white">
                                 <div className="text-3xl font-magic">
                                     Pre sale tool
@@ -372,7 +372,7 @@ const PreSaleTool = () => {
                                 </span>
                                 <br />
                                 <input
-                                    className="w-full rounded p-2 text-black"
+                                    className="w-full rounded-sm p-2 text-black"
                                     type="text"
                                     value={walletAddress}
                                     onChange={(e) => setWalletAddress(e.target.value)}
@@ -394,7 +394,7 @@ const PreSaleTool = () => {
                                 </span>
                                 <br />
                                 <input
-                                    className="w-full rounded p-2 text-black"
+                                    className="w-full rounded-sm p-2 text-black"
                                     type="text"
                                     value={ignoredAddresses}
                                     onChange={(e) => setIgnoredAddresses(e.target.value)}
@@ -412,7 +412,7 @@ const PreSaleTool = () => {
                                         Min per wallet
                                     </label>
                                     <input
-                                        className="w-full rounded p-2 text-black mt-1"
+                                        className="w-full rounded-sm p-2 text-black mt-1"
                                         type="number"
                                         value={minPerWallet}
                                         onChange={(e) => setMinPerWallet(e.target.value)}
@@ -426,7 +426,7 @@ const PreSaleTool = () => {
                                         Max per wallet
                                     </label>
                                     <input
-                                        className="w-full rounded p-2 text-black mt-1"
+                                        className="w-full rounded-sm p-2 text-black mt-1"
                                         type="number"
                                         value={maxPerWallet}
                                         onChange={(e) => setMaxPerWallet(e.target.value)}
@@ -440,7 +440,7 @@ const PreSaleTool = () => {
                                         Max total cap
                                     </label>
                                     <input
-                                        className="w-full rounded p-2 text-black mt-1"
+                                        className="w-full rounded-sm p-2 text-black mt-1"
                                         type="number"
                                         value={maxCap}
                                         onChange={(e) => setMaxCap(e.target.value)}
@@ -465,7 +465,7 @@ const PreSaleTool = () => {
                             {amountList !== null &&
                                 <div>
                                     <input
-                                        className="w-full rounded p-1 px-2 text-black mt-1 text-sm"
+                                        className="w-full rounded-sm p-1 px-2 text-black mt-1 text-sm"
                                         type="text"
                                         placeholder="Search wallet"
                                         value={walletFilter}
@@ -505,7 +505,7 @@ const PreSaleTool = () => {
                                                         key={index}
                                                         className={holder.toRefundFormatted != holder.amountRefundedFormatted ? "bg-rose-600" : "text-white border-b text-left"}
                                                     >
-                                                        <td className="px-2 py-1">{moment(holder.timeSent).format("D MMM hh:mm:ss a")}</td>
+                                                        <td className="px-2 py-1">{dayjs(holder.timeSent).format("D MMM hh:mm:ss a")}</td>
                                                         <td className="px-2 py-1 ">{holder.address}</td>
                                                         <td className="px-2 py-1">{holder.contribution > 0 ?
                                                             <div><FaCheckCircle className="text-emerald-500" /></div>
@@ -578,7 +578,7 @@ const PreSaleTool = () => {
                                         </span>
                                         <br />
                                         <input
-                                            className="w-full rounded p-2 text-black"
+                                            className="w-full rounded-sm p-2 text-black"
                                             type="text"
                                             value={tokenToAirdrop}
                                             onChange={(e) => setTokenToAirdrop(e.target.value)}
@@ -628,7 +628,7 @@ const PreSaleTool = () => {
                                         </span>
                                         <br />
                                         <input
-                                            className="w-full rounded p-2 text-black"
+                                            className="w-full rounded-sm p-2 text-black"
                                             type="number"
                                             max={100}
                                             min={1}

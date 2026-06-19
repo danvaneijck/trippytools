@@ -173,7 +173,7 @@ const BurnTokens = () => {
                             <label className="text-center">Amount to burn</label>
                             <input
                                 type="number"
-                                className="text-black m-auto p-1 rounded"
+                                className="text-black m-auto p-1 rounded-sm"
                                 value={amountToBurn}
                                 onChange={(e) => setAmountToBurn(e.target.value)}
                                 placeholder="0.0"
@@ -183,7 +183,7 @@ const BurnTokens = () => {
 
                     {tokenInfo !== null &&
                         <div
-                            className={`bg-slate-800 w-40 m-auto mt-5 p-2 text-center rounded shadow-lg ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:cursor-pointer'}`}
+                            className={`bg-slate-800 w-40 m-auto mt-5 p-2 text-center rounded-sm shadow-lg ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:cursor-pointer'}`}
                             onClick={!loading ? sendBurn : undefined}
                         >
                             {loading ? 'Burning...' : 'Burn Tokens'}
@@ -212,7 +212,7 @@ const BurnTokens = () => {
                                     </a>
                                     <button
                                         onClick={copyToClipboard}
-                                        className="ml-3 px-2 py-1 text-xs bg-gray-600 rounded hover:bg-gray-500 transition-colors"
+                                        className="ml-3 px-2 py-1 text-xs bg-gray-600 rounded-sm hover:bg-gray-500 transition-colors"
                                     >
                                         {copied ? 'Copied!' : 'Copy'}
                                     </button>

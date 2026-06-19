@@ -27,7 +27,7 @@ const ConvertModal = ({ onClose, cw20Balance, bankBalance, convertToBank, conver
         : (amount);
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 ">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 ">
             <div className="bg-customGray p-6 rounded-lg shadow-lg max-w-sm w-full slide-in">
                 <h2 className="text-center mb-2 font-magic text-3xl">Convert {conversionDirection === 'cw20ToBank' ? 'CW20 to Bank' : 'Bank to CW20'}</h2>
                 <div className='mb-4 text-sm'>
@@ -76,7 +76,7 @@ const ConvertModal = ({ onClose, cw20Balance, bankBalance, convertToBank, conver
                         type="text"
                         value={outputAmount}
                         readOnly
-                        className="w-full p-2 border border-gray-300 rounded bg-gray-100 text-black"
+                        className="w-full p-2 border border-gray-300 rounded-sm bg-gray-100 text-black"
                     />
                 </div>
 

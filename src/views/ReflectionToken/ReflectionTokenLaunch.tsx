@@ -90,9 +90,9 @@ const ReflectionTokenLaunch = () => {
                 />
             }
             <div className="flex flex-col min-h-screen bg-customGray">
-                <div className="pt-20 flex-grow mx-2">
+                <div className="pt-20 grow mx-2">
                     <div className="flex justify-center items-center min-h-full">
-                        <div className="w-full max-w-screen-md px-2 pb-10">
+                        <div className="w-full max-w-(--breakpoint-md) px-2 pb-10">
                             {newTokenAddress && newTreasuryAddress ? (
                                 <TokenSetupWizard
                                     treasuryAddress={newTreasuryAddress}
@@ -112,28 +112,28 @@ const ReflectionTokenLaunch = () => {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-base font-bold text-white">Token Name</label>
-                                                <input type="text" className="text-black w-full rounded p-2 text-sm" onChange={(e) => setTokenName(e.target.value)} value={tokenName} />
+                                                <input type="text" className="text-black w-full rounded-sm p-2 text-sm" onChange={(e) => setTokenName(e.target.value)} value={tokenName} />
                                             </div>
                                             <div>
                                                 <label className="block text-base font-bold text-white">Token Symbol</label>
-                                                <input type="text" className="text-black w-full rounded p-2 text-sm" onChange={(e) => setTokenSymbol(e.target.value)} value={tokenSymbol} />
+                                                <input type="text" className="text-black w-full rounded-sm p-2 text-sm" onChange={(e) => setTokenSymbol(e.target.value)} value={tokenSymbol} />
                                             </div>
                                             <div>
                                                 <label className="block text-base font-bold text-white">Total Supply</label>
-                                                <input type="number" className="text-black w-full rounded p-2 text-sm" onChange={(e) => setTokenSupply(Number(e.target.value))} value={tokenSupply} />
+                                                <input type="number" className="text-black w-full rounded-sm p-2 text-sm" onChange={(e) => setTokenSupply(Number(e.target.value))} value={tokenSupply} />
                                             </div>
                                             <div>
                                                 <label className="block text-base font-bold text-white">Decimals</label>
-                                                <input type="number" className="text-black w-full rounded p-2 text-sm" onChange={(e) => setTokenDecimals(Number(e.target.value))} value={tokenDecimals} />
+                                                <input type="number" className="text-black w-full rounded-sm p-2 text-sm" onChange={(e) => setTokenDecimals(Number(e.target.value))} value={tokenDecimals} />
                                             </div>
                                             <div className="md:col-span-2">
                                                 <label className="block text-base font-bold text-white">Description</label>
-                                                <input type="text" className="text-black w-full rounded p-2 text-sm" onChange={(e) => setTokenDescription(e.target.value)} value={tokenDescription} />
+                                                <input type="text" className="text-black w-full rounded-sm p-2 text-sm" onChange={(e) => setTokenDescription(e.target.value)} value={tokenDescription} />
                                             </div>
                                             <div className="md:col-span-2">
                                                 <label className="block font-bold text-white">Token Image URL</label>
                                                 <span className="text-xs">Should be a public URL (e.g., hosted on IPFS).</span>
-                                                <input type="text" className="text-black w-full rounded p-2 text-sm" onChange={(e) => setTokenImageUrl(e.target.value)} value={tokenImageUrl} />
+                                                <input type="text" className="text-black w-full rounded-sm p-2 text-sm" onChange={(e) => setTokenImageUrl(e.target.value)} value={tokenImageUrl} />
                                             </div>
                                         </div>
                                     </div>
@@ -145,22 +145,22 @@ const ReflectionTokenLaunch = () => {
                                             <div>
                                                 <label className="block text-base font-bold text-white">Global Tax Rate</label>
                                                 <span className="text-xs">Tax on every transaction (e.g., 0.05 for 5%).</span>
-                                                <input type="number" step="0.01" className="text-black w-full rounded p-2 text-sm" onChange={(e) => setGlobalRate(Number(e.target.value))} value={globalRate} />
+                                                <input type="number" step="0.01" className="text-black w-full rounded-sm p-2 text-sm" onChange={(e) => setGlobalRate(Number(e.target.value))} value={globalRate} />
                                             </div>
                                             <div>
                                                 <label className="block text-base font-bold text-white">Reflection Rate</label>
                                                 <span className="text-xs">Portion of tax for reflection (e.g., 0.5 for 50%).</span>
-                                                <input type="number" step="0.01" className="text-black w-full rounded p-2 text-sm" onChange={(e) => setReflectionRate(Number(e.target.value))} value={reflectionRate} />
+                                                <input type="number" step="0.01" className="text-black w-full rounded-sm p-2 text-sm" onChange={(e) => setReflectionRate(Number(e.target.value))} value={reflectionRate} />
                                             </div>
                                             <div>
                                                 <label className="block text-base font-bold text-white">Burn Rate</label>
                                                 <span className="text-xs">Portion of tax to burn (e.g., 0.1 for 10%).</span>
-                                                <input type="number" step="0.01" className="text-black w-full rounded p-2 text-sm" onChange={(e) => setBurnRate(Number(e.target.value))} value={burnRate} />
+                                                <input type="number" step="0.01" className="text-black w-full rounded-sm p-2 text-sm" onChange={(e) => setBurnRate(Number(e.target.value))} value={burnRate} />
                                             </div>
                                             <div>
                                                 <label className="block text-base font-bold text-white">Anti-Whale Rate</label>
                                                 <span className="text-xs">Max % of supply per transfer (e.g., 0.01 for 1%).</span>
-                                                <input type="number" step="0.001" className="text-black w-full rounded p-2 text-sm" onChange={(e) => setAntiwhaleRate(Number(e.target.value))} value={antiwhaleRate} />
+                                                <input type="number" step="0.001" className="text-black w-full rounded-sm p-2 text-sm" onChange={(e) => setAntiwhaleRate(Number(e.target.value))} value={antiwhaleRate} />
                                             </div>
                                         </div>
                                         <div className="text-xs mt-4">
