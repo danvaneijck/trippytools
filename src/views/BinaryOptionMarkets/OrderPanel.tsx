@@ -4,7 +4,7 @@ import {
     MsgCreateBinaryOptionsMarketOrder,
     IndexerGrpcAccountApi
 } from "@injectivelabs/sdk-ts";
-import { InjectiveExchangeV1Beta1Exchange } from '@injectivelabs/core-proto-ts';
+import { OrderType } from '@injectivelabs/core-proto-ts-v2/generated/injective/exchange/v1beta1/exchange_pb';
 import TokenUtils from '../../modules/tokenUtils';
 import useWalletStore from '../../store/useWalletStore';
 import useNetworkStore from '../../store/useNetworkStore';
@@ -78,7 +78,7 @@ const OrderPanel = (props: {
                 marketId: props.marketId,
                 subaccountId: subAccountId,
                 injectiveAddress: injectiveAddress,
-                orderType: InjectiveExchangeV1Beta1Exchange.OrderType.BUY,
+                orderType: OrderType.BUY,
                 triggerPrice: (Number(price) * Math.pow(10, Number(props.market.quoteToken.decimals))).toString(),
                 feeRecipient: injectiveAddress,
                 price: (Number(price) * Math.pow(10, Number(props.market.quoteToken.decimals))).toString(),
@@ -91,7 +91,7 @@ const OrderPanel = (props: {
                 marketId: props.marketId,
                 subaccountId: subAccountId,
                 injectiveAddress: injectiveAddress,
-                orderType: InjectiveExchangeV1Beta1Exchange.OrderType.BUY,
+                orderType: OrderType.BUY,
                 triggerPrice: (Number(price) * Math.pow(10, Number(props.market.quoteToken.decimals))).toString(),
                 feeRecipient: injectiveAddress,
                 price: (Number(price) * Math.pow(10, Number(props.market.quoteToken.decimals))).toString(),
@@ -139,7 +139,7 @@ const OrderPanel = (props: {
                 marketId: props.marketId,
                 subaccountId: subAccountId,
                 injectiveAddress: injectiveAddress,
-                orderType: InjectiveExchangeV1Beta1Exchange.OrderType.SELL,
+                orderType: OrderType.SELL,
                 triggerPrice: (Number(price) * Math.pow(10, Number(props.market.quoteToken.decimals))).toString(),
                 feeRecipient: injectiveAddress,
                 price: (Number(price) * Math.pow(10, Number(props.market.quoteToken.decimals))).toString(),
@@ -152,7 +152,7 @@ const OrderPanel = (props: {
                 marketId: props.marketId,
                 subaccountId: subAccountId,
                 injectiveAddress: injectiveAddress,
-                orderType: InjectiveExchangeV1Beta1Exchange.OrderType.SELL,
+                orderType: OrderType.SELL,
                 price: (Number(price) * Math.pow(10, Number(props.market.quoteToken.decimals))).toString(),
                 feeRecipient: injectiveAddress,
                 triggerPrice: (Number(price) * Math.pow(10, Number(props.market.quoteToken.decimals))).toString(),
@@ -186,7 +186,7 @@ const OrderPanel = (props: {
                     type="number"
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
-                    className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
+                    className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
                 />
             </div>
             <div>
@@ -195,7 +195,7 @@ const OrderPanel = (props: {
                     type="number"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
-                    className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
+                    className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
                 />
             </div>
             <div>
@@ -240,13 +240,13 @@ const OrderPanel = (props: {
             <div className="flex space-x-4">
                 <button
                     onClick={handleBuy}
-                    className="w-full py-2 px-4 bg-green-500 text-white rounded-md shadow-sm hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    className="w-full py-2 px-4 bg-green-500 text-white rounded-md shadow-xs hover:bg-green-600 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                 >
                     Buy
                 </button>
                 <button
                     onClick={handleSell}
-                    className="w-full py-2 px-4 bg-red-500 text-white rounded-md shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    className="w-full py-2 px-4 bg-red-500 text-white rounded-md shadow-xs hover:bg-red-600 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                 >
                     Sell
                 </button>

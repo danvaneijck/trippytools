@@ -37,10 +37,10 @@ const TokenLaunch = () => {
                 />
             }
             <div className="flex flex-col min-h-screen bg-customGray">
-                <div className="pt-20 flex-grow mx-2">
+                <div className="pt-20 grow mx-2">
                     {networkKey == "mainnet" && <div className="flex "><ShroomBalance /></div>}
                     <div className="flex justify-center items-center min-h-full">
-                        <div className="w-full max-w-screen-sm px-2 pb-10">
+                        <div className="w-full max-w-(--breakpoint-sm) px-2 pb-10">
                             <div className="flex flex-row justify-center items-center">
                                 <div>
                                     <div className="text-center text-3xl font-magic">Launch new token</div>
@@ -65,7 +65,7 @@ const TokenLaunch = () => {
                                     </label>
                                     <input
                                         type="text"
-                                        className="text-black w-full rounded p-1 text-sm"
+                                        className="text-black w-full rounded-sm p-1 text-sm"
                                         onChange={(e) =>
                                             setTokenName(e.target.value)
                                         }
@@ -81,7 +81,7 @@ const TokenLaunch = () => {
 
                                     <input
                                         type="text"
-                                        className="text-black w-full rounded p-1 text-sm"
+                                        className="text-black w-full rounded-sm p-1 text-sm"
                                         onChange={(e) =>
                                             setTokenSymbol(e.target.value)
                                         }
@@ -98,7 +98,7 @@ const TokenLaunch = () => {
                                 </label>
                                 <input
                                     type="text"
-                                    className="text-black w-full rounded p-1 text-sm"
+                                    className="text-black w-full rounded-sm p-1 text-sm"
                                     onChange={(e) =>
                                         setTokenDescription(e.target.value)
                                     }
@@ -114,7 +114,7 @@ const TokenLaunch = () => {
                                     </label>
                                     <input
                                         type="number"
-                                        className="text-black w-full rounded p-1 text-sm"
+                                        className="text-black w-full rounded-sm p-1 text-sm"
                                         onChange={(e) =>
                                             setTokenSupply(Number(e.target.value))
                                         }
@@ -129,7 +129,7 @@ const TokenLaunch = () => {
                                     </label>
                                     <input
                                         type="number"
-                                        className="text-black w-full rounded p-1 text-sm"
+                                        className="text-black w-full rounded-sm p-1 text-sm"
                                         onChange={(e) =>
                                             setTokenDecimals(Number(e.target.value))
                                         }
@@ -147,7 +147,7 @@ const TokenLaunch = () => {
                                 <span className="text-xs">the logo of your token, should be hosted on IPFS and should be a small webp image and accessible via https://</span>
                                 <input
                                     type="text"
-                                    className="text-black w-full rounded p-1 text-sm"
+                                    className="text-black w-full rounded-sm p-1 text-sm"
                                     onChange={(e) =>
                                         setTokenImageUrl(e.target.value)
                                     }

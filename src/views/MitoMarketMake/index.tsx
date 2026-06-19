@@ -197,7 +197,7 @@ const MitoMarketMake = () => {
                     }
                     {selectedVault !== null &&
                         <div
-                            className="bg-slate-800 w-40 m-auto mt-5 p-2 text-center rounded shadow-lg hover:cursor-pointer"
+                            className="bg-slate-800 w-40 m-auto mt-5 p-2 text-center rounded-sm shadow-lg hover:cursor-pointer"
                             onClick={sendMarketMake}
                         >
                             send market make

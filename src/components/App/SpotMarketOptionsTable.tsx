@@ -26,7 +26,7 @@ const SpotMarketConfigDropdownTable = () => {
         <div className="w-full max-w-4xl mx-auto mt-5 ">
             <button
                 onClick={toggleDropdown}
-                className="w-full bg-slate-900 rounded-lg text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                className="w-full bg-slate-900 rounded-lg text-white font-bold py-2 px-4 rounded-sm focus:outline-hidden focus:shadow-outline"
             >
                 {isOpen ? 'Hide Suggested Tick Sizes' : 'Show Suggested Tick Sizes'}
             </button>

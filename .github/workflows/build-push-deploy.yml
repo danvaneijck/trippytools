@@ -1,0 +1,108 @@
+name: Build, Push & Deploy
+
+# Builds the trippytools static SPA into a Docker image, pushes it to GHCR, then
+# SSHes the trippy box to pull + (re)start the `trippytools` service that lives
+# in the trippinj_docker_env compose stack.
+#
+# The Docker build's own `yarn build` is the hard gate — a broken build can't
+# produce an image and the deploy job is skipped.
+#
+# A separate `quality` job runs `yarn typecheck` + `yarn lint` for visibility but
+# is NON-BLOCKING (continue-on-error): this repo carries a large pre-existing
+# type/lint debt (Vercel only ever ran `vite build`). Ratchet those counts down
+# over time, then flip continue-on-error off to make it a real gate.
+#
+# Required repo secrets:
+#   REMOTE_HOST / REMOTE_USER / SSH_PRIVATE_KEY  — same trippy box + deploy user
+#                                                  as the trippinj backend CI.
+#   VITE_TG_BOT_TOKEN / VITE_TG_CHAT_ID          — baked into the public bundle
+#                                                  (extractable; see README).
+
+on:
+  push:
+    branches: [ "master" ]
+    paths-ignore:
+      - "**.md"
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/trippytools
+
+jobs:
+  quality:
+    # Non-blocking type/lint visibility. Does NOT gate build-and-push or deploy.
+    # --ignore-scripts skips the wallet-strategy native postinstall (usb/node-hid
+    # node-gyp) — tsc/eslint only need the published type defs, not native bins.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+      - run: yarn install --frozen-lockfile --ignore-scripts --network-timeout 600000
+      - name: Typecheck (non-blocking)
+        continue-on-error: true
+        run: yarn typecheck
+      - name: Lint (non-blocking)
+        continue-on-error: true
+        run: yarn lint
+
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: version
+        run: echo "tag=sha-$(echo ${{ github.sha }} | cut -c1-7)" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: prod
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.tag }}
+          build-args: |
+            VITE_HASURA_URL=https://api.trippyinj.xyz/v1/graphql
+            VITE_CHOICE_URL=https://api.choice.exchange/v1/graphql
+            VITE_TG_BOT_TOKEN=${{ secrets.VITE_TG_BOT_TOKEN }}
+            VITE_TG_CHAT_ID=${{ secrets.VITE_TG_CHAT_ID }}
+          cache-from: type=gha,scope=trippytools
+          cache-to: type=gha,mode=max,scope=trippytools
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Deploy to trippy via SSH
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/lib/deploy/trippinj_docker_env
+            # Keep the server compose in sync so a newly-added service definition
+            # is picked up. Fast-forward only — the live .env is gitignored.
+            git pull --ff-only
+            # ARGS scopes both the `pull` and `up` recipes to just trippytools.
+            make up ARGS=trippytools
+            docker image prune -f

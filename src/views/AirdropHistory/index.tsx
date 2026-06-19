@@ -58,7 +58,7 @@ const AirdropHistory = () => {
 
                         <div className="text-white text-2xl font-magic">Airdrop History</div>
                         <div className="flex flex-row justify-end mb-5">
-                            <Link to="/airdrop" className="bg-slate-800 p-2 mt-2 rounded  text-sm">
+                            <Link to="/airdrop" className="bg-slate-800 p-2 mt-2 rounded-sm  text-sm">
                                 Do airdrop
                             </Link>
                         </div>
@@ -68,7 +68,7 @@ const AirdropHistory = () => {
 
                             //     <div className="flex flex-row items-center">
                             //         <PiParachute className="mr-2 text-2xl" />
-                            //         {moment(value.time).fromNow()}
+                            //         {dayjs(value.time).fromNow()}
 
                             //     </div>
                             //     <a

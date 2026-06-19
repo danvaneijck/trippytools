@@ -32,7 +32,7 @@ const TokenSelect = ({ options, selectedOption, setSelectedOption }) => {
     return (
         <div className='token-select-container mt-1'>
             {showPasteButton && (
-                <button onClick={handlePaste} className="text-xs bg-slate-700 p-1 rounded shadow-lg mb-1 mt-1">
+                <button onClick={handlePaste} className="text-xs bg-slate-700 p-1 rounded-sm shadow-lg mb-1 mt-1">
                     Paste from clipboard
                 </button>
             )}
@@ -49,7 +49,7 @@ const TokenSelect = ({ options, selectedOption, setSelectedOption }) => {
                 formatCreateLabel={(inputValue) => `${inputValue}`}
                 formatOptionLabel={(data) => (
                     <div className='flex flex-row items-center'>
-                        {data.img && <IPFSImage className={"rounded mr-2"} width={30} ipfsPath={data.img} />}
+                        {data.img && <IPFSImage className={"rounded-sm mr-2"} width={30} ipfsPath={data.img} />}
                         {data.label}
                     </div>
                 )}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
-import moment from "moment";
+import dayjs from "dayjs";
 import ViewMarketModal from "./ViewMarketModal";
 import NewMarketModal from "./NewMarketModal";
 import { useSearchParams } from 'react-router-dom';
@@ -75,9 +75,9 @@ const BinaryOptionMarkets = () => {
                     {showNewMarket && <NewMarketModal setShowModal={setShowNewMarket} setLoaded={setLoaded} />}
 
                     <div className="flex flex-col min-h-screen pb-10 bg-customGray">
-                        <div className="pt-14 flex-grow mx-2 pb-20">
+                        <div className="pt-14 grow mx-2 pb-20">
                             <div className="flex justify-center items-center min-h-full">
-                                <div className="w-full max-w-screen-xl px-2 py-10">
+                                <div className="w-full max-w-(--breakpoint-xl) px-2 py-10">
                                     <div className="text-center">
                                         <div className="text-xl">
                                             Binary Option Markets
@@ -92,7 +92,7 @@ const BinaryOptionMarkets = () => {
                                         }}>
                                             <input
                                                 type="checkbox"
-                                                className="text-black w-full rounded p-1 text-sm"
+                                                className="text-black w-full rounded-sm p-1 text-sm"
                                                 onChange={() => {
                                                     setStatus("active")
 
@@ -110,7 +110,7 @@ const BinaryOptionMarkets = () => {
                                         }}>
                                             <input
                                                 type="checkbox"
-                                                className="text-black w-full rounded p-1 text-sm"
+                                                className="text-black w-full rounded-sm p-1 text-sm"
                                                 onChange={() => {
                                                     setStatus("expired")
 
@@ -128,7 +128,7 @@ const BinaryOptionMarkets = () => {
                                         }}>
                                             <input
                                                 type="checkbox"
-                                                className="text-black w-full rounded p-1 text-sm"
+                                                className="text-black w-full rounded-sm p-1 text-sm"
                                                 onChange={() => {
                                                     setStatus("demolished")
 
@@ -209,10 +209,10 @@ const BinaryOptionMarkets = () => {
                                                                 {market.oracleProvider}
                                                             </td>
                                                             <td className="px-6 py-1">
-                                                                {moment.unix(market.settlementTimestamp).fromNow()}
+                                                                {dayjs.unix(market.settlementTimestamp).fromNow()}
                                                             </td>
                                                             <td className="px-6 py-1">
-                                                                {moment.unix(market.expirationTimestamp).fromNow()}
+                                                                {dayjs.unix(market.expirationTimestamp).fromNow()}
                                                             </td>
                                                             <td className="px-6 py-1">
                                                                 {market.settlementPrice}

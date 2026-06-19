@@ -4,9 +4,9 @@ import Footer from "../../components/App/Footer";
 const ReflectionTokenLaunchpad = () => {
     return (
         <div className="flex flex-col min-h-screen bg-customGray">
-            <div className="pt-20 flex-grow mx-2">
+            <div className="pt-20 grow mx-2">
                 <div className="flex justify-center items-center min-h-full">
-                    <div className="w-full max-w-screen-md px-2 pb-10 text-center">
+                    <div className="w-full max-w-(--breakpoint-md) px-2 pb-10 text-center">
                         <div className="text-3xl font-magic mb-4">Reflection Token Launchpad</div>
                         <p className="text-slate-300 mb-10">
                             Create a new CW20 reflection token with advanced tax features or manage your existing token.

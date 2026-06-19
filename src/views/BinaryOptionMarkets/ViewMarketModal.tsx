@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { CircleLoader } from "react-spinners";
 import TokenUtils from "../../modules/tokenUtils";
-import moment from "moment";
+import dayjs from "dayjs";
 import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
 
@@ -58,11 +58,11 @@ const ViewMarketModal = (props: {
     return (
         <>
             <div
-                className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none text-white text-sm"
+                className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-hidden focus:outline-hidden text-white text-sm"
             >
                 <div className="relative w-auto my-4 mx-auto max-w-5xl">
-                    <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-slate-800 outline-none focus:outline-none">
-                        <div className="flex items-start justify-between p-4 border-b border-solid border-blueGray-900 rounded-sm">
+                    <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-slate-800 outline-hidden focus:outline-hidden">
+                        <div className="flex items-start justify-between p-4 border-b border-solid border-blueGray-900 rounded-xs">
                             <h3 className="text-xl font-semibold">
                                 View Market {market && market.ticker}
                             </h3>
@@ -141,7 +141,7 @@ const ViewMarketModal = (props: {
                                                     className="text-white border-b text-left"
                                                 >
                                                     <td className="py-1">
-                                                        {moment(order.createdAt).format()}
+                                                        {dayjs(order.createdAt).format()}
                                                     </td>
                                                     <td className="py-1">
                                                         {order.direction}
@@ -179,7 +179,7 @@ const ViewMarketModal = (props: {
                         </div>)}
                         <div className="flex items-center justify-end p-4 border-t border-solid border-blueGray-200 rounded-b">
                             <button
-                                className="text-slate-500 background-transparent font-bold uppercase px-6 py-2 text-sm outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                                className="text-slate-500 background-transparent font-bold uppercase px-6 py-2 text-sm outline-hidden focus:outline-hidden mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
                                 onClick={() => props.setShowModal(null)}
                             >

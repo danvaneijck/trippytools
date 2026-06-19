@@ -3,7 +3,7 @@ import TokenUtils from "../../modules/tokenUtils";
 import Footer from "../../components/App/Footer";
 import { processAccountTx } from "../../modules/parseTx";
 import { formatTransactionData } from "../../modules/formatTx";
-import moment from "moment";
+import dayjs from "dayjs";
 import { GridLoader } from "react-spinners";
 import { useSearchParams } from 'react-router-dom';
 import useWalletStore from "../../store/useWalletStore";
@@ -80,7 +80,7 @@ const WalletExport = () => {
                     <div className="flex flex-col justify-center mt-5 items-center">
                         <label className="text-center mb-1">Wallet Address</label>
                         <input
-                            className="text-black m-auto p-1 rounded w-1/2"
+                            className="text-black m-auto p-1 rounded-sm w-1/2"
                             value={walletAddress}
                             onChange={(e) => setWalletAddress(e.target.value)}
                         />
@@ -136,8 +136,8 @@ const WalletExport = () => {
                                             <td className="col-span-1 px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis" title={row["Block Number"]}>
                                                 {row["Block Number"]}
                                             </td>
-                                            <td className="col-span-1 px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis" title={moment(row["Block Time"]).format()}>
-                                                {moment(row["Block Time"]).format()}
+                                            <td className="col-span-1 px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis" title={dayjs(row["Block Time"]).format()}>
+                                                {dayjs(row["Block Time"]).format()}
                                             </td>
                                             <td className="col-span-1 px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis" title={row["TX Hash"]}>
                                                 <a href={`https://explorer.injective.network/transaction/${row['TX Hash']}`}>
