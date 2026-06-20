@@ -1,365 +1,570 @@
-import { useCallback, useEffect, useState } from "react";
-import TokenUtils from "../../modules/tokenUtils";
-import Footer from "../../components/App/Footer";
-import { humanReadableAmount } from "../../utils/helpers";
-import { SiConvertio } from "react-icons/si";
-import ConvertModal from "./ConvertModal";
-import { MsgExecuteContractCompat } from "@injectivelabs/sdk-ts";
-import { INJ_DENOM } from "@injectivelabs/utils";
-import { gql, useQuery } from "@apollo/client";
-import { toast, ToastContainer } from "react-toastify";
-import { Link } from "react-router-dom";
-import choice from "../../assets/choice.svg"
-import useWalletStore from "../../store/useWalletStore";
-import useNetworkStore from "../../store/useNetworkStore";
-import { performTransaction } from "../../utils/walletStrategy";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery } from '@apollo/client';
+import { MsgExecuteContractCompat } from '@injectivelabs/sdk-ts';
+import { INJ_DENOM } from '@injectivelabs/utils';
+import { toast, ToastContainer } from 'react-toastify';
+import { SiConvertio } from 'react-icons/si';
+import { FiRefreshCw, FiUsers } from 'react-icons/fi';
+import { ClipLoader } from 'react-spinners';
 
-const HOLDER_QUERY = gql`
-query getTokenHolders($address: String!, $addresses: [String!], $balanceMin: float8) {
-  token_info:token_tracker_token_by_pk(address: $address){
-    address
-    name
-    symbol
-    total_supply
-    circulating_supply
-    decimals
-    holders_last_updated
-    holders_query_progress
-    holders_save_progress
-  }
-  holders: wallet_tracker_balance(where: {token_id: {_in: $addresses}, balance: { _gt: $balanceMin }}, order_by: {balance:desc}) {
-    wallet_id
-    balance
-    percentage_held
-    token_id
-    id
-  }
-  holder_aggregate: wallet_tracker_balance_aggregate(
-    where: {
-      token_id: { _in: $addresses }
-      balance: { _gt: 0 } 
-    }
-  ) {
-    aggregate {
-      count
-    }
-  }
+import TokenUtils from '../../modules/tokenUtils';
+import Footer from '../../components/App/Footer';
+import ShroomMarkets from '../../components/App/markets';
+import {
+    formatAmount,
+    formatPrice,
+    formatUsd,
+    shortAddr,
+    timeAgo,
+} from '../../components/App/markets/format';
+import { humanReadableAmount } from '../../utils/helpers';
+import { performTransaction } from '../../utils/walletStrategy';
+import choiceClient from '../../utils/choiceApolloClient';
+import useWalletStore from '../../store/useWalletStore';
+import useNetworkStore from '../../store/useNetworkStore';
+import choice from '../../assets/choice.svg';
+import ConvertModal from './ConvertModal';
+import LiquidityBreakdown from './LiquidityBreakdown';
+import { SectionHeader } from './ui';
+import { PANEL } from './styles';
+import {
+    CHOICE_SHROOM_INJ,
+    DOJO_SHROOM_INJ,
+    ECOSYSTEM_HOLDERS_QUERY,
+    fetchChoicePools,
+    type HolderInfo,
+    MITO_VAULT,
+    parseHolderInfo,
+    parseTokenStats,
+    type PoolLiq,
+    SAI_DENOM,
+    SAI_HOLDER_IDS,
+    SHROOM_BANK_DENOM,
+    SHROOM_CW,
+    SHROOM_HOLDER_IDS,
+    TOKEN_STATS_QUERY,
+    type TokenStat,
+    tokenTvl,
+    tokenVol24h,
+    totalTvl,
+    UPDATE_TOKEN_HOLDERS_MUTATION,
+} from './ecosystem';
+
+// Fallback mushroom icon for the header before the Choice token row resolves.
+const SHROOM_LOGO_FALLBACK =
+    'https://wsrv.nl/?url=https%3A%2F%2Fbafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link%2Fshroom.jpg&n=-1&w=64&h=64';
+const SHROOM_TRADE = `https://choice.exchange/swap?input=inj&output=${SHROOM_CW}&volumeSplitting=true`;
+const SAI_TRADE = `https://choice.exchange/swap?input=inj&output=${encodeURIComponent(SAI_DENOM)}&volumeSplitting=true`;
+
+const SHROOM_ACCENT = '#f59e0b';
+const SAI_ACCENT = '#10b981';
+const UP = '#16c784';
+const DOWN = '#ea3943';
+
+// INJ-side reserve (whole INJ) of a CW pool's `assets` array.
+const injReserve = (amounts: any): number => {
+    const assets = amounts?.assets;
+    if (!Array.isArray(assets)) return 0;
+    const a = assets.find(
+        (x: any) =>
+            (x?.info?.native_token && x.info.native_token.denom === INJ_DENOM) ||
+            (x?.info?.token && x.info.token.contract_addr === INJ_DENOM),
+    );
+    return a ? Number(a.amount) / 1e18 : 0;
+};
+
+// ---- small presentational helpers ---------------------------------------
+
+// Aggregate stat in the hero strip; the headline (total liquidity) gets the
+// brand colour + larger type, the rest stay quiet.
+const HeroStat = ({
+    label,
+    value,
+    highlight,
+}: {
+    label: string;
+    value: string;
+    highlight?: boolean;
+}) => (
+    <div className="flex flex-col">
+        <span className="text-[11px] uppercase tracking-wide text-white/40">{label}</span>
+        <span
+            className={`mt-0.5 font-bold tabular-nums ${
+                highlight ? 'text-xl text-trippyYellow md:text-2xl' : 'text-lg text-white'
+            }`}
+        >
+            {value}
+        </span>
+    </div>
+);
+
+const ChangeBadge = ({ value }: { value: number }) => {
+    const up = value >= 0;
+    const c = up ? UP : DOWN;
+    return (
+        <span
+            className="mt-1 inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums"
+            style={{ color: c, backgroundColor: `${c}1f` }}
+        >
+            {up ? '▲' : '▼'} {Math.abs(value).toFixed(2)}%
+        </span>
+    );
+};
+
+const StatCell = ({ label, value }: { label: string; value: string }) => (
+    <div className="rounded-xl bg-white/3 px-3 py-2.5">
+        <div className="text-[11px] uppercase tracking-wide text-white/40">{label}</div>
+        <div className="mt-0.5 text-sm font-semibold tabular-nums text-white">{value}</div>
+    </div>
+);
+
+// Clickable holder count — tapping fires a holders refresh against the backend
+// (same mechanism as the standalone Token Holders page) and shows live progress.
+const HoldersBar = ({
+    info,
+    onRefresh,
+}: {
+    info: HolderInfo;
+    onRefresh: () => void;
+}) => {
+    // Keep "updated Xm ago" fresh without calling Date.now() during render.
+    const [now, setNow] = useState(() => Date.now());
+    useEffect(() => {
+        const id = window.setInterval(() => setNow(Date.now()), 30000);
+        return () => window.clearInterval(id);
+    }, []);
+    const updated =
+        info.lastUpdated != null
+            ? `updated ${timeAgo(new Date(info.lastUpdated).getTime(), now)} ago`
+            : 'tap to refresh';
+    return (
+        <button
+            type="button"
+            onClick={() => {
+                if (!info.inProgress) onRefresh();
+            }}
+            disabled={info.inProgress}
+            title="Refresh holder data"
+            className="group relative mt-2 flex w-full items-center justify-between gap-2 overflow-hidden rounded-lg bg-white/3 px-3 py-2 text-left transition hover:bg-white/7 disabled:cursor-default"
+        >
+            <span className="flex items-center gap-2 text-sm">
+                <FiUsers className="text-white/45" />
+                <span className="font-semibold tabular-nums text-white">
+                    {info.count != null ? info.count.toLocaleString() : '—'}
+                </span>
+                <span className="text-white/40">holders</span>
+            </span>
+            {info.inProgress ? (
+                <span className="flex items-center gap-1.5 text-xs font-medium text-trippyYellow">
+                    <ClipLoader size={12} color="#f9d73f" />
+                    refreshing
+                    {info.progressPct != null ? ` ${info.progressPct.toFixed(0)}%` : '…'}
+                </span>
+            ) : (
+                <span className="flex items-center gap-1.5 text-xs text-white/40 transition group-hover:text-white/70">
+                    {updated}
+                    <FiRefreshCw className="transition group-hover:rotate-90" />
+                </span>
+            )}
+            {info.inProgress && info.progressPct != null && (
+                <span
+                    className="absolute bottom-0 left-0 h-0.5 bg-trippyYellow"
+                    style={{ width: `${info.progressPct}%` }}
+                />
+            )}
+        </button>
+    );
+};
+
+interface TokenCardProps {
+    symbol: string;
+    name?: string | null;
+    accent: string;
+    logo?: string | null;
+    price: string;
+    change24h: number | null;
+    marketCap: string;
+    fdv: string;
+    liquidity: string;
+    vol24h: string;
+    holders?: HolderInfo;
+    onRefreshHolders?: () => void;
+    extra?: string;
+    tradeUrl: string;
 }
-`
 
-const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
-const CW20_ADAPTER = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
-const SHROOM_BANK_DENOM = `factory/${CW20_ADAPTER}/${SHROOM_TOKEN_ADDRESS}`
-const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
-const SHROOM_CHOICE_PAIR_ADDRESS = "inj1uyjjnykz0slq0w4n6k2xgleykqk9k5qkfctmw5"
+const TokenCard = ({
+    symbol,
+    name,
+    accent,
+    logo,
+    price,
+    change24h,
+    marketCap,
+    fdv,
+    liquidity,
+    vol24h,
+    holders,
+    onRefreshHolders,
+    extra,
+    tradeUrl,
+}: TokenCardProps) => (
+    <article className="relative overflow-hidden rounded-2xl border border-white/10 bg-linear-to-b from-white/5 to-white/1 p-5">
+        {/* soft accent glow in the corner */}
+        <div
+            className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full opacity-20 blur-3xl"
+            style={{ background: accent }}
+        />
+        <div className="relative">
+            <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                    {logo ? (
+                        <img
+                            src={logo}
+                            alt={symbol}
+                            className="h-11 w-11 shrink-0 rounded-full object-cover ring-1 ring-white/15"
+                        />
+                    ) : (
+                        <span
+                            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-black"
+                            style={{ background: accent }}
+                        >
+                            {symbol.slice(0, 2)}
+                        </span>
+                    )}
+                    <div className="min-w-0">
+                        <div className="truncate text-lg font-bold leading-tight text-white">
+                            {symbol}
+                        </div>
+                        {name && (
+                            <div className="truncate text-xs text-white/40">{name}</div>
+                        )}
+                    </div>
+                </div>
+                <div className="text-right">
+                    <div
+                        className="text-2xl font-bold leading-none tabular-nums"
+                        style={{ color: accent }}
+                    >
+                        {price}
+                    </div>
+                    {change24h != null && <ChangeBadge value={change24h} />}
+                </div>
+            </div>
 
-const MITO_VAULT_ADDRESS = "inj1g89dl74lyre9q6rjua9l37pcc7psnw66capurp"
+            <dl className="mt-5 grid grid-cols-2 gap-2">
+                <StatCell label="Market cap" value={marketCap} />
+                <StatCell label="FDV" value={fdv} />
+                <StatCell label="Liquidity" value={liquidity} />
+                <StatCell label="24h volume" value={vol24h} />
+            </dl>
+
+            {holders && onRefreshHolders && (
+                <HoldersBar info={holders} onRefresh={onRefreshHolders} />
+            )}
+
+            {extra && (
+                <div className="mt-3 rounded-lg bg-white/3 px-3 py-2 text-center text-xs text-white/50">
+                    {extra}
+                </div>
+            )}
+
+            <a
+                href={tradeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 flex items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-semibold transition hover:brightness-125"
+                style={{
+                    color: accent,
+                    backgroundColor: `${accent}1a`,
+                    borderColor: `${accent}40`,
+                }}
+            >
+                Trade {symbol} on Choice
+                <img src={choice} className="w-4" />
+            </a>
+        </div>
+    </article>
+);
+
+const BalanceTile = ({
+    label,
+    amount,
+    usd,
+}: {
+    label: string;
+    amount: number;
+    usd: number;
+}) => (
+    <div className="rounded-xl bg-white/3 p-3 text-center">
+        <div className="text-[11px] uppercase tracking-wide text-white/40">{label}</div>
+        <div className="mt-1 text-sm font-semibold tabular-nums text-white">
+            {humanReadableAmount(amount)} SHROOM
+        </div>
+        <div className="text-xs tabular-nums text-white/40">${usd.toFixed(2)}</div>
+    </div>
+);
+
+// ---- view ---------------------------------------------------------------
 
 const ShroomHub = () => {
-    const { connectedWallet: connectedAddress } = useWalletStore()
-    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
+    const { connectedWallet: connectedAddress } = useWalletStore();
+    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore();
 
-    const [shroomPrice, setShroomPrice] = useState(0)
-    const [cw20Balance, setCw20Balance] = useState(0)
-    const [bankBalance, setBankBalance] = useState(0)
+    // liquidity sources
+    const [pools, setPools] = useState<PoolLiq[]>([]);
+    const [poolsLoading, setPoolsLoading] = useState(true);
 
-    const [totalSupply, setTotalSupply] = useState(0)
-    const [marketCap, setMarketCap] = useState(0)
-    const [mitoLiquidity, setMitoLiquidity] = useState(0)
-    const [dojoLiquidity, setDojoLiquidity] = useState(0)
-    const [choiceLiquidity, setChoiceLiquidity] = useState(0)
+    // wallet
+    const [cw20Balance, setCw20Balance] = useState(0);
+    const [bankBalance, setBankBalance] = useState(0);
+    const [convertModal, setConvertModal] = useState(false);
 
-    const [numHolders, setNumHolders] = useState(0)
-    const [burnedAmount, setBurnedAmount] = useState(0)
-
-    const [convertModal, setConvertModal] = useState(false)
-
-
-    const { data } = useQuery(HOLDER_QUERY, {
-        fetchPolicy: "network-only",
+    // token stats — straight from the Choice token model (price / mc / fdv /
+    // supply / burn / 24h change / logo), keyed by address to dodge the
+    // duplicate "SHROOM" symbol row.
+    const { data: statsData } = useQuery(TOKEN_STATS_QUERY, {
+        client: choiceClient,
+        fetchPolicy: 'cache-and-network',
         pollInterval: 60000,
-        variables: {
-            address: SHROOM_TOKEN_ADDRESS,
-            addresses: [
-                SHROOM_TOKEN_ADDRESS,
-                SHROOM_BANK_DENOM
-            ],
-            balanceMin: 0,
-        }
+        variables: { addresses: [SHROOM_CW, SAI_DENOM] },
     });
 
-    useEffect(() => {
-        if (!data) return;
+    const tokenStats = useMemo<Record<string, TokenStat>>(
+        () => parseTokenStats(statsData?.tokens_token ?? []),
+        [statsData],
+    );
+    const shroom = tokenStats.SHROOM;
+    const sai = tokenStats.SAI;
+    const shroomPrice = shroom?.priceUsd ?? 0;
+    const saiPrice = sai?.priceUsd ?? 0;
 
-        const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
-        const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
+    // holder counts + refresh state — from the trippinj backend (default Apollo
+    // client), exactly like the standalone Token Holders page.
+    const { data: holdersData, refetch: refetchHolders } = useQuery(
+        ECOSYSTEM_HOLDERS_QUERY,
+        {
+            fetchPolicy: 'cache-and-network',
+            pollInterval: 15000,
+            variables: { shroom: SHROOM_HOLDER_IDS, sai: SAI_HOLDER_IDS },
+        },
+    );
+    const [updateTokenHolders] = useMutation(UPDATE_TOKEN_HOLDERS_MUTATION);
 
-        const BURN_ADDRESSES = [
-            dojoBurnAddress,
-            injBurnAddress,
-            SHROOM_TOKEN_ADDRESS
-        ]
+    const shroomHolders = useMemo<HolderInfo>(
+        () => parseHolderInfo(holdersData?.shroom_holders, holdersData?.shroom_token),
+        [holdersData],
+    );
+    const saiHolders = useMemo<HolderInfo>(
+        () => parseHolderInfo(holdersData?.sai_holders, holdersData?.sai_token),
+        [holdersData],
+    );
 
-        const balances = data.holders;
-
-        const groupedByWallet = balances.reduce((acc: any, holder: any) => {
-            if (!acc[holder.wallet_id]) {
-                acc[holder.wallet_id] = {
-                    cw20Balance: 0,
-                    bankBalance: 0,
-                    totalBalance: 0,
-                    hasBothTokens: false,
-                    wallet_id: holder.wallet_id
-                };
-            }
-            const isFactoryToken = holder.token_id.includes("factory");
-            const balanceValue = parseFloat(holder.balance);
-            if (isFactoryToken) {
-                acc[holder.wallet_id].bankBalance += balanceValue; // Accumulate bankBalance
-            } else {
-                acc[holder.wallet_id].cw20Balance += balanceValue; // Accumulate cw20Balance
-            }
-            if (acc[holder.wallet_id].cw20Balance > 0 && acc[holder.wallet_id].bankBalance > 0) {
-                acc[holder.wallet_id].hasBothTokens = true;
-            }
-            return acc;
-        }, {});
-
-        let totalSupply: any = Object.values(groupedByWallet).reduce((sum: any, holder: any) => {
-            if (holder.wallet_id === CW20_ADAPTER) {
-                return sum + 0;
-            }
-            return sum + (holder.cw20Balance + holder.bankBalance);
-
-        }, 0);
-
-        totalSupply = Math.round(totalSupply)
-
-        setTotalSupply(totalSupply)
-
-        const finalHolderList = Object.entries(groupedByWallet).map(([wallet_id, holder]: [string, any]) => {
-            return {
-                address: wallet_id,
-                balance: holder.cw20Balance + holder.bankBalance,
-                percentageHeld: (holder.cw20Balance + holder.bankBalance) / totalSupply * 100,
-                cw20Balance: holder.cw20Balance ? holder.cw20Balance : 0,
-                bankBalance: holder.bankBalance ? holder.bankBalance : 0,
-            };
-        }).filter(x => x.balance !== 0).sort((a, b) => b.balance - a.balance)
-
-        setNumHolders(finalHolderList.length);
-
-        const totalBurnedBalance = finalHolderList
-            .filter(addressObj => BURN_ADDRESSES.includes(addressObj.address))
-            .reduce((total, addressObj) => {
-                return total + addressObj.balance;
-            }, 0);
-
-        setBurnedAmount(totalBurnedBalance)
-    }, [data]);
-
-    useEffect(() => {
-        if (shroomPrice && totalSupply) {
-            setMarketCap(shroomPrice * (totalSupply - burnedAmount))
-        }
-    }, [shroomPrice, totalSupply, burnedAmount])
+    const refreshHolders = useCallback(
+        (address: string, symbol: string) => {
+            updateTokenHolders({ variables: { address } })
+                .then(() => {
+                    toast.success(
+                        `Refreshing ${symbol} holders — request sent. This can take a few minutes…`,
+                        { autoClose: 5000, theme: 'dark' },
+                    );
+                    // nudge the count/progress to update soon after the request lands
+                    window.setTimeout(() => void refetchHolders(), 3000);
+                })
+                .catch((e) => console.error('updateTokenHolders failed', e));
+        },
+        [updateTokenHolders, refetchHolders],
+    );
 
     const loadLiquidity = useCallback(async () => {
-        const module = new TokenUtils(networkConfig)
-        const mitoVault = await module.fetchMitoVault(MITO_VAULT_ADDRESS)
+        setPoolsLoading(true);
+        const module = new TokenUtils(networkConfig);
+        try {
+            const [injPrice, mitoVault, dojoAmounts] = await Promise.all([
+                module.getINJPrice(),
+                module.fetchMitoVault(MITO_VAULT).catch(() => null),
+                module.getPoolAmounts(DOJO_SHROOM_INJ).catch(() => null),
+            ]);
+            const inj = Number(injPrice) || 0;
 
-        if (mitoVault) {
-            setMitoLiquidity(mitoVault.currentTvl)
+            // Non-Choice venues, read on-chain.
+            const onchain: PoolLiq[] = [];
+            const mitoTvl = Number(mitoVault?.currentTvl) || 0;
+            if (mitoTvl > 0) {
+                onchain.push({
+                    id: MITO_VAULT,
+                    venue: 'Mito',
+                    pair: 'SHROOM/INJ',
+                    base: 'SHROOM',
+                    quote: 'INJ',
+                    tvlUsd: mitoTvl,
+                    vol24hUsd: null,
+                });
+            }
+            const dojoTvl = injReserve(dojoAmounts) * inj * 2;
+            if (dojoTvl > 0) {
+                onchain.push({
+                    id: DOJO_SHROOM_INJ,
+                    venue: 'DojoSwap',
+                    pair: 'SHROOM/INJ',
+                    base: 'SHROOM',
+                    quote: 'INJ',
+                    tvlUsd: dojoTvl,
+                    vol24hUsd: null,
+                });
+            }
+
+            // Choice pools from the tickers feed; fall back to the one on-chain
+            // Choice pool if the feed is unreachable.
+            let choicePools: PoolLiq[] = [];
+            try {
+                choicePools = await fetchChoicePools({
+                    INJ: inj,
+                    SHROOM: shroomPrice,
+                    SAI: saiPrice,
+                    USDC: 1,
+                });
+            } catch (e) {
+                console.error('choice tickers failed', e);
+            }
+
+            if (choicePools.length) {
+                setPools([...choicePools, ...onchain]);
+            } else {
+                const choiceAmounts = await module
+                    .getPoolAmounts(CHOICE_SHROOM_INJ)
+                    .catch(() => null);
+                const cTvl = injReserve(choiceAmounts) * inj * 2;
+                const fallback: PoolLiq[] =
+                    cTvl > 0
+                        ? [
+                              {
+                                  id: CHOICE_SHROOM_INJ,
+                                  venue: 'Choice',
+                                  pair: 'SHROOM/INJ',
+                                  base: 'SHROOM',
+                                  quote: 'INJ',
+                                  tvlUsd: cTvl,
+                                  vol24hUsd: null,
+                              },
+                          ]
+                        : [];
+                setPools([...fallback, ...onchain]);
+            }
+        } catch (e) {
+            console.error('loadLiquidity failed', e);
+        } finally {
+            setPoolsLoading(false);
         }
-
-        const [baseAssetPrice, pairInfo, poolAmountsDojo, poolAmountsChoice] = await Promise.all([
-            module.getINJPrice(),
-            module.getPairInfo(SHROOM_PAIR_ADDRESS),
-            module.getPoolAmounts(SHROOM_PAIR_ADDRESS),
-            module.getPoolAmounts(SHROOM_CHOICE_PAIR_ADDRESS)
-        ]);
-
-        const baseAssetAmountDojo = poolAmountsDojo.assets.find((asset: any) => {
-            if (asset.info.native_token) {
-                return asset.info.native_token.denom === INJ_DENOM;
-            } else if (asset.info.token) {
-                return asset.info.token.contract_addr === INJ_DENOM;
-            }
-            return false;
-        })?.amount || 0;
-
-        const baseAssetAmountChoice = poolAmountsChoice.assets.find((asset: any) => {
-            if (asset.info.native_token) {
-                return asset.info.native_token.denom === INJ_DENOM;
-            } else if (asset.info.token) {
-                return asset.info.token.contract_addr === INJ_DENOM;
-            }
-            return false;
-        })?.amount || 0;
-
-        const injAmountDojo = baseAssetAmountDojo / Math.pow(10, 18)
-        const dojoLiquidity = injAmountDojo * baseAssetPrice!
-        setDojoLiquidity(dojoLiquidity * 2)
-
-        const injAmountChoice = baseAssetAmountChoice / Math.pow(10, 18)
-        const choiceLiquidity = injAmountChoice * baseAssetPrice!
-        setChoiceLiquidity(choiceLiquidity * 2)
-
-        const quote = await module.getSellQuoteRouter(pairInfo, 1 + "0".repeat(18));
-        const returnAmount = Number(quote.amount) / Math.pow(10, 18);
-        const totalUsdValue = (returnAmount * baseAssetPrice!);
-        setShroomPrice(totalUsdValue);
-
-    }, [networkConfig])
+    }, [networkConfig, shroomPrice, saiPrice]);
 
     const loadBalance = useCallback(async () => {
-        const module = new TokenUtils(networkConfig)
+        const module = new TokenUtils(networkConfig);
         try {
-            const [cw20Balance, bankBalance] = await Promise.all([
-                module.queryTokenForBalance(SHROOM_TOKEN_ADDRESS, connectedAddress as string),
+            const [cw20, bank] = await Promise.all([
+                module.queryTokenForBalance(SHROOM_CW, connectedAddress as string),
                 module.getBalanceOfToken(SHROOM_BANK_DENOM, connectedAddress as string),
             ]);
-            setCw20Balance(Number(cw20Balance.balance) / Math.pow(10, 18))
-            setBankBalance(Number(bankBalance.amount) / Math.pow(10, 18))
-            return
+            setCw20Balance(Number(cw20.balance) / 1e18);
+            setBankBalance(Number(bank.amount) / 1e18);
         } catch (error) {
-            console.error('Failed to update balance and USD value:', error);
+            console.error('Failed to update balance:', error);
         }
-    }, [connectedAddress, networkConfig])
+    }, [connectedAddress, networkConfig]);
 
     useEffect(() => {
-        if (currentNetwork == "mainnet" && connectedAddress) {
-            loadBalance().catch(e => console.error(e))
+        if (currentNetwork === 'mainnet' && connectedAddress) {
+            loadBalance().catch((e) => console.error(e));
         }
-        loadLiquidity().catch(e => console.error(e))
-    }, [currentNetwork, networkConfig, connectedAddress, loadBalance, loadLiquidity])
+        loadLiquidity().catch((e) => console.error(e));
+    }, [currentNetwork, connectedAddress, loadBalance, loadLiquidity]);
 
-    const convertToBank = useCallback(async (amount: any) => {
-        const injectiveAddress = connectedAddress as string
-
-        const module = new TokenUtils(networkConfig)
-        const msg = module.constructCW20ToBankMsg(
-            SHROOM_TOKEN_ADDRESS,
-            amount,
-            18,
-            injectiveAddress
-        )
-
-        const result = await performTransaction(
-            injectiveAddress,
-            [msg]
-        )
-
-        const content = (
+    const txToast = (msg: string, hash?: string) =>
+        toast.success(
             <div>
-                Converted {humanReadableAmount(amount)} CW20 SHROOM to bank
-                <br />
-                <a
-                    href={`https://injscan.com/transaction/${result!['txHash']}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline text-blue-500 text-sm"
-                >
-                    View transaction on explorer
-                </a>
-            </div>
+                {msg}
+                {hash && (
+                    <>
+                        <br />
+                        <a
+                            href={`https://injscan.com/transaction/${hash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-500 underline"
+                        >
+                            View transaction on explorer
+                        </a>
+                    </>
+                )}
+            </div>,
+            { autoClose: 5000, theme: 'dark' },
         );
 
-        toast.success(content, {
-            autoClose: 5000,
-            theme: "dark"
-        });
+    const convertToBank = useCallback(
+        async (amount: any) => {
+            const addr = connectedAddress as string;
+            const module = new TokenUtils(networkConfig);
+            const msg = module.constructCW20ToBankMsg(SHROOM_CW, amount, 18, addr);
+            const result = await performTransaction(addr, [msg]);
+            txToast(
+                `Converted ${humanReadableAmount(amount)} CW20 SHROOM to bank`,
+                result?.['txHash'],
+            );
+            setConvertModal(false);
+            await loadBalance();
+        },
+        [networkConfig, loadBalance, connectedAddress],
+    );
 
-        setConvertModal(false)
-        await loadBalance()
-    }, [networkConfig, loadBalance, connectedAddress])
-
-    const convertToCw20 = useCallback(async (amount: any) => {
-        const injectiveAddress = connectedAddress as string
-
-        const module = new TokenUtils(networkConfig)
-        const msg = module.constructBankToCW20Msg(
-            SHROOM_TOKEN_ADDRESS,
-            amount,
-            18,
-            injectiveAddress
-        )
-
-        const result = await performTransaction(
-            injectiveAddress,
-            [msg]
-        )
-
-        const content = (
-            <div>
-                Converted {humanReadableAmount(amount)} bank SHROOM to CW20
-                <br />
-                <a
-                    href={`https://injscan.com/transaction/${result!['txHash']}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline text-blue-500 text-sm"
-                >
-                    View transaction on explorer
-                </a>
-            </div>
-        );
-
-        toast.success(content, {
-            autoClose: 5000,
-            theme: "dark"
-        });
-
-        setConvertModal(false)
-        await loadBalance()
-    }, [connectedAddress, loadBalance, networkConfig])
+    const convertToCw20 = useCallback(
+        async (amount: any) => {
+            const addr = connectedAddress as string;
+            const module = new TokenUtils(networkConfig);
+            const msg = module.constructBankToCW20Msg(SHROOM_CW, amount, 18, addr);
+            const result = await performTransaction(addr, [msg]);
+            txToast(
+                `Converted ${humanReadableAmount(amount)} bank SHROOM to CW20`,
+                result?.['txHash'],
+            );
+            setConvertModal(false);
+            await loadBalance();
+        },
+        [connectedAddress, loadBalance, networkConfig],
+    );
 
     const sendMarketMake = useCallback(async () => {
-
-        const injectiveAddress = connectedAddress as string
-
-        const msgMarketMake = MsgExecuteContractCompat.fromJSON({
-            sender: injectiveAddress,
-            contractAddress: "inj1g89dl74lyre9q6rjua9l37pcc7psnw66capurp",
-            msg: {
-                market_make: {}
-            },
+        const addr = connectedAddress as string;
+        const msg = MsgExecuteContractCompat.fromJSON({
+            sender: addr,
+            contractAddress: MITO_VAULT,
+            msg: { market_make: {} },
         });
+        const result = await performTransaction(addr, [msg]);
+        txToast('Successfully sent market make', result?.['txHash']);
+        await loadBalance();
+        await loadLiquidity();
+    }, [loadLiquidity, loadBalance, connectedAddress]);
 
-        const result = await performTransaction(
-            injectiveAddress,
-            [msgMarketMake]
-        )
+    // ---- derived ----
+    const totalLiquidity = useMemo(() => totalTvl(pools), [pools]);
+    const totalVol = useMemo(
+        () => pools.reduce((s, p) => s + (p.vol24hUsd ?? 0), 0),
+        [pools],
+    );
+    const shroomLiquidity = useMemo(() => tokenTvl(pools, 'SHROOM'), [pools]);
+    const saiLiquidity = useMemo(() => tokenTvl(pools, 'SAI'), [pools]);
+    const shroomVol = useMemo(() => tokenVol24h(pools, 'SHROOM'), [pools]);
+    const saiVol = useMemo(() => tokenVol24h(pools, 'SAI'), [pools]);
+    const venueCount = useMemo(() => new Set(pools.map((p) => p.venue)).size, [pools]);
 
-        const content = (
-            <div>
-                Successfully sent market make
-                <br />
-                <a
-                    href={`https://injscan.com/transaction/${result!['txHash']}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline text-blue-500 text-sm"
-                >
-                    View transaction on explorer
-                </a>
-            </div>
-        );
-
-        toast.success(content, {
-            autoClose: 5000,
-            theme: "dark"
-        });
-
-        await loadBalance()
-        await loadLiquidity()
-    }, [loadLiquidity, loadBalance, connectedAddress])
-
+    const dash = (s: string, ok: boolean) => (ok ? s : '—');
+    const headerLogo = shroom?.logo ?? SHROOM_LOGO_FALLBACK;
+    const totalBalance = cw20Balance + bankBalance;
 
     return (
         <>
             <ToastContainer />
-            {convertModal &&
+            {convertModal && (
                 <ConvertModal
                     bankBalance={bankBalance}
                     cw20Balance={cw20Balance}
@@ -367,166 +572,171 @@ const ShroomHub = () => {
                     convertToBank={convertToBank}
                     convertToCW20={convertToCw20}
                 />
-            }
+            )}
 
-            <div className="flex flex-col min-h-screen pb-10 bg-customGray">
-                <div className="pt-14 md:pt-24 mx-2 pb-20">
-                    <div className="min-h-full mt-2 md:mt-0">
-                        <div className="text-white text-center text-3xl font-magic mt-5 md:mt-0 flex items-center justify-center">
-                            Shroom Stats
-                            <img
-                                className="w-10 rounded-full ml-2 h-10"
-                                src={"https://wsrv.nl/?url=https%3A%2F%2Fbafybeibqpgy7vh5dtk7wawnjy7svmo3b6xinvog7znoe5jpklpkwaso63m.ipfs.w3s.link%2Fshroom.jpg&n=-1&w=64&h=64"}
-                            />
-                        </div>
-
-                        {/** Token Stats */}
-                        <div className="p-2 rounded-2xl shadow-md">
-                            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-center">
-                                <div className="bg-black/50 p-4 rounded-lg">
-                                    <a
-                                        className="text-sm text-white hover:cursor-pointer"
-                                        href="https://dexscreener.com/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
-                                    >
-                                        Price
-                                    </a>
-                                    <div className="text-xl font-semibold text-trippyYellow">${shroomPrice.toFixed(6)}</div>
-                                </div>
-                                <div className="bg-black/50 p-4 rounded-lg">
-                                    <div className="text-sm text-white">Market Cap</div>
-                                    <div className="text-xl font-semibold text-trippyYellow">${humanReadableAmount(marketCap)}</div>
-                                </div>
-                                <div className="bg-black/50 p-4 rounded-lg">
-                                    <div className="text-sm text-white">Total Liquidity</div>
-                                    <div className="text-xl font-semibold text-trippyYellow">${humanReadableAmount(dojoLiquidity + mitoLiquidity + choiceLiquidity)}</div>
-                                </div>
-                                <div className="bg-black/50 p-4 rounded-lg">
-                                    <a
-                                        className="text-sm text-white hover:cursor-pointer"
-                                        href="https://mito.fi/vault/inj1g89dl74lyre9q6rjua9l37pcc7psnw66capurp/"
-                                    >
-                                        Mito Liquidity
-                                    </a>
-                                    <div className="text-xl font-semibold text-trippyYellow">${humanReadableAmount(mitoLiquidity)}</div>
-                                </div>
-                                <div className="bg-black/50 p-4 rounded-lg">
-                                    <a
-                                        className="text-sm text-white hover:cursor-pointer"
-                                        href="https://dojo.trading/swap?type=swap&from=inj&to=inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
-                                    >
-                                        DojoSwap Liquidity
-                                    </a>
-                                    <div className="text-xl font-semibold text-trippyYellow">${humanReadableAmount(dojoLiquidity)}</div>
-                                </div>
-                                <div className="bg-black/50 p-4 rounded-lg">
-                                    <a
-                                        className="text-sm text-white hover:cursor-pointer"
-                                        href="https://choice.exchange/swap?input=inj&output=inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8&volumeSplitting=true"
-                                    >
-                                        Choice Liquidity
-                                    </a>
-                                    <div className="text-xl font-semibold text-trippyYellow">${humanReadableAmount(choiceLiquidity)}</div>
-                                </div>
-                                <div className="bg-black/50 p-4 rounded-lg col-span-1">
-                                    <div className="text-sm text-white">Total Holders</div>
-                                    <div className="text-xl font-semibold text-trippyYellow">{humanReadableAmount(numHolders)}</div>
-                                </div>
-                                <div className="bg-black/50 p-4 rounded-lg col-span-1">
-                                    <div className="text-sm text-white">Tokens Burned</div>
-                                    <div className="text-xl font-semibold text-trippyYellow">
-                                        {humanReadableAmount(burnedAmount)} (${humanReadableAmount(burnedAmount * shroomPrice)})
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="m-auto text-center mt-5 text-2xl font-semibold">
-                            <Link
-                                className="text-center hover:underline flex justify-center"
-                                to={'https://choice.exchange/swap?input=inj&output=inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8&volumeSplitting=true'}
-                            >
-                                Trade on Choice Exchange <img src={choice} className="w-6 ml-4" />
-                            </Link>
-                        </div>
-
-                        {/** Balances */}
-                        <div
-                            className="bg-black/50 lg:w-1/2 m-auto p-4 rounded-lg mt-5"
-                        >
-                            <div className="text-center mb-2 text-lg font-bold text-ellipsis  overflow-hidden m-auto">
-                                {connectedAddress !== null ? `${connectedAddress.slice(0, 8)}...${connectedAddress.slice(-8)}` : "Connect your wallet"}
-                            </div>
-                            <div
-                                className="flex flex-row space-x-5 md:space-x-20 justify-center text-center items-center"
-                            >
-                                <div>
-                                    <p className="font-bold text-lg">
-                                        CW20 balance
-                                    </p>
-                                    <div>
-                                        {humanReadableAmount(cw20Balance)} SHROOM
-                                    </div>
-                                    <div>
-                                        {(cw20Balance * shroomPrice).toFixed(2)} USD
-                                    </div>
-                                </div>
-
-                                <div
-                                    onClick={() => setConvertModal(true)}
-                                    className="text-center text-xs hover:cursor-pointer border px-5 py-1 rounded-lg transform transition duration-300 hover:scale-110"
-                                >
-                                    <SiConvertio
-                                        size={30}
-                                        className="m-auto"
+            <div className="flex min-h-screen flex-col bg-customGray">
+                <div className="mx-auto w-full max-w-5xl space-y-4 px-3 pt-20 pb-16 sm:px-5 md:space-y-5 md:pt-24">
+                    {/* ---- hero: brand + ecosystem aggregates ---- */}
+                    <section className="overflow-hidden rounded-3xl border border-white/10 bg-linear-to-br from-white/7 via-white/2 to-transparent p-5 md:p-7">
+                        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="relative shrink-0">
+                                    <img
+                                        src={headerLogo}
+                                        alt="SHROOM"
+                                        className="h-14 w-14 rounded-2xl object-cover ring-1 ring-white/15"
                                     />
-                                    <div className="mt-1">Convert</div>
+                                    {sai?.logo && (
+                                        <img
+                                            src={sai.logo}
+                                            alt="SAI"
+                                            className="absolute -bottom-1.5 -right-1.5 h-7 w-7 rounded-full object-cover ring-2 ring-customGray"
+                                        />
+                                    )}
                                 </div>
-
                                 <div>
-                                    <p className="font-bold text-lg">
-                                        Bank balance
-                                    </p>
-                                    <div>
-                                        {humanReadableAmount(bankBalance)} SHROOM
+                                    <div className="text-[11px] uppercase tracking-[0.25em] text-white/40">
+                                        Ecosystem dashboard
                                     </div>
-                                    <div>
-                                        {(bankBalance * shroomPrice).toFixed(2)} USD
-                                    </div>
+                                    <h1 className="font-magic text-3xl leading-tight text-white md:text-4xl">
+                                        SHROOM <span className="text-white/40">×</span> SAI
+                                    </h1>
                                 </div>
-
                             </div>
 
-                            <div className="text-center mt-2">
-                                <p className="font-bold text-lg">
-                                    Total balance
-                                </p>
-                                <div>
-                                    {humanReadableAmount(bankBalance + cw20Balance)} SHROOM
-                                </div>
-                                <div>
-                                    ${humanReadableAmount((cw20Balance + bankBalance) * shroomPrice)} USD
-                                </div>
-                            </div>
-                            <div className="flex justify-center mt-5">
-                                <button
-                                    onClick={() => void sendMarketMake()}
-                                    className="p-1 rounded-lg border"
-                                >
-                                    <div className="text-sm">
-                                        Tighten mito orders
-                                    </div>
-                                </button>
+                            <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4 md:gap-x-9">
+                                <HeroStat
+                                    label="Total liquidity"
+                                    value={formatUsd(totalLiquidity)}
+                                    highlight
+                                />
+                                <HeroStat label="24h volume" value={formatUsd(totalVol)} />
+                                <HeroStat label="Pools" value={String(pools.length)} />
+                                <HeroStat label="Venues" value={String(venueCount)} />
                             </div>
                         </div>
+                    </section>
 
-
+                    {/* ---- token summary cards ---- */}
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <TokenCard
+                            symbol="SHROOM"
+                            name={shroom?.name}
+                            accent={SHROOM_ACCENT}
+                            logo={shroom?.logo}
+                            price={dash(`$${formatPrice(shroomPrice)}`, shroomPrice > 0)}
+                            change24h={shroom?.change24h ?? null}
+                            marketCap={dash(formatUsd(shroom?.marketCap ?? 0), !!shroom?.marketCap)}
+                            fdv={dash(formatUsd(shroom?.fdv ?? 0), !!shroom?.fdv)}
+                            liquidity={formatUsd(shroomLiquidity)}
+                            vol24h={dash(formatUsd(shroomVol), shroomVol > 0)}
+                            holders={shroomHolders}
+                            onRefreshHolders={() => refreshHolders(SHROOM_CW, 'SHROOM')}
+                            extra={
+                                shroom?.burned
+                                    ? `${formatAmount(shroom.burned)} SHROOM burned ($${formatAmount(
+                                          shroom.burned * shroomPrice,
+                                      )})`
+                                    : undefined
+                            }
+                            tradeUrl={SHROOM_TRADE}
+                        />
+                        <TokenCard
+                            symbol="SAI"
+                            name={sai?.name}
+                            accent={SAI_ACCENT}
+                            logo={sai?.logo}
+                            price={dash(`$${formatPrice(sai?.priceUsd ?? 0)}`, !!sai?.priceUsd)}
+                            change24h={sai?.change24h ?? null}
+                            marketCap={dash(formatUsd(sai?.marketCap ?? 0), !!sai?.marketCap)}
+                            fdv={dash(formatUsd(sai?.fdv ?? 0), !!sai?.fdv)}
+                            liquidity={formatUsd(saiLiquidity)}
+                            vol24h={dash(formatUsd(saiVol), saiVol > 0)}
+                            holders={saiHolders}
+                            onRefreshHolders={() => refreshHolders(SAI_DENOM, 'SAI')}
+                            extra={
+                                sai?.circulatingSupply
+                                    ? `${formatAmount(sai.circulatingSupply)} / ${formatAmount(
+                                          sai.totalSupply,
+                                      )} SAI circulating`
+                                    : 'Only paired with SHROOM'
+                            }
+                            tradeUrl={SAI_TRADE}
+                        />
                     </div>
+
+                    {/* ---- live markets (chart + trades) ---- */}
+                    <section>
+                        <SectionHeader eyebrow="Markets" title="Live price & trades" />
+                        <ShroomMarkets />
+                    </section>
+
+                    {/* ---- liquidity sources breakdown ---- */}
+                    <LiquidityBreakdown pools={pools} loading={poolsLoading} />
+
+                    {/* ---- wallet / utilities ---- */}
+                    <section className={`${PANEL} p-5 md:p-6`}>
+                        <SectionHeader
+                            eyebrow="Portfolio"
+                            title="Your SHROOM"
+                            sub={connectedAddress ? shortAddr(connectedAddress) : undefined}
+                        />
+
+                        {connectedAddress ? (
+                            <>
+                                <div className="rounded-xl bg-white/3 p-4 text-center">
+                                    <div className="text-[11px] uppercase tracking-wide text-white/40">
+                                        Total balance
+                                    </div>
+                                    <div className="mt-1 text-2xl font-bold tabular-nums text-trippyYellow">
+                                        {humanReadableAmount(totalBalance)} SHROOM
+                                    </div>
+                                    <div className="text-sm tabular-nums text-white/50">
+                                        ${humanReadableAmount(totalBalance * shroomPrice)} USD
+                                    </div>
+                                </div>
+
+                                <div className="mt-3 grid grid-cols-2 gap-3">
+                                    <BalanceTile
+                                        label="CW20"
+                                        amount={cw20Balance}
+                                        usd={cw20Balance * shroomPrice}
+                                    />
+                                    <BalanceTile
+                                        label="Bank"
+                                        amount={bankBalance}
+                                        usd={bankBalance * shroomPrice}
+                                    />
+                                </div>
+
+                                <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                                    <button
+                                        onClick={() => setConvertModal(true)}
+                                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/8"
+                                    >
+                                        <SiConvertio size={18} />
+                                        Convert CW20 ⇄ Bank
+                                    </button>
+                                    <button
+                                        onClick={() => void sendMarketMake()}
+                                        className="flex-1 rounded-xl border border-white/15 py-2.5 text-sm font-semibold text-white/70 transition hover:bg-white/5 hover:text-white"
+                                    >
+                                        Tighten Mito orders
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="rounded-xl bg-white/3 px-4 py-8 text-center text-sm text-white/50">
+                                Connect your wallet to view your SHROOM balance and manage
+                                CW20 / bank conversions.
+                            </div>
+                        )}
+                    </section>
                 </div>
                 <Footer />
             </div>
         </>
-
     );
-}
+};
 
-export default ShroomHub
+export default ShroomHub;

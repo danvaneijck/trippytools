@@ -6,6 +6,7 @@ import choice from '../../../assets/choice.svg';
 import CandleChart, { UP, DOWN } from './CandleChart';
 import TradeFeed from './TradeFeed';
 import { formatPrice, formatUsd, venueLabel } from './format';
+import { TOGGLE_WRAP, toggleBtn } from '../../../views/ShroomHub/styles';
 import type { Candle, Denom, FeedTrade, MarketDescriptor, MarketKind } from './types';
 
 const SHROOM_CW = 'inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8';
@@ -198,13 +199,9 @@ const toDescriptor = (m: RawSpotMarket): MarketDescriptor => ({
     vol24hUsd: Number(m.volume24h_usd ?? 0),
 });
 
-const pickDefault = (ms: MarketDescriptor[]): MarketDescriptor | undefined =>
-    ms.find(
-        (m) =>
-            m.kind === 'orderbook' &&
-            m.base.symbol === 'SHROOM' &&
-            m.quote.symbol === 'INJ',
-    ) ?? ms[0];
+// Markets arrive already sorted by 24h USD volume (desc) from the query, so the
+// first entry is the most-traded market — that's what we open on by default.
+const pickDefault = (ms: MarketDescriptor[]): MarketDescriptor | undefined => ms[0];
 
 const labelFor = (ms: number, interval: IntervalKey) => {
     const d = dayjs(ms);
@@ -433,7 +430,7 @@ const ShroomMarkets = () => {
     return (
         <div className="mx-auto w-full max-w-5xl font-sans">
             {/* market header + selector */}
-            <div className="rounded-2xl border border-white/10 bg-black/40 p-4 md:p-6">
+            <div className="rounded-2xl border border-white/10 bg-linear-to-b from-white/5 to-white/1 p-4 md:p-6">
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div className="relative">
                         <button
@@ -510,31 +507,23 @@ const ShroomMarkets = () => {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                        <div className="flex overflow-hidden rounded-lg border border-white/15">
+                        <div className={TOGGLE_WRAP}>
                             {(['USD', 'native'] as Denom[]).map((d) => (
                                 <button
                                     key={d}
                                     onClick={() => setDenom(d)}
-                                    className={`px-3 py-1 text-sm transition-colors ${
-                                        denom === d
-                                            ? 'bg-trippyYellow text-black'
-                                            : 'text-white/70 hover:text-white'
-                                    }`}
+                                    className={toggleBtn(denom === d)}
                                 >
                                     {d === 'USD' ? 'USD' : selected?.quote.symbol ?? 'Native'}
                                 </button>
                             ))}
                         </div>
-                        <div className="flex overflow-hidden rounded-lg border border-white/15">
+                        <div className={TOGGLE_WRAP}>
                             {INTERVALS.map((i) => (
                                 <button
                                     key={i.key}
                                     onClick={() => setIntervalKey(i.key)}
-                                    className={`px-3 py-1 text-sm transition-colors ${
-                                        interval === i.key
-                                            ? 'bg-trippyYellow text-black'
-                                            : 'text-white/70 hover:text-white'
-                                    }`}
+                                    className={toggleBtn(interval === i.key)}
                                 >
                                     {i.label}
                                 </button>
@@ -578,36 +567,28 @@ const ShroomMarkets = () => {
                         href={TRADE_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center rounded-lg border-2 border-white px-3 py-2 text-sm hover:font-semibold"
+                        className="flex items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
                     >
                         Trade on Choice Exchange
-                        <img src={choice} className="ml-3 w-5" />
+                        <img src={choice} className="w-5" />
                     </a>
                 </div>
             </div>
 
             {/* combined trade feed */}
-            <div className="mt-4 rounded-2xl border border-white/10 bg-black/40 p-4 md:p-6">
+            <div className="mt-4 rounded-2xl border border-white/10 bg-linear-to-b from-white/5 to-white/1 p-4 md:p-6">
                 <div className="mb-3 flex items-center justify-between">
                     <div className="text-base font-semibold text-white">Trades</div>
-                    <div className="flex overflow-hidden rounded-lg border border-white/15 text-sm">
+                    <div className={TOGGLE_WRAP}>
                         <button
                             onClick={() => setAllMarkets(false)}
-                            className={`px-3 py-1 transition-colors ${
-                                !allMarkets
-                                    ? 'bg-trippyYellow text-black'
-                                    : 'text-white/70 hover:text-white'
-                            }`}
+                            className={toggleBtn(!allMarkets)}
                         >
                             This market
                         </button>
                         <button
                             onClick={() => setAllMarkets(true)}
-                            className={`px-3 py-1 transition-colors ${
-                                allMarkets
-                                    ? 'bg-trippyYellow text-black'
-                                    : 'text-white/70 hover:text-white'
-                            }`}
+                            className={toggleBtn(allMarkets)}
                         >
                             All markets
                         </button>
