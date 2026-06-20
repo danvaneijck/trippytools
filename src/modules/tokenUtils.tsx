@@ -1355,6 +1355,95 @@ class TokenUtils {
         return sortedHolders;
     }
 
+    // Resolve an `ipfs://` URI to a public gateway URL; pass through http(s).
+    resolveIpfsUri(uri: string): string {
+        if (!uri) return uri;
+        if (uri.startsWith("ipfs://")) return uri.replace("ipfs://", "https://ipfs.io/ipfs/");
+        return uri;
+    }
+
+    // Best-effort image + name for a single CW721 token. NFT metadata may sit
+    // on-chain (extension) or off-chain behind token_uri; Talis tokens store
+    // the picture under `media` rather than the cw721-metadata `image` field.
+    async resolveNftMetadata(collectionAddress: string, tokenId: string) {
+        try {
+            const infoQuery = Buffer.from(
+                JSON.stringify({ nft_info: { token_id: tokenId } }),
+            ).toString("base64");
+            const res = await this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, infoQuery);
+            const info = JSON.parse(new TextDecoder().decode(res.data));
+            const ext = info?.extension ?? {};
+            let image: string | null = ext.image ?? ext.image_uri ?? ext.media ?? null;
+            let name: string | null = ext.name ?? null;
+            const tokenUri: string | undefined = info?.token_uri;
+
+            if (!image && tokenUri) {
+                if (/\.(png|jpe?g|gif|webp|svg|avif)$/i.test(tokenUri)) {
+                    image = tokenUri;
+                } else {
+                    // token_uri points at a metadata JSON — fetch it for the picture.
+                    try {
+                        const meta = await fetch(this.resolveIpfsUri(tokenUri)).then((r) => r.json());
+                        image = meta.image ?? meta.media ?? meta.image_uri ?? meta.animation_url ?? null;
+                        name = name ?? meta.name ?? meta.title ?? null;
+                    } catch {
+                        // ignore — selection works without a thumbnail
+                    }
+                }
+            }
+            return { tokenId, name, image: image ? this.resolveIpfsUri(image) : null };
+        } catch {
+            return { tokenId, name: null, image: null as string | null };
+        }
+    }
+
+    // Token IDs of a CW721 collection held by `owner`, with display metadata.
+    // Handles both the standard `{ tokens: [...] }` and the Talis `{ ids: [...] }`
+    // response shapes, and items returned as bare strings or `{ token_id }`.
+    async getOwnedNFTs(
+        collectionAddress: string,
+        owner: string,
+        setProgress: React.Dispatch<React.SetStateAction<string>>,
+    ): Promise<{ tokenId: string; name: string | null; image: string | null }[]> {
+        const limit = 50;
+        const tokenIds: string[] = [];
+        let startAfter: string | null = null;
+        let prevLast: string | null = null;
+
+        // 1. Page through the wallet's tokens.
+        while (true) {
+            const query = Buffer.from(
+                JSON.stringify({ tokens: { owner, start_after: startAfter, limit } }),
+            ).toString("base64");
+            const res = await this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, query);
+            const decoded = JSON.parse(new TextDecoder().decode(res.data));
+            const page: any[] = decoded.ids ?? decoded.tokens ?? [];
+            const ids = page.map((t) => (typeof t === "string" ? t : t.token_id ?? t.id)).filter(Boolean);
+            if (ids.length === 0) break;
+            tokenIds.push(...ids);
+            setProgress(`NFTs found: ${tokenIds.length}`);
+            const last = ids[ids.length - 1];
+            if (last === prevLast) break; // contract ignored start_after — stop rather than loop
+            prevLast = last;
+            startAfter = last;
+        }
+
+        if (tokenIds.length === 0) return [];
+
+        // 2. Resolve thumbnails / names in small parallel batches (best-effort).
+        const batchSize = 8;
+        const out: { tokenId: string; name: string | null; image: string | null }[] = [];
+        for (let i = 0; i < tokenIds.length; i += batchSize) {
+            const batch = tokenIds.slice(i, i + batchSize);
+            const resolved = await Promise.all(
+                batch.map((id) => this.resolveNftMetadata(collectionAddress, id)),
+            );
+            out.push(...resolved);
+            setProgress(`loading metadata: ${Math.min(i + batchSize, tokenIds.length)} / ${tokenIds.length}`);
+        }
+        return out;
+    }
+
 
     async getCW404TokenInfo(collectionAddress: string) {
         const infoQuery = Buffer.from(

@@ -639,11 +639,18 @@ const Airdrop = () => {
                                         <div className="text-3xl font-magic">New Airdrop</div>
                                         <div className="text-sm">on Injective {currentNetwork}</div>
                                     </div>
-                                    <Link to="/airdrop-history">
-                                        <div className="mt-2 bg-slate-800 hover:bg-slate-700 p-2 my-4 rounded-sm text-center text-sm w-full sm:w-1/2 mx-auto">
-                                            View airdrop history
-                                        </div>
-                                    </Link>
+                                    <div className="flex flex-col sm:flex-row gap-2 my-4">
+                                        <Link to="/nft-airdrop" className="flex-1">
+                                            <div className="bg-slate-800 hover:bg-slate-700 p-2 rounded-sm text-center text-sm">
+                                                Airdrop NFTs instead →
+                                            </div>
+                                        </Link>
+                                        <Link to="/airdrop-history" className="flex-1">
+                                            <div className="bg-slate-800 hover:bg-slate-700 p-2 rounded-sm text-center text-sm">
+                                                View airdrop history
+                                            </div>
+                                        </Link>
+                                    </div>
 
                                     {/* Step 1 — token to airdrop */}
                                     <div className="border p-4 rounded-lg border-slate-700">
