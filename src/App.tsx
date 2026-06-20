@@ -6,6 +6,7 @@ import TokenLaunch from './views/TokenLaunch';
 import Home from "./views/Home";
 import MyTokens from './views/MyTokens';
 import Airdrop from './views/Airdrop';
+import NftAirdrop from './views/NftAirdrop';
 import MyceliumFarm from './views/MyceliumFarm';
 import { ApolloProvider } from '@apollo/client';
 import client from './utils/apolloClient';
@@ -52,6 +53,7 @@ const App = () => {
 
           <Route path="/manage-tokens" element={<MyTokens />} />
           <Route path="/airdrop" element={<Airdrop />} />
+          <Route path="/nft-airdrop" element={<NftAirdrop />} />
           <Route path="/airdrop-history" element={<AirdropHistory />} />
           <Route path="/mycelium-farm" element={<MyceliumFarm />} />
           <Route path="/binary-option-markets" element={<BinaryOptionMarkets />} />

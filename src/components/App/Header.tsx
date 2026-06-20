@@ -41,6 +41,9 @@ const Header = () => {
                     <Link to="/airdrop" className={getLinkStyle('/airdrop')}>
                         Airdrops
                     </Link>
+                    <Link to="/nft-airdrop" className={getLinkStyle('/nft-airdrop')}>
+                        NFT Drop
+                    </Link>
                     <Link to="/pre-sale-tool" className={getLinkStyle('/pre-sale-tool')}>
                         Presale
                     </Link>
@@ -119,6 +122,9 @@ const Header = () => {
                     </Link>
                     <Link to="/airdrop" className={getLinkStyle('/airdrop')} onClick={toggleMenu}>
                         Perform Airdrops
+                    </Link>
+                    <Link to="/nft-airdrop" className={getLinkStyle('/nft-airdrop')} onClick={toggleMenu}>
+                        Airdrop NFTs
                     </Link>
                     <Link to="/pre-sale-tool" className={getLinkStyle('/pre-sale-tool')} onClick={toggleMenu}>
                         Plan Presale
