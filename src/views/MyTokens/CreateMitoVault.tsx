@@ -2,7 +2,7 @@ import {
     MsgExecuteContractCompat,
 } from "@injectivelabs/sdk-ts";
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
 import TokenUtils from "../../modules/tokenUtils";
 import useWalletStore from "../../store/useWalletStore";
@@ -12,28 +12,27 @@ import { performTransaction } from "../../utils/walletStrategy";
 
 const CreateMitoVault = (props: {
     token: any
+    setShowModal: (value: any) => void
+    setLoaded: (value: any) => void
 }) => {
 
     const { connectedWallet: connectedAddress } = useWalletStore()
     const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
-    const navigate = useNavigate();
 
-    const [vaultCreationFee, setVaultCreationFee] = useState(null);
+    const [vaultCreationFee, setVaultCreationFee] = useState<number | null>(null);
     const [notionalValueCap, setNotionalValueCap] = useState('1000000');
 
-    const [injPrice, setInjPrice] = useState(null);
-    const [baseTokenBalance, setBaseTokenBalance] = useState(null);
-    const [quoteTokenBalance, setQuoteTokenBalance] = useState(null);
+    const [injPrice, setInjPrice] = useState<string | number | undefined>(null as any);
 
-    const [baseTokenAmount, setBaseTokenAmount] = useState(500000);
-    const [quoteTokenAmount, setQuoteTokenAmount] = useState(300);
+    const [baseTokenAmount, setBaseTokenAmount] = useState<string | number>(500000);
+    const [quoteTokenAmount, setQuoteTokenAmount] = useState<string | number>(300);
 
-    const [vaultLink, setVaultLink] = useState(null);
+    const [vaultLink, setVaultLink] = useState<string | null>(null);
 
     const [progress, setProgress] = useState("")
     const [txLoading, setTxLoading] = useState(false)
 
-    const [error, setError] = useState(null)
+    const [error, setError] = useState<string | null>(null)
 
     const getVaultFee = useCallback(async () => {
         console.log("get vault fee", props.token)
@@ -58,13 +57,13 @@ const CreateMitoVault = (props: {
                 const fee = await getVaultFee()
                 setVaultCreationFee(fee)
             } catch (e) {
-                if (e.name !== 'AbortError') {
+                if ((e as any).name !== 'AbortError') {
                     console.error("Failed to fetch tokens:", e);
                 }
             }
         };
 
-        fetchData();
+        void fetchData();
     }, [vaultCreationFee, getVaultFee, connectedAddress])
 
     const create = useCallback(async () => {
@@ -89,8 +88,8 @@ const CreateMitoVault = (props: {
         const baseDecimals = props.token.metadata.decimals
         const quoteDecimals = 18; // INJ
 
-        let mitoMasterContract = ""
-        let contractCode = 9212
+        let mitoMasterContract: string
+        let contractCode: number
         if (networkConfig.chainId.includes("888")) {
             mitoMasterContract = "inj174efvalr8d9muguudh9uyd7ah7zdukqs9w4adq"
             contractCode = 9212
@@ -148,26 +147,16 @@ const CreateMitoVault = (props: {
                     },
                 },
             },
-            sender: injectiveAddress,
+            sender: injectiveAddress as string,
         });
 
         console.log("create mito vault", msgs)
 
-        const gas = {
-            amount: [
-                {
-                    denom: "inj",
-                    amount: '1300000'
-                }
-            ],
-            gas: '1300000'
-        };
-
-        const response = await performTransaction(injectiveAddress, [msgs])
+        const response = await performTransaction(injectiveAddress as string, [msgs])
         let address = ""
-        const contract = response['events']?.find(x => x.type === 'wasm-vault_instantiated')
+        const contract = response?.['events']?.find((x: any) => x.type === 'wasm-vault_instantiated')
         if (contract) {
-            address = contract['attributes'].find(x => x.key === "_contract_address").value
+            address = contract['attributes'].find((x: any) => x.key === "_contract_address").value
         }
 
         setProgress(`Done! Go back and refresh`)
@@ -273,7 +262,7 @@ const CreateMitoVault = (props: {
                                 Vault creation fee: <span className="font-bold text-xl">{vaultCreationFee} INJ</span>
                             </div>
                             <div className="mt-2 mb-2 text-base">
-                                Total INJ required: <span className="font-bold text-xl">{vaultCreationFee + Number(quoteTokenAmount)} INJ</span>
+                                Total INJ required: <span className="font-bold text-xl">{(vaultCreationFee ?? 0) + Number(quoteTokenAmount)} INJ</span>
                             </div>
                             {vaultLink &&
                                 <Link
@@ -306,12 +295,12 @@ const CreateMitoVault = (props: {
                                 <button
                                     className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded-sm shadow-sm hover:shadow-lg outline-hidden focus:outline-hidden mr-1 mb-1 ease-linear transition-all duration-150"
                                     type="button"
-                                    onClick={() => create().then(() => console.log("done")).catch(e => {
+                                    onClick={() => { void create().then(() => console.log("done")).catch(e => {
                                         console.log(e)
                                         setError(e.message)
                                         setProgress("")
                                         setTxLoading(false)
-                                    })}
+                                    }) }}
                                 >
                                     Create
                                 </button>

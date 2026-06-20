@@ -15,21 +15,21 @@ const OrderPanel = (props: {
     market: any,
     setLoaded?: any
 }) => {
-    const [quantity, setQuantity] = useState(1);
-    const [price, setPrice] = useState(0.5);
+    const [quantity, setQuantity] = useState<any>(1);
+    const [price, setPrice] = useState<any>(0.5);
     const [orderType, setOrderType] = useState('market');
 
     const { connectedWallet: connectedAddress } = useWalletStore()
     const { network: networkConfig } = useNetworkStore()
 
-    const [progress, setProgress] = useState("")
-    const [error, setError] = useState(null)
+    const [, setProgress] = useState("")
+    const [, setError] = useState<any>(null)
 
-    const [quoteBalance, setQuoteBalance] = useState(null)
+    const [quoteBalance, setQuoteBalance] = useState<any>(null)
 
     const getQuoteBalance = useCallback(async () => {
         const module = new TokenUtils(networkConfig)
-        const balance = await module.getBalanceOfToken(props.market.quoteDenom, connectedAddress)
+        const balance = await module.getBalanceOfToken(props.market.quoteDenom, connectedAddress as string)
         console.log("balance", balance)
         setQuoteBalance(Number(balance.amount) / Math.pow(10, props.market.quoteToken.decimals))
     }, [networkConfig, props.market, connectedAddress])
@@ -50,14 +50,14 @@ const OrderPanel = (props: {
         }
     }, [getQuoteBalance, quoteBalance])
 
-    const handleOrderTypeChange = (e) => {
+    const handleOrderTypeChange = (e: any) => {
         setOrderType(e.target.value);
     };
 
     const handleBuy = useCallback(async () => {
         console.log('Buy', { quantity, price, orderType });
         setError(null)
-        const injectiveAddress = connectedAddress
+        const injectiveAddress = connectedAddress as string
 
         if (connectedAddress !== injectiveAddress) {
             setError("Wrong wallet connected")
@@ -67,11 +67,11 @@ const OrderPanel = (props: {
             setError(null)
         }
 
-        let subAccountId = await getSubAccount(injectiveAddress)
+        let subAccountId: any = await getSubAccount(injectiveAddress)
         console.log(subAccountId[0])
         subAccountId = subAccountId[0]
 
-        let msgBuy = null
+        let msgBuy
 
         if (orderType == "limit") {
             msgBuy = MsgCreateBinaryOptionsLimitOrder.fromJSON({
@@ -118,7 +118,7 @@ const OrderPanel = (props: {
         console.log('Sell', { quantity, price, orderType });
         setError(null)
 
-        const injectiveAddress = connectedAddress
+        const injectiveAddress = connectedAddress as string
 
         if (connectedAddress !== injectiveAddress) {
             setError("Wrong wallet connected")
@@ -128,11 +128,11 @@ const OrderPanel = (props: {
             setError(null)
         }
 
-        let subAccountId = await getSubAccount(injectiveAddress)
+        let subAccountId: any = await getSubAccount(injectiveAddress)
         console.log(subAccountId[0])
         subAccountId = subAccountId[0]
 
-        let msgBuy = null
+        let msgBuy
 
         if (orderType == "limit") {
             msgBuy = MsgCreateBinaryOptionsLimitOrder.fromJSON({
@@ -239,13 +239,13 @@ const OrderPanel = (props: {
 
             <div className="flex space-x-4">
                 <button
-                    onClick={handleBuy}
+                    onClick={() => { void handleBuy(); }}
                     className="w-full py-2 px-4 bg-green-500 text-white rounded-md shadow-xs hover:bg-green-600 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                 >
                     Buy
                 </button>
                 <button
-                    onClick={handleSell}
+                    onClick={() => { void handleSell(); }}
                     className="w-full py-2 px-4 bg-red-500 text-white rounded-md shadow-xs hover:bg-red-600 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                 >
                     Sell

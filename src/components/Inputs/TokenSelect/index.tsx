@@ -2,15 +2,15 @@ import { useState, useEffect } from 'react';
 import CreatableSelect from 'react-select/creatable';
 import IPFSImage from '../../App/IpfsImage';
 
-const TokenSelect = ({ options, selectedOption, setSelectedOption }) => {
+const TokenSelect = ({ options, selectedOption, setSelectedOption }: any) => {
     const [showPasteButton, setShowPasteButton] = useState(!selectedOption);
 
-    const handleChange = (option) => {
+    const handleChange = (option: any) => {
         setSelectedOption(option);
         setShowPasteButton(false); // Hide paste button when an option is selected
     };
 
-    const handleCreate = (inputValue) => {
+    const handleCreate = (inputValue: any) => {
         const newOption = { value: inputValue, label: inputValue };
         setSelectedOption(newOption);
     };
@@ -32,7 +32,7 @@ const TokenSelect = ({ options, selectedOption, setSelectedOption }) => {
     return (
         <div className='token-select-container mt-1'>
             {showPasteButton && (
-                <button onClick={handlePaste} className="text-xs bg-slate-700 p-1 rounded-sm shadow-lg mb-1 mt-1">
+                <button onClick={() => { void handlePaste(); }} className="text-xs bg-slate-700 p-1 rounded-sm shadow-lg mb-1 mt-1">
                     Paste from clipboard
                 </button>
             )}

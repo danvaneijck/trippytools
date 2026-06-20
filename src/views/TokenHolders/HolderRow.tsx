@@ -1,4 +1,4 @@
-import { ListChildComponentProps } from 'react-window';
+import type { CSSProperties } from "react";
 import { ClipLoader } from "react-spinners";
 import { shortAddress } from "../../utils/format";
 import type { TokenHolderRow, WalletLabelMap } from "./TokenHolderTable";
@@ -13,7 +13,13 @@ interface HolderRowData {
     findingLiq: boolean;
 }
 
-const HolderRow = ({ index, style, data }: ListChildComponentProps<HolderRowData>) => {
+interface HolderRowProps {
+    index: number;
+    style: CSSProperties;
+    data: HolderRowData;
+}
+
+const HolderRow = ({ index, style, data }: HolderRowProps) => {
     const holder = data.holders[index];
     const { startIndex, hasSplitBalances, WALLET_LABELS, lastLoadedAddress, liquidity, findingLiq } = data;
 

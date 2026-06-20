@@ -2,8 +2,8 @@
 import { Parser } from '@json2csv/plainjs';
 
 // Function to process the JSON data and prepare it for CSV
-function processTransactions(jsonData) {
-    return jsonData.map(tx => {
+function processTransactions(jsonData: any) {
+    return jsonData.map((tx: any) => {
         const baseFields = {
             'Block Time': tx.blockTimestamp,
             'Block Number': tx.blockNumber,
@@ -19,7 +19,7 @@ function processTransactions(jsonData) {
 }
 
 // Helper function to extract funds sent based on transaction type
-function extractFundsSent(tx) {
+function extractFundsSent(tx: any) {
     switch (tx.type) {
         case 'Cancel Spot Order':
             return "N/A"
@@ -60,7 +60,7 @@ function extractFundsSent(tx) {
 }
 
 // Helper function to extract funds received based on transaction type
-function extractFundsReceived(tx) {
+function extractFundsReceived(tx: any) {
     switch (tx.type) {
         case 'Cancel Spot Order':
             return `${tx.returnAmount} ${tx.returnAsset}`;
@@ -109,7 +109,7 @@ function extractFundsReceived(tx) {
     }
 }
 
-export function formatTransactionData(jsonData) {
+export function formatTransactionData(jsonData: any) {
 
     try {
         const processedData = processTransactions(jsonData);
@@ -117,7 +117,7 @@ export function formatTransactionData(jsonData) {
         const fields = ['Block Time', 'Block Number', 'TX Hash', 'TX Type', 'Signed', 'Funds Sent', 'Funds Received'];
 
         const parser = new Parser({ fields });
-        const csv = parser.parse(processedData);
+        parser.parse(processedData);
 
 
         return processedData

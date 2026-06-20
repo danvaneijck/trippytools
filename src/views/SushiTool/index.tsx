@@ -38,13 +38,13 @@ const SushiTool = () => {
 
                 setData(result);
                 setLoading(false);
-            } catch (error) {
+            } catch {
                 setLoading(false);
             }
         };
 
         // Call the function
-        fetchData();
+        void fetchData();
     }, []);
 
     const handleInputChange = (event: any) => {

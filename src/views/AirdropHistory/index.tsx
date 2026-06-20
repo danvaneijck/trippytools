@@ -34,7 +34,7 @@ query getAirdropHistory {
 const AirdropHistory = () => {
     const { networkKey: currentNetwork } = useNetworkStore()
 
-    const { data, loading } = useQuery(AIRDROP_HISTORY_QUERY, {
+    const { data } = useQuery(AIRDROP_HISTORY_QUERY, {
         fetchPolicy: "network-only",
         pollInterval: 5000
     })

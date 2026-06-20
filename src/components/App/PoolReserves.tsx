@@ -46,7 +46,7 @@ const formatAmount = (raw: string, decimals: number): string => {
 const getTokenFromInfo = (
     info: TokenInfo,
     pool: LiquidityPool
-): LiquidityPool["asset_1"] | LiquidityPool["asset_2"] | null => {
+): LiquidityPool["asset_1"]   | null => {
     if ("native_token" in info) {
         if (pool.asset_1.address === info.native_token.denom) return pool.asset_1;
         if (pool.asset_2.address === info.native_token.denom) return pool.asset_2;
@@ -70,7 +70,7 @@ const PoolReserves: React.FC<PoolReservesProps> = ({ reserves, pool }) => {
                     const token = getTokenFromInfo(asset.info, pool);
                     if (!token) return null;
 
-                    const amountFormatted = formatNumber(asset.amount / Math.pow(10, token.decimals));
+                    const amountFormatted = formatNumber(Number(asset.amount) / Math.pow(10, token.decimals));
                     const usdValue = token.price
                         ? Number(amountFormatted) * token.price
                         : null;

@@ -156,7 +156,7 @@ const TokenHolders = () => {
         }
     });
 
-    const { data: progressData, startPolling, stopPolling } = useQuery(PROGRESS_QUERY, {
+    const { data: progressData } = useQuery(PROGRESS_QUERY, {
         skip: !contractAddress || !contractAddress.value,
         pollInterval: 5000,
         fetchPolicy: "network-only",
@@ -174,30 +174,30 @@ const TokenHolders = () => {
     const [pairMarketing, setPairMarketing] = useState<MarketingInfo | null>(null);
 
     const [holders, setHolders] = useState<Holder[]>([]);
-    const [totalHolderCount, setTotalHolderCount] = useState(null)
+    const [totalHolderCount, setTotalHolderCount] = useState<number | null>(null)
     const [hasSplitBalances, setHasSplitBalances] = useState(false)
 
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState("");
-    const [error, setError] = useState(null)
+    const [error, setError] = useState<string | null>(null)
 
     const [lastLoadedAddress, setLastLoadedAddress] = useState("")
-    const [holdersLastUpdated, setHoldersLastUpdated] = useState(null)
+    const [holdersLastUpdated, setHoldersLastUpdated] = useState<any>(null)
 
-    const [liquidity, setLiquidity] = useState([])
+    const [liquidity, setLiquidity] = useState<any[]>([])
     const [findingLiq, setFindingLiq] = useState(false)
     const [liqError, setLiqError] = useState(false)
-    const [totalBurned, setTotalBurned] = useState(null)
-    const [totalTreasuryHoldings, setTotalTreasuryHoldings] = useState(null)
+    const [totalBurned, setTotalBurned] = useState<number | null>(null)
+    const [totalTreasuryHoldings, setTotalTreasuryHoldings] = useState<number | null>(null)
 
-    const [mitoVault, setMitoVault] = useState(null)
-    const [tokenPrice, setTokenPrice] = useState(null)
+    const [mitoVault, setMitoVault] = useState<any>(null)
+    const [tokenPrice, setTokenPrice] = useState<number | null>(null)
 
     const [currentPage, setCurrentPage] = useState(1);
     const [pageInput, setPageInput] = useState("");
 
-    const [queryProgress, setQueryProgress] = useState(null)
-    const [saveProgress, setSaveProgress] = useState(null)
+    const [queryProgress, setQueryProgress] = useState<number | null>(null)
+    const [saveProgress, setSaveProgress] = useState<number | null>(null)
 
     const startIndex = useMemo(() => {
         return (currentPage - 1) * ITEMS_PER_PAGE;
@@ -217,14 +217,14 @@ const TokenHolders = () => {
     }, [holders.length]);
 
 
-    const handlePageInput = (e) => {
+    const handlePageInput = (e: any) => {
         const value = e.target.value;
         if (value === "" || /^[0-9\b]+$/.test(value)) {
             setPageInput(value);
         }
     };
 
-    const goToPage = (e) => {
+    const goToPage = (e: any) => {
         e.preventDefault();
         const pageNumber = parseInt(pageInput, 10);
         if (!isNaN(pageNumber) && pageNumber > 0 && pageNumber <= totalPages) {
@@ -236,7 +236,7 @@ const TokenHolders = () => {
     useEffect(() => {
         if (contractAddress) {
             setSearchParams({
-                address: contractAddress.value ? contractAddress.value : contractAddress
+                address: (contractAddress.value ? contractAddress.value : contractAddress) as any
             })
         }
     }, [contractAddress, setSearchParams])
@@ -255,7 +255,7 @@ const TokenHolders = () => {
     const handleUpdateTokenHolders = useCallback(() => {
         updateTokenHolders({
             variables: {
-                address: contractAddress.value ? contractAddress.value : contractAddress
+                address: (contractAddress?.value ? contractAddress.value : contractAddress) as any
             }
         }).then(() => {
             toast.success('Request sent to update holders. May take a few minutes...', {
@@ -278,17 +278,17 @@ const TokenHolders = () => {
         if (!progressData || !Array.isArray(progressData.token_info)) return;
 
         const queryProgresses = progressData.token_info
-            .map(info => {
+            .map((info: any) => {
                 const totalHolderCount = info.balances_aggregate?.aggregate?.count || 1;
                 return info.holders_query_progress
                     ? (info.holders_query_progress / totalHolderCount) * 100
                     : null;
             })
-            .filter(value => value !== null);
+            .filter((value: any) => value !== null);
 
         const saveProgresses = progressData.token_info
-            .map(info => info.holders_save_progress)
-            .filter(value => value !== null);
+            .map((info: any) => info.holders_save_progress)
+            .filter((value: any) => value !== null);
 
         const minQueryProgress = queryProgresses.length > 0 ? Math.min(...queryProgresses) : null;
         const minSaveProgress = saveProgresses.length > 0 ? Math.min(...saveProgresses) : null;
@@ -296,7 +296,7 @@ const TokenHolders = () => {
         setQueryProgress(minQueryProgress);
         setSaveProgress(minSaveProgress);
 
-        if (!minQueryProgress && !minSaveProgress) refetch();
+        if (!minQueryProgress && !minSaveProgress) void refetch();
     }, [progressData, refetch]);
 
     useEffect(() => {
@@ -319,7 +319,7 @@ const TokenHolders = () => {
         }
 
         const balances = data.holders;
-        const tokenIds = new Set(balances.map(holder => holder.token_id));
+        const tokenIds = new Set(balances.map((holder: any) => holder.token_id));
 
         if (tokenIds.size === 2) {
             setHasSplitBalances(true);
@@ -327,7 +327,7 @@ const TokenHolders = () => {
             setHasSplitBalances(false);
         }
 
-        const groupedByWallet = balances.reduce((acc, holder) => {
+        const groupedByWallet = balances.reduce((acc: any, holder: any) => {
             if (!acc[holder.wallet_id]) {
                 acc[holder.wallet_id] = {
                     cw20Balance: 0,
@@ -350,7 +350,7 @@ const TokenHolders = () => {
             return acc;
         }, {});
 
-        let totalSupply = Object.values(groupedByWallet).reduce((sum, holder) => {
+        let totalSupply = Object.values(groupedByWallet).reduce((sum: number, holder: any) => {
             if (holder.wallet_id === INJ_CW20_ADAPTER) {
                 return sum + 0; // Only include cw20Balance, exclude factory token balance
             }
@@ -359,7 +359,7 @@ const TokenHolders = () => {
         }, 0);
         totalSupply = Math.round(totalSupply)
 
-        const finalHolderList = Object.entries(groupedByWallet).map(([wallet_id, holder]) => {
+        const finalHolderList = Object.entries(groupedByWallet).map(([wallet_id, holder]: [string, any]) => {
             return {
                 address: wallet_id,
                 balance: holder.cw20Balance + holder.bankBalance,  // Total combined balance
@@ -370,7 +370,7 @@ const TokenHolders = () => {
             };
         }).filter(x => x.balance !== 0).sort((a, b) => b.balance - a.balance)
 
-        setHolders(finalHolderList);
+        setHolders(finalHolderList as Holder[]);
 
         if (tokenIds.size === 1) {
             setTotalHolderCount(data.holder_aggregate.aggregate.count)
@@ -388,7 +388,7 @@ const TokenHolders = () => {
         setTotalBurned(totalBurnedBalance)
 
         const totalTreasuryHoldings = finalHolderList
-            .filter(addressObj => WALLET_LABELS[addressObj.address]?.treasury)
+            .filter(addressObj => (WALLET_LABELS as Record<string, any>)[addressObj.address]?.treasury)
             .reduce((total, addressObj) => {
                 return total + addressObj.balance;
             }, 0);
@@ -548,11 +548,11 @@ const TokenHolders = () => {
                 const tokenInfo = await module.getNFTCollectionInfo(address)
                 const holders = await module.getNFTHolders(address, setProgress)
                 setTokenInfo({ ...tokenInfo, denom: address });
-                if (holders) setHolders(holders);
+                if (holders) setHolders(holders as Holder[]);
             }
             else if (address.includes("factory") || address.includes("peggy") || address.includes("ibc")) {
                 const metadata = await module.getDenomExtraMetadata(address);
-                setTokenInfo(metadata);
+                setTokenInfo(metadata as TokenInfo);
             }
             else {
                 try {
@@ -561,7 +561,7 @@ const TokenHolders = () => {
                     const marketingInfo = await module.getTokenMarketing(address);
                     setPairMarketing(marketingInfo);
                 } catch (error) {
-                    if (error.message.includes("Error parsing into type cw404")) {
+                    if ((error as any).message.includes("Error parsing into type cw404")) {
                         try {
                             const tokenInfo = await module.getCW404TokenInfo(address);
                             setTokenInfo({ ...tokenInfo, denom: address });
@@ -571,11 +571,11 @@ const TokenHolders = () => {
                             console.error("Error with CW404 token info retrieval:", innerError);
                         }
                     }
-                    else if (error.message.includes("Error parsing into type talis_nft") || error.message.includes("Error parsing into type cw721_base") || error.message.includes("Error parsing into type common::talis_nft")) {
+                    else if ((error as any).message.includes("Error parsing into type talis_nft") || (error as any).message.includes("Error parsing into type cw721_base") || (error as any).message.includes("Error parsing into type common::talis_nft")) {
                         const tokenInfo = await module.getNFTCollectionInfo(address)
                         const holders = await module.getNFTHolders(address, setProgress)
                         setTokenInfo({ ...tokenInfo, denom: address });
-                        if (holders) setHolders(holders);
+                        if (holders) setHolders(holders as Holder[]);
                     }
                     else {
                         console.error("Error with token info retrieval:", error);
@@ -586,8 +586,8 @@ const TokenHolders = () => {
             setLastLoadedAddress(address);
         } catch (e) {
             console.log(e);
-            if (e && e.message) {
-                setError(e.message);
+            if (e && (e as any).message) {
+                setError((e as any).message);
             }
             throw e
         } finally {
@@ -603,7 +603,7 @@ const TokenHolders = () => {
                 console.error(e)
                 setLastLoadedAddress(address);
             })
-            setContractAddress(address => tokens.find(v => v.address == address) ?? address)
+            setContractAddress((address: any) => tokens.find(v => v.address == address) ?? address)
         }
     }, [searchParams, lastLoadedAddress, getTokenHolders, loading, tokens])
 
@@ -741,9 +741,9 @@ const TokenHolders = () => {
                                         <a href={`${explorerBase}/account/${tokenInfo.admin}`}>
                                             admin: {shortAddress(tokenInfo.admin)}
                                             {
-                                                WALLET_LABELS[tokenInfo.admin] ? (
-                                                    <span className={`${WALLET_LABELS[tokenInfo.admin].bgColor} ${WALLET_LABELS[tokenInfo.admin].textColor} ml-2`}>
-                                                        {WALLET_LABELS[tokenInfo.admin].label}
+                                                (WALLET_LABELS as Record<string, any>)[tokenInfo.admin] ? (
+                                                    <span className={`${(WALLET_LABELS as Record<string, any>)[tokenInfo.admin].bgColor} ${(WALLET_LABELS as Record<string, any>)[tokenInfo.admin].textColor} ml-2`}>
+                                                        {(WALLET_LABELS as Record<string, any>)[tokenInfo.admin].label}
                                                     </span>
                                                 ) : null
                                             }
@@ -770,9 +770,9 @@ const TokenHolders = () => {
                                                 {shortAddress(pairMarketing.marketing)}
                                             </a>
                                             {
-                                                WALLET_LABELS[pairMarketing.marketing] ? (
-                                                    <span className={`${WALLET_LABELS[pairMarketing.marketing].bgColor} ${WALLET_LABELS[pairMarketing.marketing].textColor} ml-2`}>
-                                                        {WALLET_LABELS[pairMarketing.marketing].label}
+                                                (WALLET_LABELS as Record<string, any>)[pairMarketing.marketing] ? (
+                                                    <span className={`${(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing].bgColor} ${(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing].textColor} ml-2`}>
+                                                        {(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing].label}
                                                     </span>
                                                 ) : null
                                             }
@@ -801,10 +801,10 @@ const TokenHolders = () => {
 
                                 {/* Circulating Supply */}
                                 Circulating supply: {humanReadableAmount(
-                                    (tokenInfo.total_supply / Math.pow(10, tokenInfo.decimals)) - (totalBurned)
+                                    (tokenInfo.total_supply! / Math.pow(10, tokenInfo.decimals)) - (totalBurned)
                                 )}{" "}
                                 {(liquidity.length > 0 || tokenPrice) && `$${humanReadableAmount(
-                                    ((tokenInfo.total_supply / Math.pow(10, tokenInfo.decimals)) - (totalBurned)) *
+                                    ((tokenInfo.total_supply! / Math.pow(10, tokenInfo.decimals)) - (totalBurned)) *
                                     (tokenPrice !== null ? tokenPrice : liquidity[0].price)
                                 )}`}
 
@@ -817,7 +817,7 @@ const TokenHolders = () => {
 
                         <div className="flex flex-row justify-center mt-2 items-center">
                             {findingLiq && <ClipLoader size={20} color="white" />}
-                            {liquidity.length > 0 && liquidity.map(({ infoDecoded, marketCap, price, factory, liquidity }, index) => {
+                            {liquidity.length > 0 && liquidity.map(({ infoDecoded, price, factory, liquidity }: any, index: number) => {
                                 return <div key={index} className="text-sm mx-2 bg-trippyYellow/10 p-2 rounded-lg shadow-lg">
                                     <a href={"https://coinhall.org/injective/" + infoDecoded.contract_addr}
                                         className="text-white hover:cursor-pointer font-bold"
@@ -912,7 +912,7 @@ const TokenHolders = () => {
 
                                 {/* Virtualized table */}
                                 <TokenHoldersTable
-                                    holders={paginatedHolders}
+                                    holders={paginatedHolders as any}
                                     startIndex={startIndex}
                                     hasSplitBalances={hasSplitBalances}
                                     WALLET_LABELS={WALLET_LABELS}

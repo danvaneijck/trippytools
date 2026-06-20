@@ -9,7 +9,7 @@ import useWalletStore from '../../store/useWalletStore';
 import useNetworkStore from '../../store/useNetworkStore';
 import { performTransaction } from '../../utils/walletStrategy';
 
-const NewMarketModal = (props: { setShowModal: (show: boolean) => void; }) => {
+const NewMarketModal = (props: { setShowModal: (show: boolean) => void; setLoaded?: any; }) => {
 
     const { connectedWallet: connectedAddress } = useWalletStore()
     const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
@@ -48,7 +48,7 @@ const NewMarketModal = (props: { setShowModal: (show: boolean) => void; }) => {
     const createMarket = useCallback(async () => {
         setError(null)
 
-        const injectiveAddress = connectedAddress;
+        const injectiveAddress = connectedAddress as string;
 
         const msgSetDenomMetadata = MsgInstantBinaryOptionsMarketLaunch.fromJSON({
             proposer: injectiveAddress,
@@ -60,13 +60,13 @@ const NewMarketModal = (props: { setShowModal: (show: boolean) => void; }) => {
                 minPriceTickSize: market.minPriceTickSize,
                 minQuantityTickSize: market.minQuantityTickSize,
                 oracleProvider: market.oracleProvider,
-                oracleScaleFactor: market.oracleScaleFactor,
+                oracleScaleFactor: market.oracleScaleFactor as any,
                 oracleSymbol: market.oracleSymbol,
                 oracleType: 11,
                 quoteDenom: market.quoteDenom,
                 settlementTimestamp: market.settlementTimestamp,
                 takerFeeRate: market.takerFeeRate
-            }
+            } as any
         });
 
         console.log("msg", msgSetDenomMetadata)
@@ -78,7 +78,7 @@ const NewMarketModal = (props: { setShowModal: (show: boolean) => void; }) => {
         props.setShowModal(false)
     }, [market, connectedAddress, props])
 
-    const handleInputChange = (e) => {
+    const handleInputChange = (e: any) => {
         const { name, value } = e.target;
         setMarket({ ...market, [name]: value });
     };
@@ -174,12 +174,12 @@ const NewMarketModal = (props: { setShowModal: (show: boolean) => void; }) => {
                             <button
                                 className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded-sm shadow-sm hover:shadow-lg outline-hidden focus:outline-hidden mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
-                                onClick={() => createMarket().then(() => console.log("done")).catch(e => {
+                                onClick={() => { void createMarket().then(() => console.log("done")).catch(e => {
                                     console.log(e)
                                     setError(e.message)
                                     setProgress("")
                                     setTxLoading(false)
-                                })}
+                                }) }}
                             >
                                 Create
                             </button>

@@ -88,7 +88,7 @@ const ConvertModal = ({ onClose, cw20Balance, bankBalance, convertToBank, conver
                 </div>
 
                 <button
-                    onClick={handleConvert}
+                    onClick={() => { void handleConvert(); }}
                     disabled={!amount || Number(amount) <= 0}
                     className="w-full bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition disabled:bg-gray-300"
                 >

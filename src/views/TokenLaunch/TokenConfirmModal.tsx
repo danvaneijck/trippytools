@@ -96,7 +96,7 @@ const TokenConfirmModal = (props: {
 
         if (networkKey == "mainnet") await sendTelegramMessage(`wallet ${connectedWallet} created a new token on trippyinj!\nname: ${props.tokenName}\nsymbol: ${props.tokenSymbol}\ndenom: ${denom}`)
 
-        navigate('/manage-tokens');
+        void navigate('/manage-tokens');
 
     }, [connectedWallet, networkKey, props.tokenSymbol, props.tokenSupply, props.tokenDecimals, props.tokenDescription, props.tokenName, props.tokenImage, navigate])
 
@@ -155,12 +155,12 @@ const TokenConfirmModal = (props: {
                             <button
                                 className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded-sm shadow-sm hover:shadow-lg outline-hidden focus:outline-hidden mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
-                                onClick={() => createAndMint().then(() => console.log("done")).catch(e => {
+                                onClick={() => { void createAndMint().then(() => console.log("done")).catch(e => {
                                     console.log(e)
                                     setError(e.message)
                                     setProgress("")
                                     setTxLoading(false)
-                                })}
+                                }) }}
                             >
                                 Launch
                             </button>

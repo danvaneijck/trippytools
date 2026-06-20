@@ -2,28 +2,28 @@ import { useCallback, useEffect, useState } from "react";
 import { CircleLoader } from "react-spinners";
 import TokenUtils from "../../modules/tokenUtils";
 import dayjs from "dayjs";
-import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
 
 
 const ViewMarketModal = (props: {
-    marketId: string
+    marketId: string,
+    setShowModal: any,
+    setLoaded?: any
 }) => {
 
-    const { connectedWallet: connectedAddress } = useWalletStore()
-    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
+    const { network: networkConfig } = useNetworkStore()
 
 
     const [loaded, setLoaded] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    const [progress, setProgress] = useState("")
-    const [txLoading, setTxLoading] = useState(false)
+    const [progress] = useState("")
+    const [txLoading] = useState(false)
 
-    const [market, setMarket] = useState(null)
-    const [orders, setOrders] = useState([])
+    const [market, setMarket] = useState<any>(null)
+    const [orders, setOrders] = useState<any[]>([])
 
-    const [error, setError] = useState(null)
+    const [error] = useState(null)
 
     const getOptionMarket = useCallback(async () => {
         console.log("get option market")
@@ -45,7 +45,7 @@ const ViewMarketModal = (props: {
     useEffect(() => {
         if (market == null && !loaded && !loading) {
             setLoading(true)
-            getOptionMarket().then(r => {
+            getOptionMarket().then(() => {
                 setLoaded(true)
                 setLoading(false)
             }).catch(e => {

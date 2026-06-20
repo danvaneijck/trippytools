@@ -14,15 +14,15 @@ const BurnTokens = () => {
     const { network: networkConfig, networkKey } = useNetworkStore() // networkKey for explorer URL
     const { tokens } = useTokenStore()
 
-    const [selectedToken, setSelectedToken] = useState(null)
-    const [tokenInfo, setTokenInfo] = useState(null)
-    const [balance, setBalance] = useState(null)
+    const [selectedToken, setSelectedToken] = useState<any>(null)
+    const [tokenInfo, setTokenInfo] = useState<any>(null)
+    const [balance, setBalance] = useState<number | null>(null)
 
-    const [amountToBurn, setAmountToBurn] = useState(0)
-    const [error, setError] = useState(null);
+    const [amountToBurn, setAmountToBurn] = useState<string | number>(0)
+    const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false)
-    const [txHash, setTxHash] = useState(null)
+    const [txHash, setTxHash] = useState<string | null>(null)
     const [copied, setCopied] = useState(false);
 
     const explorerBaseUrl = networkKey === 'testnet'
@@ -42,7 +42,7 @@ const BurnTokens = () => {
         try {
             const info = await module.getDenomExtraMetadata(selectedToken.value)
             setTokenInfo(info)
-            const balance = await module.getBalanceOfToken(selectedToken.value, connectedAddress)
+            const balance = await module.getBalanceOfToken(selectedToken.value, connectedAddress as string)
             if (!balance) return
             setBalance(Number(balance.amount))
         } catch (e) {
@@ -56,7 +56,7 @@ const BurnTokens = () => {
 
     useEffect(() => {
         if (connectedAddress && selectedToken) {
-            getTokenInfo()
+            void getTokenInfo()
         }
     }, [connectedAddress, selectedToken, getTokenInfo])
 
@@ -67,14 +67,14 @@ const BurnTokens = () => {
             return
         }
 
-        if (parseFloat(amountToBurn) <= 0) {
+        if (parseFloat(String(amountToBurn)) <= 0) {
             setError("Amount to burn must be greater than 0.");
             return;
         }
 
         const amountInBase = new BigNumberInBase(amountToBurn).toWei(tokenInfo.decimals);
 
-        if (new BigNumberInBase(balance).lt(amountInBase)) {
+        if (new BigNumberInBase(balance as any).lt(amountInBase)) {
             setError("Insufficient balance.");
             return;
         }
@@ -109,7 +109,7 @@ const BurnTokens = () => {
                 setError("Transaction failed or hash not received.")
             }
         } catch (e) {
-            setError(e.message || "An error occurred during the transaction.")
+            setError((e as any).message || "An error occurred during the transaction.")
             console.error(e)
         } finally {
             setLoading(false)
@@ -119,7 +119,7 @@ const BurnTokens = () => {
 
     const copyToClipboard = useCallback(() => {
         if (!txHash) return;
-        navigator.clipboard.writeText(`${explorerBaseUrl}/transaction/${txHash}`).then(() => {
+        void navigator.clipboard.writeText(`${explorerBaseUrl}/transaction/${txHash}`).then(() => {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
         });
@@ -184,7 +184,7 @@ const BurnTokens = () => {
                     {tokenInfo !== null &&
                         <div
                             className={`bg-slate-800 w-40 m-auto mt-5 p-2 text-center rounded-sm shadow-lg ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:cursor-pointer'}`}
-                            onClick={!loading ? sendBurn : undefined}
+                            onClick={!loading ? () => { void sendBurn(); } : undefined}
                         >
                             {loading ? 'Burning...' : 'Burn Tokens'}
                         </div>

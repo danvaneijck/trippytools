@@ -102,7 +102,7 @@ const ShroomHub = () => {
 
         const balances = data.holders;
 
-        const groupedByWallet = balances.reduce((acc, holder) => {
+        const groupedByWallet = balances.reduce((acc: any, holder: any) => {
             if (!acc[holder.wallet_id]) {
                 acc[holder.wallet_id] = {
                     cw20Balance: 0,
@@ -125,7 +125,7 @@ const ShroomHub = () => {
             return acc;
         }, {});
 
-        let totalSupply = Object.values(groupedByWallet).reduce((sum, holder) => {
+        let totalSupply: any = Object.values(groupedByWallet).reduce((sum: any, holder: any) => {
             if (holder.wallet_id === CW20_ADAPTER) {
                 return sum + 0;
             }
@@ -137,7 +137,7 @@ const ShroomHub = () => {
 
         setTotalSupply(totalSupply)
 
-        const finalHolderList = Object.entries(groupedByWallet).map(([wallet_id, holder]) => {
+        const finalHolderList = Object.entries(groupedByWallet).map(([wallet_id, holder]: [string, any]) => {
             return {
                 address: wallet_id,
                 balance: holder.cw20Balance + holder.bankBalance,
@@ -179,7 +179,7 @@ const ShroomHub = () => {
             module.getPoolAmounts(SHROOM_CHOICE_PAIR_ADDRESS)
         ]);
 
-        const baseAssetAmountDojo = poolAmountsDojo.assets.find(asset => {
+        const baseAssetAmountDojo = poolAmountsDojo.assets.find((asset: any) => {
             if (asset.info.native_token) {
                 return asset.info.native_token.denom === INJ_DENOM;
             } else if (asset.info.token) {
@@ -188,7 +188,7 @@ const ShroomHub = () => {
             return false;
         })?.amount || 0;
 
-        const baseAssetAmountChoice = poolAmountsChoice.assets.find(asset => {
+        const baseAssetAmountChoice = poolAmountsChoice.assets.find((asset: any) => {
             if (asset.info.native_token) {
                 return asset.info.native_token.denom === INJ_DENOM;
             } else if (asset.info.token) {
@@ -198,16 +198,16 @@ const ShroomHub = () => {
         })?.amount || 0;
 
         const injAmountDojo = baseAssetAmountDojo / Math.pow(10, 18)
-        const dojoLiquidity = injAmountDojo * baseAssetPrice
+        const dojoLiquidity = injAmountDojo * baseAssetPrice!
         setDojoLiquidity(dojoLiquidity * 2)
 
         const injAmountChoice = baseAssetAmountChoice / Math.pow(10, 18)
-        const choiceLiquidity = injAmountChoice * baseAssetPrice
+        const choiceLiquidity = injAmountChoice * baseAssetPrice!
         setChoiceLiquidity(choiceLiquidity * 2)
 
         const quote = await module.getSellQuoteRouter(pairInfo, 1 + "0".repeat(18));
         const returnAmount = Number(quote.amount) / Math.pow(10, 18);
-        const totalUsdValue = (returnAmount * baseAssetPrice);
+        const totalUsdValue = (returnAmount * baseAssetPrice!);
         setShroomPrice(totalUsdValue);
 
     }, [networkConfig])
@@ -216,8 +216,8 @@ const ShroomHub = () => {
         const module = new TokenUtils(networkConfig)
         try {
             const [cw20Balance, bankBalance] = await Promise.all([
-                module.queryTokenForBalance(SHROOM_TOKEN_ADDRESS, connectedAddress),
-                module.getBalanceOfToken(SHROOM_BANK_DENOM, connectedAddress),
+                module.queryTokenForBalance(SHROOM_TOKEN_ADDRESS, connectedAddress as string),
+                module.getBalanceOfToken(SHROOM_BANK_DENOM, connectedAddress as string),
             ]);
             setCw20Balance(Number(cw20Balance.balance) / Math.pow(10, 18))
             setBankBalance(Number(bankBalance.amount) / Math.pow(10, 18))
@@ -234,8 +234,8 @@ const ShroomHub = () => {
         loadLiquidity().catch(e => console.error(e))
     }, [currentNetwork, networkConfig, connectedAddress, loadBalance, loadLiquidity])
 
-    const convertToBank = useCallback(async (amount) => {
-        const injectiveAddress = connectedAddress
+    const convertToBank = useCallback(async (amount: any) => {
+        const injectiveAddress = connectedAddress as string
 
         const module = new TokenUtils(networkConfig)
         const msg = module.constructCW20ToBankMsg(
@@ -255,7 +255,7 @@ const ShroomHub = () => {
                 Converted {humanReadableAmount(amount)} CW20 SHROOM to bank
                 <br />
                 <a
-                    href={`https://injscan.com/transaction/${result['txHash']}`}
+                    href={`https://injscan.com/transaction/${result!['txHash']}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline text-blue-500 text-sm"
@@ -274,8 +274,8 @@ const ShroomHub = () => {
         await loadBalance()
     }, [networkConfig, loadBalance, connectedAddress])
 
-    const convertToCw20 = useCallback(async (amount) => {
-        const injectiveAddress = connectedAddress
+    const convertToCw20 = useCallback(async (amount: any) => {
+        const injectiveAddress = connectedAddress as string
 
         const module = new TokenUtils(networkConfig)
         const msg = module.constructBankToCW20Msg(
@@ -295,7 +295,7 @@ const ShroomHub = () => {
                 Converted {humanReadableAmount(amount)} bank SHROOM to CW20
                 <br />
                 <a
-                    href={`https://injscan.com/transaction/${result['txHash']}`}
+                    href={`https://injscan.com/transaction/${result!['txHash']}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline text-blue-500 text-sm"
@@ -316,7 +316,7 @@ const ShroomHub = () => {
 
     const sendMarketMake = useCallback(async () => {
 
-        const injectiveAddress = connectedAddress
+        const injectiveAddress = connectedAddress as string
 
         const msgMarketMake = MsgExecuteContractCompat.fromJSON({
             sender: injectiveAddress,
@@ -336,7 +336,7 @@ const ShroomHub = () => {
                 Successfully sent market make
                 <br />
                 <a
-                    href={`https://injscan.com/transaction/${result['txHash']}`}
+                    href={`https://injscan.com/transaction/${result!['txHash']}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline text-blue-500 text-sm"

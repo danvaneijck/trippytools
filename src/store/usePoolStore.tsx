@@ -9,7 +9,7 @@ export interface PoolStore {
 
 const useLiquidityPoolStore = create<PoolStore>()(
     persist(
-        (set, get) => ({
+        (set) => ({
             pools: [],
             setPools: (pools: LiquidityPool[]) => set({ pools }),
         }),

@@ -128,7 +128,7 @@ const ReflectionTokenConfirmModal = (props: ReflectionTokenConfirmModalProps) =>
 
         setProgress("Please sign the transaction in your wallet...");
         try {
-            const txResult = await performTransaction(connectedWallet, msg);
+            const txResult = await performTransaction(connectedWallet, msg as any);
 
             setProgress("Transaction successful! Parsing contract address...");
             const addresses = parseInstantiationAddresses(txResult, reflectionTokenCodeId, treasuryCodeId);

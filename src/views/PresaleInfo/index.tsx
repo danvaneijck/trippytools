@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, type CSSProperties } from 'react';
 
 
 import { Link } from 'react-router-dom';
@@ -71,7 +71,7 @@ const PreSaleInfo = () => {
         return () => clearInterval(interval);
     }, [getBalance]);
 
-    const divStyle = {
+    const divStyle: CSSProperties = {
         position: 'relative',
         width: '100%',
         paddingBottom: '5%',
@@ -229,7 +229,6 @@ const PreSaleInfo = () => {
 
             <div
                 id="dexscreener-embed"
-                // @ts-ignore
                 style={divStyle}
                 className='mt-2 flex justify-center flex-row mx-2'
             >

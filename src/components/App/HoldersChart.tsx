@@ -7,6 +7,18 @@ interface HoldersChartProps {
     data: Holder[];
 }
 
+function CustomTooltip({ payload, label, active }: any) {
+    if (active) {
+        return (
+            <div className="custom-tooltip bg-white text-black p-2">
+                <p className="label">{`${label}`}</p>
+                <p className="label">Wallets: {`${payload[0].value}`}</p>
+            </div>
+        );
+    }
+    return null;
+}
+
 const HoldersChart: React.FC<HoldersChartProps> = ({ data }) => {
     const formattedData = data.map(holder => ({
         ...holder,
@@ -18,11 +30,11 @@ const HoldersChart: React.FC<HoldersChartProps> = ({ data }) => {
     const usingUsdValues = formattedData.some(holder => holder.usdValue !== undefined);
 
     const quantiles = [
-        quantile(values, 0.2),
-        quantile(values, 0.4),
-        quantile(values, 0.6),
-        quantile(values, 0.8),
-        quantile(values, 1.0)
+        quantile(values, 0.2)!,
+        quantile(values, 0.4)!,
+        quantile(values, 0.6)!,
+        quantile(values, 0.8)!,
+        quantile(values, 1.0)!
     ];
 
     const categories = [
@@ -41,18 +53,6 @@ const HoldersChart: React.FC<HoldersChartProps> = ({ data }) => {
         else if (value <= quantiles[3]) categories[3].count++;
         else categories[4].count++;
     });
-
-    function CustomTooltip({ payload, label, active }) {
-        if (active) {
-            return (
-                <div className="custom-tooltip bg-white text-black p-2">
-                    <p className="label">{`${label}`}</p>
-                    <p className="label">Wallets: {`${payload[0].value}`}</p>
-                </div>
-            );
-        }
-        return null;
-    }
 
     return (
         <ResponsiveContainer width="100%" height={200}>

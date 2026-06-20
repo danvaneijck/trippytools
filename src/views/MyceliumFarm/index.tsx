@@ -2,6 +2,7 @@ import { BeatLoader } from "react-spinners";
 import { useCallback, useEffect, useState } from "react";
 import ShroomBalance from "../../components/App/ShroomBalance";
 import TokenUtils from "../../modules/tokenUtils";
+import { MsgExecuteContractCompat } from "@injectivelabs/sdk-ts";
 import myceliumLogo from "../../assets/mycelium.jpeg"
 import farmBackground from "../../assets/farmBackground.webp"
 import Footer from "../../components/App/Footer";
@@ -20,8 +21,8 @@ const MyceliumFarm = () => {
     const [loading, setLoading] = useState(false);
     const [txLoading, setTxLoading] = useState(false);
 
-    const [pendingRewards, setPendingRewards] = useState(null)
-    const [rewardInfo, setRewardInfo] = useState(null)
+    const [pendingRewards, setPendingRewards] = useState<any>(null)
+    const [rewardInfo, setRewardInfo] = useState<any>(null)
 
     const [selectedPool, setSelectedPool] = useState("SPORE")
 
@@ -34,7 +35,7 @@ const MyceliumFarm = () => {
             const config = await module.getAstroRewardsInfo(ASTRO_GENERATOR, selectedPool == "SPORE" ? SPORE_SHROOM_LP : SHROOM_INJ_LP)
             console.log(config)
             setRewardInfo((Number(config[0].rps) / Math.pow(10, 6)).toFixed(4))
-            const pendingRewards = await module.getPendingAstroRewards(ASTRO_GENERATOR, selectedPool == "SPORE" ? SPORE_SHROOM_LP : SHROOM_INJ_LP, connectedAddress)
+            const pendingRewards = await module.getPendingAstroRewards(ASTRO_GENERATOR, selectedPool == "SPORE" ? SPORE_SHROOM_LP : SHROOM_INJ_LP, connectedAddress as string)
             console.log(pendingRewards)
             if (pendingRewards) {
                 setPendingRewards(Number(pendingRewards[0].amount) / Math.pow(10, 6))
@@ -65,7 +66,7 @@ const MyceliumFarm = () => {
     const claimRewards = useCallback(async () => {
         try {
 
-            const injectiveAddress = connectedAddress
+            const injectiveAddress = connectedAddress as string
 
             const msgClaim = MsgExecuteContractCompat.fromJSON({
                 sender: injectiveAddress,
@@ -130,7 +131,7 @@ const MyceliumFarm = () => {
 
                                 <button
                                     className="mt-5 bg-gray-800 rounded-lg p-2 text-white border border-slate-800 shadow-lg font-bold"
-                                    onClick={getPendingRewards}
+                                    onClick={() => { void getPendingRewards(); }}
                                 >
                                     {loading ? <BeatLoader color="white" size={9} className="m-1" /> : <div>refresh rewards</div>}
                                 </button>
@@ -150,7 +151,7 @@ const MyceliumFarm = () => {
                                 </div>
                                 <button
                                     className="mt-5 bg-gray-800 rounded-lg p-2  text-white border border-slate-800 shadow-lg font-bold"
-                                    onClick={claimRewards}
+                                    onClick={() => { void claimRewards(); }}
                                 >
                                     {txLoading ? <> <BeatLoader color="white" size={9} className="m-1" /></> : <>claim rewards 🍄</>}
                                 </button>

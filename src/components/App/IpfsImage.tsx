@@ -1,9 +1,9 @@
 
 
-const IPFSImage = ({ ipfsPath, className, width }) => {
+const IPFSImage = ({ ipfsPath, className, width }: any) => {
     const baseUrl = "https://ipfs.io/ipfs/";
 
-    const getImageUrl = (path) => {
+    const getImageUrl = (path: any) => {
         if (path.startsWith("https://")) {
             return path;
         }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { humanReadableAmount } from '../../utils/format';
 
-const MarketCapField = ({ value }) => {
+const MarketCapField = ({ value }: any) => {
     const [prevValue, setPrevValue] = useState(value);
     const [animationClass, setAnimationClass] = useState('');
 

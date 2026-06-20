@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { MdWaterDrop } from 'react-icons/md';
 import { humanReadableAmount } from '../../utils/format';
 
-const LiquidityField = ({ value }) => {
+const LiquidityField = ({ value }: any) => {
     const [prevValue, setPrevValue] = useState(value);
     const [animationClass, setAnimationClass] = useState('');
 

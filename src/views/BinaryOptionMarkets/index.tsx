@@ -6,21 +6,19 @@ import NewMarketModal from "./NewMarketModal";
 import { useSearchParams } from 'react-router-dom';
 import MarketDetails from "./MarketDetails";
 import Footer from "../../components/App/Footer";
-import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
 
 
 const BinaryOptionMarkets = () => {
     const [searchParams, setSearchParams] = useSearchParams();
 
-    const { connectedWallet: connectedAddress } = useWalletStore()
     const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
-    const [markets, setMarkets] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [markets, setMarkets] = useState<any[]>([]);
+    const [loading] = useState(false);
     const [loaded, setLoaded] = useState(false);
 
-    const [viewMarket, setViewMarket] = useState(null);
+    const [viewMarket, setViewMarket] = useState<any>(null);
     const [showNewMarket, setShowNewMarket] = useState(false);
 
     const [status, setStatus] = useState("active");
@@ -42,7 +40,7 @@ const BinaryOptionMarkets = () => {
 
     useEffect(() => {
         if (markets.length == 0 && !loaded && !loading) {
-            getOptionMarkets().then(r => {
+            void getOptionMarkets().then(r => {
                 setMarkets(r)
                 setLoaded(true)
             })

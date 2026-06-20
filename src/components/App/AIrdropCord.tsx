@@ -27,7 +27,7 @@ const AirdropCard = ({ log }: Props) => {
 
     const { tokens } = useTokenStore()
 
-    const tokenDetails = tokens.find(token => token.address == log.token.address)
+    const tokenDetails = tokens.find(token => token.address == (log.token as any).address)
 
     const copyPng = async () => {
         if (!cardRef.current) return;
@@ -75,7 +75,7 @@ const AirdropCard = ({ log }: Props) => {
             />
 
             <button
-                onClick={copyPng}
+                onClick={() => { void copyPng(); }}
                 className="no-export absolute top-40 right-2 flex items-center gap-1
                    rounded-md bg-white/10 hover:bg-white/20 px-2 py-1
                    text-[11px] font-medium backdrop-blur-sm"

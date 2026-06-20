@@ -38,16 +38,16 @@ export default function WalletSelectModal() {
 
 
         <div className='flex flex-col text-white gap-2 mb-10'>
-          <div onClick={handleKeplrClick} className='flex border border-gray-600 rounded-md w-full p-4 gap-3 items-center cursor-pointer hover:border-trippyYellow'>
+          <div onClick={() => { void handleKeplrClick(); }} className='flex border border-gray-600 rounded-md w-full p-4 gap-3 items-center cursor-pointer hover:border-trippyYellow'>
             <img src={keplrLogo} className='h-8 ' alt="" /><span>Keplr Wallet</span>
           </div>
-          <div onClick={handleLeapClick} className='flex border border-gray-600 rounded-md w-full p-4 gap-3 items-center cursor-pointer hover:border-trippyYellow'>
+          <div onClick={() => { void handleLeapClick(); }} className='flex border border-gray-600 rounded-md w-full p-4 gap-3 items-center cursor-pointer hover:border-trippyYellow'>
             <img src={leapLogo} className='h-8 rounded-sm' alt="" /><span>Leap Wallet</span>
           </div>
-          <div onClick={handleMetamaskClick} className='flex border border-gray-600 rounded-md w-full p-4 gap-3 items-center cursor-pointer hover:border-trippyYellow'>
+          <div onClick={() => { void handleMetamaskClick(); }} className='flex border border-gray-600 rounded-md w-full p-4 gap-3 items-center cursor-pointer hover:border-trippyYellow'>
             <img src={metamask} className='h-8' alt="" /><span>Metamask Wallet</span>
           </div>
-          <div onClick={handlePhantomClick} className='flex border border-gray-600 rounded-md w-full p-4 gap-3 items-center cursor-pointer hover:border-trippyYellow'>
+          <div onClick={() => { void handlePhantomClick(); }} className='flex border border-gray-600 rounded-md w-full p-4 gap-3 items-center cursor-pointer hover:border-trippyYellow'>
             <img src={phantom} className='h-8 rounded-sm' alt="" /><span>Phantom Wallet</span>
           </div>
         </div>

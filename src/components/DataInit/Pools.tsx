@@ -76,7 +76,7 @@ const PoolInitializer = () => {
 
     useEffect(() => {
         const id = setInterval(() => {
-            refetch({
+            void refetch({
                 yesterday: dayjs().subtract(24, "hour").toISOString(),
             });
         }, 100000);
@@ -92,7 +92,7 @@ const PoolInitializer = () => {
             // console.log(data)
             const poolsWithTokenInfo: LiquidityPool[] = []
 
-            data.liquidity_liquiditypool.map((pool) => {
+            data.liquidity_liquiditypool.map((pool: any) => {
                 const asset1 = {
                     ...pool.asset_1,
                     info: (pool.asset_1.address == ("inj") || pool.asset_1.address.includes("peggy") || pool.asset_1.address.includes("factory/") || pool.asset_1.address.includes("ibc/")) ?

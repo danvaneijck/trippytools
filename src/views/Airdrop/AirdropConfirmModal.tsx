@@ -95,7 +95,7 @@ const AirdropConfirmModal = (props: {
 
     const [feePayed, setFeePayed] = useState(false)
 
-    const [estimatedTx, setEstimatedTx] = useState(null)
+    const [estimatedTx, setEstimatedTx] = useState<number | null>(null)
     const [completedTx, setCompletedTx] = useState(0)
 
 
@@ -129,7 +129,7 @@ const AirdropConfirmModal = (props: {
 
     const sendAirdrops = useCallback(async (denom: any, decimals: number | undefined, airdropDetails: any[]) => {
 
-        const injectiveAddress = connectedAddress
+        const injectiveAddress = connectedAddress as string
 
         if (injectiveAddress !== connectedAddress) {
             throw new Error("You are connected to the wrong address")
@@ -248,11 +248,11 @@ const AirdropConfirmModal = (props: {
                     console.log("gas", gas)
                     console.log("msg", msg)
 
-                    const response = await performTransaction(injectiveAddress, msg);
+                    const response = await performTransaction(injectiveAddress, msg as any);
                     filteredChunk.forEach(record => successfullyProcessed.add(record.address));
 
                     success = true;
-                    transactions.push(response.txHash)
+                    transactions.push(response!.txHash)
                     setCompletedTx(transactions.length)
                 } catch (error) {
                     console.error("Transaction failed, retrying...", error);
@@ -270,7 +270,7 @@ const AirdropConfirmModal = (props: {
 
     const payFee = useCallback(async () => {
 
-        const injectiveAddress = connectedAddress;
+        const injectiveAddress = connectedAddress as string;
 
         const totalAmount = props.shroomCost * Math.pow(10, 18);
         const feeCollectionAmount = (totalAmount * 0.9).toLocaleString('fullwide', { useGrouping: false }); // 90%
@@ -301,7 +301,7 @@ const AirdropConfirmModal = (props: {
         console.log("send shroom fee", feeMsg);
         console.log("send shroom burn", burnMsg);
 
-        return await performTransaction(connectedAddress, [feeMsg, burnMsg]);
+        return await performTransaction(connectedAddress as string, [feeMsg, burnMsg]);
     }, [props.shroomCost, connectedAddress]);
 
     const startAirdrop = useCallback(async () => {
@@ -338,7 +338,7 @@ const AirdropConfirmModal = (props: {
 
                     await insertWallets({
                         variables: {
-                            objects: payable.map(wallet => ({
+                            objects: payable.map((wallet: any) => ({
                                 address: wallet.address,
                                 burn_address: false
                             }))
@@ -352,7 +352,7 @@ const AirdropConfirmModal = (props: {
                             "wallet_id": connectedAddress,
                             "amount_dropped": totalOut,
                             "total_participants": payable.length,
-                            "participants": payable.map((wallet) => {
+                            "participants": payable.map((wallet: any) => {
                                 return {
                                     "wallet_id": wallet.address
                                 }
@@ -373,7 +373,7 @@ const AirdropConfirmModal = (props: {
                 }
             }
 
-            navigate('/airdrop-history');
+            void navigate('/airdrop-history');
         }
     }, [props.airdropDetails, props.shroomCost, props.tokenAddress, props.tokenDecimals, feePayed, currentNetwork, sendAirdrops, connectedAddress, navigate, payFee, insertAirdropLog, props.criteria, props.description, insertWallets, insertTokenDropped, payable, totalOut])
 
@@ -439,7 +439,7 @@ const AirdropConfirmModal = (props: {
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {payable.map((holder, index) => (
+                                                        {payable.map((holder: any, index: any) => (
                                                             <tr key={index} className="text-white border-b text-xs">
                                                                 <td className="px-6 py-1 whitespace-nowrap">
                                                                     <a
@@ -448,9 +448,9 @@ const AirdropConfirmModal = (props: {
                                                                     >
                                                                         {holder.address}
                                                                         {
-                                                                            WALLET_LABELS[holder.address] ? (
-                                                                                <span className={`${WALLET_LABELS[holder.address].bgColor} ${WALLET_LABELS[holder.address].textColor} ml-2`}>
-                                                                                    {WALLET_LABELS[holder.address].label}
+                                                                            (WALLET_LABELS as Record<string, any>)[holder.address] ? (
+                                                                                <span className={`${(WALLET_LABELS as Record<string, any>)[holder.address].bgColor} ${(WALLET_LABELS as Record<string, any>)[holder.address].textColor} ml-2`}>
+                                                                                    {(WALLET_LABELS as Record<string, any>)[holder.address].label}
                                                                                 </span>
                                                                             ) : null
                                                                         }
@@ -504,12 +504,12 @@ const AirdropConfirmModal = (props: {
                             <button
                                 className="bg-gray-600 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded-sm shadow-sm hover:shadow-lg outline-hidden focus:outline-hidden mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
-                                onClick={() => startAirdrop().then(() => console.log("done")).catch(e => {
+                                onClick={() => { void startAirdrop().then(() => console.log("done")).catch(e => {
                                     console.log(e)
                                     setError(e.message)
                                     setProgress("")
                                     setTxLoading(false)
-                                })}
+                                }); }}
                             >
                                 Do Airdrop
                             </button>

@@ -26,14 +26,14 @@ const MarketAdminModal = (props: { setShowModal: (show: boolean) => void, market
     const updateMarket = useCallback(async () => {
         setError(null)
 
-        const injectiveAddress = connectedAddress;
+        const injectiveAddress = connectedAddress as string;
 
         const msgUpdateMarket = MsgAdminUpdateBinaryOptionsMarket.fromJSON({
             sender: injectiveAddress,
             marketId: props.market.marketId,
-            settlementPrice: market.settlementPrice,
-            expirationTimestamp: dayjs(market.expirationTimestamp).unix(),
-            settlementTimestamp: dayjs(market.settlementTimestamp).unix(),
+            settlementPrice: market.settlementPrice as any,
+            expirationTimestamp: dayjs(market.expirationTimestamp).unix() as any,
+            settlementTimestamp: dayjs(market.settlementTimestamp).unix() as any,
             status: market.marketStatus
         });
 
@@ -48,7 +48,7 @@ const MarketAdminModal = (props: { setShowModal: (show: boolean) => void, market
         }
     }, [connectedAddress, props, market])
 
-    const handleInputChange = (e) => {
+    const handleInputChange = (e: any) => {
         const { name, value } = e.target;
         setMarket({ ...market, [name]: value });
     };
@@ -104,12 +104,12 @@ const MarketAdminModal = (props: { setShowModal: (show: boolean) => void, market
                             <button
                                 className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded-sm shadow-sm hover:shadow-lg outline-hidden focus:outline-hidden mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
-                                onClick={() => updateMarket().then(() => console.log("done")).catch(e => {
+                                onClick={() => { void updateMarket().then(() => console.log("done")).catch(e => {
                                     console.log(e)
                                     setError(e.message)
                                     setProgress("")
                                     setTxLoading(false)
-                                })}
+                                }) }}
                             >
                                 Update
                             </button>

@@ -20,8 +20,8 @@ const TokenLaunch = () => {
 
     const [showConfirm, setShowConfirm] = useState(false);
 
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const [loading] = useState(false);
+    const [error] = useState<any>(null);
 
     return (
         <>

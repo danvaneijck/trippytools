@@ -67,7 +67,7 @@ const TrippyDistribution = () => {
         const maxPerWallet = Number(50); // INJ
 
         if (allTransactions) {
-            const totalRaised = module.getPreSaleAmounts(
+            const totalRaised = (module.getPreSaleAmounts as any)(
                 wallet,
                 allTransactions,
                 maxCap,
@@ -77,7 +77,7 @@ const TrippyDistribution = () => {
 
             setTotalRaised(totalRaised);
 
-            const totalAdjustedContribution = await module.getMultiplier(
+            const totalAdjustedContribution = await (module.getMultiplier as any)(
                 wallet,
                 shroomAddress
             );
@@ -106,7 +106,7 @@ const TrippyDistribution = () => {
                 amountToDrop
             ))
 
-            const preSaleAmounts = module.generateAirdropCSV(
+            const preSaleAmounts = (module.generateAirdropCSV as any)(
                 totalRaised,
                 totalAdjustedContribution,
                 tokenSupply,
