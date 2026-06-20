@@ -7,6 +7,7 @@
 import {
     ChainGrpcWasmApi,
     ChainGrpcBankApi,
+    ChainGrpcErc20Api,
     IndexerRestExplorerApi,
     ExplorerTransaction,
     IndexerGrpcAccountPortfolioApi,
@@ -64,6 +65,7 @@ class TokenUtils {
     RPC: string;
     chainGrpcWasmApi: ChainGrpcWasmApi;
     chainGrpcBankApi: ChainGrpcBankApi;
+    chainGrpcErc20Api: ChainGrpcErc20Api;
     indexerRestExplorerApi: IndexerRestExplorerApi;
     indexerGrpcAccountPortfolioApi: IndexerGrpcAccountPortfolioApi;
     chainGrpcTokenFactoryApi: ChainGrpcTokenFactoryApi;
@@ -81,6 +83,7 @@ class TokenUtils {
 
         this.chainGrpcWasmApi = new ChainGrpcWasmApi(this.RPC);
         this.chainGrpcBankApi = new ChainGrpcBankApi(this.RPC);
+        this.chainGrpcErc20Api = new ChainGrpcErc20Api(this.RPC);
         this.indexerRestExplorerApi = new IndexerRestExplorerApi(
             this.endpoints.explorer
         );
@@ -292,6 +295,35 @@ class TokenUtils {
         }));
 
         return tokensWithMetadata;
+    }
+
+    /**
+     * Look up the ERC-20 address a tokenfactory denom is paired with on the
+     * native EVM, or null if it hasn't been paired. Used to show MultiVM
+     * status in the manage view and to gate the "Pair ERC-20" action.
+     */
+    async getErc20Pair(denom: string): Promise<string | null> {
+        try {
+            const pair = await this.chainGrpcErc20Api.fetchTokenPairByDenom(denom);
+            return pair?.erc20Address ?? null;
+        } catch {
+            // No pair registered (the query 404s) — treat as unpaired.
+            return null;
+        }
+    }
+
+    /**
+     * Reverse of getErc20Pair: given an ERC-20 (0x) address, return the bank
+     * denom it's paired with, or null. Lets the holder/liquidity tools accept a
+     * pasted EVM token address.
+     */
+    async getErc20PairBankDenom(erc20Address: string): Promise<string | null> {
+        try {
+            const pair = await this.chainGrpcErc20Api.fetchTokenPairByErc20Address(erc20Address);
+            return pair?.bankDenom ?? null;
+        } catch {
+            return null;
+        }
     }
 
     async getBalanceOfToken(denom: string, wallet: string) {

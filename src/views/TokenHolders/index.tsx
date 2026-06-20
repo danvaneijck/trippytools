@@ -14,6 +14,7 @@ import Footer from "../../components/App/Footer";
 import { humanReadableAmount } from "../../utils/helpers";
 import { shortAddress } from "../../utils/format";
 import { arrayToCsv, downloadCsv } from "../../utils/csv";
+import { evmAddressUrl, EVM_ADDRESS_RE } from "../../utils/evm";
 import { gql, useMutation, useQuery } from "@apollo/client";
 import dayjs from "dayjs";
 import { Bounce, ToastContainer, toast } from 'react-toastify';
@@ -172,6 +173,11 @@ const TokenHolders = () => {
 
     const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
     const [pairMarketing, setPairMarketing] = useState<MarketingInfo | null>(null);
+
+    // ERC-20 address this token is paired with on Injective EVM (null = none).
+    const [erc20Pair, setErc20Pair] = useState<string | null>(null);
+    // Toggle to display holder addresses in their EVM (0x) form.
+    const [showEvm, setShowEvm] = useState(false);
 
     const [holders, setHolders] = useState<Holder[]>([]);
     const [totalHolderCount, setTotalHolderCount] = useState<number | null>(null)
@@ -520,12 +526,16 @@ const TokenHolders = () => {
     const getTokenHolders = useCallback(async (address: string) => {
         if (loading) return
         if (lastLoadedAddress == address) return
+        // A bare 0x address is resolved to its bank denom by the effect below;
+        // don't try to load token info for it directly.
+        if (EVM_ADDRESS_RE.test(address)) return
         const module = new TokenUtils(networkConfig);
 
         setLoading(true);
         setError(null);
         setTokenInfo(null);
         setPairMarketing(null);
+        setErc20Pair(null);
 
         setProgress("");
         setLiquidity([])
@@ -583,6 +593,13 @@ const TokenHolders = () => {
                 }
             }
 
+            // Bank-denom tokens (tokenfactory/peggy/ibc/inj) can be paired with
+            // an ERC-20 on the EVM — the paired holders are the SAME accounts,
+            // so this is just status/explorer enrichment, not a second source.
+            if (address.includes("factory") || address.includes("peggy") || address.includes("ibc") || address === "inj") {
+                setErc20Pair(await module.getErc20Pair(address));
+            }
+
             setLastLoadedAddress(address);
         } catch (e) {
             console.log(e);
@@ -595,6 +612,21 @@ const TokenHolders = () => {
 
         }
     }, [loading, lastLoadedAddress, networkConfig]);
+
+    // If the user pastes an ERC-20 (0x) address, resolve it to the paired bank
+    // denom and swap it in — everything downstream then keys off the denom.
+    useEffect(() => {
+        const v = contractAddress?.value;
+        if (!v || !EVM_ADDRESS_RE.test(v)) return;
+        let cancelled = false;
+        const module = new TokenUtils(networkConfig);
+        module.getErc20PairBankDenom(v).then((denom) => {
+            if (cancelled) return;
+            if (denom) setContractAddress({ value: denom, label: denom } as any);
+            else setError("No token is paired with that ERC-20 address.");
+        }).catch(() => undefined);
+        return () => { cancelled = true; };
+    }, [contractAddress, networkConfig]);
 
     useEffect(() => {
         const address = searchParams.get("address")
@@ -717,6 +749,19 @@ const TokenHolders = () => {
                                             total supply:{" "}
                                             {humanReadableAmount(tokenInfo.total_supply /
                                                 Math.pow(10, tokenInfo.decimals))}
+                                        </div>
+                                    )}
+                                    {erc20Pair && (
+                                        <div className="mt-1">
+                                            ERC-20:{" "}
+                                            <a
+                                                className="text-emerald-400 underline break-all"
+                                                target="_blank"
+                                                href={evmAddressUrl(currentNetwork, erc20Pair)}
+                                            >
+                                                {shortAddress(erc20Pair)}
+                                            </a>
+                                            <span className="block text-xs text-slate-400">paired on Injective EVM — same holders as the bank token</span>
                                         </div>
                                     )}
                                 </div>
@@ -887,6 +932,10 @@ const TokenHolders = () => {
                                     <div>
                                         <button onClick={downloadHoldersCsv} className="p-1 bg-slate-700 hover:bg-slate-800 rounded-sm mb-2">Download Holders CSV</button>
                                         <div>Total token holders: {totalHolderCount}</div>
+                                        <label className="flex items-center gap-2 mt-1 cursor-pointer text-slate-300">
+                                            <input type="checkbox" className="accent-trippyYellow" checked={showEvm} onChange={(e) => setShowEvm(e.target.checked)} />
+                                            Show EVM (0x) addresses
+                                        </label>
                                     </div>
                                     <div>
                                         <form onSubmit={goToPage} className="mt-4">
@@ -919,6 +968,8 @@ const TokenHolders = () => {
                                     lastLoadedAddress={lastLoadedAddress}
                                     liquidity={liquidity}
                                     findingLiq={findingLiq}
+                                    showEvm={showEvm}
+                                    network={currentNetwork}
                                 />
 
                                 {/* Pagination controls */}
