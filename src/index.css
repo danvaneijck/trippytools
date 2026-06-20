@@ -3,7 +3,10 @@
 @theme {
   --animate-spin3d: spin3d 5s linear infinite;
 
-  --font-magic: MagicMushroom, sans-serif;
+  /* Space Grotesk is the whole-app font: the default sans (body, inputs, etc.)
+     and the `font-magic` title token both resolve to it. */
+  --font-sans: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-magic: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
 
   --color-customGray: #001319;
   --color-trippyYellow: #f9d73f;
@@ -124,11 +127,17 @@ body {
   100% { background-color: transparent; }
 }
 
+/*
+  Title / display font. `font-magic` (the --font-magic token) now points here.
+  Single variable woff2 (latin subset) covering the full 300–700 weight range,
+  so `font-semibold`/`font-bold` on headings resolve to real weights.
+*/
 @font-face {
-  font-family: 'MagicMushroom';
-  src: url('./assets/fonts/MagicMushroom.otf') format('opentype');
-  font-weight: normal;
+  font-family: 'Space Grotesk';
+  src: url('./assets/fonts/SpaceGrotesk-Variable.woff2') format('woff2');
+  font-weight: 300 700;
   font-style: normal;
+  font-display: swap;
 }
 
 

@@ -25,3 +25,26 @@ export const SectionHeader = ({
         {children}
     </div>
 );
+
+// A small labelled stat used inside panels (supply, liquidity, burned, …). Value
+// can be plain text or richer content (e.g. a coloured badge).
+export const StatTile = ({
+    label,
+    value,
+    accent,
+}: {
+    label: string;
+    value: ReactNode;
+    accent?: boolean;
+}) => (
+    <div className="rounded-xl bg-white/3 px-3 py-2.5">
+        <div className="text-[11px] uppercase tracking-wide text-white/40">{label}</div>
+        <div
+            className={`mt-0.5 text-sm font-semibold tabular-nums ${
+                accent ? 'text-trippyYellow' : 'text-white'
+            }`}
+        >
+            {value}
+        </div>
+    </div>
+);

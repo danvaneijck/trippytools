@@ -33,16 +33,16 @@ const TokenHoldersTable = ({ holders, startIndex, hasSplitBalances, WALLET_LABEL
     const totalHolders = holders.length;
 
     return (
-        <div className="overflow-x-auto mt-5">
+        <div className="mt-5 overflow-x-auto font-sans">
             <div
-                className={`grid ${hasSplitBalances ? 'grid-cols-7' : 'grid-cols-6'} gap-4 items-center text-left`}
+                className={`grid ${hasSplitBalances ? 'grid-cols-7' : 'grid-cols-6'} items-center gap-4 border-b border-white/10 pb-2 text-left text-[11px] uppercase tracking-wide text-white/50 min-w-175`}
             >
-                <div className="col-span-1 overflow-hidden text-ellipsis font-bold">Position</div>
-                <div className="col-span-2 overflow-hidden text-ellipsis font-bold">{showEvm ? "EVM Address" : "Address"}</div>
-                <div className="col-span-1 overflow-hidden text-ellipsis font-bold">{hasSplitBalances ? "CW20 Balance" : "Balance"}</div>
-                {hasSplitBalances && <div className="col-span-1 overflow-hidden text-ellipsis font-bold">Bank Balance</div>}
-                <div className="col-span-1 overflow-hidden text-ellipsis font-bold">Percentage</div>
-                <div className="col-span-1 overflow-hidden text-ellipsis font-bold">USD</div>
+                <div className="col-span-1 overflow-hidden text-ellipsis">Position</div>
+                <div className="col-span-2 overflow-hidden text-ellipsis">{showEvm ? "EVM Address" : "Address"}</div>
+                <div className="col-span-1 overflow-hidden text-ellipsis">{hasSplitBalances ? "CW20 Balance" : "Balance"}</div>
+                {hasSplitBalances && <div className="col-span-1 overflow-hidden text-ellipsis">Bank Balance</div>}
+                <div className="col-span-1 overflow-hidden text-ellipsis">Percentage</div>
+                <div className="col-span-1 overflow-hidden text-ellipsis">USD</div>
             </div>
             <List
                 height={400}

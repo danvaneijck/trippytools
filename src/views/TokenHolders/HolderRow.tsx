@@ -38,7 +38,7 @@ const HolderRow = ({ index, style, data }: HolderRowProps) => {
         <div
             key={index + startIndex}
             style={style}
-            className={`text-white border-b grid grid-cols-${hasSplitBalances ? 7 : 6} gap-4 items-center text-left min-w-[700px]`}
+            className={`text-white/90 border-b border-white/5 hover:bg-white/5 grid grid-cols-${hasSplitBalances ? 7 : 6} gap-4 items-center text-left min-w-175`}
         >
             <div className="col-span-1 overflow-hidden text-ellipsis">{startIndex + index + 1}</div>
             <div className="col-span-2 whitespace-nowrap overflow-hidden text-ellipsis">
