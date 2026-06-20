@@ -1,15 +1,18 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { GridLoader } from "react-spinners";
 import { Holder, MarketingInfo, PairInfo, TokenInfo } from "../../constants/types";
 import { Link, useSearchParams } from 'react-router-dom';
 import { IoIosWarning } from "react-icons/io";
+import { gql, useQuery } from "@apollo/client";
 import IPFSImage from "../../components/App/IpfsImage";
 import { WALLET_LABELS } from "../../constants/walletLabels";
 import TokenSelect from "../../components/Inputs/TokenSelect";
 import Footer from "../../components/App/Footer";
 import useNetworkStore from "../../store/useNetworkStore";
 import useLiquidityPoolStore from "../../store/usePoolStore";
+import useTokenStore from "../../store/useTokenStore";
+import choiceClient from "../../utils/choiceApolloClient";
 
 import choicelogo from "../../assets/choice.svg"
 import dojologo from "../../assets/dojo.svg"
@@ -20,28 +23,96 @@ import { shortAddress } from "../../utils/format";
 import { arrayToCsv, downloadCsv } from "../../utils/csv";
 import { CHOICE_FACTORY } from "../../constants/contractAddresses";
 import { evmAddressUrl, injToEvm } from "../../utils/evm";
-
+import { PANEL } from "../ShroomHub/styles";
+import { SectionHeader, StatTile } from "../ShroomHub/ui";
 
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
 const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
+const DEFAULT_POOL = "inj1uyjjnykz0slq0w4n6k2xgleykqk9k5qkfctmw5";
+const BTN =
+    "rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 disabled:opacity-40";
+
+// Full pool list straight from the Choice API so the search covers every pool
+// (not just the price-tracked subset the global store preloads).
+const POOLS_QUERY = gql`
+    query LiquiditySearchPools {
+        liquidity_liquiditypool {
+            contract_addr
+            dex {
+                name
+                factory_address
+            }
+            liquidity_token {
+                address
+            }
+            asset_1 {
+                address
+                symbol
+                logo
+            }
+            asset_2 {
+                address
+                symbol
+                logo
+            }
+        }
+    }
+`;
+
+interface PoolOption {
+    value: string;
+    label: string;
+    img?: string;
+}
+
+// Choice pools sort to the top, then alphabetically by pair — matches the old
+// store-backed ordering.
+const sortPools = (a: any, b: any): number => {
+    const aChoice = a.dex?.factory_address === CHOICE_FACTORY;
+    const bChoice = b.dex?.factory_address === CHOICE_FACTORY;
+    if (aChoice === bChoice) {
+        return `${a.asset_1.symbol}/${a.asset_2.symbol}`.localeCompare(
+            `${b.asset_1.symbol}/${b.asset_2.symbol}`,
+        );
+    }
+    return aChoice ? -1 : 1;
+};
+
+const toOption = (p: any): PoolOption => ({
+    value: p.contract_addr,
+    label: `${p.asset_1.symbol}/${p.asset_2.symbol} (${p.dex.name})`,
+    img: p.asset_1.logo ?? p.asset_1.icon,
+});
 
 const TokenLiquidity = () => {
     const [searchParams, setSearchParams] = useSearchParams();
 
     const { pools } = useLiquidityPoolStore()
+    const { tokens } = useTokenStore()
 
-    const [selectedPool, setSelectedPool] = useState(pools.find(x => x.contract_addr == "inj1uyjjnykz0slq0w4n6k2xgleykqk9k5qkfctmw5") ?? null);
+    const [selectedPool, setSelectedPool] = useState(pools.find(x => x.contract_addr == DEFAULT_POOL) ?? null);
 
     const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
-    const [contractAddress, setContractAddress] = useState(
-        pools.filter(p => p.liquidity_token !== null).map((p) => {
-            return {
-                value: p.contract_addr,
-                label: `${p.asset_1.symbol}/${p.asset_2.symbol} (${p.dex.name})`,
-                img: p.asset_1.icon,
-            }
-        }).find(x => x.value == (searchParams.get("address") ?? "inj1uyjjnykz0slq0w4n6k2xgleykqk9k5qkfctmw5"))
+    // Live, full pool list from Choice for the search dropdown.
+    const { data: poolData } = useQuery(POOLS_QUERY, {
+        client: choiceClient,
+        fetchPolicy: "cache-and-network",
+    });
+
+    const poolOptions = useMemo<PoolOption[]>(() => {
+        const source: any[] = poolData?.liquidity_liquiditypool?.length
+            ? poolData.liquidity_liquiditypool
+            : pools;
+        return source
+            .filter((p) => p.liquidity_token !== null && p.asset_1 != null && p.asset_2 != null)
+            .slice()
+            .sort(sortPools)
+            .map(toOption);
+    }, [poolData, pools]);
+
+    const [contractAddress, setContractAddress] = useState<PoolOption | undefined>(
+        () => poolOptions.find(x => x.value == (searchParams.get("address") ?? DEFAULT_POOL)),
     );
 
     const [lastLoadedAddress, setLastLoadedAddress] = useState("")
@@ -158,15 +229,9 @@ const TokenLiquidity = () => {
         const address = searchParams.get("address")
         if (address && address !== lastLoadedAddress) {
             void getTokenHolders(address)
-            setContractAddress((address: any) => pools.map((p) => {
-                return {
-                    value: p.contract_addr,
-                    label: `${p.asset_1.symbol}/${p.asset_2.symbol} (${p.dex.name})`,
-                    img: p.asset_1.icon,
-                }
-            }).find(v => v.value == address) ?? address)
+            setContractAddress(poolOptions.find(v => v.value == address) ?? { value: address, label: address })
         }
-    }, [searchParams, lastLoadedAddress, getTokenHolders, pools])
+    }, [searchParams, lastLoadedAddress, getTokenHolders, poolOptions])
 
     const renderDex = (pool: any) => {
         let link
@@ -180,15 +245,12 @@ const TokenLiquidity = () => {
             link = `https://coinhall.org/injective/${pool.contract_addr}`
         }
         return (
-            <Link to={link as string} >
-                <div className="items-center underline">
-                    DEX: {pool.dex.name}
-                    {pool.dex.name == 'Choice' && <img src={choicelogo} alt="Choice Logo" className="inline-block ml-2" style={{ width: 20, height: 20 }} />}
-                    {pool.dex.name == 'DojoSwap' && <img src={dojologo} alt="Dojo Logo" className="inline-block ml-2" style={{ width: 20, height: 20 }} />}
-                    {pool.dex.name == 'White Whale' && <img src={whitewhale} alt="White Whale Logo" className="inline-block ml-2" style={{ width: 20, height: 20 }} />}
-                </div>
+            <Link to={link as string} className="inline-flex items-center underline">
+                DEX: {pool.dex.name}
+                {pool.dex.name == 'Choice' && <img src={choicelogo} alt="Choice Logo" className="ml-2 inline-block" style={{ width: 20, height: 20 }} />}
+                {pool.dex.name == 'DojoSwap' && <img src={dojologo} alt="Dojo Logo" className="ml-2 inline-block" style={{ width: 20, height: 20 }} />}
+                {pool.dex.name == 'White Whale' && <img src={whitewhale} alt="White Whale Logo" className="ml-2 inline-block" style={{ width: 20, height: 20 }} />}
             </Link>
-
         )
     }
 
@@ -201,150 +263,118 @@ const TokenLiquidity = () => {
         downloadCsv("holders.csv", arrayToCsv(rows, ["Holder Address", "Balance", "Percentage Held"]));
     };
 
+    // Prefer Choice's registry logo over raw on-chain metadata (often a dead
+    // IPFS link). CW20 marketing logos are kept as a final fallback.
+    const choiceLogo = tokens.find((t) => t.address === tokenInfo?.denom)?.icon;
+    const logoSrc = choiceLogo || tokenInfo?.logo || pairMarketing?.logo?.url || null;
+
     return (
-        <div className="flex flex-col min-h-screen bg-customGray">
-            <div className="pt-14 grow mx-2 pb-20">
-                <div className="flex justify-center items-center w-full py-10">
-                    <div className="w-full max-w-(--breakpoint-lg) px-2">
-                        <div className="text-center text-white font-magic">
-                            <div className="text-3xl">
-                                Liquidity holders
-                            </div>
-                            <div className="text-lg">on Injective main net</div>
-                        </div>
+        <div className="flex min-h-screen flex-col bg-customGray text-stone-100">
+            <div className="mx-auto w-full max-w-5xl space-y-4 px-3 pt-20 pb-16 sm:px-5 md:space-y-5 md:pt-24">
+                {/* ---- title ---- */}
+                <div className="text-center">
+                    <div className="text-[11px] uppercase tracking-[0.25em] text-white/40">
+                        Injective mainnet
+                    </div>
+                    <h1 className="font-magic text-3xl text-white md:text-4xl">Liquidity holders</h1>
+                </div>
 
-                        <div className="mt-4 space-y-2">
-                            <label
-                                htmlFor="token-address"
-                                className="block text-white"
-                            >
-                                Pair address
-                            </label>
-                            <TokenSelect
-                                options={
-                                    pools.filter(p => p.liquidity_token !== null).sort((a, b) => {
-                                        const aChoice = a.dex.factory_address === CHOICE_FACTORY;
-                                        const bChoice = b.dex.factory_address === CHOICE_FACTORY;
+                {/* ---- search ---- */}
+                <section className={`${PANEL} p-5 md:p-6`}>
+                    <label htmlFor="token-address" className="mb-2 block font-sans text-sm text-white/60">
+                        Pair address
+                    </label>
+                    <TokenSelect
+                        options={poolOptions}
+                        selectedOption={contractAddress}
+                        setSelectedOption={setContractAddress}
+                    />
+                    {error && <div className="mt-3 rounded-lg bg-red-500/10 px-3 py-2 font-sans text-sm text-red-400">
+                        {error}
+                    </div>}
+                </section>
 
-                                        if (aChoice === bChoice) {
-                                            // same class → fall back to a secondary sort (e.g. pair symbol)
-                                            return `${a.asset_1.symbol}/${a.asset_2.symbol}`.localeCompare(
-                                                `${b.asset_1.symbol}/${b.asset_2.symbol}`
-                                            );
-                                        }
-                                        // Choice pools first
-                                        return aChoice ? -1 : 1;
-                                    }).map((p) => {
-                                        return {
-                                            value: p.contract_addr,
-                                            label: `${p.asset_1.symbol}/${p.asset_2.symbol} (${p.dex.name})`,
-                                            img: p.asset_1.icon,
-                                        }
-                                    })
-                                }
-                                selectedOption={contractAddress}
-                                setSelectedOption={setContractAddress}
-                            />
-                        </div>
-
-                        {error && <div className="text-red-500 mt-2">
-                            {error}
-                        </div>}
-
-                        <div className="flex flex-col md:flex-row justify-between">
-
-                            {tokenInfo && (
-                                <div className="mt-5 text-sm text-white">
-                                    <div className="text-xl">Token Info</div>
-
-                                    <div>name: {tokenInfo.name}</div>
-                                    <div>symbol: {tokenInfo.symbol}</div>
-                                    <div>decimals: {tokenInfo.decimals}</div>
-                                    {tokenInfo.total_supply && (
-                                        <div>
-                                            total supply:{" "}
-                                            {formatNumber(tokenInfo.total_supply /
-                                                Math.pow(10, tokenInfo.decimals))}
+                {/* ---- token + pair overview ---- */}
+                {(tokenInfo || pairInfo) && (
+                    <section className={`${PANEL} p-5 md:p-6`}>
+                        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+                            {logoSrc &&
+                                <IPFSImage
+                                    width={88}
+                                    className="shrink-0 rounded-2xl object-cover ring-1 ring-white/10"
+                                    ipfsPath={logoSrc}
+                                />
+                            }
+                            <div className="min-w-0 flex-1 font-sans text-sm text-white/65">
+                                {tokenInfo && (
+                                    <>
+                                        <div className="flex flex-wrap items-baseline gap-x-2">
+                                            <span className="text-2xl font-semibold text-white">{tokenInfo.name}</span>
+                                            {tokenInfo.symbol &&
+                                                <span className="text-lg text-white/45">{tokenInfo.symbol}</span>
+                                            }
                                         </div>
-                                    )}
-                                    {erc20Pair && (
-                                        <div className="mt-1">
-                                            ERC-20:{" "}
-                                            <a
-                                                className="text-emerald-400 underline break-all"
-                                                target="_blank"
-                                                href={evmAddressUrl(currentNetwork, erc20Pair)}
-                                            >
-                                                {shortAddress(erc20Pair)}
-                                            </a>
-                                            <span className="block text-xs text-slate-400">paired on Injective EVM</span>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                            {!pairMarketing && tokenInfo && tokenInfo.logo && (
-                                <div className="mt-5 text-sm text-white">
-                                    <IPFSImage
-                                        width={100}
-                                        className={'mb-2 rounded-lg'}
-                                        ipfsPath={tokenInfo.logo}
-
-                                    />
-                                    <a href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}explorer.injective.network/account/${tokenInfo.admin}`}>
-                                        admin: {shortAddress(tokenInfo.admin)}
-                                        {
-                                            (WALLET_LABELS as Record<string, any>)[tokenInfo.admin!] ? (
-                                                <span className={`${(WALLET_LABELS as Record<string, any>)[tokenInfo.admin!].bgColor} ${(WALLET_LABELS as Record<string, any>)[tokenInfo.admin!].textColor} ml-2`}>
-                                                    {(WALLET_LABELS as Record<string, any>)[tokenInfo.admin!].label}
-                                                </span>
-                                            ) : null
-                                        }
-                                    </a>
-                                </div>
-                            )}
-                            {pairMarketing && pairMarketing.logo && (
-                                <div className="mt-5 text-sm text-white">
-
-                                    <img
-                                        src={pairMarketing.logo.url}
-                                        style={{ width: 50, height: 50 }}
-                                        className="mb-2"
-                                        alt="logo"
-                                    />
-                                    <div>project: {pairMarketing.project}</div>
-                                    <div>description: {pairMarketing.description}</div>
-                                    <div>
-                                        marketing: {pairMarketing.marketing}
-                                        {
-                                            (WALLET_LABELS as Record<string, any>)[pairMarketing.marketing] ? (
-                                                <span className={`${(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing].bgColor} ${(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing].textColor} ml-2`}>
-                                                    {(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing].label}
-                                                </span>
-                                            ) : null
+                                        {erc20Pair && (
+                                            <div className="mt-1">
+                                                ERC-20:{" "}
+                                                <a
+                                                    className="break-all text-emerald-400 underline"
+                                                    target="_blank"
+                                                    href={evmAddressUrl(currentNetwork, erc20Pair)}
+                                                >
+                                                    {shortAddress(erc20Pair)}
+                                                </a>
+                                                <span className="block text-xs text-white/40">paired on Injective EVM</span>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                                {pairMarketing && (
+                                    <div className="mt-2 space-y-0.5">
+                                        {pairMarketing.project && <div>project: <span className="text-white/85">{pairMarketing.project}</span></div>}
+                                        {pairMarketing.description && <div>{pairMarketing.description}</div>}
+                                        {pairMarketing.marketing &&
+                                            <div>
+                                                marketing: {shortAddress(pairMarketing.marketing)}
+                                                {(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing] && (
+                                                    <span className={`${(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing].bgColor} ${(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing].textColor} ml-2`}>
+                                                        {(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing].label}
+                                                    </span>
+                                                )}
+                                            </div>
                                         }
                                     </div>
-
-                                </div>
-                            )}
-                        </div>
-                        {pairInfo && (
-                            <div className="mt-4 text-white text-sm">
-                                <div className="text-xl">Liquidity Info</div>
-
-                                {selectedPool &&
-                                    <div>
-                                        {renderDex(selectedPool)}
+                                )}
+                                {!pairMarketing && tokenInfo?.admin && (
+                                    <div className="mt-2">
+                                        <a className="underline" href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}explorer.injective.network/account/${tokenInfo.admin}`}>
+                                            admin: {shortAddress(tokenInfo.admin)}
+                                            {(WALLET_LABELS as Record<string, any>)[tokenInfo.admin] && (
+                                                <span className={`${(WALLET_LABELS as Record<string, any>)[tokenInfo.admin].bgColor} ${(WALLET_LABELS as Record<string, any>)[tokenInfo.admin].textColor} ml-2`}>
+                                                    {(WALLET_LABELS as Record<string, any>)[tokenInfo.admin].label}
+                                                </span>
+                                            )}
+                                        </a>
                                     </div>
-
-                                }
-                                <div>
-                                    pair address: {pairInfo.contract_addr}
-                                </div>
-                                <div>
-                                    liquidity token: {liquidityToken}
-                                </div>
+                                )}
+                                {selectedPool && (
+                                    <div className="mt-2">{renderDex(selectedPool)}</div>
+                                )}
                             </div>
-                        )}
+                        </div>
+
+                        {/* stat tiles */}
+                        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                            {tokenInfo && <StatTile label="Decimals" value={tokenInfo.decimals ?? "—"} />}
+                            {tokenInfo?.total_supply != null && (
+                                <StatTile
+                                    label="Total supply"
+                                    value={formatNumber(tokenInfo.total_supply / Math.pow(10, tokenInfo.decimals))}
+                                />
+                            )}
+                            {pairInfo && <StatTile label="Pair address" value={shortAddress(pairInfo.contract_addr)} />}
+                            {liquidityToken && <StatTile label="LP token" value={shortAddress(liquidityToken)} />}
+                        </div>
 
                         {poolReserves && selectedPool && (
                             <div className="mt-4">
@@ -354,100 +384,84 @@ const TokenLiquidity = () => {
                                 />
                             </div>
                         )}
+                    </section>
+                )}
 
-                        {loading && (
-                            <div className="flex flex-col items-center justify-center pt-5">
-                                <GridLoader color="#f9d73f" />
-                                {progress.length > 0 && <div className="text-sm mt-2">
-                                    {progress}
-                                </div>
-                                }
-                            </div>
-                        )}
-                        {!loading && holders.length == 0 && lastLoadedAddress &&
-                            <div className="mt-10 text-center">
-                                no liquidity yet
-                            </div>
-                        }
-                        {holders.length > 0 && (
-                            <div className="mt-2 overflow-x-auto text-sm">
-                                <button onClick={downloadHoldersCsv} className="p-2 bg-gray-800 hover:bg-gray-900 rounded-sm mb-2 mt-2 font-semibold">Download CSV</button>
-                                <label className="flex items-center gap-2 mb-2 cursor-pointer text-slate-300">
-                                    <input type="checkbox" className="accent-trippyYellow" checked={showEvm} onChange={(e) => setShowEvm(e.target.checked)} />
-                                    Show EVM (0x) addresses
-                                </label>
-                                <div>Total liquidity holders: {holders.length}</div>
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="">
-                                        <tr>
-                                            <th className="px-4 py-2">
-                                                Position
-                                            </th>
-                                            <th className="px-4 py-2">
-                                                {showEvm ? "EVM Address" : "Address"}
-                                            </th>
-                                            <th className="px-4 py-2">
-                                                Balance
-                                            </th>
-                                            <th className="px-4 py-2">
-                                                Percentage
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="">
-                                        {holders.map((holder, index) => {
-                                            // inj1 and 0x are the same account — show whichever the toggle asks for.
-                                            const evmAddr = showEvm ? injToEvm(holder.address) : null;
-                                            return (
-                                            <tr
-                                                key={index}
-                                                className="border-b"
-                                            >
-                                                <td className="px-6 py-1">
-                                                    {index + 1}
-                                                </td>
-                                                <td className="px-4 py-1 text-blue-600 flex flex-row items-center">
-                                                    <a
-                                                        target="_blank"
-                                                        href={evmAddr ? evmAddressUrl(currentNetwork, evmAddr) : `https://explorer.injective.network/account/${holder.address}`}
-                                                    >
-                                                        {evmAddr ?? holder.address}
-                                                    </a>
-                                                    {
-                                                        (WALLET_LABELS as Record<string, any>)[holder.address] ? (
-                                                            <span className={`${(WALLET_LABELS as Record<string, any>)[holder.address].bgColor} ${(WALLET_LABELS as Record<string, any>)[holder.address].textColor} ml-2`}>
-                                                                {(WALLET_LABELS as Record<string, any>)[holder.address].label}
-                                                            </span>
-                                                        ) : null
-                                                    }
-
-                                                    {pairInfo && holder.address == pairInfo.contract_addr && (
-                                                        <span className="text-blue-400 ml-2">
-                                                            {" "}
-                                                            pair contract
-                                                        </span>
-                                                    )}
-                                                    {holder.address != dojoBurnAddress && holder.address != injBurnAddress && Number(holder.percentageHeld) > 99 && (
-                                                        <span className="text-orange-400 ml-2 flex text-xl">
-                                                            <IoIosWarning />
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td className="px-4 py-2">
-                                                    {formatNumber(holder.balance as number)}
-                                                </td>
-                                                <td className="px-4 py-2">
-                                                    {holder.percentageHeld.toFixed(2)}%
-                                                </td>
-                                            </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
+                {loading && (
+                    <div className="flex flex-col items-center justify-center py-10">
+                        <GridLoader color="#f9d73f" />
+                        {progress.length > 0 && <div className="mt-3 font-sans text-sm text-white/60">{progress}</div>}
                     </div>
-                </div>
+                )}
+
+                {!loading && holders.length == 0 && lastLoadedAddress &&
+                    <div className="py-10 text-center font-sans text-white/50">no liquidity yet</div>
+                }
+
+                {/* ---- LP holders ---- */}
+                {holders.length > 0 && (
+                    <section className={`${PANEL} p-5 md:p-6`}>
+                        <SectionHeader
+                            eyebrow="Providers"
+                            title="Liquidity holders"
+                            sub={`${holders.length.toLocaleString()} total`}
+                        >
+                            <div className="flex flex-wrap items-center gap-3 font-sans">
+                                <label className="flex cursor-pointer items-center gap-2 text-sm text-white/60">
+                                    <input type="checkbox" className="accent-trippyYellow" checked={showEvm} onChange={(e) => setShowEvm(e.target.checked)} />
+                                    EVM (0x) addresses
+                                </label>
+                                <button onClick={downloadHoldersCsv} className={BTN}>Download CSV</button>
+                            </div>
+                        </SectionHeader>
+
+                        <div className="overflow-x-auto font-sans text-sm">
+                            <div className="grid min-w-150 grid-cols-[3rem_1fr_8rem_6rem] gap-4 border-b border-white/10 pb-2 text-[11px] uppercase tracking-wide text-white/50">
+                                <div>#</div>
+                                <div>{showEvm ? "EVM Address" : "Address"}</div>
+                                <div className="text-right">Balance</div>
+                                <div className="text-right">Percentage</div>
+                            </div>
+                            {holders.map((holder, index) => {
+                                // inj1 and 0x are the same account — show whichever the toggle asks for.
+                                const evmAddr = showEvm ? injToEvm(holder.address) : null;
+                                const label = (WALLET_LABELS as Record<string, any>)[holder.address];
+                                return (
+                                    <div
+                                        key={index}
+                                        className="grid min-w-150 grid-cols-[3rem_1fr_8rem_6rem] items-center gap-4 border-b border-white/5 py-1.5 text-white/90 hover:bg-white/5"
+                                    >
+                                        <div className="text-white/50">{index + 1}</div>
+                                        <div className="flex flex-row items-center overflow-hidden">
+                                            <a
+                                                className="truncate text-sky-400 hover:text-sky-300"
+                                                target="_blank"
+                                                href={evmAddr ? evmAddressUrl(currentNetwork, evmAddr) : `https://explorer.injective.network/account/${holder.address}`}
+                                            >
+                                                {evmAddr ?? shortAddress(holder.address)}
+                                            </a>
+                                            {label && (
+                                                <span className={`${label.bgColor} ${label.textColor} ml-2`}>
+                                                    {label.label}
+                                                </span>
+                                            )}
+                                            {pairInfo && holder.address == pairInfo.contract_addr && (
+                                                <span className="ml-2 text-sky-300">pair contract</span>
+                                            )}
+                                            {holder.address != dojoBurnAddress && holder.address != injBurnAddress && Number(holder.percentageHeld) > 99 && (
+                                                <span className="ml-2 flex text-xl text-orange-400">
+                                                    <IoIosWarning />
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="text-right tabular-nums">{formatNumber(holder.balance as number)}</div>
+                                        <div className="text-right tabular-nums">{holder.percentageHeld.toFixed(2)}%</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </section>
+                )}
             </div>
 
             <Footer />

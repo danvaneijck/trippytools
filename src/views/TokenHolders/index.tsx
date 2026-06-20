@@ -23,10 +23,72 @@ import { GrStatusUnknown } from "react-icons/gr";
 import TokenHoldersTable from "./TokenHolderTable";
 import useNetworkStore from "../../store/useNetworkStore";
 import useTokenStore from "../../store/useTokenStore";
+import useLiquidityPoolStore from "../../store/usePoolStore";
+import { PANEL } from "../ShroomHub/styles";
+import { SectionHeader, StatTile } from "../ShroomHub/ui";
+
+const QUNT_DENOM = "factory/inj127l5a2wmkyvucxdlupqyac3y0v6wqfhq03ka64/qunt";
+const QUNT_LOGO = "https://wsrv.nl/?url=https%3A%2F%2Fi.ibb.co%2FRBHCm14%2Fbennypfp.png&n=-1";
+const BTN =
+    "rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 disabled:opacity-40 disabled:hover:bg-white/5";
 
 const INJ_CW20_ADAPTER = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
 const injBurnAddress = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
+
+// One DEX liquidity source for a token, in the shape the holder UI consumes.
+interface LiqEntry {
+    infoDecoded: { contract_addr: string };
+    factory: { name: string };
+    price: number;
+    liquidity: number;
+    marketCap: number;
+}
+
+// The address forms a token can appear under in Choice's pool list: the cw20
+// contract, its bank-adapter denom, and the inner token of a factory denom.
+const addressForms = (denom: string): Set<string> => {
+    const set = new Set<string>([denom]);
+    set.add(`factory/${INJ_CW20_ADAPTER}/${denom}`);
+    const m = /^factory\/[^/]+\/(.+)$/.exec(denom);
+    if (m) set.add(m[1]);
+    return set;
+};
+
+const assetUsdPrice = (asset: any): number | null => {
+    const p = asset?.prices?.[0]?.price;
+    return p != null ? Number(p) : null;
+};
+
+// Derive a token's DEX liquidity + USD price straight from the Choice pool/token
+// stores — no on-chain factory scan needed. Pools carry their own USD TVL and
+// the token registry carries the current price.
+const deriveChoiceLiquidity = (
+    denom: string,
+    pools: any[],
+    tokens: any[],
+): { pools: LiqEntry[]; price: number | null } => {
+    const forms = addressForms(denom);
+    const matched = pools.filter(
+        (p) => forms.has(p.asset_1?.address) || forms.has(p.asset_2?.address),
+    );
+    const storePrice = tokens.find((t) => forms.has(t.address))?.price ?? null;
+    const tokenSide = (p: any) => (forms.has(p.asset_1?.address) ? p.asset_1 : p.asset_2);
+    const price =
+        storePrice && Number(storePrice) > 0
+            ? Number(storePrice)
+            : matched.length
+              ? assetUsdPrice(tokenSide(matched[0]))
+              : null;
+    const entries: LiqEntry[] = matched.map((p) => ({
+        infoDecoded: { contract_addr: p.contract_addr },
+        factory: { name: p.dex?.name ?? "DEX" },
+        price: price ?? 0,
+        liquidity: Number(p.tvl) || 0,
+        marketCap: 0,
+    }));
+    return { pools: entries, price: price ?? null };
+};
 
 
 const HOLDER_QUERY = gql`
@@ -52,7 +114,7 @@ query getTokenHolders($address: String!, $addresses: [String!], $balanceMin: flo
   holder_aggregate: wallet_tracker_balance_aggregate(
     where: {
       token_id: { _in: $addresses }
-      balance: { _gt: 0 } 
+      balance: { _gt: 0 }
     }
   ) {
     aggregate {
@@ -112,7 +174,7 @@ const ProgressBar = ({ queryProgress, saveProgress }: ProgressBarProps) => {
                 <span className="text-sm font-medium text-white">{label}</span>
                 <span className="text-sm font-medium text-white">{progress}%</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-3">
+            <div className="w-full bg-white/10 rounded-full h-3">
                 <div
                     className="bg-[#36d7b7] h-3 rounded-full transition-all duration-500 ease-in-out"
                     style={{ width: `${progress}%` }}
@@ -433,17 +495,23 @@ const TokenHolders = () => {
         async (signal: AbortSignal) => {
             if (signal.aborted) return;
 
-            const assetInfo = tokenInfo?.denom.includes('factory')
-                ? { native_token: { denom: tokenInfo.denom } }
-                : { token: { contract_addr: tokenInfo!.denom } };
-
             const module = new TokenUtils(networkConfig);
             setFindingLiq(true);
 
             try {
-                const denom = tokenInfo!.denom.includes('factory')
-                    ? tokenInfo!.denom
-                    : `factory/${INJ_CW20_ADAPTER}/${tokenInfo!.denom}`;
+                const denom = tokenInfo!.denom;
+
+                // ---- DEX liquidity + price from the Choice stores (instant,
+                // already loaded) instead of an on-chain factory scan. ----
+                const poolsSnap = useLiquidityPoolStore.getState().pools;
+                const tokensSnap = useTokenStore.getState().tokens;
+                const choiceLiq = deriveChoiceLiquidity(denom, poolsSnap, tokensSnap);
+
+                // ---- Mito MM vault lives on Helix, not in Choice's pool table,
+                // so it's still discovered via the markets/vaults endpoints. ----
+                const bankDenom = denom.includes('factory')
+                    ? denom
+                    : `factory/${INJ_CW20_ADAPTER}/${denom}`;
 
                 const [spotMarkets, mitoVaults] = await Promise.all([
                     getSpotMarkets(),
@@ -455,39 +523,38 @@ const TokenHolders = () => {
                 }
 
                 const market = [...spotMarkets].reverse()
-                    .find(m => m.baseDenom === denom);
+                    .find(m => m.baseDenom === bankDenom);
                 const vault = market
                     ? [...mitoVaults].reverse().find(v => v.marketId === market.marketId)
                     : null;
 
-                let price: number | null = null;
+                let price: number | null = choiceLiq.price;
 
                 if (vault) {
                     setMitoVault(vault);
-                    price = await module.getHelixMarketBestBuy(
-                        vault.marketId,
-                        18 - tokenInfo!.decimals,
-                    );
-                    if (signal.aborted) return;
-
-                    setTokenPrice(price);
+                    if (price == null) {
+                        price = await module.getHelixMarketBestBuy(
+                            vault.marketId,
+                            18 - tokenInfo!.decimals,
+                        );
+                        if (signal.aborted) return;
+                    }
                 }
 
-                const liq = await module.checkForLiquidity(assetInfo);
-                if (signal.aborted) return;
-
-                if (liq.length === 0) {
+                if (choiceLiq.pools.length === 0 && !vault) {
                     setLiqError(true);
                     return;
                 }
 
-                setLiquidity(liq);
+                setLiquidity(choiceLiq.pools);
 
-                const validPrice = price ?? liq[0].price;
-                setHolders(h =>
-                    h.map(x => ({ ...x, usdValue: Number(x.balance) * validPrice }))
-                );
-                setTokenPrice(validPrice);
+                const validPrice = price ?? (choiceLiq.pools[0]?.price ?? null);
+                if (validPrice != null) {
+                    setHolders(h =>
+                        h.map(x => ({ ...x, usdValue: Number(x.balance) * validPrice }))
+                    );
+                    setTokenPrice(validPrice);
+                }
                 setFindingLiq(false);
             } catch (e: any) {
                 if (!signal.aborted) {
@@ -622,7 +689,7 @@ const TokenHolders = () => {
         const module = new TokenUtils(networkConfig);
         module.getErc20PairBankDenom(v).then((denom) => {
             if (cancelled) return;
-            if (denom) setContractAddress({ value: denom, label: denom } as any);
+            if (denom) setContractAddress({ value: denom, label: denom });
             else setError("No token is paired with that ERC-20 address.");
         }).catch(() => undefined);
         return () => { cancelled = true; };
@@ -648,352 +715,336 @@ const TokenHolders = () => {
         downloadCsv("holders.csv", arrayToCsv(rows, ["Holder Address", "Balance", "Percentage Held"]));
     };
 
+    // Prefer Choice's registry logo (already loaded into the token store) over
+    // raw on-chain metadata, which is frequently a dead IPFS link.
+    const choiceLogo = useMemo(() => {
+        const addr = tokenInfo?.denom ?? lastLoadedAddress;
+        return tokens.find((t) => t.address === addr)?.icon;
+    }, [tokens, tokenInfo, lastLoadedAddress]);
+
+    const logoSrc =
+        tokenInfo?.denom === QUNT_DENOM
+            ? QUNT_LOGO
+            : choiceLogo || tokenInfo?.logo || pairMarketing?.logo?.url || null;
+
+    // Derived supply / value figures shown as stat tiles in the overview panel.
+    const priceForCalc = tokenPrice ?? (liquidity.length > 0 ? liquidity[0].price : null);
+    const supplyWhole =
+        tokenInfo?.total_supply != null
+            ? tokenInfo.total_supply / Math.pow(10, tokenInfo.decimals)
+            : null;
+    const circulating =
+        supplyWhole != null && totalBurned != null ? supplyWhole - totalBurned : null;
+    const totalLiquidity =
+        liquidity.length > 0
+            ? (mitoVault ? mitoVault.currentTvl : 0) +
+              liquidity.reduce((acc, item) => acc + item.liquidity, 0)
+            : mitoVault
+              ? mitoVault.currentTvl
+              : null;
+    const usd = (whole: number | null) =>
+        whole != null && priceForCalc != null
+            ? `$${humanReadableAmount(whole * priceForCalc)}`
+            : null;
+
+    const adminLabel =
+        tokenInfo?.admin != null
+            ? (WALLET_LABELS as Record<string, any>)[tokenInfo.admin]
+            : null;
+
     return (
-        <div className="flex flex-col min-h-screen pb-10 bg-customGray">
+        <div className="flex min-h-screen flex-col bg-customGray text-stone-100">
             <ToastContainer />
-            <div className="pt-14 grow mx-2 pb-20">
-                <div className="flex justify-center items-center min-h-full">
-                    <div className="w-full max-w-(--breakpoint-lg) px-2 py-10">
-                        <div className="text-center text-white font-magic">
-                            <div className="text-3xl">
-                                Token holders
-                            </div>
-                            <div className="text-lg">on Injective main net</div>
-                        </div>
+            <div className="mx-auto w-full max-w-5xl space-y-4 px-3 pt-20 pb-16 sm:px-5 md:space-y-5 md:pt-24">
+                {/* ---- title ---- */}
+                <div className="text-center">
+                    <div className="text-[11px] uppercase tracking-[0.25em] text-white/40">
+                        Injective mainnet
+                    </div>
+                    <h1 className="font-magic text-3xl text-white md:text-4xl">Token holders</h1>
+                </div>
 
-                        <div className="mt-4 space-y-2">
-                            <label
-                                htmlFor="token-address"
-                                className="block text-white"
-                            >
-                                Token address
-                            </label>
-                            <TokenSelect
-                                options={[
-                                    {
-                                        label: "TOKENS",
-                                        options: tokens.filter(x => x.show_on_ui).map((t) => {
-                                            return {
-                                                value: t.address,
-                                                label: t.symbol,
-                                                img: t.icon
-                                            }
-                                        }).sort((a, b) => a.label.localeCompare(b.label))
-                                    },
-                                    {
-                                        label: "CW404",
-                                        options: CW404_TOKENS
-                                    },
-                                    {
-                                        label: "NFT",
-                                        options: NFT_COLLECTIONS
+                {/* ---- search ---- */}
+                <section className={`${PANEL} p-5 md:p-6`}>
+                    <label htmlFor="token-address" className="mb-2 block font-sans text-sm text-white/60">
+                        Token address
+                    </label>
+                    <TokenSelect
+                        options={[
+                            {
+                                label: "TOKENS",
+                                options: tokens.filter(x => x.show_on_ui).map((t) => {
+                                    return {
+                                        value: t.address,
+                                        label: t.symbol,
+                                        img: t.icon
                                     }
-                                ]}
-                                selectedOption={contractAddress}
-                                setSelectedOption={setContractAddress}
-                            />
-                        </div>
+                                }).sort((a, b) => a.label.localeCompare(b.label))
+                            },
+                            {
+                                label: "CW404",
+                                options: CW404_TOKENS
+                            },
+                            {
+                                label: "NFT",
+                                options: NFT_COLLECTIONS
+                            }
+                        ]}
+                        selectedOption={contractAddress}
+                        setSelectedOption={setContractAddress}
+                    />
 
-                        {!loading && !queryLoading &&
-                            <>
-                                {holdersLastUpdated ?
-                                    <div className="mt-4 flex flex-row items-center">
-                                        <div>
-                                            Holders last updated: {dayjs(holdersLastUpdated).fromNow()}
-                                        </div>
-                                        {!queryProgress && !saveProgress &&
-                                            <div
-                                                onClick={handleUpdateTokenHolders}
-                                                className="ml-5 p-2 shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-lg hover:cursor-pointer text-center font-magic"
-                                            >
-                                                Refresh
-                                            </div>
-                                        }
-                                    </div>
-                                    :
-                                    <div className="mt-4 flex flex-row items-center">
-                                        <div className="flex flex-row items-center">
-                                            Unknown last updated <GrStatusUnknown className="ml-4 text-lg" />
-                                        </div>
-                                        {!queryProgress && !saveProgress &&
-                                            <div
-                                                onClick={handleUpdateTokenHolders}
-                                                className="ml-5 p-2 shadow-lg rounded-lg bg-slate-700 hover:bg-slate-800 text-lg hover:cursor-pointer text-center font-magic"
-                                            >
-                                                Refresh
-                                            </div>
-                                        }
-                                    </div>
+                    {!loading && !queryLoading &&
+                        <div className="mt-4 flex flex-wrap items-center gap-3 font-sans text-sm text-white/60">
+                            {holdersLastUpdated ?
+                                <span>Holders last updated: {dayjs(holdersLastUpdated).fromNow()}</span>
+                                :
+                                <span className="flex items-center gap-2">
+                                    Unknown last updated <GrStatusUnknown className="text-base" />
+                                </span>
+                            }
+                            {!queryProgress && !saveProgress &&
+                                <button onClick={handleUpdateTokenHolders} className={BTN}>
+                                    Refresh
+                                </button>
+                            }
+                        </div>
+                    }
+                    {(queryProgress || saveProgress) &&
+                        <ProgressBar queryProgress={queryProgress} saveProgress={saveProgress} />
+                    }
+                    {error && <div className="mt-3 rounded-lg bg-red-500/10 px-3 py-2 font-sans text-sm text-red-400">
+                        {error}
+                    </div>}
+                </section>
+
+                {/* ---- token overview ---- */}
+                {tokenInfo && (
+                    <section className={`${PANEL} p-5 md:p-6`}>
+                        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+                            {logoSrc &&
+                                <IPFSImage
+                                    width={88}
+                                    className="shrink-0 rounded-2xl object-cover ring-1 ring-white/10"
+                                    ipfsPath={logoSrc}
+                                />
+                            }
+                            <div className="min-w-0 flex-1 font-sans text-sm text-white/65">
+                                <div className="flex flex-wrap items-baseline gap-x-2">
+                                    <span className="text-2xl font-semibold text-white">{tokenInfo.name}</span>
+                                    {tokenInfo.symbol &&
+                                        <span className="text-lg text-white/45">{tokenInfo.symbol}</span>
+                                    }
+                                </div>
+                                <div className="mt-0.5 break-all text-white/40">{tokenInfo.denom}</div>
+
+                                {tokenInfo.description && tokenInfo.description.length > 0 &&
+                                    <div className="mt-2 text-white/55">{tokenInfo.description}</div>
                                 }
-                            </>
-                        }
-                        {(queryProgress || saveProgress) &&
-                            <ProgressBar queryProgress={queryProgress} saveProgress={saveProgress} />
-                        }
+                                {tokenInfo.decimals !== null &&
+                                    <div className="mt-2">decimals: <span className="text-white/85">{tokenInfo.decimals}</span></div>
+                                }
 
-                        {error && <div className="text-red-500 mt-2">
-                            {error}
-                        </div>
-                        }
-
-                        <div className="flex flex-col md:flex-row justify-between text-sm ">
-                            {tokenInfo && (
-                                <div className="mt-5 text-white mr-20">
-                                    <div className="font-bold">address: {tokenInfo.denom}</div>
-                                    <div>name: {tokenInfo.name}</div>
-                                    <div>symbol: {tokenInfo.symbol}</div>
-                                    {tokenInfo.decimals !== null && <div>decimals: {tokenInfo.decimals}</div>}
-                                    {tokenInfo.description && tokenInfo.description.length > 0 && <div>description: {tokenInfo.description}</div>}
-                                    {tokenInfo.total_supply && (
-                                        <div>
-                                            total supply:{" "}
-                                            {humanReadableAmount(tokenInfo.total_supply /
-                                                Math.pow(10, tokenInfo.decimals))}
-                                        </div>
-                                    )}
-                                    {erc20Pair && (
-                                        <div className="mt-1">
-                                            ERC-20:{" "}
-                                            <a
-                                                className="text-emerald-400 underline break-all"
-                                                target="_blank"
-                                                href={evmAddressUrl(currentNetwork, erc20Pair)}
-                                            >
-                                                {shortAddress(erc20Pair)}
-                                            </a>
-                                            <span className="block text-xs text-slate-400">paired on Injective EVM — same holders as the bank token</span>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                            {!pairMarketing && tokenInfo && (
-                                <div className="mt-5 text-sm text-white">
-                                    {tokenInfo.denom == "factory/inj127l5a2wmkyvucxdlupqyac3y0v6wqfhq03ka64/qunt" &&
-                                        <IPFSImage
-                                            width={100}
-                                            className={'mb-2 rounded-lg'}
-                                            ipfsPath={"https://wsrv.nl/?url=https%3A%2F%2Fi.ibb.co%2FRBHCm14%2Fbennypfp.png&n=-1"}
-                                        />
-                                    }
-                                    {tokenInfo.logo &&
-                                        <IPFSImage
-                                            width={100}
-                                            className={'mb-2 rounded-lg'}
-                                            ipfsPath={tokenInfo.logo}
-                                        />
-                                    }
-                                    {tokenInfo.admin &&
-                                        <a href={`${explorerBase}/account/${tokenInfo.admin}`}>
-                                            admin: {shortAddress(tokenInfo.admin)}
-                                            {
-                                                (WALLET_LABELS as Record<string, any>)[tokenInfo.admin] ? (
-                                                    <span className={`${(WALLET_LABELS as Record<string, any>)[tokenInfo.admin].bgColor} ${(WALLET_LABELS as Record<string, any>)[tokenInfo.admin].textColor} ml-2`}>
-                                                        {(WALLET_LABELS as Record<string, any>)[tokenInfo.admin].label}
-                                                    </span>
-                                                ) : null
-                                            }
+                                {erc20Pair && (
+                                    <div className="mt-1">
+                                        ERC-20:{" "}
+                                        <a
+                                            className="text-emerald-400 underline break-all"
+                                            target="_blank"
+                                            href={evmAddressUrl(currentNetwork, erc20Pair)}
+                                        >
+                                            {shortAddress(erc20Pair)}
                                         </a>
-                                    }
-                                    {tokenInfo.admin !== dojoBurnAddress && tokenInfo.admin !== injBurnAddress &&
-                                        <div className="text-red-500 flex flex-row items-center">admin can mint more supply <MdWarning className="ml-2" /></div>
-                                    }
-                                </div>
-                            )}
-                            {pairMarketing && pairMarketing.logo && (
-                                <div className="mt-5 text-sm text-white">
-                                    <img
-                                        src={pairMarketing.logo.url}
-                                        style={{ width: 100 }}
-                                        className="mb-2 rounded-lg"
-                                        alt="logo"
-                                    />
-                                    <div>project: {pairMarketing.project}</div>
-                                    <div>description: {pairMarketing.description}</div>
-                                    {pairMarketing.marketing &&
-                                        <div>
-                                            marketing: <a href={`${explorerBase}/account/${pairMarketing.marketing}`}>
-                                                {shortAddress(pairMarketing.marketing)}
-                                            </a>
-                                            {
-                                                (WALLET_LABELS as Record<string, any>)[pairMarketing.marketing] ? (
-                                                    <span className={`${(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing].bgColor} ${(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing].textColor} ml-2`}>
-                                                        {(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing].label}
-                                                    </span>
-                                                ) : null
-                                            }
-                                        </div>
-                                    }
-
-                                </div>
-                            )}
-                        </div>
-
-                        {totalBurned !== null && tokenInfo !== null && (
-                            <div>
-                                {/* Total Burned Tokens */}
-                                Total burned tokens: {humanReadableAmount(totalBurned)} 🔥{" "}
-                                {(liquidity.length > 0 || tokenPrice) && `$${humanReadableAmount(totalBurned * (tokenPrice !== null ? tokenPrice : liquidity[0].price))}`}
-                                <br />
-
-                                {/* Total Treasury Holdings */}
-                                {totalTreasuryHoldings !== null && totalTreasuryHoldings !== 0 && tokenInfo.denom == "factory/inj127l5a2wmkyvucxdlupqyac3y0v6wqfhq03ka64/qunt" && (
-                                    <div>
-                                        Total treasury holdings: {humanReadableAmount(totalTreasuryHoldings)} 💰{" "}
-                                        {(liquidity.length > 0 || tokenPrice) && `$${humanReadableAmount(totalTreasuryHoldings * (tokenPrice !== null ? tokenPrice : liquidity[0].price))}`}
+                                        <span className="block text-xs text-white/40">paired on Injective EVM — same holders as the bank token</span>
                                     </div>
                                 )}
 
-
-                                {/* Circulating Supply */}
-                                Circulating supply: {humanReadableAmount(
-                                    (tokenInfo.total_supply! / Math.pow(10, tokenInfo.decimals)) - (totalBurned)
-                                )}{" "}
-                                {(liquidity.length > 0 || tokenPrice) && `$${humanReadableAmount(
-                                    ((tokenInfo.total_supply! / Math.pow(10, tokenInfo.decimals)) - (totalBurned)) *
-                                    (tokenPrice !== null ? tokenPrice : liquidity[0].price)
-                                )}`}
-
-                                {liquidity.length > 0 && <div>
-                                    Total liquidity: ${humanReadableAmount(mitoVault ? mitoVault.currentTvl + liquidity.reduce((acc, item) => acc + item.liquidity, 0) : liquidity.reduce((acc, item) => acc + item.liquidity, 0))}
-                                </div>}
-                            </div>
-                        )}
-
-
-                        <div className="flex flex-row justify-center mt-2 items-center">
-                            {findingLiq && <ClipLoader size={20} color="white" />}
-                            {liquidity.length > 0 && liquidity.map(({ infoDecoded, price, factory, liquidity }: any, index: number) => {
-                                return <div key={index} className="text-sm mx-2 bg-trippyYellow/10 p-2 rounded-lg shadow-lg">
-                                    <a href={"https://coinhall.org/injective/" + infoDecoded.contract_addr}
-                                        className="text-white hover:cursor-pointer font-bold"
-                                    >
-                                        {factory.name}
-                                    </a>
-                                    <br />
-                                    price: ${price.toFixed(10)}
-                                    <br />
-                                    liquidity: ${liquidity.toFixed(2)}
-                                    <br />
-                                    <Link to={`/token-liquidity?address=${infoDecoded.contract_addr}`} className="font-bold hover:underline mr-5">
-                                        view liquidity providers
-                                    </Link>
-                                </div>
-                            })}
-
-                            {mitoVault !== null && tokenInfo &&
-                                <div className="text-sm mx-2 bg-trippyYellow/10 p-2 rounded-lg shadow-lg ">
-                                    <a href={`https://${netPrefix}mito.fi/vault/${mitoVault.contractAddress}`}
-                                        className="text-white hover:cursor-pointer font-bold"
-                                    >
-                                        Mito vault
-                                    </a>
-                                    <br />
-                                    liquidity: ${humanReadableAmount(mitoVault.currentTvl)}
-                                    <br />
-                                    {tokenPrice && <div>
-                                        price: ${tokenPrice.toFixed(6)}
-                                        <br />
+                                {pairMarketing ? (
+                                    <div className="mt-2 space-y-0.5">
+                                        {pairMarketing.project && <div>project: <span className="text-white/85">{pairMarketing.project}</span></div>}
+                                        {pairMarketing.description && <div>{pairMarketing.description}</div>}
+                                        {pairMarketing.marketing &&
+                                            <div>
+                                                marketing:{" "}
+                                                <a className="underline" href={`${explorerBase}/account/${pairMarketing.marketing}`}>
+                                                    {shortAddress(pairMarketing.marketing)}
+                                                </a>
+                                                {(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing] && (
+                                                    <span className={`${(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing].bgColor} ${(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing].textColor} ml-2`}>
+                                                        {(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing].label}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        }
                                     </div>
-                                    }
-                                    <Link
-                                        className="underline"
-                                        target="_blank"
-                                        to={`https://${netPrefix}mito.fi/vault/${mitoVault.contractAddress}`}
-                                    >
-                                        mito vault url
-                                    </Link>
-                                    <br />
-                                    <Link
-                                        className="underline"
-                                        target="_blank"
-                                        to={`https://${netPrefix}helixapp.com/spot/?marketId=${mitoVault.marketId}`}
-                                    >
-                                        helix market url
-                                    </Link>
-                                </div>
-                            }
+                                ) : (
+                                    tokenInfo.admin &&
+                                    <div className="mt-2">
+                                        <a className="underline" href={`${explorerBase}/account/${tokenInfo.admin}`}>
+                                            admin: {shortAddress(tokenInfo.admin)}
+                                            {adminLabel && (
+                                                <span className={`${adminLabel.bgColor} ${adminLabel.textColor} ml-2`}>
+                                                    {adminLabel.label}
+                                                </span>
+                                            )}
+                                        </a>
+                                        {tokenInfo.admin !== dojoBurnAddress && tokenInfo.admin !== injBurnAddress &&
+                                            <div className="mt-1 flex flex-row items-center text-orange-400">
+                                                admin can mint more supply <MdWarning className="ml-2" />
+                                            </div>
+                                        }
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        {loading && (
-                            <div className="flex flex-col items-center justify-center pt-5">
-                                <GridLoader color="#f9d73f" />
-                                {progress.length > 0 &&
-                                    <div className="mt-2">
-                                        {progress}
+                        {/* stat tiles */}
+                        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                            <StatTile
+                                label="Total supply"
+                                value={supplyWhole != null ? humanReadableAmount(supplyWhole) : "—"}
+                            />
+                            <StatTile
+                                label="Circulating"
+                                value={circulating != null ? (
+                                    <>
+                                        {humanReadableAmount(circulating)}
+                                        {usd(circulating) && <span className="ml-1 text-white/40">{usd(circulating)}</span>}
+                                    </>
+                                ) : "—"}
+                            />
+                            <StatTile
+                                label="Burned 🔥"
+                                value={totalBurned != null ? (
+                                    <>
+                                        {humanReadableAmount(totalBurned)}
+                                        {usd(totalBurned) && <span className="ml-1 text-white/40">{usd(totalBurned)}</span>}
+                                    </>
+                                ) : "—"}
+                            />
+                            <StatTile
+                                label="Liquidity"
+                                accent
+                                value={totalLiquidity != null ? `$${humanReadableAmount(totalLiquidity)}` : (findingLiq ? "…" : "—")}
+                            />
+                            {totalTreasuryHoldings !== null && totalTreasuryHoldings !== 0 && tokenInfo.denom === QUNT_DENOM && (
+                                <StatTile
+                                    label="Treasury 💰"
+                                    value={
+                                        <>
+                                            {humanReadableAmount(totalTreasuryHoldings)}
+                                            {usd(totalTreasuryHoldings) && <span className="ml-1 text-white/40">{usd(totalTreasuryHoldings)}</span>}
+                                        </>
+                                    }
+                                />
+                            )}
+                        </div>
+
+                        {/* liquidity sources */}
+                        {(findingLiq || liquidity.length > 0 || mitoVault) &&
+                            <div className="mt-4 flex flex-wrap items-center gap-2">
+                                {findingLiq && <ClipLoader size={18} color="white" />}
+                                {liquidity.map(({ infoDecoded, price, factory, liquidity }: any, index: number) => (
+                                    <div key={index} className="rounded-xl bg-white/3 px-3 py-2 font-sans text-xs text-white/70">
+                                        <a href={"https://coinhall.org/injective/" + infoDecoded.contract_addr} className="font-bold text-white hover:underline">
+                                            {factory.name}
+                                        </a>
+                                        <div>price: ${price.toFixed(10)}</div>
+                                        <div>liquidity: ${liquidity.toFixed(2)}</div>
+                                        <Link to={`/token-liquidity?address=${infoDecoded.contract_addr}`} className="font-semibold text-trippyYellow hover:underline">
+                                            view providers →
+                                        </Link>
+                                    </div>
+                                ))}
+                                {mitoVault !== null &&
+                                    <div className="rounded-xl bg-white/3 px-3 py-2 font-sans text-xs text-white/70">
+                                        <a href={`https://${netPrefix}mito.fi/vault/${mitoVault.contractAddress}`} className="font-bold text-white hover:underline">
+                                            Mito vault
+                                        </a>
+                                        <div>liquidity: ${humanReadableAmount(mitoVault.currentTvl)}</div>
+                                        {tokenPrice && <div>price: ${tokenPrice.toFixed(6)}</div>}
+                                        <a className="font-semibold text-trippyYellow hover:underline" target="_blank" href={`https://${netPrefix}helixapp.com/spot/?marketId=${mitoVault.marketId}`}>
+                                            helix market →
+                                        </a>
                                     </div>
                                 }
                             </div>
-                        )}
+                        }
+                    </section>
+                )}
 
-                        {holders.length > 0 && (
-                            <div className="mt-5 text-sm">
-                                <HoldersChart data={holders} />
-                                <div className="flex flex-col md:flex-row items-center justify-between">
-                                    <div>
-                                        <button onClick={downloadHoldersCsv} className="p-1 bg-slate-700 hover:bg-slate-800 rounded-sm mb-2">Download Holders CSV</button>
-                                        <div>Total token holders: {totalHolderCount}</div>
-                                        <label className="flex items-center gap-2 mt-1 cursor-pointer text-slate-300">
-                                            <input type="checkbox" className="accent-trippyYellow" checked={showEvm} onChange={(e) => setShowEvm(e.target.checked)} />
-                                            Show EVM (0x) addresses
-                                        </label>
-                                    </div>
-                                    <div>
-                                        <form onSubmit={goToPage} className="mt-4">
-                                            <label htmlFor="pageSearch" className="mr-2">Go to page:</label>
-                                            <input
-                                                id="pageSearch"
-                                                type="text"
-                                                value={pageInput}
-                                                onChange={handlePageInput}
-                                                placeholder="Enter page number"
-                                                className="px-4 py-2 border border-gray-300 rounded-sm text-black"
-                                            />
-                                            <button
-                                                type="submit"
-                                                className="ml-2 px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-sm"
-                                            >
-                                                Go
-                                            </button>
-                                            <span className="px-4">Page {currentPage} of {totalPages}</span>
-                                        </form>
-                                    </div>
-                                </div>
-
-                                {/* Virtualized table */}
-                                <TokenHoldersTable
-                                    holders={paginatedHolders as any}
-                                    startIndex={startIndex}
-                                    hasSplitBalances={hasSplitBalances}
-                                    WALLET_LABELS={WALLET_LABELS}
-                                    lastLoadedAddress={lastLoadedAddress}
-                                    liquidity={liquidity}
-                                    findingLiq={findingLiq}
-                                    showEvm={showEvm}
-                                    network={currentNetwork}
-                                />
-
-                                {/* Pagination controls */}
-                                <div className="pagination-controls mt-4">
-                                    <button
-                                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                        disabled={currentPage === 1}
-                                        className="px-4 py-2 mr-2 bg-gray-800 text-white disabled:bg-gray-500"
-                                    >
-                                        Previous
-                                    </button>
-                                    <span className="px-4">Page {currentPage} of {totalPages}</span>
-                                    <button
-                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                        disabled={currentPage === totalPages}
-                                        className="px-4 py-2 ml-2 bg-gray-800 text-white disabled:bg-gray-500"
-                                    >
-                                        Next
-                                    </button>
-                                </div>
-                            </div>
-                        )}
+                {loading && (
+                    <div className="flex flex-col items-center justify-center py-10">
+                        <GridLoader color="#f9d73f" />
+                        {progress.length > 0 && <div className="mt-3 font-sans text-sm text-white/60">{progress}</div>}
                     </div>
-                </div>
+                )}
+
+                {/* ---- holders ---- */}
+                {holders.length > 0 && (
+                    <section className={`${PANEL} p-5 md:p-6`}>
+                        <SectionHeader
+                            eyebrow="Distribution"
+                            title="Holders"
+                            sub={totalHolderCount != null ? `${totalHolderCount.toLocaleString()} total` : undefined}
+                        >
+                            <div className="flex flex-wrap items-center gap-3 font-sans">
+                                <label className="flex cursor-pointer items-center gap-2 text-sm text-white/60">
+                                    <input type="checkbox" className="accent-trippyYellow" checked={showEvm} onChange={(e) => setShowEvm(e.target.checked)} />
+                                    EVM (0x) addresses
+                                </label>
+                                <button onClick={downloadHoldersCsv} className={BTN}>Download CSV</button>
+                            </div>
+                        </SectionHeader>
+
+                        <HoldersChart data={holders} />
+
+                        <TokenHoldersTable
+                            holders={paginatedHolders as any}
+                            startIndex={startIndex}
+                            hasSplitBalances={hasSplitBalances}
+                            WALLET_LABELS={WALLET_LABELS}
+                            lastLoadedAddress={lastLoadedAddress}
+                            liquidity={liquidity}
+                            findingLiq={findingLiq}
+                            showEvm={showEvm}
+                            network={currentNetwork}
+                        />
+
+                        {/* pagination */}
+                        <div className="mt-4 flex flex-col items-center justify-between gap-3 font-sans text-sm text-white/60 sm:flex-row">
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                    className={BTN}
+                                >
+                                    Previous
+                                </button>
+                                <span>Page {currentPage} of {totalPages}</span>
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                    disabled={currentPage === totalPages}
+                                    className={BTN}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                            <form onSubmit={goToPage} className="flex items-center gap-2">
+                                <label htmlFor="pageSearch">Go to page:</label>
+                                <input
+                                    id="pageSearch"
+                                    type="text"
+                                    value={pageInput}
+                                    onChange={handlePageInput}
+                                    placeholder="#"
+                                    className="w-20 rounded-lg border border-white/15 bg-black/20 px-3 py-1.5 text-white placeholder:text-white/30"
+                                />
+                                <button type="submit" className={BTN}>Go</button>
+                            </form>
+                        </div>
+                    </section>
+                )}
             </div>
             <Footer />
         </div>

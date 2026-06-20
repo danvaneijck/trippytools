@@ -19,29 +19,45 @@ export const getSelectedNetwork = () =>
 export const getSelectedWallet = () =>
     useWalletStore.getState().selectedWalletType
 
-const buildWalletStrategy = () => {
+const buildWalletStrategy = async () => {
     const network = getSelectedNetworkKey()
-    let ethereumOptions = undefined
+    // wallet-strategy >= 1.20 reads `evmOptions.evmChainId` (the old
+    // `ethereumOptions.ethereumChainId` shape is no longer read at all, which
+    // silently disabled metamask/phantom). Keep the original mainnet-only EVM
+    // intent, just under the new field names.
+    let evmOptions = undefined
     if (network === 'mainnet') {
-        ethereumOptions = {
-            ethereumChainId: EvmChainId.Mainnet,
+        evmOptions = {
+            evmChainId: EvmChainId.Mainnet,
             rpcUrl: ethRpc
         }
     }
 
     const wallet = getSelectedWallet()
+    if (!wallet) {
+        throw new Error('No wallet selected. Connect a wallet first.')
+    }
     const chainId = getSelectedNetwork().chainId
 
-    return new WalletStrategy({
+    const walletStrategy = new WalletStrategy({
         chainId: chainId,
         wallet: wallet,
-        ethereumOptions: ethereumOptions,
+        evmOptions: evmOptions,
         strategies: {}
     } as any)
+
+    // wallet-strategy >= 1.20 lazy-loads each wallet's strategy: the
+    // WalletStrategy subclass overrides setWallet() to run loadStrategy() (+ any
+    // initStrategy). Until that runs, every getAddresses/sign call delegates to
+    // getStrategy(), which throws "Wallet <x> strategy not loaded". So load the
+    // selected wallet's strategy before handing it to getAddresses/MsgBroadcaster.
+    await walletStrategy.setWallet(wallet)
+
+    return walletStrategy
 }
 
 export const getAddresses = async (): Promise<string[]> => {
-    const walletStrategy = buildWalletStrategy()
+    const walletStrategy = await buildWalletStrategy()
     let addresses = (await walletStrategy.getAddresses())
     if (walletStrategy.getWallet() === 'metamask' || walletStrategy.getWallet() === 'phantom') {
         addresses = addresses.map(getInjectiveAddress)
@@ -69,7 +85,7 @@ export const performTransaction = async (
 
     const useExplicitGas = typeof opts.gas === 'number'
 
-    const walletStrategy = buildWalletStrategy()
+    const walletStrategy = await buildWalletStrategy()
     const broadcaster = new MsgBroadcaster({
         walletStrategy,
         // Simulation can't price the inner EVM deploy in a paired-token tx, so
