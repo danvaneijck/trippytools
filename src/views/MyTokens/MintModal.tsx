@@ -9,6 +9,8 @@ import { performTransaction } from "../../utils/walletStrategy";
 
 const MintModal = (props: {
     token: any
+    setShowModal: (value: any) => void
+    setLoaded: (value: any) => void
 }) => {
 
     const { connectedWallet: connectedAddress } = useWalletStore()
@@ -18,7 +20,7 @@ const MintModal = (props: {
     const [progress, setProgress] = useState("")
     const [txLoading, setTxLoading] = useState(false)
 
-    const [error, setError] = useState(null)
+    const [error, setError] = useState<string | null>(null)
 
 
     const mint = useCallback(async () => {
@@ -36,7 +38,7 @@ const MintModal = (props: {
         }
 
         const msgMint = MsgMint.fromJSON({
-            sender: injectiveAddress,
+            sender: injectiveAddress as string,
             amount: {
                 amount: (Number(amount) * Math.pow(10, props.token.metadata.decimals)).toLocaleString('fullwide', { useGrouping: false }),
                 denom: props.token.token
@@ -46,7 +48,7 @@ const MintModal = (props: {
         console.log("mint", msgMint)
         setProgress(`Mint tokens`)
 
-        await performTransaction(injectiveAddress, [msgMint])
+        await performTransaction(injectiveAddress as string, [msgMint])
 
         setProgress("Done...")
 
@@ -107,12 +109,12 @@ const MintModal = (props: {
                             <button
                                 className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded-sm shadow-sm hover:shadow-lg outline-hidden focus:outline-hidden mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
-                                onClick={() => mint().then(() => console.log("done")).catch(e => {
+                                onClick={() => { void mint().then(() => console.log("done")).catch(e => {
                                     console.log(e)
                                     setError(e.message)
                                     setProgress("")
                                     setTxLoading(false)
-                                })}
+                                }) }}
                             >
                                 Mint
                             </button>

@@ -10,13 +10,13 @@ const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 
 const ShroomBalance = () => {
     const { connectedWallet } = useWalletStore()
-    const { networkKey, network } = useNetworkStore()
+    const { network } = useNetworkStore()
 
     const [loading, setLoading] = useState(false)
-    const [lastLoadedAddress, setLastLoadedAddress] = useState(null)
+    const [lastLoadedAddress, setLastLoadedAddress] = useState<any>(null)
 
-    const [balance, setBalance] = useState(null)
-    const [usd, setUsd] = useState(null)
+    const [balance, setBalance] = useState<any>(null)
+    const [usd, setUsd] = useState<any>(null)
 
     const getBalance = useCallback(async () => {
         if (!connectedWallet) return
@@ -31,7 +31,7 @@ const ShroomBalance = () => {
             setBalance(normalizedBalance);
             const quote = await module.getSellQuoteRouter(pairInfo, tokenBalance.balance);
             const returnAmount = Number(quote.amount) / Math.pow(10, 18);
-            const totalUsdValue = (returnAmount * baseAssetPrice).toFixed(2);
+            const totalUsdValue = (returnAmount * baseAssetPrice!).toFixed(2);
             setUsd(totalUsdValue);
             setLastLoadedAddress(connectedWallet)
             return normalizedBalance
@@ -45,7 +45,7 @@ const ShroomBalance = () => {
         if (loading) return
         if (!balance || !usd || (!lastLoadedAddress || lastLoadedAddress !== connectedWallet)) {
             setLoading(true)
-            getBalance().then(r => {
+            getBalance().then(() => {
 
             }).catch(e => {
                 console.log(e)
@@ -64,7 +64,7 @@ const ShroomBalance = () => {
     }, [connectedWallet])
 
     return (
-        <div className="flex self-end items-center text-sm w-full hover:cursor-pointer max-w-(--breakpoint-sm)" onClick={getBalance}>
+        <div className="flex self-end items-center text-sm w-full hover:cursor-pointer max-w-(--breakpoint-sm)" onClick={() => { void getBalance(); }}>
             <div>
                 <img src={shroom} style={{ borderRadius: '50%', width: 32 }} className="mr-2" alt="Spinning Image" />
             </div>

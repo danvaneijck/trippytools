@@ -25,7 +25,7 @@ export function useWalletConnect() {
         console.error("No addresses found for wallet:", wallet);
       }
     } catch (error) {
-      toast.error(error.message, {
+      toast.error((error as any).message, {
         autoClose: 5000,
         theme: "dark"
       });

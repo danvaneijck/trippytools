@@ -5,10 +5,10 @@ import Button from "./Button";
 const WalletConnect = () => {
   const { connectedWallet, setShowWallets, showWallets } = useWalletStore();
 
-  const formattedAddress = `${connectedWallet.slice(
+  const formattedAddress = `${connectedWallet?.slice(
     0,
     5
-  )}...${connectedWallet.slice(-5)}`;
+  )}...${connectedWallet?.slice(-5)}`;
 
   function handleConnectWallet() {
     setShowWallets(!showWallets)

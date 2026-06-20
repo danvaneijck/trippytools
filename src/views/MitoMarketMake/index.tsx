@@ -8,7 +8,7 @@ import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
 import { performTransaction } from "../../utils/walletStrategy";
 import { MsgExecuteContract, MsgExecuteContractCompat } from "@injectivelabs/sdk-ts";
-import { Bounce, ToastContainer, toast } from 'react-toastify';
+import { toast } from 'react-toastify';
 
 const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
 const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
@@ -18,12 +18,12 @@ const MitoMarketMake = () => {
     const { connectedWallet: connectedAddress } = useWalletStore()
     const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
-    const [vaultOptions, setVaultOptions] = useState([])
+    const [vaultOptions, setVaultOptions] = useState<any[]>([])
 
-    const [selectedVault, setSelectedVault] = useState(null)
+    const [selectedVault, setSelectedVault] = useState<any>(null)
 
     const shroomCost = 2500
-    const [shroomPrice, setShroomPrice] = useState(null)
+    const [shroomPrice, setShroomPrice] = useState<any>(null)
 
     useEffect(() => {
         const getShroomCost = async () => {
@@ -36,7 +36,7 @@ const MitoMarketMake = () => {
                 const quote = await module.getSellQuoteRouter(pairInfo, shroomCost + "0".repeat(18));
                 console.log(quote)
                 const returnAmount = Number(quote.amount) / Math.pow(10, 18);
-                const totalUsdValue = (returnAmount * baseAssetPrice).toFixed(3);
+                const totalUsdValue = (returnAmount * baseAssetPrice!).toFixed(3);
                 setShroomPrice(totalUsdValue);
                 return totalUsdValue
             } catch (error) {
@@ -88,12 +88,12 @@ const MitoMarketMake = () => {
             };
         });
 
-        const options = []
+        const options: any[] = []
         matchedMarkets.map((market) => {
             if (market.matchingVault !== null) {
                 options.push({
                     value: market,
-                    label: `${market.baseToken ? market.baseToken.name : market.marketId} vault (${market.baseDenom ?? market.baseToken.address})`
+                    label: `${market.baseToken ? market.baseToken.name : market.marketId} vault (${market.baseDenom ?? (market.baseToken as any).address})`
                 })
             }
         })
@@ -103,7 +103,7 @@ const MitoMarketMake = () => {
 
     useEffect(() => {
         if (vaultOptions.length == 0) {
-            getMitoMarketList()
+            void getMitoMarketList()
         }
     }, [getMitoMarketList, vaultOptions])
 
@@ -118,7 +118,7 @@ const MitoMarketMake = () => {
 
         const feeMsg = MsgExecuteContract.fromJSON({
             contractAddress: SHROOM_TOKEN_ADDRESS,
-            sender: injectiveAddress,
+            sender: injectiveAddress as string,
             msg: {
                 transfer: {
                     recipient: FEE_COLLECTION_ADDRESS,
@@ -128,7 +128,7 @@ const MitoMarketMake = () => {
         });
 
         const msgMarketMake = MsgExecuteContractCompat.fromJSON({
-            sender: injectiveAddress,
+            sender: injectiveAddress as string,
             contractAddress: address,
             msg: {
                 market_make: {}
@@ -137,7 +137,7 @@ const MitoMarketMake = () => {
         console.log(feeMsg, msgMarketMake)
 
         const response = await performTransaction(
-            injectiveAddress,
+            injectiveAddress as string,
             [
                 feeMsg,
                 msgMarketMake
@@ -148,7 +148,7 @@ const MitoMarketMake = () => {
             Sent mito market make for vault <span className="font-bold">{selectedVault.value.matchingVault.contractAddress}</span> <br />
             <br />
             <a
-                href={`${networkConfig.explorerUrl}/transaction/${response.txHash}`}
+                href={`${networkConfig.explorerUrl}/transaction/${response!.txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline text-blue-500 text-sm"
@@ -198,7 +198,7 @@ const MitoMarketMake = () => {
                     {selectedVault !== null &&
                         <div
                             className="bg-slate-800 w-40 m-auto mt-5 p-2 text-center rounded-sm shadow-lg hover:cursor-pointer"
-                            onClick={sendMarketMake}
+                            onClick={() => { void sendMarketMake(); }}
                         >
                             send market make
                         </div>

@@ -153,7 +153,7 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
     }, [connectedWallet, network, tokenAddress]);
 
     // --- A new function to handle a batch of messages ---
-    const handleExecuteBatch = useCallback(async (msgs, successCallback?: (result: any) => void) => {
+    const handleExecuteBatch = useCallback(async (msgs: any, successCallback?: (result: any) => void) => {
         if (!connectedWallet || msgs.length === 0) return;
         setLoading(true);
         setError(null);
@@ -489,7 +489,7 @@ const TokenSetupWizard = ({ tokenAddress, treasuryAddress, tokenDecimals, initia
                         <>
                             <p className="text-xs text-yellow-400 mt-2 mb-2">
                                 Your token must be registered on the Injective CW20 Adapter before creating a pool.
-                                {adapterFee && ` The one-time fee is ${new BigNumberInWei((adapterFee as any).amount).toBase(INJ_DECIMALS)} ${((adapterFee as any).denom).toUpperCase()}.`}
+                                {adapterFee && ` The one-time fee is ${new BigNumberInWei((adapterFee as any).amount).toBase(INJ_DECIMALS).toString()} ${((adapterFee as any).denom).toUpperCase()}.`}
                             </p>
                             <button onClick={() => void handleRegisterOnAdapter()} disabled={loading || !adapterFee} className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-500 rounded-lg p-2 w-full text-white mt-2 shadow-lg transition-colors">
                                 Register Token

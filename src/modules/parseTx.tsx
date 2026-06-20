@@ -1,17 +1,17 @@
 import { Buffer } from "buffer";
 
-export function processAccountTx(data, walletAddress) {
+export function processAccountTx(data: any, walletAddress: any) {
 
-    const taxData = [];
+    const taxData: any[] = [];
 
     let breakLoop = false
 
-    data.forEach(transaction => {
-        const signed = transaction.signatures.some(signature => signature.address === walletAddress);
+    data.forEach((transaction: any) => {
+        const signed = transaction.signatures.some((signature: any) => signature.address === walletAddress);
         if (transaction.errorLog.length > 0) return
 
 
-        transaction.messages.forEach((message, index) => {
+        transaction.messages.forEach((message: any, index: any) => {
             try {
 
                 // NFT purchase
@@ -22,12 +22,12 @@ export function processAccountTx(data, walletAddress) {
 
                     let added = false
 
-                    transaction.logs.forEach(log => {
+                    transaction.logs.forEach((log: any) => {
                         const msgIndex = log.msg_index || 0
-                        log.events.forEach(event => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "coin_received") {
-                                const receiverAttribute = event.attributes.find(attr => attr.key === "receiver");
-                                const amountAttribute = event.attributes.find(attr => attr.key === "amount");
+                                const receiverAttribute = event.attributes.find((attr: any) => attr.key === "receiver");
+                                const amountAttribute = event.attributes.find((attr: any) => attr.key === "amount");
 
                                 const returnAsset = amountAttribute.value.replace(/^\d+/, '').trim();
                                 const returnAmount = Number(amountAttribute.value.match(/^\d+/)[0])
@@ -56,13 +56,13 @@ export function processAccountTx(data, walletAddress) {
 
                     if (!added) {
                         // NFT purchase
-                        transaction.logs.forEach(log => {
-                            log.events.forEach(event => {
+                        transaction.logs.forEach((log: any) => {
+                            log.events.forEach((event: any) => {
                                 if (event.type === "wasm") {
-                                    const actionAttribute = event.attributes.find(attr => attr.key === "action");
-                                    const senderAttribute = event.attributes.find(attr => attr.key === "sender");
-                                    const recipientAttribute = event.attributes.find(attr => attr.key === "recipient");
-                                    const tokenIdAttribute = event.attributes.find(attr => attr.key === "token_id");
+                                    const actionAttribute = event.attributes.find((attr: any) => attr.key === "action");
+                                    const senderAttribute = event.attributes.find((attr: any) => attr.key === "sender");
+                                    const recipientAttribute = event.attributes.find((attr: any) => attr.key === "recipient");
+                                    const tokenIdAttribute = event.attributes.find((attr: any) => attr.key === "token_id");
 
                                     if (
                                         actionAttribute &&
@@ -108,12 +108,12 @@ export function processAccountTx(data, walletAddress) {
 
                     let added = false
 
-                    transaction.logs.forEach(log => {
-                        log.events.forEach(event => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "coin_received") {
-                                const receiverAttribute = event.attributes.find(attr => attr.key === "receiver");
-                                const amountAttribute = event.attributes.find(attr => attr.key === "amount");
-                                const msgIndexAttribute = event.attributes.find(attr => attr.key === "msg_index")?.value || 0;
+                                const receiverAttribute = event.attributes.find((attr: any) => attr.key === "receiver");
+                                const amountAttribute = event.attributes.find((attr: any) => attr.key === "amount");
+                                const msgIndexAttribute = event.attributes.find((attr: any) => attr.key === "msg_index")?.value || 0;
 
                                 const returnAsset = amountAttribute.value.replace(/^\d+/, '').trim();
                                 const returnAmount = Number(amountAttribute.value.match(/^\d+/)[0])
@@ -160,12 +160,12 @@ export function processAccountTx(data, walletAddress) {
 
                     let added = false
 
-                    transaction.logs.forEach(log => {
-                        log.events.forEach(event => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "coin_received") {
-                                const receiverAttribute = event.attributes.find(attr => attr.key === "receiver");
-                                const amountAttribute = event.attributes.find(attr => attr.key === "amount");
-                                const msgIndexAttribute = event.attributes.find(attr => attr.key === "msg_index")?.value || 0;
+                                const receiverAttribute = event.attributes.find((attr: any) => attr.key === "receiver");
+                                const amountAttribute = event.attributes.find((attr: any) => attr.key === "amount");
+                                const msgIndexAttribute = event.attributes.find((attr: any) => attr.key === "msg_index")?.value || 0;
 
                                 const returnAsset = amountAttribute.value.replace(/^\d+/, '').trim();
                                 const returnAmount = Number(amountAttribute.value.match(/^\d+/)[0]);
@@ -194,13 +194,13 @@ export function processAccountTx(data, walletAddress) {
                     });
 
                     if (!added) {
-                        transaction.logs.forEach(log => {
+                        transaction.logs.forEach((log: any) => {
                             const msgIndex = log.msg_index || 0
-                            log.events.forEach(event => {
+                            log.events.forEach((event: any) => {
                                 if (event.type === "wasm") {
-                                    const senderAttribute = event.attributes.find(attr => attr.key === "sender");
-                                    const recipientAttribute = event.attributes.find(attr => attr.key === "recipient");
-                                    const tokenIdAttribute = event.attributes.find(attr => attr.key === "token_id");
+                                    const senderAttribute = event.attributes.find((attr: any) => attr.key === "sender");
+                                    const recipientAttribute = event.attributes.find((attr: any) => attr.key === "recipient");
+                                    const tokenIdAttribute = event.attributes.find((attr: any) => attr.key === "token_id");
 
                                     if (senderAttribute && recipientAttribute &&
                                         parseInt(msgIndex) === index
@@ -243,12 +243,12 @@ export function processAccountTx(data, walletAddress) {
 
                     let added = false
 
-                    transaction.logs.forEach(log => {
-                        log.events.forEach(event => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "coin_received") {
-                                const receiverAttribute = event.attributes.find(attr => attr.key === "receiver");
-                                const amountAttribute = event.attributes.find(attr => attr.key === "amount");
-                                const msgIndexAttribute = event.attributes.find(attr => attr.key === "msg_index")?.value || 0;
+                                const receiverAttribute = event.attributes.find((attr: any) => attr.key === "receiver");
+                                const amountAttribute = event.attributes.find((attr: any) => attr.key === "amount");
+                                const msgIndexAttribute = event.attributes.find((attr: any) => attr.key === "msg_index")?.value || 0;
 
                                 const returnAsset = amountAttribute.value.replace(/^\d+/, '').trim();
                                 const returnAmount = Number(amountAttribute.value.match(/^\d+/)[0]);
@@ -295,13 +295,13 @@ export function processAccountTx(data, walletAddress) {
 
                     let added = false
 
-                    transaction.logs.forEach(log => {
-                        log.events.forEach(event => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "wasm") {
-                                const actionAttribute = event.attributes.find(attr => attr.key === "action");
-                                const senderAttribute = event.attributes.find(attr => attr.key === "sender");
-                                const recipientAttribute = event.attributes.find(attr => attr.key === "recipient");
-                                const tokenIdAttribute = event.attributes.find(attr => attr.key === "token_id");
+                                const actionAttribute = event.attributes.find((attr: any) => attr.key === "action");
+                                const senderAttribute = event.attributes.find((attr: any) => attr.key === "sender");
+                                const recipientAttribute = event.attributes.find((attr: any) => attr.key === "recipient");
+                                const tokenIdAttribute = event.attributes.find((attr: any) => attr.key === "token_id");
 
                                 if (
                                     actionAttribute &&
@@ -341,6 +341,7 @@ export function processAccountTx(data, walletAddress) {
                 // send native denom
                 else if (message.type === "/cosmos.bank.v1beta1.MsgSend") {
                     let added = false
+                    void added;
                     const { from_address, to_address, amount } = message.message;
                     const denomAmount = amount[0];
 
@@ -380,16 +381,15 @@ export function processAccountTx(data, walletAddress) {
                     const msgContent = JSON.parse(message.message.msg);
                     const tokenAddress = msgContent.create_asset_meta.asset_info.token.contract_addr;
                     const nonce = msgContent.create_asset_meta.nonce;
-                    const collection = message.contract;
 
-                    transaction.logs.forEach(log => {
-                        log.events.forEach(event => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "wasm") {
-                                const contractAddressAttribute = event.attributes.find(attr => attr.key === "_contract_address");
-                                const tokenChainAttribute = event.attributes.find(attr => attr.key === "meta.token_chain");
-                                const tokenAttribute = event.attributes.find(attr => attr.key === "meta.token");
-                                const nonceAttribute = event.attributes.find(attr => attr.key === "meta.nonce");
-                                const blockTimeAttribute = event.attributes.find(attr => attr.key === "meta.block_time");
+                                const contractAddressAttribute = event.attributes.find((attr: any) => attr.key === "_contract_address");
+                                const tokenChainAttribute = event.attributes.find((attr: any) => attr.key === "meta.token_chain");
+                                const tokenAttribute = event.attributes.find((attr: any) => attr.key === "meta.token");
+                                const nonceAttribute = event.attributes.find((attr: any) => attr.key === "meta.nonce");
+                                const blockTimeAttribute = event.attributes.find((attr: any) => attr.key === "meta.block_time");
 
                                 if (
                                     contractAddressAttribute &&
@@ -428,7 +428,7 @@ export function processAccountTx(data, walletAddress) {
                 else if (
                     message.type == "/cosmos.authz.v1beta1.MsgRevoke"
                 ) {
-
+                    // no-op: authz revokes are not tracked in the tax export
                 }
 
                 else if (
@@ -438,12 +438,11 @@ export function processAccountTx(data, walletAddress) {
                     const delegatorAddress = message.message.delegator_address;
                     const validatorAddress = message.message.validator_address;
 
-                    transaction.logs.forEach(log => {
-                        log.events.forEach(event => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "withdraw_rewards") {
-                                const amountAttribute = event.attributes.find(attr => attr.key === "amount");
-                                const validatorAttribute = event.attributes.find(attr => attr.key === "validator");
-                                const delegatorAttribute = event.attributes.find(attr => attr.key === "delegator");
+                                const amountAttribute = event.attributes.find((attr: any) => attr.key === "amount");
+                                const validatorAttribute = event.attributes.find((attr: any) => attr.key === "validator");
 
                                 if (
                                     amountAttribute &&
@@ -486,10 +485,10 @@ export function processAccountTx(data, walletAddress) {
                     const proposalId = message.message.proposal_id;
                     const option = message.message.option;
 
-                    transaction.logs.forEach(log => {
-                        log.events.forEach(event => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "proposal_vote") {
-                                const proposalIdAttribute = event.attributes.find(attr => attr.key === "proposal_id");
+                                const proposalIdAttribute = event.attributes.find((attr: any) => attr.key === "proposal_id");
 
                                 if (
                                     proposalIdAttribute &&
@@ -528,8 +527,8 @@ export function processAccountTx(data, walletAddress) {
 
                     if (message.message.inputs[0].address == walletAddress) {
                         added = true
-                        message.message.outputs.forEach(output => {
-                            output.coins.forEach(coin => {
+                        message.message.outputs.forEach((output: any) => {
+                            output.coins.forEach((coin: any) => {
                                 taxData.push({
                                     type: "MultiSend Sender",
                                     blockNumber: transaction.blockNumber,
@@ -545,9 +544,9 @@ export function processAccountTx(data, walletAddress) {
                         });
                     }
                     else {
-                        message.message.outputs.forEach(output => {
+                        message.message.outputs.forEach((output: any) => {
                             if (output.address === walletAddress) {
-                                output.coins.forEach(coin => {
+                                output.coins.forEach((coin: any) => {
                                     added = true
                                     taxData.push({
                                         type: "MultiSend Receiver",
@@ -578,20 +577,17 @@ export function processAccountTx(data, walletAddress) {
                 ) {
                     let added = false
                     const msgContent = JSON.parse(message.message.msg);
-                    const contractAddress = message.message.contract;
                     const sender = message.message.sender;
                     const funds = Number(message.message.funds.split("inj")[0]) / Math.pow(10, 18); // Convert to INJ
-                    const tokenNumber = msgContent.token_number;
                     const mintLimit = msgContent.mint_limit;
                     const proof = msgContent.proof;
 
-                    transaction.logs.forEach(log => {
-                        log.events.forEach(event => {
-                            if (event.type === "wasm" && event.attributes.some(attr => attr.key === "action" && attr.value === "transfer_nft")) {
-                                const tokenId = event.attributes.find(attr => attr.key === "token_id").value;
-                                const recipient = event.attributes.find(attr => attr.key === "recipient").value;
-                                const senderContract = event.attributes.find(attr => attr.key === "sender").value;
-                                const contract = event.attributes.find(attr => attr.key === "_contract_address").value;
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
+                            if (event.type === "wasm" && event.attributes.some((attr: any) => attr.key === "action" && attr.value === "transfer_nft")) {
+                                const tokenId = event.attributes.find((attr: any) => attr.key === "token_id").value;
+                                const recipient = event.attributes.find((attr: any) => attr.key === "recipient").value;
+                                const contract = event.attributes.find((attr: any) => attr.key === "_contract_address").value;
 
                                 if (recipient === sender) {
                                     added = true
@@ -636,17 +632,17 @@ export function processAccountTx(data, walletAddress) {
                     const sender = message.message.sender;
 
                     // Extract transaction details from logs
-                    transaction.logs.forEach(log => {
+                    transaction.logs.forEach((log: any) => {
                         const msgIndex = log.msg_index || 0
-                        log.events.forEach(event => {
-                            if (event.type === "wasm" && event.attributes.some(attr => attr.key === "action" && attr.value === "helix_swap")) {
-                                const returnAmountAttr = event.attributes.find(attr => attr.key === "return_amount");
-                                const returnAssetAttr = event.attributes.find(attr => attr.key === "ask_asset");
+                        log.events.forEach((event: any) => {
+                            if (event.type === "wasm" && event.attributes.some((attr: any) => attr.key === "action" && attr.value === "helix_swap")) {
+                                const returnAmountAttr = event.attributes.find((attr: any) => attr.key === "return_amount");
+                                const returnAssetAttr = event.attributes.find((attr: any) => attr.key === "ask_asset");
 
                                 const returnAmount = returnAmountAttr ? Number(returnAmountAttr.value) : null;
                                 const returnAsset = returnAssetAttr ? returnAssetAttr.value : null;
 
-                                const receiverAttribute = event.attributes.find(attr => attr.key === "receiver")
+                                const receiverAttribute = event.attributes.find((attr: any) => attr.key === "receiver")
 
                                 if (receiverAttribute.value == walletAddress) {
                                     added = true
@@ -668,17 +664,17 @@ export function processAccountTx(data, walletAddress) {
                                 }
 
                             }
-                            else if (event.type === "wasm" && event.attributes.some(attr => attr.key === "hallswap")) {
-                                const returnAmountAttr = event.attributes.find(attr => attr.key === "return_amount");
-                                const returnAssetAttr = event.attributes.find(attr => attr.key === "return_asset");
-                                const offerAmountAttr = event.attributes.find(attr => attr.key === "offer_amount");
+                            else if (event.type === "wasm" && event.attributes.some((attr: any) => attr.key === "hallswap")) {
+                                const returnAmountAttr = event.attributes.find((attr: any) => attr.key === "return_amount");
+                                const returnAssetAttr = event.attributes.find((attr: any) => attr.key === "return_asset");
+                                const offerAmountAttr = event.attributes.find((attr: any) => attr.key === "offer_amount");
 
                                 const returnAmount = returnAmountAttr ? Number(returnAmountAttr.value) : null;
                                 const returnAsset = returnAssetAttr ? returnAssetAttr.value : null;
 
 
 
-                                const receiverAttribute = event.attributes.find(attr => attr.key === "receiver")
+                                const receiverAttribute = event.attributes.find((attr: any) => attr.key === "receiver")
 
                                 if (receiverAttribute.value == walletAddress) {
                                     added = true
@@ -703,8 +699,8 @@ export function processAccountTx(data, walletAddress) {
 
                             // TODO check this
                             else if (event.type == "coin_received" && !added) {
-                                const receiverAttribute = event.attributes.find(attr => attr.key === "receiver");
-                                const amountAttribute = event.attributes.find(attr => attr.key === "amount");
+                                const receiverAttribute = event.attributes.find((attr: any) => attr.key === "receiver");
+                                const amountAttribute = event.attributes.find((attr: any) => attr.key === "amount");
 
                                 if (
                                     receiverAttribute &&
@@ -750,11 +746,11 @@ export function processAccountTx(data, walletAddress) {
                     const contractAddress = message.message.contract;
 
                     // Extract details from logs
-                    transaction.logs.forEach(log => {
-                        log.events.forEach(event => {
-                            if (event.type === "wasm" && event.attributes.some(attr => attr.key === "action" && attr.value === "withdraw")) {
-                                const amountAttr = event.attributes.find(attr => attr.key === "amount");
-                                const ownerAttr = event.attributes.find(attr => attr.key === "owner");
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
+                            if (event.type === "wasm" && event.attributes.some((attr: any) => attr.key === "action" && attr.value === "withdraw")) {
+                                const amountAttr = event.attributes.find((attr: any) => attr.key === "amount");
+                                const ownerAttr = event.attributes.find((attr: any) => attr.key === "owner");
 
                                 const withdrawnAmount = amountAttr ? Number(amountAttr.value) / Math.pow(10, 18) : null; // Adjust decimals
                                 const owner = ownerAttr ? ownerAttr.value : null;
@@ -790,23 +786,23 @@ export function processAccountTx(data, walletAddress) {
                     JSON.parse(message.message.data).args?.msg?.redeem?.redemption_type
                 ) {
                     let added = false
-                    const { sender, funds, contract_address, data: rawData } = message.message;
+                    const { sender, data: rawData } = message.message;
 
                     const dataContent = JSON.parse(rawData);
                     const redemptionType = dataContent.args?.msg?.redeem?.redemption_type;
                     const traderSubaccountId = dataContent.args?.trader_subaccount_id;
                     const vaultSubaccountId = dataContent.args?.vault_subaccount_id;
 
-                    transaction.logs.forEach(log => {
-                        log.events.forEach(event => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "wasm-lp_balance_changed") {
-                                const contractAddress = event.attributes.find(attr => attr.key === "_contract_address")?.value;
-                                const burnAmount = event.attributes.find(attr => attr.key === "burn_amount")?.value;
-                                const redeemedFunds = event.attributes.find(attr => attr.key === "redeemed_funds")?.value;
-                                const traderAddress = event.attributes.find(attr => attr.key === "trader_address")?.value;
+                                const contractAddress = event.attributes.find((attr: any) => attr.key === "_contract_address")?.value;
+                                const burnAmount = event.attributes.find((attr: any) => attr.key === "burn_amount")?.value;
+                                const redeemedFunds = event.attributes.find((attr: any) => attr.key === "redeemed_funds")?.value;
+                                const traderAddress = event.attributes.find((attr: any) => attr.key === "trader_address")?.value;
 
                                 if (contractAddress && burnAmount && redeemedFunds && traderAddress === walletAddress) {
-                                    const redeemedFundsParsed = JSON.parse(redeemedFunds).map(fund => ({
+                                    const redeemedFundsParsed = JSON.parse(redeemedFunds).map((fund: any) => ({
                                         denom: fund.denom,
                                         amount: Number(fund.amount)
                                     }));
@@ -841,27 +837,27 @@ export function processAccountTx(data, walletAddress) {
 
                 else if (message.type === "/injective.wasmx.v1.MsgExecuteContractCompat" && message.message.msg === "{\"Claim\":{}}") {
                     let added = false
-                    const { sender, contract } = message.message;
+                    const { sender } = message.message;
 
                     // Extract logs for the claim
-                    transaction.logs.forEach(log => {
-                        log.events.forEach(event => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "wasm-launchpad_claimed") {
-                                const contractAddress = event.attributes.find(attr => attr.key === "_contract_address")?.value;
-                                const subscriber = event.attributes.find(attr => attr.key === "subscriber")?.value;
-                                const tokensToSendImmediately = event.attributes.find(attr => attr.key === "tokens_to_send_immediately")?.value;
-                                const tokensToVest = event.attributes.find(attr => attr.key === "tokens_to_vest")?.value;
+                                const contractAddress = event.attributes.find((attr: any) => attr.key === "_contract_address")?.value;
+                                const subscriber = event.attributes.find((attr: any) => attr.key === "subscriber")?.value;
+                                const tokensToSendImmediately = event.attributes.find((attr: any) => attr.key === "tokens_to_send_immediately")?.value;
+                                const tokensToVest = event.attributes.find((attr: any) => attr.key === "tokens_to_vest")?.value;
 
                                 if (subscriber === walletAddress) {
                                     const tokensClaimed = tokensToSendImmediately
-                                        ? JSON.parse(tokensToSendImmediately).map(token => ({
+                                        ? JSON.parse(tokensToSendImmediately).map((token: any) => ({
                                             denom: token.denom,
                                             amount: Number(token.amount)
                                         }))
                                         : [];
 
                                     const tokensVested = tokensToVest
-                                        ? JSON.parse(tokensToVest).map(token => ({
+                                        ? JSON.parse(tokensToVest).map((token: any) => ({
                                             denom: token.denom,
                                             amount: Number(token.amount)
                                         }))
@@ -894,18 +890,18 @@ export function processAccountTx(data, walletAddress) {
 
                 else if (message.type === "/injective.wasmx.v1.MsgExecuteContractCompat" && message.message.msg === "{\"Subscribe\":{}}") {
                     let added = false
-                    const { sender, contract, funds } = message.message;
+                    const { sender, funds } = message.message;
 
                     // Extract logs for subscription details
-                    transaction.logs.forEach(log => {
-                        log.events.forEach(event => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "wasm-launchpad_subscribed") {
-                                const contractAddress = event.attributes.find(attr => attr.key === "_contract_address")?.value;
-                                const subscriber = event.attributes.find(attr => attr.key === "subscriber")?.value;
-                                const newSubscribedAmount = event.attributes.find(attr => attr.key === "new_subscribed_amount")?.value;
-                                const diff = event.attributes.find(attr => attr.key === "diff")?.value;
-                                const newTotalAmount = event.attributes.find(attr => attr.key === "new_total_amount")?.value;
-                                const targetQuoteSubscription = event.attributes.find(attr => attr.key === "target_quote_subscription_incl_vault")?.value;
+                                const contractAddress = event.attributes.find((attr: any) => attr.key === "_contract_address")?.value;
+                                const subscriber = event.attributes.find((attr: any) => attr.key === "subscriber")?.value;
+                                const newSubscribedAmount = event.attributes.find((attr: any) => attr.key === "new_subscribed_amount")?.value;
+                                const diff = event.attributes.find((attr: any) => attr.key === "diff")?.value;
+                                const newTotalAmount = event.attributes.find((attr: any) => attr.key === "new_total_amount")?.value;
+                                const targetQuoteSubscription = event.attributes.find((attr: any) => attr.key === "target_quote_subscription_incl_vault")?.value;
 
                                 if (subscriber === walletAddress) {
                                     added = true
@@ -938,16 +934,16 @@ export function processAccountTx(data, walletAddress) {
 
                 else if (message.type === "/injective.wasmx.v1.MsgExecuteContractCompat" && message.message.msg === "{\"bond\":{}}") {
                     let added = false
-                    const { sender, contract, funds } = message.message;
+                    const { funds } = message.message;
 
                     // Extract logs for bonding details
-                    transaction.logs.forEach(log => {
-                        log.events.forEach(event => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "wasm") {
-                                const contractAddress = event.attributes.find(attr => attr.key === "_contract_address")?.value;
-                                const action = event.attributes.find(attr => attr.key === "action")?.value;
-                                const owner = event.attributes.find(attr => attr.key === "owner")?.value;
-                                const amount = event.attributes.find(attr => attr.key === "amount")?.value;
+                                const contractAddress = event.attributes.find((attr: any) => attr.key === "_contract_address")?.value;
+                                const action = event.attributes.find((attr: any) => attr.key === "action")?.value;
+                                const owner = event.attributes.find((attr: any) => attr.key === "owner")?.value;
+                                const amount = event.attributes.find((attr: any) => attr.key === "amount")?.value;
 
                                 if (action === "bond" && owner === walletAddress) {
                                     added = true
@@ -977,19 +973,18 @@ export function processAccountTx(data, walletAddress) {
 
                 else if (message.type === "/injective.wasmx.v1.MsgExecuteContractCompat" && message.message.msg.includes("end_auction")) {
                     let added = false
-                    const { sender, contract } = message.message;
 
                     // Extract auction details from logs
-                    transaction.logs.forEach(log => {
-                        log.events.forEach(event => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "wasm") {
-                                const contractAddress = event.attributes.find(attr => attr.key === "_contract_address")?.value;
-                                const auctionId = event.attributes.find(attr => attr.key === "auction_id")?.value;
-                                const seller = event.attributes.find(attr => attr.key === "seller")?.value;
-                                const tokenId = event.attributes.find(attr => attr.key === "token_id")?.value;
-                                const highestBidder = event.attributes.find(attr => attr.key === "highest_bidder")?.value;
-                                const currency = event.attributes.find(attr => attr.key === "currency")?.value;
-                                const amount = event.attributes.find(attr => attr.key === "amount")?.value;
+                                const contractAddress = event.attributes.find((attr: any) => attr.key === "_contract_address")?.value;
+                                const auctionId = event.attributes.find((attr: any) => attr.key === "auction_id")?.value;
+                                const seller = event.attributes.find((attr: any) => attr.key === "seller")?.value;
+                                const tokenId = event.attributes.find((attr: any) => attr.key === "token_id")?.value;
+                                const highestBidder = event.attributes.find((attr: any) => attr.key === "highest_bidder")?.value;
+                                const currency = event.attributes.find((attr: any) => attr.key === "currency")?.value;
+                                const amount = event.attributes.find((attr: any) => attr.key === "amount")?.value;
 
                                 if (auctionId && seller && tokenId && highestBidder) {
                                     added = true
@@ -1013,13 +1008,12 @@ export function processAccountTx(data, walletAddress) {
                     });
 
                     if (!added) {
-                        transaction.logs.forEach(log => {
+                        transaction.logs.forEach((log: any) => {
                             const msgIndex = log.msg_index || 0
-                            log.events.forEach(event => {
+                            log.events.forEach((event: any) => {
                                 if (event.type === "coin_received") {
-                                    const receiverAttribute = event.attributes.find(attr => attr.key === "receiver");
-                                    const amountAttribute = event.attributes.find(attr => attr.key === "amount");
-                                    const msgIndexAttribute = event.attributes.find(attr => attr.key === "msg_index")?.value || 0;
+                                    const receiverAttribute = event.attributes.find((attr: any) => attr.key === "receiver");
+                                    const amountAttribute = event.attributes.find((attr: any) => attr.key === "amount");
 
                                     const returnAsset = amountAttribute.value.replace(/^\d+/, '').trim();
                                     const returnAmount = Number(amountAttribute.value.match(/^\d+/)[0]);
@@ -1055,14 +1049,14 @@ export function processAccountTx(data, walletAddress) {
 
                 else if (message.type === "/injective.wasmx.v1.MsgExecuteContractCompat" && message.message.msg.includes("stake_voting_tokens")) {
                     let added = false
-                    const { sender, contract, funds } = message.message;
+                    const { sender, funds } = message.message;
 
                     // Extract staking details from logs
-                    transaction.logs.forEach(log => {
-                        log.events.forEach(event => {
-                            if (event.type === "wasm" && event.attributes.some(attr => attr.key === "action" && attr.value === "staking")) {
-                                const contractAddress = event.attributes.find(attr => attr.key === "_contract_address")?.value;
-                                const stakingAmount = event.attributes.find(attr => attr.key === "amount")?.value;
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
+                            if (event.type === "wasm" && event.attributes.some((attr: any) => attr.key === "action" && attr.value === "staking")) {
+                                const contractAddress = event.attributes.find((attr: any) => attr.key === "_contract_address")?.value;
+                                const stakingAmount = event.attributes.find((attr: any) => attr.key === "amount")?.value;
 
                                 if (contractAddress && stakingAmount) {
                                     added = true
@@ -1092,17 +1086,17 @@ export function processAccountTx(data, walletAddress) {
 
                 else if (message.type === "/injective.wasmx.v1.MsgExecuteContractCompat" && message.message.msg.includes("claim") && transaction.memo === "talis") {
                     let added = false
-                    const { sender, contract, msg } = message.message;
+                    const { sender, msg } = message.message;
                     const claimDetails = JSON.parse(msg).claim;
 
                     // Extract claim details from logs
-                    const log = transaction.logs.find(log => log.msg_index === index);
+                    const log = transaction.logs.find((log: any) => log.msg_index === index);
                     if (log) {
-                        const claimEvent = log.events.find(event => event.type === "wasm" && event.attributes.some(attr => attr.key === "action" && attr.value === "claim"));
+                        const claimEvent = log.events.find((event: any) => event.type === "wasm" && event.attributes.some((attr: any) => attr.key === "action" && attr.value === "claim"));
 
                         if (claimEvent) {
-                            const claimedAmount = claimEvent.attributes.find(attr => attr.key === "amount")?.value;
-                            const contractAddress = claimEvent.attributes.find(attr => attr.key === "_contract_address")?.value;
+                            const claimedAmount = claimEvent.attributes.find((attr: any) => attr.key === "amount")?.value;
+                            const contractAddress = claimEvent.attributes.find((attr: any) => attr.key === "_contract_address")?.value;
 
                             added = true
                             taxData.push({
@@ -1115,7 +1109,7 @@ export function processAccountTx(data, walletAddress) {
                                 dropId: claimDetails.drop_id,
                                 maxClaimableAmount: Number(claimDetails.max_claimable_amount) / Math.pow(10, 18), // Convert to readable format
                                 claimedAmount: claimedAmount ? Number(claimedAmount) / Math.pow(10, 18) : null,
-                                signed: transaction.signatures.some(signature => signature.address === walletAddress)
+                                signed: transaction.signatures.some((signature: any) => signature.address === walletAddress)
                             });
                         }
                     }
@@ -1138,19 +1132,19 @@ export function processAccountTx(data, walletAddress) {
                     const marketId = swapData.market_id;
                     const minimumReceive = Number(swapData.minimum_receive)
 
-                    transaction.logs.forEach(log => {
+                    transaction.logs.forEach((log: any) => {
                         const msgIndex = log.msg_index || 0
-                        log.events.forEach(event => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "wasm") {
-                                const actionAttribute = event.attributes.find(attr => attr.key === "action");
-                                const offerAmountAttribute = event.attributes.find(attr => attr.key === "offer_amount");
-                                const returnAmountAttribute = event.attributes.find(attr => attr.key === "return_amount");
-                                const recipientAttribute = event.attributes.find(attr => attr.key === "receiver");
-                                const senderAttribute = event.attributes.find(attr => attr.key === "sender");
-                                const offerAssetAttribute = event.attributes.find(attr => attr.key === "offer_asset");
-                                const askAssetAttribute = event.attributes.find(attr => attr.key === "ask_asset");
+                                const actionAttribute = event.attributes.find((attr: any) => attr.key === "action");
+                                const offerAmountAttribute = event.attributes.find((attr: any) => attr.key === "offer_amount");
+                                const returnAmountAttribute = event.attributes.find((attr: any) => attr.key === "return_amount");
+                                const recipientAttribute = event.attributes.find((attr: any) => attr.key === "receiver");
+                                const senderAttribute = event.attributes.find((attr: any) => attr.key === "sender");
+                                const offerAssetAttribute = event.attributes.find((attr: any) => attr.key === "offer_asset");
+                                const askAssetAttribute = event.attributes.find((attr: any) => attr.key === "ask_asset");
 
-                                const contractAddressAttribute = event.attributes.find(attr => attr.key === "_contract_address");
+                                const contractAddressAttribute = event.attributes.find((attr: any) => attr.key === "_contract_address");
 
 
                                 if (
@@ -1184,9 +1178,8 @@ export function processAccountTx(data, walletAddress) {
                                 }
 
 
-                                const input = event.attributes.find(attr => attr.key === "input");
-                                const output = event.attributes.find(attr => attr.key === "output")
-                                const amount = event.attributes.find(attr => attr.key === "amount")
+                                const input = event.attributes.find((attr: any) => attr.key === "input");
+                                const output = event.attributes.find((attr: any) => attr.key === "output")
 
                                 if (input && input.value == "factory/inj1zaem9jqplp08hkkd5vcl6vmvala9qury79vfj4/point") {
                                     added = true
@@ -1203,8 +1196,8 @@ export function processAccountTx(data, walletAddress) {
                             }
 
                             if (event.type == "coin_received") {
-                                const receiverAttribute = event.attributes.find(attr => attr.key === "receiver");
-                                const amountAttribute = event.attributes.find(attr => attr.key === "amount");
+                                const receiverAttribute = event.attributes.find((attr: any) => attr.key === "receiver");
+                                const amountAttribute = event.attributes.find((attr: any) => attr.key === "amount");
 
                                 if (
                                     receiverAttribute &&
@@ -1254,12 +1247,12 @@ export function processAccountTx(data, walletAddress) {
                         const contractAddress = message.message.contract;
 
 
-                        transaction.logs.forEach(log => {
-                            log.events.forEach(event => {
+                        transaction.logs.forEach((log: any) => {
+                            log.events.forEach((event: any) => {
                                 if (event.type === "transfer") {
-                                    const recipientAttribute = event.attributes.find(attr => attr.key === "recipient");
-                                    const senderAttribute = event.attributes.find(attr => attr.key === "sender");
-                                    const amountAttribute = event.attributes.find(attr => attr.key === "amount");
+                                    const recipientAttribute = event.attributes.find((attr: any) => attr.key === "recipient");
+                                    const senderAttribute = event.attributes.find((attr: any) => attr.key === "sender");
+                                    const amountAttribute = event.attributes.find((attr: any) => attr.key === "amount");
 
                                     if (
 
@@ -1316,13 +1309,13 @@ export function processAccountTx(data, walletAddress) {
                         const senderAddress = message.message.sender;
                         const contractAddress = message.message.contract;
 
-                        transaction.logs.forEach(log => {
-                            log.events.forEach(event => {
+                        transaction.logs.forEach((log: any) => {
+                            log.events.forEach((event: any) => {
                                 if (event.type === "wasm-stake_updated") {
-                                    const stakerAttribute = event.attributes.find(attr => attr.key === "staker");
-                                    const diffAttribute = event.attributes.find(attr => attr.key === "diff");
-                                    const denomAttribute = event.attributes.find(attr => attr.key === "denom");
-                                    const directionAttribute = event.attributes.find(attr => attr.key === "direction");
+                                    const stakerAttribute = event.attributes.find((attr: any) => attr.key === "staker");
+                                    const diffAttribute = event.attributes.find((attr: any) => attr.key === "diff");
+                                    const denomAttribute = event.attributes.find((attr: any) => attr.key === "denom");
+                                    const directionAttribute = event.attributes.find((attr: any) => attr.key === "direction");
 
                                     if (
                                         stakerAttribute &&
@@ -1379,14 +1372,14 @@ export function processAccountTx(data, walletAddress) {
                         const senderAddress = message.message.sender;
                         const contractAddress = message.message.contract;
 
-                        transaction.logs.forEach(log => {
-                            log.events.forEach(event => {
+                        transaction.logs.forEach((log: any) => {
+                            log.events.forEach((event: any) => {
                                 if (event.type === "wasm-stake_updated") {
-                                    const stakerAttribute = event.attributes.find(attr => attr.key === "staker");
-                                    const denomAttribute = event.attributes.find(attr => attr.key === "denom");
-                                    const diffAttribute = event.attributes.find(attr => attr.key === "diff");
-                                    const directionAttribute = event.attributes.find(attr => attr.key === "direction");
-                                    const rewardsPerTokenAttribute = event.attributes.find(attr => attr.key === "rewards_per_token");
+                                    const stakerAttribute = event.attributes.find((attr: any) => attr.key === "staker");
+                                    const denomAttribute = event.attributes.find((attr: any) => attr.key === "denom");
+                                    const diffAttribute = event.attributes.find((attr: any) => attr.key === "diff");
+                                    const directionAttribute = event.attributes.find((attr: any) => attr.key === "direction");
+                                    const rewardsPerTokenAttribute = event.attributes.find((attr: any) => attr.key === "rewards_per_token");
 
                                     if (
                                         stakerAttribute &&
@@ -1400,7 +1393,7 @@ export function processAccountTx(data, walletAddress) {
                                         const rewards = rewardsPerTokenAttribute
                                             ? JSON.parse(rewardsPerTokenAttribute.value)
                                             : [];
-                                        const formattedRewards = rewards.map(reward => ({
+                                        const formattedRewards = rewards.map((reward: any) => ({
                                             denom: reward.denom,
                                             amount: parseFloat(reward.amount)
                                         }));
@@ -1453,11 +1446,11 @@ export function processAccountTx(data, walletAddress) {
                         const quantity = Number(quantityRaw);
 
                         // Parse logs for details like spent and received coins
-                        transaction.logs.forEach(log => {
-                            log.events.forEach(event => {
+                        transaction.logs.forEach((log: any) => {
+                            log.events.forEach((event: any) => {
                                 if (event.type === "coin_spent") {
-                                    const spender = event.attributes.find(attr => attr.key === "spender")?.value;
-                                    const spentAmountRaw = event.attributes.find(attr => attr.key === "amount")?.value;
+                                    const spender = event.attributes.find((attr: any) => attr.key === "spender")?.value;
+                                    const spentAmountRaw = event.attributes.find((attr: any) => attr.key === "amount")?.value;
 
                                     if (spender === message.message.sender && spentAmountRaw) {
                                         const spentAsset = spentAmountRaw.replace(/^\d+/, '').trim(); // Extract the asset symbol
@@ -1526,16 +1519,16 @@ export function processAccountTx(data, walletAddress) {
                         const fundsRaw = message.message.funds;
 
                         // Parse funds
-                        const [amountRaw, assetDenom] = fundsRaw.match(/(\d+)([a-zA-Z\/]+)/).slice(1, 3);
+                        const [amountRaw] = fundsRaw.match(/(\d+)([a-zA-Z/]+)/).slice(1, 3);
                         const stakedAmount = Number(amountRaw)
 
-                        transaction.logs.forEach(log => {
-                            log.events.forEach(event => {
+                        transaction.logs.forEach((log: any) => {
+                            log.events.forEach((event: any) => {
                                 if (event.type === "wasm-stake_updated") {
-                                    const updatedContract = event.attributes.find(attr => attr.key === "_contract_address")?.value;
-                                    const staker = event.attributes.find(attr => attr.key === "staker")?.value;
-                                    const diff = event.attributes.find(attr => attr.key === "diff")?.value;
-                                    const denom = event.attributes.find(attr => attr.key === "denom")?.value;
+                                    const updatedContract = event.attributes.find((attr: any) => attr.key === "_contract_address")?.value;
+                                    const staker = event.attributes.find((attr: any) => attr.key === "staker")?.value;
+                                    const diff = event.attributes.find((attr: any) => attr.key === "diff")?.value;
+                                    const denom = event.attributes.find((attr: any) => attr.key === "denom")?.value;
 
                                     if (updatedContract === contractAddress && staker === sender) {
                                         const stakedDiff = Number(diff)
@@ -1596,16 +1589,16 @@ export function processAccountTx(data, walletAddress) {
                         const beliefPrice = decodedMsg?.swap?.belief_price || null;
                         const maxSpread = decodedMsg?.swap?.max_spread || null;
 
-                        transaction.logs.forEach(log => {
-                            log.events.forEach(event => {
-                                if (event.type === "wasm" && event.attributes.some(attr => attr.key === "action" && attr.value === "swap")) {
-                                    const askAsset = event.attributes.find(attr => attr.key === "ask_asset")?.value;
-                                    const offerAmountRaw = event.attributes.find(attr => attr.key === "offer_amount")?.value;
-                                    const offerAssetRaw = event.attributes.find(attr => attr.key === "offer_asset")?.value;
+                        transaction.logs.forEach((log: any) => {
+                            log.events.forEach((event: any) => {
+                                if (event.type === "wasm" && event.attributes.some((attr: any) => attr.key === "action" && attr.value === "swap")) {
+                                    const askAsset = event.attributes.find((attr: any) => attr.key === "ask_asset")?.value;
+                                    const offerAmountRaw = event.attributes.find((attr: any) => attr.key === "offer_amount")?.value;
+                                    const offerAssetRaw = event.attributes.find((attr: any) => attr.key === "offer_asset")?.value;
 
-                                    const returnAmountRaw = event.attributes.find(attr => attr.key === "return_amount")?.value;
-                                    const spreadAmountRaw = event.attributes.find(attr => attr.key === "spread_amount")?.value;
-                                    const commissionAmountRaw = event.attributes.find(attr => attr.key === "commission_amount")?.value;
+                                    const returnAmountRaw = event.attributes.find((attr: any) => attr.key === "return_amount")?.value;
+                                    const spreadAmountRaw = event.attributes.find((attr: any) => attr.key === "spread_amount")?.value;
+                                    const commissionAmountRaw = event.attributes.find((attr: any) => attr.key === "commission_amount")?.value;
 
                                     // Convert amounts to human-readable format
                                     const offerAmount = offerAmountRaw ? Number(offerAmountRaw) : null;
@@ -1662,24 +1655,19 @@ export function processAccountTx(data, walletAddress) {
                         const contractAddress = message.message.contract;
                         const auctionId = message.message.msg.end_auction.auction_id;
 
-                        transaction.logs.forEach(log => {
-                            log.events.forEach(event => {
-                                if (event.type === "wasm" && event.attributes.some(attr => attr.key === "auction_id")) {
-                                    const auctionAttributes = event.attributes.reduce((acc, attr) => {
-                                        acc[attr.key] = attr.value;
-                                        return acc;
-                                    }, {});
+                        transaction.logs.forEach((log: any) => {
+                            log.events.forEach((event: any) => {
+                                if (event.type === "wasm" && event.attributes.some((attr: any) => attr.key === "auction_id")) {
+                                    const nftTransferEvent = transaction.logs[0].events.find((e: any) => e.type === "wasm" && e.attributes.some((attr: any) => attr.key === "action" && attr.value === "transfer_nft"));
+                                    const nftRecipient = nftTransferEvent?.attributes.find((attr: any) => attr.key === "recipient")?.value;
+                                    const nftTokenId = nftTransferEvent?.attributes.find((attr: any) => attr.key === "token_id")?.value;
 
-                                    const nftTransferEvent = transaction.logs[0].events.find(e => e.type === "wasm" && e.attributes.some(attr => attr.key === "action" && attr.value === "transfer_nft"));
-                                    const nftRecipient = nftTransferEvent?.attributes.find(attr => attr.key === "recipient")?.value;
-                                    const nftTokenId = nftTransferEvent?.attributes.find(attr => attr.key === "token_id")?.value;
-
-                                    const coinSpent = transaction.logs[0].events.find(e => e.type === "coin_spent");
-                                    const coinSpentAmountRaw = coinSpent?.attributes.find(attr => attr.key === "amount")?.value || null;
+                                    const coinSpent = transaction.logs[0].events.find((e: any) => e.type === "coin_spent");
+                                    const coinSpentAmountRaw = coinSpent?.attributes.find((attr: any) => attr.key === "amount")?.value || null;
                                     const coinSpentAmount = coinSpentAmountRaw ? Number(coinSpentAmountRaw.replace("inj", "")) / Math.pow(10, 18) : null;
 
-                                    const coinReceived = transaction.logs[0].events.find(e => e.type === "coin_received");
-                                    const coinReceivedAmountRaw = coinReceived?.attributes.find(attr => attr.key === "amount")?.value || null;
+                                    const coinReceived = transaction.logs[0].events.find((e: any) => e.type === "coin_received");
+                                    const coinReceivedAmountRaw = coinReceived?.attributes.find((attr: any) => attr.key === "amount")?.value || null;
                                     const coinReceivedAmount = coinReceivedAmountRaw ? Number(coinReceivedAmountRaw.replace("inj", "")) / Math.pow(10, 18) : null;
 
                                     added = true
@@ -1733,10 +1721,10 @@ export function processAccountTx(data, walletAddress) {
                             const maxSpread = parseFloat(swapData.max_spread);
                             const deadline = new Date(swapData.deadline * 1000).toISOString();
 
-                            transaction.logs.forEach(log => {
-                                log.events.forEach(event => {
-                                    if (event.type === "wasm" && event.attributes.some(attr => attr.key === "action" && attr.value === "swap")) {
-                                        const wasmAttributes = event.attributes.reduce((acc, attr) => {
+                            transaction.logs.forEach((log: any) => {
+                                log.events.forEach((event: any) => {
+                                    if (event.type === "wasm" && event.attributes.some((attr: any) => attr.key === "action" && attr.value === "swap")) {
+                                        const wasmAttributes = event.attributes.reduce((acc: any, attr: any) => {
                                             acc[attr.key] = attr.value;
                                             return acc;
                                         }, {});
@@ -1782,16 +1770,16 @@ export function processAccountTx(data, walletAddress) {
                             const sender = message.message.sender;
 
                             // Extract transaction details from logs
-                            transaction.logs.forEach(log => {
-                                log.events.forEach(event => {
-                                    if (event.type === "wasm" && event.attributes.some(attr => attr.key === "action" && attr.value === "helix_swap")) {
-                                        const returnAmountAttr = event.attributes.find(attr => attr.key === "return_amount");
-                                        const returnAssetAttr = event.attributes.find(attr => attr.key === "ask_asset");
+                            transaction.logs.forEach((log: any) => {
+                                log.events.forEach((event: any) => {
+                                    if (event.type === "wasm" && event.attributes.some((attr: any) => attr.key === "action" && attr.value === "helix_swap")) {
+                                        const returnAmountAttr = event.attributes.find((attr: any) => attr.key === "return_amount");
+                                        const returnAssetAttr = event.attributes.find((attr: any) => attr.key === "ask_asset");
 
                                         const returnAmount = returnAmountAttr ? Number(returnAmountAttr.value) : null;
                                         const returnAsset = returnAssetAttr ? returnAssetAttr.value : null;
 
-                                        const receiverAttribute = event.attributes.find(attr => attr.key === "receiver")
+                                        const receiverAttribute = event.attributes.find((attr: any) => attr.key === "receiver")
 
                                         if (receiverAttribute.value == walletAddress) {
                                             added = true
@@ -1812,15 +1800,15 @@ export function processAccountTx(data, walletAddress) {
                                         }
 
                                     }
-                                    else if (event.type === "wasm" && event.attributes.some(attr => attr.key === "hallswap")) {
-                                        const returnAmountAttr = event.attributes.find(attr => attr.key === "return_amount");
-                                        const returnAssetAttr = event.attributes.find(attr => attr.key === "return_asset");
-                                        const offerAmountAttr = event.attributes.find(attr => attr.key === "offer_amount");
+                                    else if (event.type === "wasm" && event.attributes.some((attr: any) => attr.key === "hallswap")) {
+                                        const returnAmountAttr = event.attributes.find((attr: any) => attr.key === "return_amount");
+                                        const returnAssetAttr = event.attributes.find((attr: any) => attr.key === "return_asset");
+                                        const offerAmountAttr = event.attributes.find((attr: any) => attr.key === "offer_amount");
 
                                         const returnAmount = returnAmountAttr ? Number(returnAmountAttr.value) : null;
                                         const returnAsset = returnAssetAttr ? returnAssetAttr.value : null;
 
-                                        const receiverAttribute = event.attributes.find(attr => attr.key === "receiver")
+                                        const receiverAttribute = event.attributes.find((attr: any) => attr.key === "receiver")
 
                                         if (receiverAttribute.value == walletAddress) {
                                             added = true
@@ -1848,7 +1836,7 @@ export function processAccountTx(data, walletAddress) {
 
                         if (decodedMsg.withdraw_liquidity) {
                             const withdrawData = decodedMsg.withdraw_liquidity;
-                            const minAssets = withdrawData.min_assets.map(asset => {
+                            const minAssets = withdrawData.min_assets.map((asset: any) => {
                                 if (asset.info.native_token) {
                                     return {
                                         type: "native",
@@ -1865,19 +1853,19 @@ export function processAccountTx(data, walletAddress) {
                                     console.warn("Unknown asset type:", asset);
                                     return null; // Handle unexpected asset types gracefully
                                 }
-                            }).filter(asset => asset !== null);
+                            }).filter((asset: any) => asset !== null);
                             const deadline = new Date(withdrawData.deadline * 1000).toISOString();
 
-                            transaction.logs.forEach(log => {
-                                log.events.forEach(event => {
-                                    if (event.type === "wasm" && event.attributes.some(attr => attr.key === "action" && attr.value === "withdraw_liquidity")) {
-                                        const wasmAttributes = event.attributes.reduce((acc, attr) => {
+                            transaction.logs.forEach((log: any) => {
+                                log.events.forEach((event: any) => {
+                                    if (event.type === "wasm" && event.attributes.some((attr: any) => attr.key === "action" && attr.value === "withdraw_liquidity")) {
+                                        const wasmAttributes = event.attributes.reduce((acc: any, attr: any) => {
                                             acc[attr.key] = attr.value;
                                             return acc;
                                         }, {});
 
                                         const refundAssets = wasmAttributes.refund_assets
-                                            ? wasmAttributes.refund_assets.split(",").map(asset => {
+                                            ? wasmAttributes.refund_assets.split(",").map((asset: any) => {
                                                 const [amount, contractAddr] = asset.trim().split(/(?=[inj1])/);
                                                 return { amount: Number(amount), contractAddr: contractAddr.trim() };
                                             })
@@ -1913,16 +1901,16 @@ export function processAccountTx(data, walletAddress) {
                             const minimumReceive = Number(decodedMsg.execute_swap_operations.minimum_receive);
                             const deadline = new Date(decodedMsg.execute_swap_operations.deadline * 1000).toISOString();
 
-                            transaction.logs.forEach(log => {
-                                log.events.forEach(event => {
-                                    if (event.type === "wasm" && event.attributes.some(attr => attr.key === "action" && attr.value === "swap")) {
-                                        const askAsset = event.attributes.find(attr => attr.key === "ask_asset")?.value;
-                                        const offerAmountRaw = event.attributes.find(attr => attr.key === "offer_amount")?.value;
-                                        const offerAssetRaw = event.attributes.find(attr => attr.key === "offer_asset")?.value;
+                            transaction.logs.forEach((log: any) => {
+                                log.events.forEach((event: any) => {
+                                    if (event.type === "wasm" && event.attributes.some((attr: any) => attr.key === "action" && attr.value === "swap")) {
+                                        const askAsset = event.attributes.find((attr: any) => attr.key === "ask_asset")?.value;
+                                        const offerAmountRaw = event.attributes.find((attr: any) => attr.key === "offer_amount")?.value;
+                                        const offerAssetRaw = event.attributes.find((attr: any) => attr.key === "offer_asset")?.value;
 
-                                        const returnAmountRaw = event.attributes.find(attr => attr.key === "return_amount")?.value;
-                                        const spreadAmountRaw = event.attributes.find(attr => attr.key === "spread_amount")?.value;
-                                        const commissionAmountRaw = event.attributes.find(attr => attr.key === "commission_amount")?.value;
+                                        const returnAmountRaw = event.attributes.find((attr: any) => attr.key === "return_amount")?.value;
+                                        const spreadAmountRaw = event.attributes.find((attr: any) => attr.key === "spread_amount")?.value;
+                                        const commissionAmountRaw = event.attributes.find((attr: any) => attr.key === "commission_amount")?.value;
 
                                         // Convert amounts to human-readable format
                                         const offerAmount = offerAmountRaw ? Number(offerAmountRaw) : null;
@@ -1931,7 +1919,7 @@ export function processAccountTx(data, walletAddress) {
                                         const commissionAmount = commissionAmountRaw ? Number(commissionAmountRaw) : null;
 
                                         // Iterate through operations to gather swap details
-                                        const operationDetails = swapOperations.map(op => {
+                                        const operationDetails = swapOperations.map((op: any) => {
                                             if (op.dojo_swap) {
                                                 const offerAssetInfo = op.dojo_swap.offer_asset_info.token
                                                     ? op.dojo_swap.offer_asset_info.token.contract_addr
@@ -1948,7 +1936,7 @@ export function processAccountTx(data, walletAddress) {
                                             }
                                             console.warn("Unknown operation type:", op);
                                             return null;
-                                        }).filter(op => op !== null); // Filter out invalid operations
+                                        }).filter((op: any) => op !== null); // Filter out invalid operations
 
                                         added = true;
                                         taxData.push({
@@ -1977,15 +1965,14 @@ export function processAccountTx(data, walletAddress) {
                         }
 
                         if (decodedMsg.bond_boost) {
-                            const bondBoostData = decodedMsg.bond_boost;
 
-                            transaction.logs.forEach(log => {
-                                log.events.forEach(event => {
+                            transaction.logs.forEach((log: any) => {
+                                log.events.forEach((event: any) => {
                                     if (
                                         event.type === "wasm" &&
-                                        event.attributes.some(attr => attr.key === "action" && attr.value === "bond_boost")
+                                        event.attributes.some((attr: any) => attr.key === "action" && attr.value === "bond_boost")
                                     ) {
-                                        const wasmAttributes = event.attributes.reduce((acc, attr) => {
+                                        const wasmAttributes = event.attributes.reduce((acc: any, attr: any) => {
                                             acc[attr.key] = attr.value;
                                             return acc;
                                         }, {});
@@ -2054,10 +2041,10 @@ export function processAccountTx(data, walletAddress) {
                     message.message.msg.harvest
                 ) {
                     let added = false
-                    transaction.logs.forEach(log => {
-                        log.events.forEach(event => {
-                            if (event.type === "wasm" && event.attributes.some(attr => attr.key === "action" && attr.value === "harvest")) {
-                                const wasmAttributes = event.attributes.reduce((acc, attr) => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
+                            if (event.type === "wasm" && event.attributes.some((attr: any) => attr.key === "action" && attr.value === "harvest")) {
+                                const wasmAttributes = event.attributes.reduce((acc: any, attr: any) => {
                                     acc[attr.key] = attr.value;
                                     return acc;
                                 }, {});
@@ -2085,7 +2072,7 @@ export function processAccountTx(data, walletAddress) {
 
                             // Extract additional transfer details if needed
                             if (event.type === "transfer") {
-                                const transferAttributes = event.attributes.reduce((acc, attr) => {
+                                const transferAttributes = event.attributes.reduce((acc: any, attr: any) => {
                                     acc[attr.key] = attr.value;
                                     return acc;
                                 }, {});
@@ -2129,10 +2116,10 @@ export function processAccountTx(data, walletAddress) {
                     message.message.msg.deposit
                 ) {
                     let added = false
-                    transaction.logs.forEach(log => {
-                        log.events.forEach(event => {
-                            if (event.type === "wasm" && event.attributes.some(attr => attr.key === "action" && attr.value === "deposit")) {
-                                const wasmAttributes = event.attributes.reduce((acc, attr) => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
+                            if (event.type === "wasm" && event.attributes.some((attr: any) => attr.key === "action" && attr.value === "deposit")) {
+                                const wasmAttributes = event.attributes.reduce((acc: any, attr: any) => {
                                     acc[attr.key] = attr.value;
                                     return acc;
                                 }, {});
@@ -2158,7 +2145,7 @@ export function processAccountTx(data, walletAddress) {
 
                             // Parse the transfer details
                             if (event.type === "transfer") {
-                                const transferAttributes = event.attributes.reduce((acc, attr) => {
+                                const transferAttributes = event.attributes.reduce((acc: any, attr: any) => {
                                     acc[attr.key] = attr.value;
                                     return acc;
                                 }, {});
@@ -2222,10 +2209,10 @@ export function processAccountTx(data, walletAddress) {
                                 : null;
                             const targetDenom = swapData.target_denom || null;
 
-                            transaction.logs.forEach(log => {
-                                log.events.forEach(event => {
+                            transaction.logs.forEach((log: any) => {
+                                log.events.forEach((event: any) => {
                                     if (event.type === "wasm-atomic_swap_execution") {
-                                        const wasmAttributes = event.attributes.reduce((acc, attr) => {
+                                        const wasmAttributes = event.attributes.reduce((acc: any, attr: any) => {
                                             acc[attr.key] = attr.value;
                                             return acc;
                                         }, {});
@@ -2294,29 +2281,29 @@ export function processAccountTx(data, walletAddress) {
                     if (msgData.trade) {
                         const escrowId = msgData.trade.trading_escrow_id;
 
-                        transaction.logs.forEach(log => {
+                        transaction.logs.forEach((log: any) => {
                             // Extract logs for trade details
                             const nftTransfer = log.events.find(
-                                (event) =>
+                                (event: any) =>
                                     event.type === "wasm" &&
-                                    event.attributes.some(attr => attr.key === "action" && attr.value === "transfer_nft")
+                                    event.attributes.some((attr: any) => attr.key === "action" && attr.value === "transfer_nft")
                             );
 
                             const coinTransfer = log.events.find(
-                                (event) =>
+                                (event: any) =>
                                     event.type === "transfer" &&
-                                    event.attributes.some(attr => attr.key === "recipient")
+                                    event.attributes.some((attr: any) => attr.key === "recipient")
                             );
 
                             const tokenTransfer = nftTransfer
-                                ? nftTransfer.attributes.reduce((acc, attr) => {
+                                ? nftTransfer.attributes.reduce((acc: any, attr: any) => {
                                     acc[attr.key] = attr.value;
                                     return acc;
                                 }, {})
                                 : {};
 
                             const coinDetails = coinTransfer
-                                ? coinTransfer.attributes.reduce((acc, attr) => {
+                                ? coinTransfer.attributes.reduce((acc: any, attr: any) => {
                                     acc[attr.key] = attr.value;
                                     return acc;
                                 }, {})
@@ -2369,29 +2356,29 @@ export function processAccountTx(data, walletAddress) {
                     if (msgData.create_escrow) {
                         const escrowId = msgData.create_escrow.trading_escrow_id;
 
-                        transaction.logs.forEach(log => {
+                        transaction.logs.forEach((log: any) => {
                             // Extract logs for escrow creation details
                             const nftTransfer = log.events.find(
-                                (event) =>
+                                (event: any) =>
                                     event.type === "wasm" &&
-                                    event.attributes.some(attr => attr.key === "action" && attr.value === "transfer_nft")
+                                    event.attributes.some((attr: any) => attr.key === "action" && attr.value === "transfer_nft")
                             );
 
                             const coinTransfer = log.events.find(
-                                (event) =>
+                                (event: any) =>
                                     event.type === "transfer" &&
-                                    event.attributes.some(attr => attr.key === "recipient")
+                                    event.attributes.some((attr: any) => attr.key === "recipient")
                             );
 
                             const tokenTransfer = nftTransfer
-                                ? nftTransfer.attributes.reduce((acc, attr) => {
+                                ? nftTransfer.attributes.reduce((acc: any, attr: any) => {
                                     acc[attr.key] = attr.value;
                                     return acc;
                                 }, {})
                                 : {};
 
                             const coinDetails = coinTransfer
-                                ? coinTransfer.attributes.reduce((acc, attr) => {
+                                ? coinTransfer.attributes.reduce((acc: any, attr: any) => {
                                     acc[attr.key] = attr.value;
                                     return acc;
                                 }, {})
@@ -2440,45 +2427,43 @@ export function processAccountTx(data, walletAddress) {
                     const msgData = JSON.parse(message.message.msg);
 
                     if (msgData.swap_exact_output) {
-                        const targetOutputQuantity = msgData.swap_exact_output.target_output_quantity;
-                        const targetDenom = msgData.swap_exact_output.target_denom;
 
-                        transaction.logs.forEach(log => {
+                        transaction.logs.forEach((log: any) => {
                             // Extract logs for swap details
                             const wasmSwapExecution = log.events.find(
-                                (event) =>
+                                (event: any) =>
                                     event.type === "wasm-atomic_swap_execution" &&
-                                    event.attributes.some(attr => attr.key === "swap_final_amount")
+                                    event.attributes.some((attr: any) => attr.key === "swap_final_amount")
                             );
 
                             const coinSpent = log.events.find(
-                                (event) =>
+                                (event: any) =>
                                     event.type === "coin_spent" &&
-                                    event.attributes.some(attr => attr.key === "spender")
+                                    event.attributes.some((attr: any) => attr.key === "spender")
                             );
 
                             const coinReceived = log.events.find(
-                                (event) =>
+                                (event: any) =>
                                     event.type === "coin_received" &&
-                                    event.attributes.some(attr => attr.key === "receiver")
+                                    event.attributes.some((attr: any) => attr.key === "receiver")
                             );
 
                             const wasmSwapDetails = wasmSwapExecution
-                                ? wasmSwapExecution.attributes.reduce((acc, attr) => {
+                                ? wasmSwapExecution.attributes.reduce((acc: any, attr: any) => {
                                     acc[attr.key] = attr.value;
                                     return acc;
                                 }, {})
                                 : {};
 
                             const spentDetails = coinSpent
-                                ? coinSpent.attributes.reduce((acc, attr) => {
+                                ? coinSpent.attributes.reduce((acc: any, attr: any) => {
                                     acc[attr.key] = attr.value;
                                     return acc;
                                 }, {})
                                 : {};
 
                             const receivedDetails = coinReceived
-                                ? coinReceived.attributes.reduce((acc, attr) => {
+                                ? coinReceived.attributes.reduce((acc: any, attr: any) => {
                                     acc[attr.key] = attr.value;
                                     return acc;
                                 }, {})
@@ -2522,42 +2507,42 @@ export function processAccountTx(data, walletAddress) {
                     JSON.parse(message.message.msg).withdraw_voting_tokens
                 ) {
                     let added = false
-                    transaction.logs.forEach(log => {
+                    transaction.logs.forEach((log: any) => {
                         // Extract logs for withdrawal details
                         const wasmWithdrawal = log.events.find(
-                            (event) =>
+                            (event: any) =>
                                 event.type === "wasm" &&
-                                event.attributes.some(attr => attr.key === "action" && attr.value === "withdraw")
+                                event.attributes.some((attr: any) => attr.key === "action" && attr.value === "withdraw")
                         );
 
                         const coinSpent = log.events.find(
-                            (event) =>
+                            (event: any) =>
                                 event.type === "coin_spent" &&
-                                event.attributes.some(attr => attr.key === "spender")
+                                event.attributes.some((attr: any) => attr.key === "spender")
                         );
 
                         const coinReceived = log.events.find(
-                            (event) =>
+                            (event: any) =>
                                 event.type === "coin_received" &&
-                                event.attributes.some(attr => attr.key === "receiver")
+                                event.attributes.some((attr: any) => attr.key === "receiver")
                         );
 
                         const wasmDetails = wasmWithdrawal
-                            ? wasmWithdrawal.attributes.reduce((acc, attr) => {
+                            ? wasmWithdrawal.attributes.reduce((acc: any, attr: any) => {
                                 acc[attr.key] = attr.value;
                                 return acc;
                             }, {})
                             : {};
 
                         const spentDetails = coinSpent
-                            ? coinSpent.attributes.reduce((acc, attr) => {
+                            ? coinSpent.attributes.reduce((acc: any, attr: any) => {
                                 acc[attr.key] = attr.value;
                                 return acc;
                             }, {})
                             : {};
 
                         const receivedDetails = coinReceived
-                            ? coinReceived.attributes.reduce((acc, attr) => {
+                            ? coinReceived.attributes.reduce((acc: any, attr: any) => {
                                 acc[attr.key] = attr.value;
                                 return acc;
                             }, {})
@@ -2601,43 +2586,44 @@ export function processAccountTx(data, walletAddress) {
                 ) {
                     let added = false
                     const msgData = JSON.parse(message.message.msg);
+                    void msgData;
 
-                    transaction.logs.forEach(log => {
+                    transaction.logs.forEach((log: any) => {
                         // Extract relevant log events
                         const wasmEvent = log.events.find(
-                            (event) =>
+                            (event: any) =>
                                 event.type === "wasm" &&
-                                event.attributes.some(attr => attr.key === "action" && attr.value === "place bid")
+                                event.attributes.some((attr: any) => attr.key === "action" && attr.value === "place bid")
                         );
 
                         const coinSpent = log.events.find(
-                            (event) =>
+                            (event: any) =>
                                 event.type === "coin_spent" &&
-                                event.attributes.some(attr => attr.key === "spender")
+                                event.attributes.some((attr: any) => attr.key === "spender")
                         );
 
                         const coinReceived = log.events.find(
-                            (event) =>
+                            (event: any) =>
                                 event.type === "coin_received" &&
-                                event.attributes.some(attr => attr.key === "receiver")
+                                event.attributes.some((attr: any) => attr.key === "receiver")
                         );
 
                         const wasmDetails = wasmEvent
-                            ? wasmEvent.attributes.reduce((acc, attr) => {
+                            ? wasmEvent.attributes.reduce((acc: any, attr: any) => {
                                 acc[attr.key] = attr.value;
                                 return acc;
                             }, {})
                             : {};
 
                         const spentDetails = coinSpent
-                            ? coinSpent.attributes.reduce((acc, attr) => {
+                            ? coinSpent.attributes.reduce((acc: any, attr: any) => {
                                 acc[attr.key] = attr.value;
                                 return acc;
                             }, {})
                             : {};
 
                         const receivedDetails = coinReceived
-                            ? coinReceived.attributes.reduce((acc, attr) => {
+                            ? coinReceived.attributes.reduce((acc: any, attr: any) => {
                                 acc[attr.key] = attr.value;
                                 return acc;
                             }, {})
@@ -2679,19 +2665,18 @@ export function processAccountTx(data, walletAddress) {
                     const order = message.message.order;
                     let returnAsset, returnAmount, offerAsset, offerAmount
 
-                    transaction.logs.forEach(log => {
-                        const msgIndex = log.msg_index || 0
-                        const coinRecievedEvent = log.events.find(x => x.type == "coin_received" && x.attributes.find(att => att.key == "receiver" && att.value == walletAddress))
+                    transaction.logs.forEach((log: any) => {
+                        const coinRecievedEvent = log.events.find((x: any) => x.type == "coin_received" && x.attributes.find((att: any) => att.key == "receiver" && att.value == walletAddress))
 
                         if (coinRecievedEvent) {
-                            const amountReceived = coinRecievedEvent.attributes.find(att => att.key == "amount").value
+                            const amountReceived = coinRecievedEvent.attributes.find((att: any) => att.key == "amount").value
                             returnAsset = amountReceived.replace(/^\d+/, '').trim();
                             returnAmount = Number(amountReceived.match(/^\d+/)[0])
                         }
 
-                        const coinSpentEvent = log.events.find(x => x.type == "coin_spent" && x.attributes.find(att => att.key == "spender" && att.value == walletAddress))
+                        const coinSpentEvent = log.events.find((x: any) => x.type == "coin_spent" && x.attributes.find((att: any) => att.key == "spender" && att.value == walletAddress))
                         if (coinSpentEvent) {
-                            const amountSpent = coinSpentEvent.attributes.find(att => att.key == "amount").value
+                            const amountSpent = coinSpentEvent.attributes.find((att: any) => att.key == "amount").value
                             offerAsset = amountSpent.replace(/^\d+/, '').trim();
                             offerAmount = Number(amountSpent.match(/^\d+/)[0])
                         }
@@ -2739,19 +2724,18 @@ export function processAccountTx(data, walletAddress) {
 
                     let returnAsset, returnAmount, offerAsset, offerAmount
 
-                    transaction.logs.forEach(log => {
-                        const msgIndex = log.msg_index || 0
-                        const coinRecievedEvent = log.events.find(x => x.type == "coin_received" && x.attributes.find(att => att.key == "receiver" && att.value == walletAddress))
+                    transaction.logs.forEach((log: any) => {
+                        const coinRecievedEvent = log.events.find((x: any) => x.type == "coin_received" && x.attributes.find((att: any) => att.key == "receiver" && att.value == walletAddress))
 
                         if (coinRecievedEvent) {
-                            const amountReceived = coinRecievedEvent.attributes.find(att => att.key == "amount").value
+                            const amountReceived = coinRecievedEvent.attributes.find((att: any) => att.key == "amount").value
                             returnAsset = amountReceived.replace(/^\d+/, '').trim();
                             returnAmount = Number(amountReceived.match(/^\d+/)[0])
                         }
 
-                        const coinSpentEvent = log.events.find(x => x.type == "coin_spent" && x.attributes.find(att => att.key == "spender" && att.value == walletAddress))
+                        const coinSpentEvent = log.events.find((x: any) => x.type == "coin_spent" && x.attributes.find((att: any) => att.key == "spender" && att.value == walletAddress))
                         if (coinSpentEvent) {
-                            const amountSpent = coinSpentEvent.attributes.find(att => att.key == "amount").value
+                            const amountSpent = coinSpentEvent.attributes.find((att: any) => att.key == "amount").value
                             offerAsset = amountSpent.replace(/^\d+/, '').trim();
                             offerAmount = Number(amountSpent.match(/^\d+/)[0])
                         }
@@ -2793,16 +2777,16 @@ export function processAccountTx(data, walletAddress) {
                 else if (message.type === "/injective.exchange.v1beta1.MsgCancelDerivativeOrder") {
                     const { sender, market_id, subaccount_id, order_hash } = message.message;
 
-                    let orderDetails = null;
+                    let orderDetails: any = null;
                     let added = false;
 
                     // Iterate through transaction logs
-                    transaction.logs.forEach(log => {
+                    transaction.logs.forEach((log: any) => {
                         const msgIndex = log.msg_index || 0
-                        log.events.forEach(event => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "injective.exchange.v1beta1.EventCancelDerivativeOrder") {
-                                const orderInfoAttribute = event.attributes.find(attr => attr.key === "limit_order");
-                                const marketIdAttribute = event.attributes.find(attr => attr.key === "market_id");
+                                const orderInfoAttribute = event.attributes.find((attr: any) => attr.key === "limit_order");
+                                const marketIdAttribute = event.attributes.find((attr: any) => attr.key === "market_id");
 
                                 if (
                                     orderInfoAttribute &&
@@ -2844,19 +2828,19 @@ export function processAccountTx(data, walletAddress) {
                     const { sender, data } = message.message;
 
                     // Iterate over the data array in the message
-                    data.forEach((order, orderIndex) => {
+                    data.forEach((order: any, orderIndex: any) => {
                         const { market_id, subaccount_id, order_hash, order_mask, cid } = order;
 
-                        let orderDetails = null;
+                        let orderDetails: any = null;
                         let added = false;
 
                         // Iterate through transaction logs to match the message index and extract event details
-                        transaction.logs.forEach(log => {
+                        transaction.logs.forEach((log: any) => {
                             const msgIndex = log.msg_index || 0
-                            log.events.forEach(event => {
+                            log.events.forEach((event: any) => {
                                 if (event.type === "injective.exchange.v1beta1.EventCancelDerivativeOrder") {
-                                    const orderInfoAttribute = event.attributes.find(attr => attr.key === "limit_order");
-                                    const marketIdAttribute = event.attributes.find(attr => attr.key === "market_id");
+                                    const orderInfoAttribute = event.attributes.find((attr: any) => attr.key === "limit_order");
+                                    const marketIdAttribute = event.attributes.find((attr: any) => attr.key === "market_id");
 
                                     if (
                                         orderInfoAttribute &&
@@ -2916,15 +2900,15 @@ export function processAccountTx(data, walletAddress) {
                         guildDetails: {
                             guildId: msgData.join_guild.id || null,
                         },
-                        logs: transaction.logs.map((log) => {
+                        logs: transaction.logs.map((log: any) => {
                             const guildEvent = log.events.find(
-                                (event) =>
+                                (event: any) =>
                                     event.type === "wasm-campaign-join_guild" &&
-                                    event.attributes.some((attr) => attr.key === "guild_id")
+                                    event.attributes.some((attr: any) => attr.key === "guild_id")
                             );
 
                             return guildEvent
-                                ? guildEvent.attributes.reduce((acc, attr) => {
+                                ? guildEvent.attributes.reduce((acc: any, attr: any) => {
                                     acc[attr.key] = attr.value;
                                     return acc;
                                 }, {})
@@ -2942,19 +2926,20 @@ export function processAccountTx(data, walletAddress) {
                 ) {
                     let added = false
                     const msgContent = JSON.parse(message.message.msg);
+                    void msgContent;
 
                     // Extract details related to the 'remove_strategy' action
                     const contractAddress = message.message.contract;
                     const sender = message.message.sender;
 
                     // Loop through transaction logs to collect relevant data
-                    transaction.logs.forEach((log) => {
-                        log.events.forEach((event) => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "wasm-remove_strategy") {
-                                const midPrice = event.attributes.find(attr => attr.key === "mid_price")?.value;
-                                const baseDeposit = event.attributes.find(attr => attr.key === "base_deposit")?.value;
-                                const quoteDeposit = event.attributes.find(attr => attr.key === "quote_deposit")?.value;
-                                const stopReason = event.attributes.find(attr => attr.key === "stop_reason")?.value;
+                                const midPrice = event.attributes.find((attr: any) => attr.key === "mid_price")?.value;
+                                const baseDeposit = event.attributes.find((attr: any) => attr.key === "base_deposit")?.value;
+                                const quoteDeposit = event.attributes.find((attr: any) => attr.key === "quote_deposit")?.value;
+                                const stopReason = event.attributes.find((attr: any) => attr.key === "stop_reason")?.value;
 
                                 added = true
                                 taxData.push({
@@ -3001,14 +2986,14 @@ export function processAccountTx(data, walletAddress) {
                     const quoteFunds = message.message.funds;
 
                     // Loop through transaction logs to collect additional data
-                    transaction.logs.forEach((log) => {
-                        log.events.forEach((event) => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "wasm-create_strategy") {
-                                const marketId = event.attributes.find(attr => attr.key === "market_id")?.value;
-                                const baseQuantity = event.attributes.find(attr => attr.key === "base_quantity")?.value;
-                                const quoteQuantity = event.attributes.find(attr => attr.key === "quote_quantity")?.value;
-                                const swapFee = event.attributes.find(attr => attr.key === "swap_fee")?.value;
-                                const executionPrice = event.attributes.find(attr => attr.key === "execution_price")?.value;
+                                const marketId = event.attributes.find((attr: any) => attr.key === "market_id")?.value;
+                                const baseQuantity = event.attributes.find((attr: any) => attr.key === "base_quantity")?.value;
+                                const quoteQuantity = event.attributes.find((attr: any) => attr.key === "quote_quantity")?.value;
+                                const swapFee = event.attributes.find((attr: any) => attr.key === "swap_fee")?.value;
+                                const executionPrice = event.attributes.find((attr: any) => attr.key === "execution_price")?.value;
 
                                 added = true
                                 taxData.push({
@@ -3086,16 +3071,14 @@ export function processAccountTx(data, walletAddress) {
                     const gasUsed = transaction.gasUsed;
 
                     // Extract relevant logs for additional details
-                    const fundsSpent = null;
-                    const recipient = null;
-
                     let added = false
+                    void added;
 
-                    transaction.logs.forEach((log) => {
-                        log.events.forEach((event) => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "coin_spent") {
-                                const spender = event.attributes.find(attr => attr.key === "spender")?.value;
-                                const spentAmountRaw = event.attributes.find(attr => attr.key === "amount")?.value;
+                                const spender = event.attributes.find((attr: any) => attr.key === "spender")?.value;
+                                const spentAmountRaw = event.attributes.find((attr: any) => attr.key === "amount")?.value;
 
                                 if (spender === message.message.sender && spentAmountRaw) {
                                     const spentAsset = spentAmountRaw.replace(/^\d+/, '').trim();
@@ -3139,15 +3122,15 @@ export function processAccountTx(data, walletAddress) {
                     let rewardsWithdrawn = null;
                     let newShares = null;
 
-                    transaction.logs.forEach((log) => {
-                        log.events.forEach((event) => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "withdraw_rewards") {
                                 rewardsWithdrawn = parseFloat(
-                                    event.attributes.find(attr => attr.key === "amount")?.value.replace("inj", "") || 0
+                                    event.attributes.find((attr: any) => attr.key === "amount")?.value.replace("inj", "") || 0
                                 )
                             }
                             if (event.type === "delegate") {
-                                newShares = event.attributes.find(attr => attr.key === "new_shares")?.value || null;
+                                newShares = event.attributes.find((attr: any) => attr.key === "new_shares")?.value || null;
                             }
                         });
                     });
@@ -3178,27 +3161,26 @@ export function processAccountTx(data, walletAddress) {
                     const sender = message.message.sender;
                     const contractAddress = message.message.contract;
                     const recipient = withdrawMessage.withdraw_funds.address_to;
-                    const funds = parseFloat(message.message.funds || 0) / Math.pow(10, 18); // Convert funds to INJ
 
                     // Extract details from transaction logs
                     let withdrawnAmount = null;
                     let feeRecipient = null;
                     let feeAmount = null;
 
-                    transaction.logs.forEach((log) => {
-                        log.events.forEach((event) => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "transfer") {
-                                const senderAttr = event.attributes.find(attr => attr.key === "sender" && attr.value === contractAddress);
+                                const senderAttr = event.attributes.find((attr: any) => attr.key === "sender" && attr.value === contractAddress);
                                 if (senderAttr) {
                                     withdrawnAmount = parseFloat(
-                                        event.attributes.find(attr => attr.key === "amount")?.value.replace("inj", "") || 0
+                                        event.attributes.find((attr: any) => attr.key === "amount")?.value.replace("inj", "") || 0
                                     ) / Math.pow(10, 18);
                                 }
                             }
-                            if (event.type === "transfer" && event.attributes.some(attr => attr.key === "recipient" && attr.value !== recipient)) {
-                                feeRecipient = event.attributes.find(attr => attr.key === "recipient")?.value;
+                            if (event.type === "transfer" && event.attributes.some((attr: any) => attr.key === "recipient" && attr.value !== recipient)) {
+                                feeRecipient = event.attributes.find((attr: any) => attr.key === "recipient")?.value;
                                 feeAmount = parseFloat(
-                                    event.attributes.find(attr => attr.key === "amount")?.value.replace("inj", "") || 0
+                                    event.attributes.find((attr: any) => attr.key === "amount")?.value.replace("inj", "") || 0
                                 ) / Math.pow(10, 18);
                             }
                         });
@@ -3231,27 +3213,26 @@ export function processAccountTx(data, walletAddress) {
                     const contractAddress = message.message.contract;
                     const recipient = withdrawMessage.withdraw_from_reserve.address_to;
                     const tokenNumber = withdrawMessage.withdraw_from_reserve.token_number;
-                    const funds = parseFloat(message.message.funds || 0) / Math.pow(10, 18); // Convert funds to INJ (if any)
 
                     // Extract details from transaction logs
                     let withdrawnAmount = null;
                     let feeRecipient = null;
                     let feeAmount = null;
 
-                    transaction.logs.forEach((log) => {
-                        log.events.forEach((event) => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "transfer") {
-                                const senderAttr = event.attributes.find(attr => attr.key === "sender" && attr.value === contractAddress);
+                                const senderAttr = event.attributes.find((attr: any) => attr.key === "sender" && attr.value === contractAddress);
                                 if (senderAttr) {
                                     withdrawnAmount = parseFloat(
-                                        event.attributes.find(attr => attr.key === "amount")?.value.replace("inj", "") || 0
+                                        event.attributes.find((attr: any) => attr.key === "amount")?.value.replace("inj", "") || 0
                                     ) / Math.pow(10, 18);
                                 }
                             }
-                            if (event.type === "transfer" && event.attributes.some(attr => attr.key === "recipient" && attr.value !== recipient)) {
-                                feeRecipient = event.attributes.find(attr => attr.key === "recipient")?.value;
+                            if (event.type === "transfer" && event.attributes.some((attr: any) => attr.key === "recipient" && attr.value !== recipient)) {
+                                feeRecipient = event.attributes.find((attr: any) => attr.key === "recipient")?.value;
                                 feeAmount = parseFloat(
-                                    event.attributes.find(attr => attr.key === "amount")?.value.replace("inj", "") || 0
+                                    event.attributes.find((attr: any) => attr.key === "amount")?.value.replace("inj", "") || 0
                                 ) / Math.pow(10, 18);
                             }
                         });
@@ -3296,13 +3277,13 @@ export function processAccountTx(data, walletAddress) {
                     // Extract details from logs
                     let contractExecutionDetails = null;
 
-                    transaction.logs.forEach((log) => {
-                        log.events.forEach((event) => {
-                            if (event.type === "wasm" && event.attributes.some(attr => attr.key === "action" && attr.value === "update_private_phase")) {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
+                            if (event.type === "wasm" && event.attributes.some((attr: any) => attr.key === "action" && attr.value === "update_private_phase")) {
                                 contractExecutionDetails = {
-                                    contractAddress: event.attributes.find(attr => attr.key === "_contract_address")?.value,
-                                    action: event.attributes.find(attr => attr.key === "action")?.value,
-                                    phaseId: event.attributes.find(attr => attr.key === "phase_id")?.value,
+                                    contractAddress: event.attributes.find((attr: any) => attr.key === "_contract_address")?.value,
+                                    action: event.attributes.find((attr: any) => attr.key === "action")?.value,
+                                    phaseId: event.attributes.find((attr: any) => attr.key === "phase_id")?.value,
                                 };
                             }
                         });
@@ -3382,12 +3363,12 @@ export function processAccountTx(data, walletAddress) {
                         let added = false;
 
                         // Iterate through transaction logs
-                        transaction.logs.forEach(log => {
+                        transaction.logs.forEach((log: any) => {
                             const msgIndex = log.msg_index || 0
-                            log.events.forEach(event => {
+                            log.events.forEach((event: any) => {
                                 if (event.type === "wasm") {
-                                    const actionAttribute = event.attributes.find(attr => attr.key === "action");
-                                    const operatorAttribute = event.attributes.find(attr => attr.key === "operator");
+                                    const actionAttribute = event.attributes.find((attr: any) => attr.key === "action");
+                                    const operatorAttribute = event.attributes.find((attr: any) => attr.key === "operator");
 
                                     if (
                                         actionAttribute &&
@@ -3436,12 +3417,12 @@ export function processAccountTx(data, walletAddress) {
                     const totalTokens = instantiateMessage.total_tokens;
 
                     // Extract private phases
-                    const privatePhases = instantiateMessage.private_phases.map(phase => ({
+                    const privatePhases = instantiateMessage.private_phases.map((phase: any) => ({
                         id: phase.id,
                         private: phase.private,
                         start: new Date(phase.start * 1000).toISOString(),
                         end: new Date(phase.end * 1000).toISOString(),
-                        price: phase.price.native.map(price => ({
+                        price: phase.price.native.map((price: any) => ({
                             denom: price.denom,
                             amount: parseFloat(price.amount) / Math.pow(10, 18), // Convert amount to human-readable format
                         })),
@@ -3454,7 +3435,7 @@ export function processAccountTx(data, walletAddress) {
                         private: instantiateMessage.public_phase.private,
                         start: new Date(instantiateMessage.public_phase.start * 1000).toISOString(),
                         end: new Date(instantiateMessage.public_phase.end * 1000).toISOString(),
-                        price: instantiateMessage.public_phase.price.native.map(price => ({
+                        price: instantiateMessage.public_phase.price.native.map((price: any) => ({
                             denom: price.denom,
                             amount: parseFloat(price.amount) / Math.pow(10, 18), // Convert amount to human-readable format
                         })),
@@ -3489,7 +3470,7 @@ export function processAccountTx(data, walletAddress) {
                     // Extract general details
                     const sender = message.message.sender;
                     const admin = instantiateMessage.admin;
-                    const contractAddress = message.logs?.[0]?.events.find(event => event.type === "cosmwasm.wasm.v1.EventContractInstantiated")?.attributes.find(attr => attr.key === "contract_address")?.value?.replace(/"/g, "");
+                    const contractAddress = message.logs?.[0]?.events.find((event: any) => event.type === "cosmwasm.wasm.v1.EventContractInstantiated")?.attributes.find((attr: any) => attr.key === "contract_address")?.value?.replace(/"/g, "");
                     const name = instantiateMessage.name;
                     const description = instantiateMessage.description;
                     const minter = instantiateMessage.minter;
@@ -3528,12 +3509,12 @@ export function processAccountTx(data, walletAddress) {
                     let added = false;
 
                     // Iterate through transaction logs
-                    transaction.logs.forEach(log => {
+                    transaction.logs.forEach((log: any) => {
                         const msgIndex = log.msg_index || 0
-                        log.events.forEach(event => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "coin_received") {
-                                const receiverAttribute = event.attributes.find(attr => attr.key === "receiver");
-                                const amountAttribute = event.attributes.find(attr => attr.key === "amount");
+                                const receiverAttribute = event.attributes.find((attr: any) => attr.key === "receiver");
+                                const amountAttribute = event.attributes.find((attr: any) => attr.key === "amount");
 
                                 const returnAsset = amountAttribute.value.replace(/^\d+/, '').trim();
                                 const returnAmount = Number(amountAttribute.value.match(/^\d+/)[0])
@@ -3623,14 +3604,14 @@ export function processAccountTx(data, walletAddress) {
                         console.error("Failed to parse the contract message:", error);
                     }
 
-                    transaction.logs.forEach(log => {
-                        log.events.forEach(event => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "wasm") {
-                                const actionAttribute = event.attributes.find(attr => attr.key === "action" && attr.value === "transfer");
-                                const amountAttribute = event.attributes.find(attr => attr.key === "amount");
-                                const fromAttribute = event.attributes.find(attr => attr.key === "from");
-                                const toAttribute = event.attributes.find(attr => attr.key === "to");
-                                const msgIndexAttribute = event.attributes.find(attr => attr.key === "msg_index")?.value || 0;
+                                const actionAttribute = event.attributes.find((attr: any) => attr.key === "action" && attr.value === "transfer");
+                                const amountAttribute = event.attributes.find((attr: any) => attr.key === "amount");
+                                const fromAttribute = event.attributes.find((attr: any) => attr.key === "from");
+                                const toAttribute = event.attributes.find((attr: any) => attr.key === "to");
+                                const msgIndexAttribute = event.attributes.find((attr: any) => attr.key === "msg_index")?.value || 0;
 
                                 if (
                                     actionAttribute &&
@@ -3674,15 +3655,15 @@ export function processAccountTx(data, walletAddress) {
 
                     let added = false;
 
-                    transaction.logs.forEach(log => {
+                    transaction.logs.forEach((log: any) => {
                         const msgIndex = log.msg_index || 0
-                        log.events.forEach(event => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "ibc_transfer") {
-                                const senderAttribute = event.attributes.find(attr => attr.key === "sender");
-                                const receiverAttribute = event.attributes.find(attr => attr.key === "receiver");
-                                const amountAttribute = event.attributes.find(attr => attr.key === "amount");
-                                const denomAttribute = event.attributes.find(attr => attr.key === "denom");
-                                const memoAttribute = event.attributes.find(attr => attr.key === "memo");
+                                const senderAttribute = event.attributes.find((attr: any) => attr.key === "sender");
+                                const receiverAttribute = event.attributes.find((attr: any) => attr.key === "receiver");
+                                const amountAttribute = event.attributes.find((attr: any) => attr.key === "amount");
+                                const denomAttribute = event.attributes.find((attr: any) => attr.key === "denom");
+                                const memoAttribute = event.attributes.find((attr: any) => attr.key === "memo");
 
                                 if (
                                     senderAttribute &&
@@ -3748,18 +3729,18 @@ export function processAccountTx(data, walletAddress) {
                     message.type === "/injective.wasmx.v1.MsgExecuteContractCompat" &&
                     message.message.msg.includes("{\"send\":{\"contract\":\"inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk\"")
                 ) {
-                    const { sender, contract, msg, funds } = message.message;
+                    const { contract, funds } = message.message;
 
                     let added = false;
 
-                    transaction.logs.forEach(log => {
-                        log.events.forEach(event => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "wasm") {
-                                const fromAttribute = event.attributes.find(attr => attr.key === "from");
-                                const toAttribute = event.attributes.find(attr => attr.key === "to");
-                                const amountAttribute = event.attributes.find(attr => attr.key === "amount");
-                                const actionAttribute = event.attributes.find(attr => attr.key === "action");
-                                const msgIndexAttribute = event.attributes.find(attr => attr.key === "msg_index")?.value || 0;
+                                const fromAttribute = event.attributes.find((attr: any) => attr.key === "from");
+                                const toAttribute = event.attributes.find((attr: any) => attr.key === "to");
+                                const amountAttribute = event.attributes.find((attr: any) => attr.key === "amount");
+                                const actionAttribute = event.attributes.find((attr: any) => attr.key === "action");
+                                const msgIndexAttribute = event.attributes.find((attr: any) => attr.key === "msg_index")?.value || 0;
 
 
                                 if (
@@ -3773,9 +3754,9 @@ export function processAccountTx(data, walletAddress) {
                                     added = true;
 
                                     const factoryTokenEvent = log.events.find(
-                                        e => e.type === "injective.tokenfactory.v1beta1.EventMintTFDenom"
+                                        (e: any) => e.type === "injective.tokenfactory.v1beta1.EventMintTFDenom"
                                     );
-                                    const factoryTokenDetails = factoryTokenEvent?.attributes.find(attr => attr.key === "amount");
+                                    const factoryTokenDetails = factoryTokenEvent?.attributes.find((attr: any) => attr.key === "amount");
 
                                     taxData.push({
                                         type: "CW20 to Factory Token Conversion",
@@ -3808,20 +3789,20 @@ export function processAccountTx(data, walletAddress) {
                     message.type === "/injective.wasmx.v1.MsgExecuteContractCompat" &&
                     message.message.msg.includes("\"provide_liquidity\"")
                 ) {
-                    const { sender, contract, msg, funds } = message.message;
+                    const { contract, funds } = message.message;
 
                     let added = false;
 
-                    transaction.logs.forEach(log => {
+                    transaction.logs.forEach((log: any) => {
                         const msgIndex = log.msg_index || 0
-                        log.events.forEach(event => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "wasm") {
-                                const actionAttribute = event.attributes.find(attr => attr.key === "action");
-                                const senderAttribute = event.attributes.find(attr => attr.key === "sender");
-                                const receiverAttribute = event.attributes.find(attr => attr.key === "receiver");
-                                const assetsAttribute = event.attributes.find(attr => attr.key === "assets");
-                                const shareAttribute = event.attributes.find(attr => attr.key === "share");
-                                const refundAssetsAttribute = event.attributes.find(attr => attr.key === "refund_assets");
+                                const actionAttribute = event.attributes.find((attr: any) => attr.key === "action");
+                                const senderAttribute = event.attributes.find((attr: any) => attr.key === "sender");
+                                const receiverAttribute = event.attributes.find((attr: any) => attr.key === "receiver");
+                                const assetsAttribute = event.attributes.find((attr: any) => attr.key === "assets");
+                                const shareAttribute = event.attributes.find((attr: any) => attr.key === "share");
+                                const refundAssetsAttribute = event.attributes.find((attr: any) => attr.key === "refund_assets");
 
                                 if (
                                     actionAttribute?.value === "provide_liquidity" &&
@@ -3866,7 +3847,7 @@ export function processAccountTx(data, walletAddress) {
                         message.type === "/injective.wasmx.v1.MsgExecuteContractCompat"
                     ) &&
                     (
-                        (typeof message.message.msg === "object" && message.message.msg.hasOwnProperty("transfer")) ||
+                        (typeof message.message.msg === "object" && Object.prototype.hasOwnProperty.call(message.message.msg, "transfer")) ||
                         (typeof message.message.msg === "string" && message.message.msg.includes("\"transfer\""))
                     )
                 ) {
@@ -3875,15 +3856,15 @@ export function processAccountTx(data, walletAddress) {
                     let added = false;
 
                     // Iterate through transaction logs
-                    transaction.logs.forEach(log => {
+                    transaction.logs.forEach((log: any) => {
                         const msgIndex = log.msg_index || 0
-                        log.events.forEach(event => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "wasm") {
-                                const actionAttribute = event.attributes.find(attr => attr.key === "action");
-                                const fromAttribute = event.attributes.find(attr => attr.key === "from");
-                                const toAttribute = event.attributes.find(attr => attr.key === "to");
-                                const amountAttribute = event.attributes.find(attr => attr.key === "amount");
-                                const contractAddressAttribute = event.attributes.find(attr => attr.key === "_contract_address");
+                                const actionAttribute = event.attributes.find((attr: any) => attr.key === "action");
+                                const fromAttribute = event.attributes.find((attr: any) => attr.key === "from");
+                                const toAttribute = event.attributes.find((attr: any) => attr.key === "to");
+                                const amountAttribute = event.attributes.find((attr: any) => attr.key === "amount");
+                                const contractAddressAttribute = event.attributes.find((attr: any) => attr.key === "_contract_address");
 
                                 if (
                                     actionAttribute?.value === "transfer" &&
@@ -3967,19 +3948,19 @@ export function processAccountTx(data, walletAddress) {
                     let added = false;
 
                     // Iterate through transaction logs
-                    transaction.logs.forEach(log => {
-                        log.events.forEach(event => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "wasm-vault_config_updated") {
-                                const contractAddressAttribute = event.attributes.find(attr => attr.key === "_contract_address");
-                                const orderDensityAttribute = event.attributes.find(attr => attr.key === "order_density");
-                                const maxInvariantSensitivityAttribute = event.attributes.find(attr => attr.key === "max_invariant_sensitivity_bps");
-                                const maxPriceSensitivityAttribute = event.attributes.find(attr => attr.key === "max_price_sensitivity_bps");
-                                const pricingStrategyAttribute = event.attributes.find(attr => attr.key === "pricing_strategy");
-                                const feeBpsAttribute = event.attributes.find(attr => attr.key === "fee_bps");
-                                const orderTypeAttribute = event.attributes.find(attr => attr.key === "order_type");
-                                const notionalValueCapAttribute = event.attributes.find(attr => attr.key === "notional_value_cap");
-                                const contractTypeAttribute = event.attributes.find(attr => attr.key === "contract_type");
-                                const msgIndexAttribute = event.attributes.find(attr => attr.key === "msg_index")?.value || 0;
+                                const contractAddressAttribute = event.attributes.find((attr: any) => attr.key === "_contract_address");
+                                const orderDensityAttribute = event.attributes.find((attr: any) => attr.key === "order_density");
+                                const maxInvariantSensitivityAttribute = event.attributes.find((attr: any) => attr.key === "max_invariant_sensitivity_bps");
+                                const maxPriceSensitivityAttribute = event.attributes.find((attr: any) => attr.key === "max_price_sensitivity_bps");
+                                const pricingStrategyAttribute = event.attributes.find((attr: any) => attr.key === "pricing_strategy");
+                                const feeBpsAttribute = event.attributes.find((attr: any) => attr.key === "fee_bps");
+                                const orderTypeAttribute = event.attributes.find((attr: any) => attr.key === "order_type");
+                                const notionalValueCapAttribute = event.attributes.find((attr: any) => attr.key === "notional_value_cap");
+                                const contractTypeAttribute = event.attributes.find((attr: any) => attr.key === "contract_type");
+                                const msgIndexAttribute = event.attributes.find((attr: any) => attr.key === "msg_index")?.value || 0;
 
                                 if (
                                     contractAddressAttribute &&
@@ -4028,13 +4009,12 @@ export function processAccountTx(data, walletAddress) {
 
                     let added = false;
 
-                    transaction.logs.forEach((log) => {
+                    transaction.logs.forEach((log: any) => {
                         const msgIndex = log.msg_index || 0
-                        log.events.forEach((event) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "injective.exchange.v1beta1.EventSubaccountDeposit") {
-                                const amountAttribute = event.attributes.find((attr) => attr.key === "amount");
-                                const subaccountIdAttribute = event.attributes.find((attr) => attr.key === "subaccount_id");
-                                const srcAddressAttribute = event.attributes.find((attr) => attr.key === "src_address");
+                                const subaccountIdAttribute = event.attributes.find((attr: any) => attr.key === "subaccount_id");
+                                const srcAddressAttribute = event.attributes.find((attr: any) => attr.key === "src_address");
 
                                 if (parseInt(msgIndex) === index) {
                                     added = true;
@@ -4070,13 +4050,12 @@ export function processAccountTx(data, walletAddress) {
 
                     let added = false;
 
-                    transaction.logs.forEach((log) => {
-                        log.events.forEach((event) => {
+                    transaction.logs.forEach((log: any) => {
+                        log.events.forEach((event: any) => {
                             if (event.type === "injective.exchange.v1beta1.EventSubaccountBalanceTransfer") {
-                                const amountAttribute = event.attributes.find((attr) => attr.key === "amount");
-                                const srcSubaccountIdAttribute = event.attributes.find((attr) => attr.key === "src_subaccount_id");
-                                const dstSubaccountIdAttribute = event.attributes.find((attr) => attr.key === "dst_subaccount_id");
-                                const msgIndexAttribute = event.attributes.find((attr) => attr.key === "msg_index")?.value;
+                                const srcSubaccountIdAttribute = event.attributes.find((attr: any) => attr.key === "src_subaccount_id");
+                                const dstSubaccountIdAttribute = event.attributes.find((attr: any) => attr.key === "dst_subaccount_id");
+                                const msgIndexAttribute = event.attributes.find((attr: any) => attr.key === "msg_index")?.value;
 
                                 if (msgIndexAttribute && parseInt(msgIndexAttribute) === index) {
                                     added = true;
@@ -4115,13 +4094,13 @@ export function processAccountTx(data, walletAddress) {
                         const amount = Number(sendToEthData.amount.amount);
                         const bridgeFee = Number(sendToEthData.bridge_fee.amount);
 
-                        transaction.logs.forEach(log => {
-                            log.events.forEach(event => {
+                        transaction.logs.forEach((log: any) => {
+                            log.events.forEach((event: any) => {
                                 if (event.type === "injective.peggy.v1.EventSendToEth") {
-                                    const outgoingTxIdAttr = event.attributes.find(attr => attr.key === "outgoing_tx_id");
+                                    const outgoingTxIdAttr = event.attributes.find((attr: any) => attr.key === "outgoing_tx_id");
                                     const outgoingTxId = outgoingTxIdAttr ? outgoingTxIdAttr.value.replace(/"/g, "") : null;
 
-                                    const receiverAttr = event.attributes.find(attr => attr.key === "receiver");
+                                    const receiverAttr = event.attributes.find((attr: any) => attr.key === "receiver");
                                     const receiver = receiverAttr ? receiverAttr.value.replace(/"/g, "") : ethDest;
 
                                     added = true;
@@ -4158,7 +4137,6 @@ export function processAccountTx(data, walletAddress) {
                         const messageData = message.message;
                         const sender = messageData.sender;
                         const contractAddress = messageData.contract_address;
-                        const fundsRaw = messageData.funds;
                         const data = JSON.parse(messageData.data);
 
                         const vaultSubaccountId = data.args?.vault_subaccount_id || null;
@@ -4167,21 +4145,21 @@ export function processAccountTx(data, walletAddress) {
 
 
                         // Extract additional details from logs
-                        transaction.logs.forEach(log => {
-                            log.events.forEach(event => {
+                        transaction.logs.forEach((log: any) => {
+                            log.events.forEach((event: any) => {
                                 if (event.type === "wasm-lp_balance_changed") {
-                                    const mintAmount = event.attributes.find(attr => attr.key === "mint_amount")?.value;
-                                    const subscribedFundsRaw = event.attributes.find(attr => attr.key === "subscribed_funds")?.value;
+                                    const mintAmount = event.attributes.find((attr: any) => attr.key === "mint_amount")?.value;
+                                    const subscribedFundsRaw = event.attributes.find((attr: any) => attr.key === "subscribed_funds")?.value;
 
                                     const subscribedFunds = subscribedFundsRaw
-                                        ? JSON.parse(subscribedFundsRaw).map(fund => ({
+                                        ? JSON.parse(subscribedFundsRaw).map((fund: any) => ({
                                             denom: fund.denom,
                                             amount: Number(fund.amount),
                                         }))
                                         : null;
 
-                                    const lpRecievedEvent = log.events.find(x => x.type == "coin_received" && x.attributes.find(att => att.key == "receiver" && att.value == walletAddress))
-                                    const lpRecieved = lpRecievedEvent.attributes.find(att => att.key == "amount").value
+                                    const lpRecievedEvent = log.events.find((x: any) => x.type == "coin_received" && x.attributes.find((att: any) => att.key == "receiver" && att.value == walletAddress))
+                                    const lpRecieved = lpRecievedEvent.attributes.find((att: any) => att.key == "amount").value
                                     const lpDenom = lpRecieved.split("factory")[1]
 
                                     added = true;
@@ -4222,14 +4200,14 @@ export function processAccountTx(data, walletAddress) {
                         const subaccountId = messageData.subaccount_id;
                         const orderHash = messageData.order_hash;
 
-                        let returnAsset, returnAmount
+                        let returnAsset: any, returnAmount: any
 
                         // Parse logs to extract order details
-                        transaction.logs.forEach(log => {
-                            log.events.forEach(event => {
+                        transaction.logs.forEach((log: any) => {
+                            log.events.forEach((event: any) => {
                                 if (event.type === "injective.exchange.v1beta1.EventCancelSpotOrder") {
-                                    const orderDetailsAttr = event.attributes.find(attr => attr.key === "order");
-                                    const marketIdAttr = event.attributes.find(attr => attr.key === "market_id");
+                                    const orderDetailsAttr = event.attributes.find((attr: any) => attr.key === "order");
+                                    const marketIdAttr = event.attributes.find((attr: any) => attr.key === "market_id");
 
                                     let orderDetails = null;
                                     if (orderDetailsAttr) {
@@ -4238,9 +4216,9 @@ export function processAccountTx(data, walletAddress) {
 
                                     const marketIdFromLog = marketIdAttr ? marketIdAttr.value.replace(/"/g, '') : null;
 
-                                    const coinRecievedEvent = log.events.find(x => x.type == "coin_received" && x.attributes.find(att => att.key == "receiver" && att.value == walletAddress))
+                                    const coinRecievedEvent = log.events.find((x: any) => x.type == "coin_received" && x.attributes.find((att: any) => att.key == "receiver" && att.value == walletAddress))
                                     if (coinRecievedEvent) {
-                                        const amountReceived = coinRecievedEvent.attributes.find(att => att.key == "amount").value
+                                        const amountReceived = coinRecievedEvent.attributes.find((att: any) => att.key == "amount").value
                                         returnAsset = amountReceived.replace(/^\d+/, '').trim();
                                         returnAmount = Number(amountReceived.match(/^\d+/)[0])
                                     }
@@ -4289,11 +4267,10 @@ export function processAccountTx(data, walletAddress) {
                         const decimals = metadata.decimals || null;
 
                         // Extract additional details from logs
-                        transaction.logs.forEach(log => {
-                            log.events.forEach(event => {
+                        transaction.logs.forEach((log: any) => {
+                            log.events.forEach((event: any) => {
                                 if (event.type === "injective.tokenfactory.v1beta1.EventSetTFDenomMetadata") {
-                                    const denom = event.attributes.find(attr => attr.key === "denom")?.value;
-                                    const metadataRaw = event.attributes.find(attr => attr.key === "metadata")?.value;
+                                    const metadataRaw = event.attributes.find((attr: any) => attr.key === "metadata")?.value;
                                     const metadataParsed = metadataRaw ? JSON.parse(metadataRaw) : null;
 
                                     added = true;
@@ -4349,7 +4326,7 @@ export function processAccountTx(data, walletAddress) {
         });
 
         if (breakLoop) {
-            throw 'break'
+            throw new Error('break')
         }
     });
 

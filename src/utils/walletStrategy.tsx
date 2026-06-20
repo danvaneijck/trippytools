@@ -37,7 +37,7 @@ const buildWalletStrategy = () => {
         wallet: wallet,
         ethereumOptions: ethereumOptions,
         strategies: {}
-    })
+    } as any)
 }
 
 export const getAddresses = async (): Promise<string[]> => {

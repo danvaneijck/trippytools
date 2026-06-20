@@ -125,10 +125,10 @@ function getTodayPrice(token: Token): number {
     token.prices && token.prices[0]?.price != null
       ? token.prices[0].price
       : token.price;
-  return parseFloat(raw || "0");
+  return parseFloat((raw as any) || "0");
 }
 
-function getPercentChange(token): number {
+function getPercentChange(token: any): number {
   const today = getTodayPrice(token);
   const yesterday =
     token.yesterday_price && token.yesterday_price[0]?.price != null
@@ -157,7 +157,7 @@ const TokenInitializer = () => {
 
   useEffect(() => {
     const id = setInterval(() => {
-      refetch({
+      void refetch({
         yesterday: dayjs().subtract(24, "hour").toISOString(),
       });
     }, 100000);
@@ -172,7 +172,7 @@ const TokenInitializer = () => {
       setTokens(data.tokens_token.map((token: Token) => {
         const price = getTodayPrice(token)
         const percentChange = getPercentChange(token)
-        const marketCap = (token.total_supply / Math.pow(10, token.decimals)) * price
+        const marketCap = ((token as any).total_supply / Math.pow(10, token.decimals)) * price
         return {
           ...token,
           percentChange: percentChange,
@@ -189,7 +189,7 @@ const TokenInitializer = () => {
                 contract_addr: token.address
               }
             },
-          icon: token.logo
+          icon: (token as any).logo
         }
       }));
     }

@@ -63,14 +63,14 @@ export async function sendNativeMultiSend(
 
                 const response = await performTransaction(sender, [msg]);
                 pending.forEach((r) => sent.add(r.address));
-                txHashes.push(response.txHash);
+                txHashes.push(response!.txHash);
                 ok = true;
                 opts.onProgress?.(txHashes.length, chunks.length);
             } catch (e: any) {
                 attempt += 1;
                 console.error("Multisend chunk failed, retrying...", e);
                 if (attempt >= maxRetries) {
-                    throw new Error(`Multisend failed after ${maxRetries} retries: ${e?.message ?? e}`);
+                    throw new Error(`Multisend failed after ${maxRetries} retries: ${e?.message ?? e}`, { cause: e });
                 }
             }
         }

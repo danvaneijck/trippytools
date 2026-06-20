@@ -11,6 +11,8 @@ import { performTransaction } from "../../utils/walletStrategy";
 
 const TokenMetadataModal = (props: {
     token: any
+    setShowModal: (value: any) => void
+    setLoaded: (value: any) => void
 }) => {
 
     const { connectedWallet: connectedAddress } = useWalletStore()
@@ -28,7 +30,7 @@ const TokenMetadataModal = (props: {
         const injectiveAddress = connectedAddress
 
         const msgSetDenomMetadata = MsgSetDenomMetadata.fromJSON({
-            sender: injectiveAddress,
+            sender: injectiveAddress as string,
             metadata: {
                 base: props.token.metadata.denom,
                 description: tokenDescription,
@@ -44,7 +46,7 @@ const TokenMetadataModal = (props: {
 
         console.log("metadata", msgSetDenomMetadata)
         setProgress("Upload denom metadata")
-        await performTransaction(injectiveAddress, [msgSetDenomMetadata])
+        await performTransaction(injectiveAddress as string, [msgSetDenomMetadata])
 
         setProgress("Done...")
 
@@ -131,12 +133,12 @@ const TokenMetadataModal = (props: {
                             <button
                                 className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded-sm shadow-sm hover:shadow-lg outline-hidden focus:outline-hidden mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
-                                onClick={() => updateMetadata().then(() => console.log("done")).catch(e => {
+                                onClick={() => { void updateMetadata().then(() => console.log("done")).catch(e => {
                                     console.log(e)
                                     setError(e.message)
                                     setProgress("")
                                     setTxLoading(false)
-                                })}
+                                }) }}
                             >
                                 Update
                             </button>

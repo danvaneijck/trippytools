@@ -44,14 +44,14 @@ const LIQUIDITY_POOLS = useLiquidityPoolStore.getState().pools.map((p) => {
 });
 
 export const WALLET_LABELS = {
-    ...LIQUIDITY_POOLS.reduce((acc, pool) => {
+    ...LIQUIDITY_POOLS.reduce((acc: Record<string, any>, pool) => {
         acc[pool.value] = {
             label: pool.label + " pool",
             bgColor: "",
             textColor: "text-blue-500",
         };
         return acc;
-    }, {}),
+    }, {} as Record<string, any>),
     [rugLord]: {
         label: "rugger",
         bgColor: "",

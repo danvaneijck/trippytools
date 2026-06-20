@@ -9,7 +9,7 @@ export interface TokenStore {
 
 const useTokenStore = create<TokenStore>()(
     persist(
-        (set, get) => ({
+        (set) => ({
             tokens: [],
             setTokens: (tokens: Token[]) => set({ tokens }),
         }),

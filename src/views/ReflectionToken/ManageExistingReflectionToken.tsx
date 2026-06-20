@@ -129,7 +129,7 @@ const ManageExistingReflectionToken = () => {
             const data = JSON.parse(Buffer.from(response.data).toString('utf8'));
             console.log(data)
             setIsWhitelisted(data);
-        } catch (e: any) {
+        } catch {
             // setError(`Failed to check whitelist status: ${e.message}`);
             setIsWhitelisted(false); // Reset on error
         } finally {
@@ -187,7 +187,7 @@ const ManageExistingReflectionToken = () => {
                                     onChange={(e) => setTokenAddress(e.target.value)}
                                 />
                                 <button
-                                    onClick={handleQueryToken}
+                                    onClick={() => { void handleQueryToken(); }}
                                     disabled={querying || !tokenAddress}
                                     className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-500 rounded-lg p-2 text-white font-semibold w-28"
                                 >
@@ -244,7 +244,7 @@ const ManageExistingReflectionToken = () => {
                                         }}
                                     />
                                     <button
-                                        onClick={handleCheckWhitelistStatus}
+                                        onClick={() => { void handleCheckWhitelistStatus(); }}
                                         disabled={checkingStatus || !manageAddress}
                                         className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-500 rounded-lg p-2 text-white font-semibold w-32"
                                     >
@@ -270,7 +270,7 @@ const ManageExistingReflectionToken = () => {
                                         <div className="mt-4 flex justify-center space-x-4">
                                             {!isWhitelisted && (
                                                 <button
-                                                    onClick={() => handleWhitelistUpdate(manageAddress, true)}
+                                                    onClick={() => { void handleWhitelistUpdate(manageAddress, true); }}
                                                     disabled={loading}
                                                     className="bg-green-600 hover:bg-green-700 disabled:bg-gray-500 rounded-lg p-2 text-white w-32"
                                                 >
@@ -279,7 +279,7 @@ const ManageExistingReflectionToken = () => {
                                             )}
                                             {isWhitelisted && (
                                                 <button
-                                                    onClick={() => handleWhitelistUpdate(manageAddress, false)}
+                                                    onClick={() => { void handleWhitelistUpdate(manageAddress, false); }}
                                                     disabled={loading}
                                                     className="bg-red-600 hover:bg-red-700 disabled:bg-gray-500 rounded-lg p-2 text-white w-36"
                                                 >

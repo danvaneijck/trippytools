@@ -20,12 +20,12 @@ const DojoWhitelist = () => {
     const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
     const [denom, setDenom] = useState("factory/inj1sy2aad37tku3dz0353epczxd95hvuhzl0lhfqh/FUN")
-    const [tokenInfo, setTokenInfo] = useState(null)
-    const [tokenOwner, setTokenOwner] = useState(null)
+    const [tokenInfo, setTokenInfo] = useState<any>(null)
+    const [tokenOwner, setTokenOwner] = useState<any>(null)
 
     const shroomCost = 5000
-    const [shroomPrice, setShroomPrice] = useState(null)
-    const [error, setError] = useState(null);
+    const [shroomPrice, setShroomPrice] = useState<any>(null)
+    const [error, setError] = useState<any>(null);
     const [success, setSuccess] = useState(false);
 
     useEffect(() => {
@@ -39,7 +39,7 @@ const DojoWhitelist = () => {
                 const quote = await module.getSellQuoteRouter(pairInfo, shroomCost + "0".repeat(18));
                 console.log(quote)
                 const returnAmount = Number(quote.amount) / Math.pow(10, 18);
-                const totalUsdValue = (returnAmount * baseAssetPrice).toFixed(3);
+                const totalUsdValue = (returnAmount * baseAssetPrice!).toFixed(3);
                 setShroomPrice(totalUsdValue);
                 return totalUsdValue
             } catch (error) {
@@ -60,7 +60,7 @@ const DojoWhitelist = () => {
         module.getDenomExtraMetadata(denom)
             .then((meta) => {
                 setTokenInfo(meta);
-                const owner = meta.denom.split("/")[1]
+                const owner = (meta as any).denom.split("/")[1]
                 setTokenOwner(owner)
             }).catch(e => {
                 console.log(e)
@@ -72,7 +72,7 @@ const DojoWhitelist = () => {
             return
         }
 
-        const injectiveAddress = connectedAddress;
+        const injectiveAddress = connectedAddress as string;
 
         if (connectedAddress !== injectiveAddress) {
             setError("wrong address connected")
@@ -205,7 +205,7 @@ const DojoWhitelist = () => {
                     {tokenInfo !== null &&
                         <div
                             className="bg-slate-800 w-40 m-auto mt-5 p-2 text-center rounded-sm shadow-lg hover:cursor-pointer"
-                            onClick={sendWhitelist}
+                            onClick={() => { void sendWhitelist(); }}
                         >
                             Whitelist token
                         </div>

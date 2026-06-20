@@ -16,7 +16,7 @@ export interface WalletStore {
 
 const useWalletStore = create<WalletStore>()(
     persist(
-        (set, get) => ({
+        (set) => ({
             connectedWallet: null,
             showWallets: false,
 

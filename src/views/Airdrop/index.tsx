@@ -55,8 +55,8 @@ const Airdrop = () => {
     const { tokens } = useTokenStore();
     const { pools } = useLiquidityPoolStore();
 
-    const [tokenAddress, setTokenAddress] = useState(null);
-    const [tokenInfo, setTokenInfo] = useState(null);
+    const [tokenAddress, setTokenAddress] = useState<any>(null);
+    const [tokenInfo, setTokenInfo] = useState<any>(null);
     const [pairMarketing, setPairMarketing] = useState<MarketingInfo | null>(null);
 
     const [balance, setBalance] = useState(0);
@@ -64,7 +64,7 @@ const Airdrop = () => {
     const dropAmount = Number(balanceToDrop) || 0;
 
     const [shroomCost] = useState(25000);
-    const [shroomPrice, setShroomPrice] = useState(null);
+    const [shroomPrice, setShroomPrice] = useState<any>(null);
 
     const [dropMode, setDropMode] = useState<{ value: DropMode; label: string }>({
         value: "TOKEN",
@@ -72,9 +72,9 @@ const Airdrop = () => {
     });
 
     const [nftCollection, setNftCollection] = useState(NFT_COLLECTIONS[0]);
-    const [nftCollectionInfo, setNftCollectionInfo] = useState(null);
-    const [airdropTokenAddress, setAirdropTokenAddress] = useState();
-    const [airdropTokenInfo, setAirdropTokenInfo] = useState(null);
+    const [nftCollectionInfo, setNftCollectionInfo] = useState<any>(null);
+    const [airdropTokenAddress, setAirdropTokenAddress] = useState<any>();
+    const [airdropTokenInfo, setAirdropTokenInfo] = useState<any>(null);
 
     const [airdropDetails, setAirdropDetails] = useState<AirdropRecipient[]>([]);
     const [csvInvalidRows, setCsvInvalidRows] = useState<ParsedCsv["invalidRows"]>([]);
@@ -89,14 +89,14 @@ const Airdrop = () => {
     const [description, setDescription] = useState("");
 
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState<any>(null);
     const [distMode, setDistMode] = useState<DistMode>("fair");
     const [progress, setProgress] = useState("");
 
     const [mitoHolderType, setMitoHolderType] = useState<"stake" | "non-stake">("non-stake");
-    const [mitoVaults, setMitoVaults] = useState([]);
-    const [mitoHolders, setMitoHolders] = useState([]);
-    const [selectedMitoVault, setSelectedMitoVault] = useState(null);
+    const [mitoVaults, setMitoVaults] = useState<any[]>([]);
+    const [mitoHolders, setMitoHolders] = useState<any[]>([]);
+    const [selectedMitoVault, setSelectedMitoVault] = useState<any>(null);
 
     // GOV is always an equal split (no distribution toggle); everything else
     // follows the selected fair/proportionate mode.
@@ -146,7 +146,7 @@ const Airdrop = () => {
     }, [dropMode.value]);
 
     const getMitoVaultHolders = useCallback(
-        async (vaultAddress) => {
+        async (vaultAddress: any) => {
             const module = new TokenUtils(networkConfig);
             setLoading(true);
             setError(null);
@@ -157,7 +157,7 @@ const Airdrop = () => {
                 setLoading(false);
             } catch (e) {
                 console.error("Failed to fetch mito vault holders:", e);
-                setError(e?.message ?? "Failed to fetch mito vault holders");
+                setError((e as any)?.message ?? "Failed to fetch mito vault holders");
                 setLoading(false);
             }
         },
@@ -189,8 +189,8 @@ const Airdrop = () => {
                 return { ...market, matchingVault: matchingVault || null };
             });
 
-            const options = [];
-            matchedMarkets.forEach((market) => {
+            const options: any[] = [];
+            matchedMarkets.forEach((market: any) => {
                 if (market.matchingVault !== null) {
                     options.push({
                         value: market,
@@ -204,7 +204,7 @@ const Airdrop = () => {
             setLoading(false);
         } catch (e) {
             console.error("Failed to fetch mito vault list:", e);
-            setError(e?.message ?? "Failed to fetch mito vault list");
+            setError((e as any)?.message ?? "Failed to fetch mito vault list");
             setLoading(false);
         }
     }, [getSpotMarkets, getMitoVaults]);
@@ -265,7 +265,7 @@ const Airdrop = () => {
         mitoHolderType,
     ]);
 
-    async function fetchBlock(height) {
+    async function fetchBlock(height: any) {
         const baseUrl = "https://sentry.lcd.injective.network/cosmos/base/tendermint/v1beta1/blocks";
         let attempts = 0;
         const maxAttempts = 50;
@@ -278,20 +278,20 @@ const Airdrop = () => {
                 attempts += 1;
                 await new Promise((res) => setTimeout(res, 2000));
                 if (attempts >= maxAttempts) {
-                    throw new Error(`Failed to fetch block after ${maxAttempts} attempts: ${e.message}`);
+                    throw new Error(`Failed to fetch block after ${maxAttempts} attempts: ${(e as any).message}`, { cause: e });
                 }
             }
         }
     }
 
     const getProposalAndBlockHeight = useCallback(
-        async (propNumber) => {
-            async function findBlockBeforeTime(targetTime) {
+        async (propNumber: any) => {
+            async function findBlockBeforeTime(targetTime: any) {
                 const targetDate = new Date(targetTime);
                 const latestBlock = await fetchBlock("latest");
                 const latestHeight = parseInt(latestBlock.block.header.height);
                 const latestBlockTime = new Date(latestBlock.block.header.time);
-                const timeDifference = targetDate - latestBlockTime;
+                const timeDifference = targetDate.getTime() - latestBlockTime.getTime();
                 let estimatedHeight = latestHeight + Math.floor(timeDifference / 690);
 
                 if (estimatedHeight < 1) estimatedHeight = 1;
@@ -318,7 +318,7 @@ const Airdrop = () => {
 
             const api = new ChainGrpcGovApi(networkConfig.grpc);
             const proposal = await api.fetchProposal(propNumber);
-            const endVoteTime = dayjs.unix(proposal.votingEndTime);
+            const endVoteTime = dayjs.unix(proposal!.votingEndTime);
             const closestBlock = await findBlockBeforeTime(endVoteTime);
             return Number(closestBlock.block.header.height);
         },
@@ -360,13 +360,13 @@ const Airdrop = () => {
                 ]);
                 const quote = await module.getSellQuoteRouter(pairInfo, shroomCost + "0".repeat(18));
                 const returnAmount = Number(quote.amount) / Math.pow(10, 18);
-                const totalUsdValue = (returnAmount * baseAssetPrice).toFixed(3);
+                const totalUsdValue = (returnAmount * baseAssetPrice!).toFixed(3);
                 setShroomPrice(totalUsdValue);
             } catch (e) {
                 console.error("Failed to update shroom cost:", e);
             }
         };
-        if (currentNetwork === "mainnet") getShroomCost();
+        if (currentNetwork === "mainnet") void getShroomCost();
     }, [currentNetwork, networkConfig, shroomCost]);
 
     const getTokenInfo = useCallback(() => {
@@ -381,9 +381,9 @@ const Airdrop = () => {
                 .then((meta) => {
                     setTokenInfo(meta);
                     module
-                        .getBalanceOfToken(tokenAddress.value, connectedAddress)
+                        .getBalanceOfToken(tokenAddress.value, connectedAddress as string)
                         .then((r) => {
-                            const bal = Number(r.amount) / Math.pow(10, meta.decimals);
+                            const bal = Number(r.amount) / Math.pow(10, (meta as any).decimals);
                             setBalance(bal);
                             setBalanceToDrop(String(bal));
                             setLoading(false);
@@ -405,7 +405,7 @@ const Airdrop = () => {
                 .then((meta) => {
                     setTokenInfo(meta);
                     module
-                        .queryTokenForBalance(tokenAddress.value, connectedAddress)
+                        .queryTokenForBalance(tokenAddress.value, connectedAddress as string)
                         .then((r) => {
                             const bal = Number(r.balance) / Math.pow(10, meta.decimals);
                             setBalance(bal);
@@ -460,7 +460,7 @@ const Airdrop = () => {
             }
             setNftCollectionInfo(info);
 
-            const base: AirdropRecipient[] = holders.map((holder) => ({
+            const base: AirdropRecipient[] = holders.map((holder: any) => ({
                 address: holder.address,
                 balance: Number(holder.balance),
                 percentageHeld: holder.percentageHeld,
@@ -472,7 +472,7 @@ const Airdrop = () => {
             setLoading(false);
         } catch (e) {
             console.log(e);
-            setError(e?.message ?? "Failed to fetch NFT holders");
+            setError((e as any)?.message ?? "Failed to fetch NFT holders");
             setLoading(false);
         }
     }, [networkConfig, nftCollection, dropAmount, activeDist]);
@@ -484,7 +484,7 @@ const Airdrop = () => {
         setLoading(true);
         setError(null);
 
-        let tokenMeta;
+        let tokenMeta: any;
         const liquidityPoolAddresses = pools.map((pool) => pool.contract_addr);
         const tokenAddresses = tokens.map((token) => token.address);
         const addressesToExclude = [
@@ -552,12 +552,12 @@ const Airdrop = () => {
             setAirdropDetails(allocate(base, activeDist, dropAmount));
             setLoading(false);
         } catch (e) {
-            setError(e?.message ?? "Failed to fetch token holders");
+            setError((e as any)?.message ?? "Failed to fetch token holders");
             setLoading(false);
         }
     }, [airdropTokenAddress, activeDist, dropAmount, networkConfig, tokens, pools]);
 
-    const handleFileUpload = useCallback(async (event) => {
+    const handleFileUpload = useCallback(async (event: any) => {
         const file = event.target.files?.[0];
         if (!file) return;
         setError(null);
@@ -567,7 +567,7 @@ const Airdrop = () => {
             setAirdropDetails(recipients);
         } catch (e) {
             console.log(e);
-            setError(e?.message ?? "Failed to parse CSV");
+            setError((e as any)?.message ?? "Failed to parse CSV");
         }
     }, []);
 
@@ -596,7 +596,7 @@ const Airdrop = () => {
             setLoading(false);
         } catch (e) {
             console.log(e);
-            setError(e?.message ?? "Failed to fetch proposal voters");
+            setError((e as any)?.message ?? "Failed to fetch proposal voters");
             setLoading(false);
         }
     }, [getProposalAndBlockHeight, proposalNumber, networkConfig, dropAmount, attemptFindBlock, blockHeight]);
@@ -705,13 +705,13 @@ const Airdrop = () => {
                                                         }explorer.injective.network/account/${tokenInfo.admin}`}
                                                     >
                                                         admin: {tokenInfo.admin.slice(0, 5) + "..." + tokenInfo.admin.slice(-5)}
-                                                        {WALLET_LABELS[tokenInfo.admin] ? (
+                                                        {(WALLET_LABELS as Record<string, any>)[tokenInfo.admin] ? (
                                                             <span
-                                                                className={`${WALLET_LABELS[tokenInfo.admin].bgColor} ${
-                                                                    WALLET_LABELS[tokenInfo.admin].textColor
+                                                                className={`${(WALLET_LABELS as Record<string, any>)[tokenInfo.admin].bgColor} ${
+                                                                    (WALLET_LABELS as Record<string, any>)[tokenInfo.admin].textColor
                                                                 } ml-2`}
                                                             >
-                                                                {WALLET_LABELS[tokenInfo.admin].label}
+                                                                {(WALLET_LABELS as Record<string, any>)[tokenInfo.admin].label}
                                                             </span>
                                                         ) : null}
                                                     </a>
@@ -729,13 +729,13 @@ const Airdrop = () => {
                                                     <div>description: {pairMarketing.description}</div>
                                                     <div>
                                                         marketing: {pairMarketing.marketing}
-                                                        {WALLET_LABELS[pairMarketing.marketing] ? (
+                                                        {(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing] ? (
                                                             <span
-                                                                className={`${WALLET_LABELS[pairMarketing.marketing].bgColor} ${
-                                                                    WALLET_LABELS[pairMarketing.marketing].textColor
+                                                                className={`${(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing].bgColor} ${
+                                                                    (WALLET_LABELS as Record<string, any>)[pairMarketing.marketing].textColor
                                                                 } ml-2`}
                                                             >
-                                                                {WALLET_LABELS[pairMarketing.marketing].label}
+                                                                {(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing].label}
                                                             </span>
                                                         ) : null}
                                                     </div>
@@ -778,7 +778,7 @@ const Airdrop = () => {
                                                 <Select
                                                     className="text-black"
                                                     value={dropMode}
-                                                    onChange={setDropMode}
+                                                    onChange={setDropMode as any}
                                                     options={DROP_MODE_OPTIONS}
                                                 />
                                             </div>
@@ -803,7 +803,7 @@ const Airdrop = () => {
                                                     </div>
                                                     <button
                                                         disabled={loading}
-                                                        onClick={getNftCollection}
+                                                        onClick={() => { void getNftCollection(); }}
                                                         className="bg-gray-800 hover:bg-gray-700 rounded-lg p-2 w-full text-white mt-4 shadow-lg"
                                                     >
                                                         Get collection holders
@@ -879,7 +879,7 @@ const Airdrop = () => {
                                                     </div>
                                                     <button
                                                         disabled={loading}
-                                                        onClick={getTokenHolders}
+                                                        onClick={() => { void getTokenHolders(); }}
                                                         className="bg-gray-800 hover:bg-gray-700 rounded-lg p-2 w-full text-white mt-4 shadow-lg"
                                                     >
                                                         Generate airdrop list
@@ -919,7 +919,7 @@ const Airdrop = () => {
                                                     <input
                                                         type="file"
                                                         accept=".csv"
-                                                        onChange={handleFileUpload}
+                                                        onChange={(e) => { void handleFileUpload(e); }}
                                                         className="text-white text-sm file:mr-3 file:rounded-sm file:border-0 file:bg-slate-700 file:px-3 file:py-1 file:text-white hover:file:bg-slate-600"
                                                     />
                                                     {csvInvalidRows.length > 0 && (
@@ -979,7 +979,7 @@ const Airdrop = () => {
                                                         </label>
                                                     </div>
                                                     <button
-                                                        onClick={getPropVoters}
+                                                        onClick={() => { void getPropVoters(); }}
                                                         className="bg-gray-800 hover:bg-gray-700 rounded-lg p-2 w-full text-white mt-6 shadow-lg"
                                                     >
                                                         Get voters
@@ -1005,7 +1005,7 @@ const Airdrop = () => {
                                                 <div>
                                                     <button
                                                         disabled={loading}
-                                                        onClick={getMitoMarketList}
+                                                        onClick={() => { void getMitoMarketList(); }}
                                                         className="bg-gray-800 hover:bg-gray-700 rounded-lg p-2 w-full text-white shadow-lg"
                                                     >
                                                         Get vault list
@@ -1054,11 +1054,11 @@ const Airdrop = () => {
                                                                 </div>
                                                             </div>
                                                             <button
-                                                                onClick={() =>
-                                                                    getMitoVaultHolders(
+                                                                onClick={() => {
+                                                                    void getMitoVaultHolders(
                                                                         selectedMitoVault.value.matchingVault.contractAddress,
-                                                                    )
-                                                                }
+                                                                    );
+                                                                }}
                                                                 className="bg-gray-800 hover:bg-gray-700 rounded-lg p-2 w-full text-white shadow-lg"
                                                             >
                                                                 Generate airdrop list

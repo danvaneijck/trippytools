@@ -1,7 +1,11 @@
-// @ts-nocheck
+/* eslint-disable no-constant-binary-expression, @typescript-eslint/no-unused-expressions */
+// Vendored / minified scoring logic from dojo.trading — the single-letter vars
+// and ternary-as-statement / defensive-null-on-fresh-object patterns are
+// minifier artifacts, not bugs. Disabled the rules its compiled style trips
+// rather than rewrite obfuscated third-party code.
 
-function accruedPoints(e) {
-    let { id: t, tokenId: r, rank: n, startTime: o, endTime: i } = e;
+function accruedPoints(e: any) {
+    const { rank: n, startTime: o, endTime: i } = e;
     const a = (new Date).getTime()
         , s = i - o;
     let c = 1;
@@ -10,13 +14,13 @@ function accruedPoints(e) {
     a < o ? u = 0 : a > i && (u = i - o);
     const d = (18e3 - n) / 3
         , l = 5e-10;
-    return d * c * (u * l);// @ts-nocheck
+    return d * c * (u * l);
 
 }
 
-function getData(r, o) {
+function getData(r: any, o: any) {
 
-    var i;
+    let i;
     const e = r.data
         , { metadata: t, burntTokenIds: n, rankMapping: a, stakings: s } = null === o || void 0 === o || null === (i = o.data) || void 0 === i ? void 0 : o.data
         , c = [...e, ...t].map((e => ({
@@ -24,9 +28,9 @@ function getData(r, o) {
             metadata: e,
             isBurnt: n.includes(e.tokenId),
             rank: a[e.tokenId] ? a[e.tokenId] : null,
-            staking: s.filter((t => t.tokenId === e.tokenId)),
-            totalOma: s.filter((t => t.tokenId === e.tokenId)).reduce(((t, r) => {
-                var n, o;
+            staking: s.filter(((t: any) => t.tokenId === e.tokenId)),
+            totalOma: s.filter(((t: any) => t.tokenId === e.tokenId)).reduce(((t: any, r: any) => {
+                let n, o;
                 return (null === (n = {
                     id: r.id,
                     tokenId: r.tokenId,
@@ -57,15 +61,15 @@ export async function getSushiStats() {
 }
 
 
-export function processSushiData(metadata, nfts) {
+export function processSushiData(metadata: any, nfts: any) {
 
-    let o = metadata;
-    let r = nfts;
+    const o = metadata;
+    const r = nfts;
     let x = getData(r, o);
     x = x.filter((i) => {
         return i.rank !== null
     })
-    let result = x.sort((a, b) => {
+    const result = x.sort((a, b) => {
         return a.rank - b.rank
     })
     return result;

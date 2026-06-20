@@ -12,19 +12,16 @@ import useNetworkStore from "../../store/useNetworkStore";
 
 const WalletExport = () => {
     const { connectedWallet: connectedAddress } = useWalletStore()
-    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
+    const { network: networkConfig } = useNetworkStore()
 
     const [searchParams, setSearchParams] = useSearchParams();
 
 
-    const [transactions, setTransactions] = useState([])
-    const [processedTx, setProcessedTx] = useState([])
-    const [csvData, setCsvData] = useState(null)
-    const [finalJson, setFinalJson] = useState(null)
+    const [transactions, setTransactions] = useState<any[]>([])
+    const [, setProcessedTx] = useState<any[]>([])
+    const [finalJson, setFinalJson] = useState<any>(null)
 
     const [walletAddress, setWalletAddress] = useState("")
-    const [error, setError] = useState(null);
-    const [success, setSuccess] = useState(false);
 
     const [loading, setLoading] = useState(false);
 
@@ -45,16 +42,21 @@ const WalletExport = () => {
         setLoading(true)
         const module = new TokenUtils(networkConfig)
         const allTx = await module.getAllAccountTx(walletAddress, setProgress)
-        setTransactions(allTx)
+        setTransactions(allTx as any)
         setLoading(false)
     }, [networkConfig, walletAddress])
 
-    const parseWalletTransactions = useCallback(async () => {
-        console.log("parse wallet tx")
-        const parsed = processAccountTx(transactions, walletAddress)
-        setProcessedTx(parsed)
-        const array = formatTransactionData(parsed)
-        setFinalJson(array)
+    const parseWalletTransactions = useCallback(() => {
+        try {
+            console.log("parse wallet tx")
+            const parsed = processAccountTx(transactions, walletAddress)
+            setProcessedTx(parsed)
+            const array = formatTransactionData(parsed)
+            setFinalJson(array)
+            console.log("parsed tx")
+        } catch (e) {
+            console.log(e)
+        }
     }, [transactions, walletAddress])
 
     useEffect(() => {
@@ -65,7 +67,7 @@ const WalletExport = () => {
 
     useEffect(() => {
         if (transactions.length > 0 && walletAddress) {
-            parseWalletTransactions().then(() => console.log("parsed tx")).catch(e => console.log(e))
+            parseWalletTransactions()
         }
     }, [connectedAddress, parseWalletTransactions, transactions, walletAddress])
 
@@ -90,7 +92,7 @@ const WalletExport = () => {
                                 setSearchParams({
                                     wallet: walletAddress
                                 })
-                                getWalletTransactions()
+                                void getWalletTransactions()
                             }}
                             className="bg-gray-800 rounded-lg p-2 mt-5 text-white border border-slate-800 shadow-lg font-bold w-1/2"
                         >
@@ -131,7 +133,7 @@ const WalletExport = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {finalJson.map((row, index) => (
+                                    {finalJson.map((row: any, index: any) => (
                                         <tr key={index} className="border-b grid grid-cols-7">
                                             <td className="col-span-1 px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis" title={row["Block Number"]}>
                                                 {row["Block Number"]}

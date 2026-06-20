@@ -62,7 +62,7 @@ export function parseAirdropCsv(file: File): Promise<ParsedCsv> {
 
                 resolve({ recipients, invalidRows });
             },
-            error: (err: any) => reject(err),
+            error: (err: Error) => reject(err),
         });
     });
 }

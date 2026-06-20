@@ -20,9 +20,9 @@ const MarketDetails = (props: {
 
     const [showAdminModal, setShowAdminModal] = useState(false);
 
-    const [market, setMarket] = useState(null)
+    const [market, setMarket] = useState<any>(null)
 
-    const [orders, setOrders] = useState([])
+    const [orders, setOrders] = useState<any[]>([])
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -47,7 +47,7 @@ const MarketDetails = (props: {
     useEffect(() => {
         if (!loaded && !loading) {
             setLoading(true)
-            getOptionMarket().then(r => {
+            getOptionMarket().then(() => {
                 setLoaded(true)
                 setLoading(false)
             }).catch(e => {
@@ -91,7 +91,7 @@ const MarketDetails = (props: {
                                 <>
                                     <button
                                         className="bg-slate-700 shadow-lg p-2 rounded-lg text-sm hover:font-bold hover:cursor-pointer mb-4"
-                                        onClick={() => { navigate(location.pathname) }}
+                                        onClick={() => { void navigate(location.pathname) }}
                                     >
                                         Go back
                                     </button>

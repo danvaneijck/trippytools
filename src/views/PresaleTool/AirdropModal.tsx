@@ -38,9 +38,9 @@ const AirdropModal = (props: AirdropModalProps) => {
 
     const [progress, setProgress] = useState("")
     const [txLoading, setTxLoading] = useState(false)
-    const [msgPreview, setMsgPreview] = useState(null)
+    const [msgPreview, setMsgPreview] = useState<any>(null)
 
-    const [error, setError] = useState(null)
+    const [error, setError] = useState<any>(null)
 
     const payFee = useCallback(async () => {
 
@@ -55,7 +55,7 @@ const AirdropModal = (props: AirdropModalProps) => {
 
         const msg = MsgExecuteContract.fromJSON({
             contractAddress: SHROOM_TOKEN_ADDRESS,
-            sender: injectiveAddress,
+            sender: injectiveAddress as string,
             msg: {
                 transfer: {
                     recipient: FEE_COLLECTION_ADDRESS,
@@ -65,7 +65,7 @@ const AirdropModal = (props: AirdropModalProps) => {
         });
 
         console.log("send shroom fee", msg)
-        return await performTransaction(injectiveAddress, [msg])
+        return await performTransaction(injectiveAddress as string, [msg])
     }, [shroomFee, connectedAddress])
 
     const sendAirdrops = useCallback(async (denom: string) => {
@@ -99,7 +99,7 @@ const AirdropModal = (props: AirdropModalProps) => {
             const r = await sendAirdrops(props.tokenInfo.denom)
             console.log("done", r)
             setTxLoading(false)
-            navigate(`/token-holders?address=${props.tokenInfo.denom}`);
+            void navigate(`/token-holders?address=${props.tokenInfo.denom}`);
         } catch (e: any) {
             console.log(e)
             setError(e.message)
@@ -158,9 +158,9 @@ const AirdropModal = (props: AirdropModalProps) => {
                                                                     >
                                                                         {holder.address}
                                                                         {
-                                                                            WALLET_LABELS[holder.address] ? (
-                                                                                <span className={`${WALLET_LABELS[holder.address].bgColor} ${WALLET_LABELS[holder.address].textColor} ml-2`}>
-                                                                                    {WALLET_LABELS[holder.address].label}
+                                                                            (WALLET_LABELS as Record<string, any>)[holder.address] ? (
+                                                                                <span className={`${(WALLET_LABELS as Record<string, any>)[holder.address].bgColor} ${(WALLET_LABELS as Record<string, any>)[holder.address].textColor} ml-2`}>
+                                                                                    {(WALLET_LABELS as Record<string, any>)[holder.address].label}
                                                                                 </span>
                                                                             ) : null
                                                                         }
@@ -233,7 +233,7 @@ const AirdropModal = (props: AirdropModalProps) => {
                             <button
                                 className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded-sm shadow-sm hover:shadow-lg outline-hidden focus:outline-hidden mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
-                                onClick={() => handleSendAirdrops()}
+                                onClick={() => { void handleSendAirdrops(); }}
                             >
                                 Send Airdrops
                             </button>

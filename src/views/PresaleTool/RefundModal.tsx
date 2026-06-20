@@ -23,9 +23,9 @@ const RefundModal = (props: RefundModalProps) => {
     const [progress, setProgress] = useState("")
     const [txLoading, setTxLoading] = useState(false)
 
-    const [msgPreview, setMsgPreview] = useState(null)
+    const [msgPreview, setMsgPreview] = useState<any>(null)
 
-    const [error, setError] = useState(null)
+    const [error, setError] = useState<any>(null)
 
     const sendRefunds = useCallback(async (denom: string) => {
         if (!connectedAddress) {
@@ -86,7 +86,7 @@ const RefundModal = (props: RefundModalProps) => {
                                 </p>
                                 <p>
                                     Required {props.tokenAddress}: {props.refundDetails.reduce((accumulator, current) => {
-                                        return accumulator + current.amount;
+                                        return accumulator + Number(current.amount);
                                     }, 0) / Math.pow(10, 18)} {props.tokenAddress}
                                 </p>
                                 {props.refundDetails !== null && props.refundDetails.length > 0 &&
@@ -117,9 +117,9 @@ const RefundModal = (props: RefundModalProps) => {
                                                                     >
                                                                         {holder.address}
                                                                         {
-                                                                            WALLET_LABELS[holder.address] ? (
-                                                                                <span className={`${WALLET_LABELS[holder.address].bgColor} ${WALLET_LABELS[holder.address].textColor} ml-2`}>
-                                                                                    {WALLET_LABELS[holder.address].label}
+                                                                            (WALLET_LABELS as Record<string, any>)[holder.address] ? (
+                                                                                <span className={`${(WALLET_LABELS as Record<string, any>)[holder.address].bgColor} ${(WALLET_LABELS as Record<string, any>)[holder.address].textColor} ml-2`}>
+                                                                                    {(WALLET_LABELS as Record<string, any>)[holder.address].label}
                                                                                 </span>
                                                                             ) : null
                                                                         }
@@ -177,7 +177,7 @@ const RefundModal = (props: RefundModalProps) => {
                             <button
                                 className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded-sm shadow-sm hover:shadow-lg outline-hidden focus:outline-hidden mr-1 mb-1 ease-linear transition-all duration-150"
                                 type="button"
-                                onClick={handleSendRefunds}
+                                onClick={() => { void handleSendRefunds(); }}
                             >
                                 Send Refund
                             </button>

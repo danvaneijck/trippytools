@@ -10,11 +10,11 @@ import { performTransaction } from "../../utils/walletStrategy";
 
 const QuntUnwrap = () => {
     const { connectedWallet: connectedAddress } = useWalletStore()
-    const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
+    const { network: networkConfig } = useNetworkStore()
 
     const [quntWrappedContract] = useState("inj1u8a7878lnk469s9jel84fvd67jrtj3rj5cv8kx")
-    const [tokenInfo, setTokenInfo] = useState(null)
-    const [balance, setBalance] = useState(null)
+    const [tokenInfo, setTokenInfo] = useState<any>(null)
+    const [balance, setBalance] = useState<any>(null)
 
     const [amountToUnwrap, setAmountToUnwrap] = useState(0)
     const [error, setError] = useState(null);
@@ -24,13 +24,13 @@ const QuntUnwrap = () => {
         const module = new TokenUtils(networkConfig)
         const info = await module.getTokenInfo(quntWrappedContract)
         setTokenInfo(info)
-        const balance = await module.queryTokenForBalance(quntWrappedContract, connectedAddress)
+        const balance = await module.queryTokenForBalance(quntWrappedContract, connectedAddress as string)
         setBalance(balance.balance)
     }, [networkConfig, quntWrappedContract, connectedAddress])
 
     useEffect(() => {
         if (connectedAddress && !balance) {
-            getTokenInfo()
+            void getTokenInfo()
         }
     }, [connectedAddress, balance, getTokenInfo])
 
@@ -49,7 +49,7 @@ const QuntUnwrap = () => {
 
         const unwrapMsg = MsgExecuteContractCompat.fromJSON({
             contractAddress: quntWrappedContract,
-            sender: injectiveAddress,
+            sender: injectiveAddress as string,
             msg: {
                 send: {
                     contract: "inj182hvp064stesu55clqnzhm68vj84qgt0jxf0ln",
@@ -63,7 +63,7 @@ const QuntUnwrap = () => {
         console.log(unwrapMsg)
 
         const result = await performTransaction(
-            injectiveAddress,
+            injectiveAddress as string,
             [
                 unwrapMsg
             ]
@@ -95,14 +95,14 @@ const QuntUnwrap = () => {
                         <input
                             className="text-black m-auto p-1 rounded-sm"
                             value={amountToUnwrap}
-                            onChange={(e) => setAmountToUnwrap(e.target.value)}
+                            onChange={(e) => setAmountToUnwrap(e.target.value as any)}
                         />
                     </div>
 
                     {tokenInfo !== null &&
                         <div
                             className="bg-slate-800 w-40 m-auto mt-5 p-2 text-center rounded-sm shadow-lg hover:cursor-pointer"
-                            onClick={sendUnwrap}
+                            onClick={() => { void sendUnwrap(); }}
                         >
                             Unwrap token
                         </div>

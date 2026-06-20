@@ -31,8 +31,8 @@ const PreSaleTool = () => {
     const { connectedWallet: connectedAddress } = useWalletStore()
     const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore()
 
-    const [injPrice, setInjPrice] = useState(null)
-    const [injBalance, setINJBalance] = useState(null)
+    const [injPrice, setInjPrice] = useState<any>(null)
+    const [injBalance, setINJBalance] = useState<any>(null)
 
     const [presaleToken, setPresaleToken] = useState(INJECTIVE_TOKEN)
 
@@ -42,13 +42,13 @@ const PreSaleTool = () => {
     const [ignoredAddresses, setIgnoredAddresses] = useState(
         searchParams.get("ignoredAddresses") || "inj18xsczx27lanjt40y9v79q0v57d76j2s8ctj85x"
     );
-    const [maxCap, setMaxCap] = useState(
+    const [maxCap, setMaxCap] = useState<any>(
         Number(searchParams.get("maxCap")) || 200
     );
-    const [minPerWallet, setMinPerWallet] = useState(
+    const [minPerWallet, setMinPerWallet] = useState<any>(
         Number(searchParams.get("minPerWallet")) || 0.1
     );
-    const [maxPerWallet, setMaxPerWallet] = useState(
+    const [maxPerWallet, setMaxPerWallet] = useState<any>(
         Number(searchParams.get("maxPerWallet")) || 2
     );
 
@@ -64,25 +64,25 @@ const PreSaleTool = () => {
         setSearchParams(params);
     }, [walletAddress, ignoredAddresses, maxCap, minPerWallet, maxPerWallet, setSearchParams]);
 
-    const [amountList, setAmountList] = useState(null)
-    const [walletFilter, setWalletFilter] = useState(null)
+    const [amountList, setAmountList] = useState<any>(null)
+    const [walletFilter, setWalletFilter] = useState<any>(null)
 
     const [refundModal, setRefundModal] = useState(false)
     const [refundAmounts, setRefundAmounts] = useState([])
 
-    const [totalToRefund, setTotalToRefund] = useState(null)
-    const [totalRefunded, setTotalRefunded] = useState(null)
-    const [totalContributions, setTotalContributions] = useState(null)
+    const [totalToRefund, setTotalToRefund] = useState<any>(null)
+    const [totalRefunded, setTotalRefunded] = useState<any>(null)
+    const [totalContributions, setTotalContributions] = useState<any>(null)
 
     const [tokenToAirdrop, setTokenToAirdrop] = useState("factory/inj1lq9wn94d49tt7gc834cxkm0j5kwlwu4gm65lhe/subs")
-    const [tokenInfo, setTokenInfo] = useState(null);
-    const [tokenBalance, setTokenBalance] = useState(null);
-    const [percentToAirdrop, setPercentToAirdrop] = useState(50)
+    const [tokenInfo, setTokenInfo] = useState<any>(null);
+    const [tokenBalance, setTokenBalance] = useState<any>(null);
+    const [percentToAirdrop, setPercentToAirdrop] = useState<any>(50)
 
     const [airdropModal, setAirdropModal] = useState(false)
-    const [airdropList, setAirdropList] = useState(null)
+    const [airdropList, setAirdropList] = useState<any>(null)
 
-    const [error, setError] = useState(null)
+    const [error, setError] = useState<any>(null)
 
     useEffect(() => {
         setAmountList(null)
@@ -97,7 +97,7 @@ const PreSaleTool = () => {
         const module = new TokenUtils(networkConfig);
         try {
             const price = await module.getINJDerivativesPrice();
-            const balance = await module.getBalanceOfToken('inj', connectedAddress)
+            const balance = await module.getBalanceOfToken('inj', connectedAddress as string)
             console.log(balance)
             setINJBalance(Number(balance.amount) / Math.pow(10, 18))
             setInjPrice(price)
@@ -154,12 +154,14 @@ const PreSaleTool = () => {
             let totalContribution = 0;
             let totalToRefund = 0;
 
+            // `?? 0` was dead (Number() is never nullish; values are already
+            // guarded truthy above), so it's dropped — behavior unchanged.
             Array.from(preSaleAmounts.values()).forEach((entry) => {
                 if (entry.amountRefunded)
-                    totalRefunded += Number(entry.amountRefunded) ?? 0;
+                    totalRefunded += Number(entry.amountRefunded);
                 if (entry.contribution)
-                    totalContribution += Number(entry.contribution) ?? 0;
-                if (entry.toRefund) totalToRefund += Number(entry.toRefund) ?? 0;
+                    totalContribution += Number(entry.contribution);
+                if (entry.toRefund) totalToRefund += Number(entry.toRefund);
             });
 
             console.log(
@@ -199,30 +201,30 @@ const PreSaleTool = () => {
         if (
             walletAddress && ignoredAddresses && maxCap && minPerWallet && maxPerWallet && !amountList
         ) {
-            handleCollectWallets()
+            void handleCollectWallets()
         }
     }, [walletAddress, ignoredAddresses, maxCap, minPerWallet, maxPerWallet, amountList, handleCollectWallets])
 
     const handleRefund = useCallback(() => {
-        const refundList = amountList.map((amount) => {
+        const refundList = amountList.map((amount: any) => {
             console.log(amount.amountRefunded)
             return {
                 address: amount.address,
                 amount: Number(amount.toRefund) - Number(amount.amountRefunded ?? 0)
             }
         })
-        setRefundAmounts(refundList.filter(x => x.amount !== 0))
+        setRefundAmounts(refundList.filter((x: any) => x.amount !== 0))
         setRefundModal(true)
     }, [amountList])
 
     const handleRefundAll = useCallback(() => {
-        const refundList = amountList.map((amount) => {
+        const refundList = amountList.map((amount: any) => {
             return {
                 address: amount.address,
                 amount: Number(amount.amountSent) - Number(amount.amountRefunded ?? 0)
             }
         })
-        setRefundAmounts(refundList.filter(x => x.amount > 0))
+        setRefundAmounts(refundList.filter((x: any) => x.amount > 0))
         setRefundModal(true)
     }, [amountList])
 
@@ -249,7 +251,7 @@ const PreSaleTool = () => {
         setTokenBalance(balance)
     }, [tokenToAirdrop, networkConfig, connectedAddress])
 
-    const handlePrepareAirdropList = useCallback(async () => {
+    const handlePrepareAirdropList = useCallback(() => {
         console.log(amountList)
         let totalToSend = tokenBalance.amount * (percentToAirdrop / 100)
 
@@ -257,11 +259,11 @@ const PreSaleTool = () => {
 
         console.log(`total to send ${totalToSend}`)
 
-        const totalContributions = amountList.reduce((acc, curr) => acc + curr.contribution, 0);
+        const totalContributions = amountList.reduce((acc: any, curr: any) => acc + curr.contribution, 0);
 
         console.log(`total contributions ${totalContributions}`)
 
-        const airdropList = amountList.map((amount) => {
+        const airdropList = amountList.map((amount: any) => {
             const percentContribution = (amount.contribution / totalContributions) * 100;
             const amountToSend = Math.round(totalToSend * (percentContribution / 100))
 
@@ -286,7 +288,7 @@ const PreSaleTool = () => {
 
     const handleDownloadCsv = useCallback(() => {
         if (!airdropList) return
-        const rows = airdropList.map((h) => ({ address: h.address, amount: h.amountFormatted }))
+        const rows = airdropList.map((h: any) => ({ address: h.address, amount: h.amountFormatted }))
         downloadCsv(`presale-airdrop-${tokenInfo?.symbol ?? "token"}.csv`, arrayToCsv(rows, ["address", "amount"]))
     }, [airdropList, tokenInfo])
 
@@ -300,12 +302,12 @@ const PreSaleTool = () => {
                     tokenAddress={presaleToken.value}
                     decimals={18}
                     setShowModal={setRefundModal}
-                    collectWallets={handleCollectWallets}
+                    collectWallets={() => { void handleCollectWallets(); }}
                 />
             }
             {airdropModal &&
                 <AirdropModal
-                    airdropDetails={airdropList.filter(record => record.amount != 0)}
+                    airdropDetails={airdropList.filter((record: any) => record.amount != 0)}
                     tokenInfo={tokenInfo}
                     setShowModal={setAirdropModal}
                 />
@@ -457,7 +459,7 @@ const PreSaleTool = () => {
                             </label>
 
                             <button
-                                onClick={handleCollectWallets}
+                                onClick={() => { void handleCollectWallets(); }}
                                 className="p-2 rounded-lg text-center bg-slate-700 hover:bg-slate-800 mt-5"
                             >
                                 Collect wallets
@@ -497,11 +499,11 @@ const PreSaleTool = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {amountList.filter(holder => {
+                                                {amountList.filter((holder: any) => {
                                                     return walletFilter && walletFilter.length > 0
                                                         ? holder.address === walletFilter
                                                         : true;
-                                                }).sort((a, b) => new Date(a.timeSent) - new Date(b.timeSent)).map((holder, index) => (
+                                                }).sort((a: any, b: any) => Number(new Date(a.timeSent)) - Number(new Date(b.timeSent))).map((holder: any, index: any) => (
                                                     <tr
                                                         key={index}
                                                         className={holder.toRefundFormatted != holder.amountRefundedFormatted ? "bg-rose-600" : "text-white border-b text-left"}
@@ -587,7 +589,7 @@ const PreSaleTool = () => {
                                     </div>
 
                                     <button
-                                        onClick={handleGetTokenDetails}
+                                        onClick={() => { void handleGetTokenDetails(); }}
                                         className="p-2 rounded-lg text-center bg-slate-700 hover:bg-slate-800 mt-2"
                                     >
                                         Get token details
@@ -675,7 +677,7 @@ const PreSaleTool = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {airdropList.sort((a, b) => b.amount - a.amount).map((holder, index) => (
+                                                {airdropList.sort((a: any, b: any) => b.amount - a.amount).map((holder: any, index: any) => (
                                                     <tr key={index} className="text-white border-b text-left">
                                                         <td className="px-6 py-1">{index + 1}</td>
                                                         <td className="px-6 py-1">{holder.address}</td>

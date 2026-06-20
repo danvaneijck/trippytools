@@ -8,7 +8,7 @@ const Header = () => {
     const location = useLocation();
     const [menuOpen, setMenuOpen] = useState(false);
 
-    const getLinkStyle = (path) => {
+    const getLinkStyle = (path: any) => {
         return (location.pathname.startsWith(path) && path !== "/") || location.pathname === path
             ? 'font-bold mx-5 pb-1 border-b-2 border-rose-400 text-trippyYellow'
             : 'font-bold mx-5 pb-1 hover:underline';

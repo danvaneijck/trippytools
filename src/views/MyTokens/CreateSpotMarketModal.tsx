@@ -13,15 +13,17 @@ import { performTransaction } from "../../utils/walletStrategy";
 
 const CreateSpotMarketModal = (props: {
     token: any
+    setShowModal: (value: any) => void
+    setLoaded: (value: any) => void
 }) => {
 
     const { connectedWallet: connectedAddress } = useWalletStore()
     const { networkKey: currentNetwork } = useNetworkStore()
 
     const [priceTickSize, setPriceTickSize] = useState('0.0000001');
-    const [quantityTickSize, setQuantityTickSize] = useState(100);
+    const [quantityTickSize, setQuantityTickSize] = useState<string | number>(100);
 
-    const [marketLink, setMarketLink] = useState(null)
+    const [marketLink, setMarketLink] = useState<string | null>(null)
 
     const [progress, setProgress] = useState("")
     const [txLoading, setTxLoading] = useState(false)
@@ -51,27 +53,27 @@ const CreateSpotMarketModal = (props: {
         const minNotional = 1 * Math.pow(10, 18)
 
         const msgCreateSpotMarket = MsgInstantSpotMarketLaunch.fromJSON({
-            proposer: injectiveAddress,
+            proposer: injectiveAddress as string,
             market: {
-                sender: injectiveAddress,
+                sender: injectiveAddress as string,
                 ticker: `${props.token.metadata.symbol}/INJ`,
                 baseDenom: props.token.token,
                 quoteDenom: 'inj',
                 minPriceTickSize: minPriceTick.toString(),
                 minQuantityTickSize: minQuantityTick.toString(),
                 minNotional: minNotional.toString()
-            }
+            } as any
         });
 
         console.log("spot market msg", msgCreateSpotMarket)
         setProgress(`Create instant spot market`)
 
-        const response = await performTransaction(injectiveAddress, [msgCreateSpotMarket])
+        const response = await performTransaction(injectiveAddress as string, [msgCreateSpotMarket])
         console.log(response)
         let market = null
-        const contract = response['events']?.find(x => x.type === 'injective.exchange.v1beta1.EventSpotMarketUpdate')
+        const contract = response?.['events']?.find((x: any) => x.type === 'injective.exchange.v1beta1.EventSpotMarketUpdate')
         if (contract) {
-            market = contract['attributes'].find(x => x.key === "market").value
+            market = contract['attributes'].find((x: any) => x.key === "market").value
         }
         if (market) {
             const decoded = JSON.parse(market)
@@ -179,12 +181,12 @@ const CreateSpotMarketModal = (props: {
                                 <button
                                     className="bg-slate-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded-sm shadow-sm hover:shadow-lg outline-hidden focus:outline-hidden mr-1 mb-1 ease-linear transition-all duration-150"
                                     type="button"
-                                    onClick={() => create().then(() => console.log("done")).catch(e => {
+                                    onClick={() => { void create().then(() => console.log("done")).catch(e => {
                                         console.log(e)
                                         setError(e.message)
                                         setProgress("")
                                         setTxLoading(false)
-                                    })}
+                                    }) }}
                                 >
                                     Create
                                 </button>

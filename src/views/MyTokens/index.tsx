@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+ 
 import { useCallback, useEffect, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { GridLoader } from "react-spinners";
@@ -53,8 +53,8 @@ const MyTokens = () => {
     const [showMint, setShowMint] = useState<FactoryToken | null>(null);
     const [showMitoVault, setShowMitoVault] = useState<FactoryToken | null>(null);
 
-    const [injPrice, setInjPrice] = useState(null)
-    const [injBalance, setINJBalance] = useState(null)
+    const [injPrice, setInjPrice] = useState<string | number | null | undefined>(null)
+    const [injBalance, setINJBalance] = useState<number | null>(null)
 
     const [loading, setLoading] = useState(false);
 
@@ -67,7 +67,7 @@ const MyTokens = () => {
     const getTokens = useCallback(async () => {
         const module = new TokenUtils(networkConfig);
         try {
-            const userTokens = await module.getUserTokens(connectedAddress);
+            const userTokens = await module.getUserTokens(connectedAddress as string);
             return userTokens;
         } catch (error) {
             console.error('Failed to fetch tokens:', error);
@@ -101,7 +101,7 @@ const MyTokens = () => {
         const module = new TokenUtils(networkConfig);
         try {
             const price = await module.getINJDerivativesPrice();
-            const balance = await module.getBalanceOfToken('inj', connectedAddress)
+            const balance = await module.getBalanceOfToken('inj', connectedAddress as string)
             setINJBalance(Number(balance.amount) / Math.pow(10, 18))
             setInjPrice(price)
             return price;
@@ -156,7 +156,7 @@ const MyTokens = () => {
                     console.error("Failed to fetch spot markets:", e);
                 }
             } catch (e) {
-                if (e.name !== 'AbortError') {
+                if ((e as any).name !== 'AbortError') {
                     console.error("Failed to fetch tokens:", e);
                 }
             } finally {
@@ -174,10 +174,10 @@ const MyTokens = () => {
 
         const msgChangeAdmin = MsgChangeAdmin.fromJSON({
             denom: token.token,
-            sender: injectiveAddress,
+            sender: injectiveAddress as string,
             newAdmin: BURN_ADMIN_ADDRESS
         });
-        await performTransaction(injectiveAddress, [msgChangeAdmin])
+        await performTransaction(injectiveAddress as string, [msgChangeAdmin])
         setLoaded(false)
     }, [connectedAddress])
 
@@ -221,7 +221,7 @@ const MyTokens = () => {
                                         <div>INJ  price: ${Number(injPrice).toFixed(2)}</div>
                                     }
                                     {injPrice && injBalance &&
-                                        <div>INJ  balance: {injBalance.toFixed(2)} (${(injBalance * injPrice).toFixed(2)})</div>
+                                        <div>INJ  balance: {injBalance.toFixed(2)} (${(injBalance * Number(injPrice)).toFixed(2)})</div>
                                     }
                                     {!loading &&
                                         <div className="mt-2">
@@ -277,7 +277,7 @@ const MyTokens = () => {
                                                                             {shortAddress(token.token)}
                                                                         </a>
                                                                     </td>
-                                                                    <td className="px-4 py-2 text-xs">{(token.metadata.total_supply / Math.pow(10, token.metadata.decimals)).toLocaleString()}</td>
+                                                                    <td className="px-4 py-2 text-xs">{(token.metadata.total_supply! / Math.pow(10, token.metadata.decimals)).toLocaleString()}</td>
                                                                     <td className="px-4 py-2 text-xs">{token.metadata.decimals}</td>
                                                                     <td className="px-4 py-2 text-xs">
                                                                         {token.metadata.admin == connectedAddress ?
@@ -318,7 +318,7 @@ const MyTokens = () => {
                                                                             <> <button onClick={() => { setShowMint(token) }} className="my-2 bg-slate-800 shadow-lg p-2 rounded-lg text-xs">
                                                                                 Mint
                                                                             </button>
-                                                                                <button onClick={() => { burnAdmin(token) }} className="my-2 ml-2 bg-slate-800 shadow-lg p-2 rounded-lg text-xs">
+                                                                                <button onClick={() => { void burnAdmin(token) }} className="my-2 ml-2 bg-slate-800 shadow-lg p-2 rounded-lg text-xs">
                                                                                     Burn admin
                                                                                 </button>
                                                                                 <button onClick={() => { setShowMetadataModal(token) }} className="my-2 ml-2 bg-slate-800 shadow-lg p-2 rounded-lg text-xs">

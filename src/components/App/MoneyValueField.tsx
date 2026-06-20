@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const MoneyValueField = ({ value }) => {
+const MoneyValueField = ({ value }: any) => {
     const [prevValue, setPrevValue] = useState(value);
     const [animationClass, setAnimationClass] = useState('');
 

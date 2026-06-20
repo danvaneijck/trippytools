@@ -105,10 +105,10 @@ const TokenLiquidity = () => {
             try {
                 if (memeAddress.includes("factory") || memeAddress.includes("peggy") || memeAddress.includes("ibc") || memeAddress == "inj") {
                     const denomMetadata = await module.getDenomExtraMetadata(memeAddress);
-                    setTokenInfo(denomMetadata);
+                    setTokenInfo(denomMetadata as TokenInfo);
                 } else {
                     const tokenInfo = await module.getTokenInfo(memeAddress);
-                    setTokenInfo({ ...tokenInfo, denom: memeAddress });
+                    setTokenInfo({ ...tokenInfo, denom: memeAddress } as TokenInfo);
 
                     const marketingInfo = await module.getTokenMarketing(memeAddress);
                     setPairMarketing(marketingInfo);
@@ -137,8 +137,8 @@ const TokenLiquidity = () => {
 
         } catch (e) {
             console.log(e);
-            if (e && e.message) {
-                setError(e.message);
+            if (e && (e as any).message) {
+                setError((e as any).message);
             }
         } finally {
             setLoading(false);
@@ -149,8 +149,8 @@ const TokenLiquidity = () => {
     useEffect(() => {
         const address = searchParams.get("address")
         if (address && address !== lastLoadedAddress) {
-            getTokenHolders(address)
-            setContractAddress(address => pools.map((p) => {
+            void getTokenHolders(address)
+            setContractAddress((address: any) => pools.map((p) => {
                 return {
                     value: p.contract_addr,
                     label: `${p.asset_1.symbol}/${p.asset_2.symbol} (${p.dex.name})`,
@@ -160,7 +160,7 @@ const TokenLiquidity = () => {
         }
     }, [searchParams, lastLoadedAddress, getTokenHolders, pools])
 
-    const renderDex = (pool) => {
+    const renderDex = (pool: any) => {
         let link
         if (pool.dex.name == 'Choice') {
             link = `https://choice.exchange/swap?input=${pool.asset_1.address}&output=${pool.asset_2.address}`
@@ -172,7 +172,7 @@ const TokenLiquidity = () => {
             link = `https://coinhall.org/injective/${pool.contract_addr}`
         }
         return (
-            <Link to={link} >
+            <Link to={link as string} >
                 <div className="items-center underline">
                     DEX: {pool.dex.name}
                     {pool.dex.name == 'Choice' && <img src={choicelogo} alt="Choice Logo" className="inline-block ml-2" style={{ width: 20, height: 20 }} />}
@@ -272,9 +272,9 @@ const TokenLiquidity = () => {
                                     <a href={`https://${currentNetwork == 'testnet' ? 'testnet.' : ''}explorer.injective.network/account/${tokenInfo.admin}`}>
                                         admin: {shortAddress(tokenInfo.admin)}
                                         {
-                                            WALLET_LABELS[tokenInfo.admin] ? (
-                                                <span className={`${WALLET_LABELS[tokenInfo.admin].bgColor} ${WALLET_LABELS[tokenInfo.admin].textColor} ml-2`}>
-                                                    {WALLET_LABELS[tokenInfo.admin].label}
+                                            (WALLET_LABELS as Record<string, any>)[tokenInfo.admin!] ? (
+                                                <span className={`${(WALLET_LABELS as Record<string, any>)[tokenInfo.admin!].bgColor} ${(WALLET_LABELS as Record<string, any>)[tokenInfo.admin!].textColor} ml-2`}>
+                                                    {(WALLET_LABELS as Record<string, any>)[tokenInfo.admin!].label}
                                                 </span>
                                             ) : null
                                         }
@@ -295,9 +295,9 @@ const TokenLiquidity = () => {
                                     <div>
                                         marketing: {pairMarketing.marketing}
                                         {
-                                            WALLET_LABELS[pairMarketing.marketing] ? (
-                                                <span className={`${WALLET_LABELS[pairMarketing.marketing].bgColor} ${WALLET_LABELS[pairMarketing.marketing].textColor} ml-2`}>
-                                                    {WALLET_LABELS[pairMarketing.marketing].label}
+                                            (WALLET_LABELS as Record<string, any>)[pairMarketing.marketing] ? (
+                                                <span className={`${(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing].bgColor} ${(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing].textColor} ml-2`}>
+                                                    {(WALLET_LABELS as Record<string, any>)[pairMarketing.marketing].label}
                                                 </span>
                                             ) : null
                                         }
@@ -385,9 +385,9 @@ const TokenLiquidity = () => {
                                                         {holder.address}
                                                     </a>
                                                     {
-                                                        WALLET_LABELS[holder.address] ? (
-                                                            <span className={`${WALLET_LABELS[holder.address].bgColor} ${WALLET_LABELS[holder.address].textColor} ml-2`}>
-                                                                {WALLET_LABELS[holder.address].label}
+                                                        (WALLET_LABELS as Record<string, any>)[holder.address] ? (
+                                                            <span className={`${(WALLET_LABELS as Record<string, any>)[holder.address].bgColor} ${(WALLET_LABELS as Record<string, any>)[holder.address].textColor} ml-2`}>
+                                                                {(WALLET_LABELS as Record<string, any>)[holder.address].label}
                                                             </span>
                                                         ) : null
                                                     }
@@ -405,7 +405,7 @@ const TokenLiquidity = () => {
                                                     )}
                                                 </td>
                                                 <td className="px-4 py-2">
-                                                    {formatNumber(holder.balance)}
+                                                    {formatNumber(holder.balance as number)}
                                                 </td>
                                                 <td className="px-4 py-2">
                                                     {holder.percentageHeld.toFixed(2)}%

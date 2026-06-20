@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
+ 
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
+ 
+ 
+ 
+ 
 import {
     ChainGrpcWasmApi,
     ChainGrpcBankApi,
@@ -37,34 +37,13 @@ const DOJO_ROUTER = "inj1t6g03pmc0qcgr7z44qjzaen804f924xke6menl"
 
 
 interface EndpointConfig {
-    rpc(rpc: any): unknown;
     grpc: string;
     explorer: string;
     indexer: string;
-}
-
-interface Holder {
-    address: string;
-    balance: string;
-    percentageHeld: number;
-}
-
-interface PresaleAmount {
-    address?: string | undefined;
-    timeSent?: string | undefined;
-    amountSent?: number | undefined;
-    contribution?: number | undefined;
-    toRefund?: number | undefined;
-    amountSentFormatted?: number | undefined;
-    totalContributionFormatted?: number | undefined;
-    toRefundFormatted?: number | undefined;
-    amountRefundedFormatted?: number | undefined;
-    multiplierTokensSent?: number | undefined;
-    multiplier?: number | undefined;
-    adjustedContribution?: number | undefined;
-    tokensToSend?: string | undefined;
-    amountRefunded?: number | undefined;
-    tokensSent?: string | undefined;
+    rpc?: string;
+    rest?: string;
+    chainId?: string;
+    explorerUrl?: string;
 }
 
 interface BalanceResponse {
@@ -210,7 +189,7 @@ class TokenUtils {
         }
     }
 
-    async getBuyQuoteRouter(pair, amount) {
+    async getBuyQuoteRouter(pair: any, amount: any) {
         const pairName = `${pair.token0Meta.symbol}, ${pair.token1Meta.symbol}`;
 
         try {
@@ -218,7 +197,7 @@ class TokenUtils {
                 throw new Error(`Invalid pair or asset_infos for getBuyQuoteFromRouter DojoSwap: ${pair}`);
             }
 
-            const assetToBuy = pair.asset_infos.findIndex(assetInfo => {
+            const assetToBuy = pair.asset_infos.findIndex((assetInfo: any) => {
                 const isNativeToken = assetInfo.native_token && assetInfo.native_token.denom !== 'inj';
                 const isCW20Token = assetInfo.token && assetInfo.token.contract_addr !== 'inj';
                 return isNativeToken || isCW20Token;
@@ -257,7 +236,7 @@ class TokenUtils {
         }
     }
 
-    async getSellQuoteRouter(pair, amount) {
+    async getSellQuoteRouter(pair: any, amount: any) {
         const pairName = `${pair.token0Meta.symbol}, ${pair.token1Meta.symbol}`;
 
         try {
@@ -265,7 +244,7 @@ class TokenUtils {
                 throw new Error(`Invalid pair or asset_infos for getSellQuoteFromRouter DojoSwap: ${pair}`);
             }
 
-            const assetToSell = pair.asset_infos.findIndex(assetInfo => {
+            const assetToSell = pair.asset_infos.findIndex((assetInfo: any) => {
                 const isNativeToken = assetInfo.native_token && assetInfo.native_token.denom !== 'inj';
                 const isCW20Token = assetInfo.token && assetInfo.token.contract_addr !== 'inj';
                 return isNativeToken || isCW20Token;
@@ -370,7 +349,7 @@ class TokenUtils {
         }
     }
 
-    async getDenomMetadata(denom) {
+    async getDenomMetadata(denom: any) {
         if (denom == "inj") {
             return {
                 decimals: 18
@@ -421,7 +400,7 @@ class TokenUtils {
                 description: data.description,
                 logo: data.uri,
                 admin: admin.admin,
-                denomUnits: data.denomUnits
+                denomUnits: data.denomUnits as []
             };
 
 
@@ -463,7 +442,7 @@ class TokenUtils {
                             await this.chainGrpcWasmApi.fetchSmartContractState(
                                 tokenAddress,
                                 balanceQuery
-                            );
+                            ) as unknown as ChainGrpcWasmApiResponse;
                         setProgress(`wallets checked: ${Object.values(accountsWithBalances).length}`);
                         const balanceDecoded = JSON.parse(
                             new TextDecoder().decode(balanceInfo.data)
@@ -520,7 +499,7 @@ class TokenUtils {
                 break;
             }
 
-            nextPage = response.pagination.next;
+            nextPage = response.pagination!.next;
             setProgress(`wallets checked: ${allBalances.length}`);
         } while (nextPage);
 
@@ -550,7 +529,7 @@ class TokenUtils {
         try {
 
             const info = await this.getDenomExtraMetadata(denom)
-            const decimals = info.decimals
+            const decimals = (info as any).decimals
 
             let allBalances: {
                 address: string;
@@ -783,7 +762,7 @@ class TokenUtils {
                     if (message.message.inputs.length == 1) {
                         sender = message.message.inputs[0].address
                         if (sender === address) {
-                            message.message.outputs.map((output) => {
+                            message.message.outputs.map((output: any) => {
                                 if (output.coins.length == 1 && output.coins[0].denom == "inj") {
                                     const recipient = output.address
                                     const amount = output.coins[0].amount
@@ -795,9 +774,10 @@ class TokenUtils {
                                                 (!isNaN(Number(entry.amountRefunded)) ? Number(entry.amountRefunded) : 0) +
                                                 Number(amount);
 
-                                            let toRefund =
-                                                Number(entry.toRefund) ??
-                                                0 - amountRefunded;
+                                            // NOTE: Number() never returns null/undefined, so the
+                                            // original `?? 0 - amountRefunded` fallback was dead code
+                                            // and never ran. Preserved as-is (= Number(entry.toRefund)).
+                                            let toRefund = Number(entry.toRefund);
 
                                             if (toRefund < 0) toRefund = 0;
 
@@ -923,9 +903,9 @@ class TokenUtils {
                                     (!isNaN(Number(entry.amountRefunded)) ? Number(entry.amountRefunded) : 0) +
                                     Number(amount);
 
-                                let toRefund =
-                                    Number(entry.toRefund) ??
-                                    0 - amountRefunded;
+                                // NOTE: dead `?? 0 - amountRefunded` fallback removed (Number()
+                                // is never nullish so it never ran); behavior unchanged.
+                                let toRefund = Number(entry.toRefund);
                                 if (toRefund < 0) toRefund = 0;
 
                                 preSaleAmounts.set(participant, {
@@ -942,9 +922,10 @@ class TokenUtils {
                         if (preSaleAmounts.has(sender)) {
                             const entry = preSaleAmounts.get(sender);
                             if (entry) {
+                                // `?? 0` was dead (Number() never nullish); behavior unchanged.
                                 const totalSent =
                                     Number(amount) +
-                                    (Number(entry.amountSent) ?? 0);
+                                    Number(entry.amountSent);
 
                                 let toRefund = 0;
 
@@ -1052,7 +1033,7 @@ class TokenUtils {
         return percentageOf25;
     }
 
-    async getMultiplier(presaleWallet: string, multiplierToken: string, preSaleAmounts) {
+    async getMultiplier(presaleWallet: string, multiplierToken: string, preSaleAmounts: any) {
         const allTransactions = await this.getContractTx(multiplierToken);
 
         allTransactions.forEach((tx) => {
@@ -1088,7 +1069,7 @@ class TokenUtils {
             });
         });
 
-        preSaleAmounts.forEach((entry, address) => {
+        preSaleAmounts.forEach((entry: any, address: any) => {
             if (!entry.multiplierTokensSent) {
                 preSaleAmounts.set(address, {
                     ...entry,
@@ -1113,7 +1094,7 @@ class TokenUtils {
         });
 
         let total = 0;
-        preSaleAmounts.forEach((entry) => {
+        preSaleAmounts.forEach((entry: any) => {
             if (entry.adjustedContribution)
                 total += Number(entry.adjustedContribution);
         });
@@ -1127,7 +1108,7 @@ class TokenUtils {
         decimals: number,
         percentToAirdrop: number,
         devAllocation: number,
-        preSaleAmounts
+        preSaleAmounts: any
     ) {
         let amountToDrop =
             totalSupply * Math.pow(10, decimals) * percentToAirdrop;
@@ -1137,7 +1118,7 @@ class TokenUtils {
 
         const dropAmounts = new Map();
 
-        Array.from(preSaleAmounts.values()).forEach((entry) => {
+        Array.from(preSaleAmounts.values()).forEach((entry: any) => {
             if (entry.address) {
                 if (!entry.contribution || entry.contribution <= 0) return;
 
@@ -1165,7 +1146,7 @@ class TokenUtils {
         });
 
         let total = 0;
-        preSaleAmounts.forEach((entry) => {
+        preSaleAmounts.forEach((entry: any) => {
             if (entry.adjustedContribution)
                 total += Number(entry.adjustedContribution);
         });
@@ -1207,7 +1188,7 @@ class TokenUtils {
                     marketing = await this.getTokenMarketing(denom);
                 }
                 catch (error) {
-                    if (error.message.includes("Error parsing into type cw404")) {
+                    if ((error as any).message.includes("Error parsing into type cw404")) {
                         try {
                             tokenInfo = await this.getCW404TokenInfo(denom);
                         } catch (innerError) {
@@ -1248,10 +1229,10 @@ class TokenUtils {
         return infoDecoded
     }
 
-    async fetchOwnersInBatches(tokensNeedingOwners, collectionAddress, batchSize = 5, delay = 500, maxRetries = 3) {
+    async fetchOwnersInBatches(tokensNeedingOwners: any, collectionAddress: any, batchSize = 5, delay = 500, maxRetries = 3) {
         const ownerResults = [];
 
-        const fetchWithRetry = async (tokenId, retries = maxRetries) => {
+        const fetchWithRetry = async (tokenId: any, retries = maxRetries) => {
             const ownerQuery = Buffer.from(
                 JSON.stringify({
                     owner_of: { token_id: tokenId }
@@ -1274,7 +1255,7 @@ class TokenUtils {
 
         for (let i = 0; i < tokensNeedingOwners.length; i += batchSize) {
             const batch = tokensNeedingOwners.slice(i, i + batchSize);
-            const ownerQueries = batch.map(tokenId => fetchWithRetry(tokenId));
+            const ownerQueries = batch.map((tokenId: any) => fetchWithRetry(tokenId));
             const results = await Promise.all(ownerQueries);
             ownerResults.push(...results);
             if (i + batchSize < tokensNeedingOwners.length) {
@@ -1299,7 +1280,7 @@ class TokenUtils {
 
         let startAfter = "";
         let hasMore = true;
-        const holderMap = {};
+        const holderMap: Record<string, any> = {};
 
         while (hasMore) {
             const allTokensQuery = Buffer.from(
@@ -1400,8 +1381,8 @@ class TokenUtils {
         const contractInfoDecoded = await this.getCW404TokenInfo(collectionAddress)
         const decimals = contractInfoDecoded.decimals
 
-        const client = await CosmWasmClient.connect(this.endpoints.rpc);
-        const queryClient = client.forceGetQueryClient();
+        const client = await CosmWasmClient.connect(this.endpoints.rpc!);
+        const queryClient = (client as any).forceGetQueryClient();
         let startAfter: Uint8Array | undefined;
 
         const key = CW404_BALANCE_STARTING_KEYS.find(x => x.address == collectionAddress)
@@ -1417,7 +1398,7 @@ class TokenUtils {
 
         while (true) {
             const state = await queryClient.wasm.getAllContractState(collectionAddress, startAfter);
-            let lastModel = null
+            let lastModel: any = null
             for (const model of state.models) {
                 const key = Buffer.from(model.key).toString("hex");
                 if (key.startsWith(balanceKeyHex)) {
@@ -1447,7 +1428,7 @@ class TokenUtils {
                             balance: amount
                         })
                         setProgress(`holders: ${holders.length}`)
-                    } catch (e) {
+                    } catch {
                         console.log("error", key, Buffer.from(model.value).toString("ascii"));
                     }
                 } else {
@@ -1563,7 +1544,7 @@ class TokenUtils {
 
                     allPools.push({ infoDecoded, factory: factoryAddress, price, marketCap, liquidity })
                 }
-                catch (e) {
+                catch {
                     // console.log(e)
                 }
             }
@@ -1571,14 +1552,14 @@ class TokenUtils {
         return allPools
     }
 
-    async getPoolAmounts(address) {
+    async getPoolAmounts(address: any) {
         const poolQuery = Buffer.from(JSON.stringify({ pool: {} })).toString('base64');
         const poolInfo = await this.chainGrpcWasmApi.fetchSmartContractState(address, poolQuery)
         const poolDecoded = JSON.parse(new TextDecoder().decode(poolInfo.data))
         return poolDecoded
     }
 
-    async getPrice(pair) {
+    async getPrice(pair: any) {
         const { token0Meta, token1Meta } = pair;
         const baseAsset = this.baseAssets.find(baseAsset =>
             (token0Meta.denom === baseAsset.native_token?.denom || token0Meta.denom === baseAsset.token?.contract_addr) ||
@@ -1596,7 +1577,7 @@ class TokenUtils {
         const baseAssetPriceUsd = await this.getBaseAssetPrice(baseTokenMeta);
         // console.log("base asset price", baseAssetPriceUsd)
 
-        const baseAssetAmount = poolDecoded.assets.find(asset => {
+        const baseAssetAmount = poolDecoded.assets.find((asset: any) => {
             if (asset.info.native_token) {
                 return asset.info.native_token.denom === baseTokenMeta.denom;
             } else if (asset.info.token) {
@@ -1605,7 +1586,7 @@ class TokenUtils {
             return false;
         })?.amount || 0;
 
-        const tokenAmount = poolDecoded.assets.find(asset => {
+        const tokenAmount = poolDecoded.assets.find((asset: any) => {
             if (asset.info.native_token) {
                 return asset.info.native_token.denom === memeTokenMeta.denom;
             } else if (asset.info.token) {
@@ -1620,10 +1601,10 @@ class TokenUtils {
 
         const ratio = (Number(baseAssetAmount) / Math.pow(10, baseTokenMeta.decimals)) / (Number(tokenAmount) / Math.pow(10, memeTokenMeta.decimals));
 
-        return ratio * baseAssetPriceUsd;
+        return ratio * baseAssetPriceUsd!;
     }
 
-    async getPoolLiquidity(pair) {
+    async getPoolLiquidity(pair: any) {
         const { token0Meta, token1Meta } = pair;
         const baseAsset = this.baseAssets.find(baseAsset =>
             (token0Meta.denom === baseAsset.native_token?.denom || token0Meta.denom === baseAsset.token?.contract_addr) ||
@@ -1641,7 +1622,7 @@ class TokenUtils {
         const baseAssetPriceUsd = await this.getBaseAssetPrice(baseTokenMeta);
         // console.log("base asset price", baseAssetPriceUsd)
 
-        const baseAssetAmount = poolDecoded.assets.find(asset => {
+        const baseAssetAmount = poolDecoded.assets.find((asset: any) => {
             if (asset.info.native_token) {
                 return asset.info.native_token.denom === baseTokenMeta.denom;
             } else if (asset.info.token) {
@@ -1650,7 +1631,7 @@ class TokenUtils {
             return false;
         })?.amount || 0;
 
-        const tokenAmount = poolDecoded.assets.find(asset => {
+        const tokenAmount = poolDecoded.assets.find((asset: any) => {
             if (asset.info.native_token) {
                 return asset.info.native_token.denom === memeTokenMeta.denom;
             } else if (asset.info.token) {
@@ -1663,10 +1644,10 @@ class TokenUtils {
             return null
         }
 
-        return (Number(baseAssetAmount) / Math.pow(10, baseTokenMeta.decimals)) * baseAssetPriceUsd * 2;
+        return (Number(baseAssetAmount) / Math.pow(10, baseTokenMeta.decimals)) * baseAssetPriceUsd! * 2;
     }
 
-    async getBaseAssetPrice(baseAsset) {
+    async getBaseAssetPrice(baseAsset: any) {
         if (baseAsset.denom === 'inj') {
             return await this.getINJPrice();
         } else if (baseAsset.denom === 'inj1zdj9kqnknztl2xclm5ssv25yre09f8908d4923') { // dojo address
@@ -1675,7 +1656,7 @@ class TokenUtils {
         return 1;
     }
 
-    async getMarketCap(pair) {
+    async getMarketCap(pair: any) {
         const { token0Meta, token1Meta } = pair;
 
         const baseAsset = this.baseAssets.find(baseAsset =>
@@ -1687,7 +1668,7 @@ class TokenUtils {
         const memeTokenMeta = (baseTokenMeta === token0Meta) ? token1Meta : token0Meta;
 
         const price = await this.getPrice(pair);
-        let supply = 0;
+        let supply: any;
 
         if (!memeTokenMeta.total_supply) {
             supply = await this.chainGrpcBankApi.fetchSupplyOf(memeTokenMeta.denom);
@@ -1696,7 +1677,7 @@ class TokenUtils {
             supply = memeTokenMeta.total_supply;
         }
 
-        const marketCap = (Number(supply) / Math.pow(10, memeTokenMeta.decimals)) * price;
+        const marketCap = (Number(supply) / Math.pow(10, memeTokenMeta.decimals)) * price!;
         return marketCap;
     }
 
@@ -1705,13 +1686,10 @@ class TokenUtils {
         return markets
     }
 
-    async fetchMitoVault(address) {
-        let endpoint = "";
-        if (this.endpoints.chainId.includes("888")) {
-            endpoint = 'https://k8s.testnet.mito.grpc-web.injective.network';
-        } else {
-            endpoint = 'https://k8s.mainnet.mito.grpc-web.injective.network';
-        }
+    async fetchMitoVault(address: any) {
+        const endpoint = this.endpoints.chainId!.includes("888")
+            ? 'https://k8s.testnet.mito.grpc-web.injective.network'
+            : 'https://k8s.mainnet.mito.grpc-web.injective.network';
         const mitoApi = new IndexerGrpcMitoApi(endpoint);
 
         const vault = await mitoApi.fetchVault({ contractAddress: address })
@@ -1721,18 +1699,15 @@ class TokenUtils {
     }
 
     async fetchMitoVaults() {
-        let endpoint = "";
-        if (this.endpoints.chainId.includes("888")) {
-            endpoint = 'https://k8s.testnet.mito.grpc-web.injective.network';
-        } else {
-            endpoint = 'https://k8s.mainnet.mito.grpc-web.injective.network';
-        }
+        const endpoint = this.endpoints.chainId!.includes("888")
+            ? 'https://k8s.testnet.mito.grpc-web.injective.network'
+            : 'https://k8s.mainnet.mito.grpc-web.injective.network';
         const mitoApi = new IndexerGrpcMitoApi(endpoint);
 
         const limit = 100;
         let pageIndex = 0;
-        let totalVaults = [];
-        let total = 0;
+        let totalVaults: any[] = [];
+        let total: number;
 
         do {
             const response = await mitoApi.fetchVaults({
@@ -1746,26 +1721,23 @@ class TokenUtils {
             }
 
             totalVaults = totalVaults.concat(response.vaults);
-            total = response.pagination.total;
+            total = response.pagination!.total as number;
             pageIndex += 1;
 
         } while (totalVaults.length < total);
         return totalVaults;
     }
 
-    async fetchMitoVaultHolders(vaultAddress: string, stakingContractAddress: string, setProgress) {
-        let endpoint = "";
-        if (this.endpoints.chainId.includes("888")) {
-            endpoint = 'https://k8s.testnet.mito.grpc-web.injective.network';
-        } else {
-            endpoint = 'https://k8s.mainnet.mito.grpc-web.injective.network';
-        }
+    async fetchMitoVaultHolders(vaultAddress: string, stakingContractAddress: string, setProgress: any) {
+        const endpoint = this.endpoints.chainId!.includes("888")
+            ? 'https://k8s.testnet.mito.grpc-web.injective.network'
+            : 'https://k8s.mainnet.mito.grpc-web.injective.network';
         const mitoApi = new IndexerGrpcMitoApi(endpoint);
 
         const limit = 100;
         let pageIndex = 0;
-        let totalHolders = [];
-        let total = 0;
+        let totalHolders: any[] = [];
+        let total: number;
 
         do {
             const response = await mitoApi.fetchLPHolders({
@@ -1781,7 +1753,7 @@ class TokenUtils {
 
 
             totalHolders = totalHolders.concat(response.holders);
-            total = response.pagination.total;
+            total = response.pagination!.total as number;
             pageIndex += response.holders.length;
 
             setProgress(`${totalHolders.length} / ${total}`)
@@ -1795,18 +1767,15 @@ class TokenUtils {
         const { denomCreationFee } = await this.chainGrpcTokenFactoryApi.fetchModuleParams();
         const [fee] = denomCreationFee;
 
-        let mitoMasterContract = ""
-        if (this.endpoints.chainId.includes("888")) {
-            mitoMasterContract = "inj174efvalr8d9muguudh9uyd7ah7zdukqs9w4adq"
-        } else {
-            mitoMasterContract = 'inj1vcqkkvqs7prqu70dpddfj7kqeqfdz5gg662qs3';
-        }
+        const mitoMasterContract = this.endpoints.chainId!.includes("888")
+            ? "inj174efvalr8d9muguudh9uyd7ah7zdukqs9w4adq"
+            : 'inj1vcqkkvqs7prqu70dpddfj7kqeqfdz5gg662qs3';
         const query = Buffer.from(JSON.stringify({ config: {} })).toString('base64');
         const info = await this.chainGrpcWasmApi.fetchSmartContractState(mitoMasterContract, query)
         const config = JSON.parse(new TextDecoder().decode(info.data))
 
         const permissionlessVaultRegistrationFee = config.permissionless_vault_registration_fee.find(
-            ({ denom }) => denom === 'inj'
+            ({ denom }: any) => denom === 'inj'
         );
 
         return ((Number(permissionlessVaultRegistrationFee?.amount) || 0) + (Number(fee?.amount) || 0)) / Math.pow(10, 18);
@@ -1824,7 +1793,7 @@ class TokenUtils {
         const market =
             markets.find((m) => m.ticker === 'INJ/USDC PERP') ??
             markets.find((m) => m.ticker === 'INJ/USDT PERP') ??
-            markets.find((m) => m.oracleBase === 'INJ' && /\bPERP$/.test(m.ticker ?? ''))
+            markets.find((m) => (m as any).oracleBase === 'INJ' && /\bPERP$/.test(m.ticker ?? ''))
 
         if (!market) {
             // No INJ perp listed at all — use the AMM spot price rather than throw.
@@ -1834,15 +1803,15 @@ class TokenUtils {
         // The INJ/USDC perp is priced off the Pyth oracle; read the feed params
         // straight from the market so this works for whatever oracle it uses.
         const oraclePrice = await indexerGrpcOracleApi.fetchOraclePriceNoThrow({
-            baseSymbol: market.oracleBase,
-            quoteSymbol: market.oracleQuote,
+            baseSymbol: (market as any).oracleBase,
+            quoteSymbol: (market as any).oracleQuote,
             oracleType: market.oracleType,
         })
 
         return oraclePrice['price']
     }
 
-    async getBalances(wallet) {
+    async getBalances(wallet: any) {
         const balances = await this.indexerGrpcAccountPortfolioApi.fetchAccountPortfolioBalances(wallet);
         console.log(balances)
         const balancesWithMetadata = [];
@@ -1873,9 +1842,8 @@ class TokenUtils {
         return balancesWithMetadata;
     }
 
-    async fetchBinaryOptionMarkets(status) {
+    async fetchBinaryOptionMarkets(status: any) {
         const marketsAPI = new IndexerGrpcDerivativesApi(this.endpoints.indexer)
-        const key = ''
         const markets = await marketsAPI.fetchBinaryOptionsMarkets({
             marketStatus: status,
             pagination: { limit: 20 }
@@ -1884,13 +1852,13 @@ class TokenUtils {
         return markets.markets
     }
 
-    async fetchBinaryOptionMarket(marketId) {
+    async fetchBinaryOptionMarket(marketId: any) {
         const marketsAPI = new IndexerGrpcDerivativesApi(this.endpoints.indexer)
         const markets = await marketsAPI.fetchBinaryOptionsMarket(marketId)
         return markets
     }
 
-    async getDerivativeMarketOrders(marketId) {
+    async getDerivativeMarketOrders(marketId: any) {
         const marketsAPI = new IndexerGrpcDerivativesApi(this.endpoints.indexer)
         const orders = await marketsAPI.fetchOrderHistory({
             marketId: marketId
@@ -1908,7 +1876,7 @@ class TokenUtils {
         return oracleList
     }
 
-    async fetchOraclePrice(ticker) {
+    async fetchOraclePrice(ticker: any) {
         const indexerGrpcOracleApi = new IndexerGrpcOracleApi(this.endpoints.indexer)
 
         const marketsAPI = new IndexerGrpcDerivativesApi(this.endpoints.indexer)
@@ -1919,8 +1887,8 @@ class TokenUtils {
             console.log("cannot find market with ticker", ticker)
             return
         }
-        const baseSymbol = market.oracleBase
-        const quoteSymbol = market.oracleQuote
+        const baseSymbol = (market as any).oracleBase
+        const quoteSymbol = (market as any).oracleQuote
         const oracleType = market.oracleType
 
         const oraclePrice = await indexerGrpcOracleApi.fetchOraclePriceNoThrow({
@@ -1933,7 +1901,7 @@ class TokenUtils {
         return oraclePrice['price']
     }
 
-    async fetchWithRetry(url, options, maxRetries = 10, retryDelay = 1000) {
+    async fetchWithRetry(url: any, options: any, maxRetries = 10, retryDelay = 1000) {
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
                 const response = await fetch(url, options);
@@ -1952,9 +1920,9 @@ class TokenUtils {
         }
     }
 
-    async fetchProposalVoters(proposalId, blockNumber, setProgress) {
+    async fetchProposalVoters(proposalId: any, blockNumber: any, setProgress: any) {
         const lcdBase = `https://sentry.lcd.injective.network/cosmos/gov/v1/proposals/${proposalId}/votes`;
-        let voters = [];
+        let voters: any[] = [];
         let nextKey = null;
         const maxRetries = 100; // Set the maximum number of retries
 
@@ -1990,7 +1958,7 @@ class TokenUtils {
                     weight: parseFloat(item.options[0].weight)
                 };
             });
-        } catch (error) {
+        } catch {
             // console.error('Error:', error);
         }
         return voters.map(item => {
@@ -2018,15 +1986,15 @@ class TokenUtils {
         return (Number(buyOrders[0].price) / Math.pow(10, decimals)) * Number(injPrice)
     }
 
-    async getSpotMarket(marketId) {
+    async getSpotMarket(marketId: any) {
         return await this.indexerGrpcSpotApi.fetchMarket(marketId);
     }
 
-    async getSpotMarketOrders(marketId) {
+    async getSpotMarketOrders(marketId: any) {
         return await this.indexerGrpcSpotApi.fetchOrders({ marketId });
     }
 
-    constructCW20ToBankMsg(cw20Address, amount, decimals, wallet) {
+    constructCW20ToBankMsg(cw20Address: any, amount: any, decimals: any, wallet: any) {
         const adapterContract = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
 
         const msg = MsgExecuteContractCompat.fromJSON({
@@ -2044,7 +2012,7 @@ class TokenUtils {
         return msg
     }
 
-    constructBankToCW20Msg(cw20Address, amount, decimals, wallet) {
+    constructBankToCW20Msg(cw20Address: any, amount: any, decimals: any, wallet: any) {
         const adapterContract = "inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk"
         const denom = `factory/${adapterContract}/${cw20Address}`
 
@@ -2065,13 +2033,13 @@ class TokenUtils {
         return msg
     }
 
-    constructExecuteRouteMessage(injectiveAddress, route, offer_asset, amount, minReceive, funds) {
+    constructExecuteRouteMessage(injectiveAddress: any, route: any, offer_asset: any, amount: any, minReceive: any, funds: any) {
         const swapOperations = {
             execute_routes: {
                 offer_asset_info: offer_asset,
                 routes: [
                     {
-                        route: route.map((pool) => {
+                        route: route.map((pool: any) => {
                             return {
                                 contract_addr: pool.address,
                             }
@@ -2109,7 +2077,7 @@ class TokenUtils {
         return msg
     }
 
-    async constructSpotMarketOrder(marketId, price, quantity, orderType, decimals, injectiveAddress, feeRecipient) {
+    async constructSpotMarketOrder(marketId: any, price: any, quantity: any, orderType: any, decimals: any, injectiveAddress: any, feeRecipient: any) {
         const marketInfo = await this.indexerGrpcSpotApi.fetchMarket(marketId);
 
         const { priceTensMultiplier, quantityTensMultiplier } = getSpotMarketTensMultiplier({
@@ -2161,12 +2129,12 @@ class TokenUtils {
         return msg
     }
 
-    getHelixShroomBuyQuote(market, orders, quoteAmount, decimals) {
+    getHelixShroomBuyQuote(market: any, orders: any, quoteAmount: any, decimals: any) {
         const takerFeeRate = parseFloat(market.takerFeeRate);
 
         const sellOrders = orders.orders
-            .filter(order => order.orderSide === 'sell')
-            .sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+            .filter((order: any) => order.orderSide === 'sell')
+            .sort((a: any, b: any) => parseFloat(a.price) - parseFloat(b.price));
 
         let totalQuantity = 0;
         let remainingQuote = quoteAmount * (1 - takerFeeRate); // Apply taker fee at the start
@@ -2183,7 +2151,6 @@ class TokenUtils {
                 remainingQuote -= quantityAvailable * price;
             } else {
                 totalQuantity += maxSpendableQuantity;
-                remainingQuote = 0;
                 break;
             }
 
@@ -2204,12 +2171,12 @@ class TokenUtils {
         };
     }
 
-    getHelixShroomSellQuote(market, orders, baseAmount, decimals) {
+    getHelixShroomSellQuote(market: any, orders: any, baseAmount: any, decimals: any) {
         const takerFeeRate = parseFloat(market.takerFeeRate);
 
         const buyOrders = orders.orders
-            .filter(order => order.orderSide === 'buy')
-            .sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+            .filter((order: any) => order.orderSide === 'buy')
+            .sort((a: any, b: any) => parseFloat(b.price) - parseFloat(a.price));
 
         let totalQuote = 0;
         let totalBaseSold = 0;
@@ -2230,7 +2197,6 @@ class TokenUtils {
             } else {
                 totalQuote += remainingBase * price;
                 totalBaseSold += remainingBase;
-                remainingBase = 0;
                 break;
             }
 
@@ -2251,7 +2217,7 @@ class TokenUtils {
         };
     }
 
-    async getHelixMarketQuote(marketId, baseTokenAmount, decimals) {
+    async getHelixMarketQuote(marketId: any, baseTokenAmount: any, decimals: any) {
         const market = await this.indexerGrpcSpotApi.fetchMarket(marketId);
 
         const baseDecimals = decimals;
@@ -2259,7 +2225,6 @@ class TokenUtils {
         const orders = await this.indexerGrpcSpotApi.fetchOrders({ marketId });
 
         const takerFeeRate = parseFloat(market.takerFeeRate);
-        const makerFeeRate = parseFloat(market.makerFeeRate);
 
         const buyOrders = orders.orders.filter(order => order.orderSide === 'buy').sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
         const sellOrders = orders.orders.filter(order => order.orderSide === 'sell').sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
@@ -2267,7 +2232,7 @@ class TokenUtils {
         console.log("buy orders", buyOrders)
         console.log("sell orders", sellOrders)
 
-        function calculateQuoteAmount(orderList, baseTokenAmount, fee) {
+        function calculateQuoteAmount(orderList: any, baseTokenAmount: any, fee: any) {
             let totalPrice = 0;
             let totalQuantity = 0;
             let remainingBaseAmount = baseTokenAmount
@@ -2308,13 +2273,13 @@ class TokenUtils {
         };
     }
 
-    async getAllAccountTx(walletAddress: string, setProgress) {
+    async getAllAccountTx(walletAddress: string, setProgress: any) {
         const api = new IndexerRestExplorerApi("https://sentry.explorer.grpc-web.injective.network/api/explorer/v1");
         const allTransactions = [];
         let skip = 0;
         const limit = 100;
         let totalFetched = 0;
-        let totalTransactions = 0;
+        let totalTransactions: number;
 
         try {
             const tx = await api.fetchAccountTransactions({
