@@ -19,6 +19,7 @@ import { formatNumber } from "../../utils/helpers";
 import { shortAddress } from "../../utils/format";
 import { arrayToCsv, downloadCsv } from "../../utils/csv";
 import { CHOICE_FACTORY } from "../../constants/contractAddresses";
+import { evmAddressUrl, injToEvm } from "../../utils/evm";
 
 
 const dojoBurnAddress = "inj1wu0cs0zl38pfss54df6t7hq82k3lgmcdex2uwn";
@@ -53,6 +54,11 @@ const TokenLiquidity = () => {
 
     const [poolReserves, setPoolReserves] = useState(null);
 
+    // ERC-20 the underlying (non-INJ) token is paired with on the EVM, if any.
+    const [erc20Pair, setErc20Pair] = useState<string | null>(null);
+    // Show LP-holder addresses in their EVM (0x) form.
+    const [showEvm, setShowEvm] = useState(false);
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null)
 
@@ -82,6 +88,7 @@ const TokenLiquidity = () => {
         setPairMarketing(null);
         setProgress("");
         setHolders([]);
+        setErc20Pair(null);
 
         try {
             const pairInfo = await module.getPairInfo(address);
@@ -106,6 +113,7 @@ const TokenLiquidity = () => {
                 if (memeAddress.includes("factory") || memeAddress.includes("peggy") || memeAddress.includes("ibc") || memeAddress == "inj") {
                     const denomMetadata = await module.getDenomExtraMetadata(memeAddress);
                     setTokenInfo(denomMetadata as TokenInfo);
+                    setErc20Pair(await module.getErc20Pair(memeAddress));
                 } else {
                     const tokenInfo = await module.getTokenInfo(memeAddress);
                     setTokenInfo({ ...tokenInfo, denom: memeAddress } as TokenInfo);
@@ -259,6 +267,19 @@ const TokenLiquidity = () => {
                                                 Math.pow(10, tokenInfo.decimals))}
                                         </div>
                                     )}
+                                    {erc20Pair && (
+                                        <div className="mt-1">
+                                            ERC-20:{" "}
+                                            <a
+                                                className="text-emerald-400 underline break-all"
+                                                target="_blank"
+                                                href={evmAddressUrl(currentNetwork, erc20Pair)}
+                                            >
+                                                {shortAddress(erc20Pair)}
+                                            </a>
+                                            <span className="block text-xs text-slate-400">paired on Injective EVM</span>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                             {!pairMarketing && tokenInfo && tokenInfo.logo && (
@@ -351,6 +372,10 @@ const TokenLiquidity = () => {
                         {holders.length > 0 && (
                             <div className="mt-2 overflow-x-auto text-sm">
                                 <button onClick={downloadHoldersCsv} className="p-2 bg-gray-800 hover:bg-gray-900 rounded-sm mb-2 mt-2 font-semibold">Download CSV</button>
+                                <label className="flex items-center gap-2 mb-2 cursor-pointer text-slate-300">
+                                    <input type="checkbox" className="accent-trippyYellow" checked={showEvm} onChange={(e) => setShowEvm(e.target.checked)} />
+                                    Show EVM (0x) addresses
+                                </label>
                                 <div>Total liquidity holders: {holders.length}</div>
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="">
@@ -359,7 +384,7 @@ const TokenLiquidity = () => {
                                                 Position
                                             </th>
                                             <th className="px-4 py-2">
-                                                Address
+                                                {showEvm ? "EVM Address" : "Address"}
                                             </th>
                                             <th className="px-4 py-2">
                                                 Balance
@@ -370,7 +395,10 @@ const TokenLiquidity = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="">
-                                        {holders.map((holder, index) => (
+                                        {holders.map((holder, index) => {
+                                            // inj1 and 0x are the same account — show whichever the toggle asks for.
+                                            const evmAddr = showEvm ? injToEvm(holder.address) : null;
+                                            return (
                                             <tr
                                                 key={index}
                                                 className="border-b"
@@ -380,9 +408,10 @@ const TokenLiquidity = () => {
                                                 </td>
                                                 <td className="px-4 py-1 text-blue-600 flex flex-row items-center">
                                                     <a
-                                                        href={`https://explorer.injective.network/account/${holder.address}`}
+                                                        target="_blank"
+                                                        href={evmAddr ? evmAddressUrl(currentNetwork, evmAddr) : `https://explorer.injective.network/account/${holder.address}`}
                                                     >
-                                                        {holder.address}
+                                                        {evmAddr ?? holder.address}
                                                     </a>
                                                     {
                                                         (WALLET_LABELS as Record<string, any>)[holder.address] ? (
@@ -411,7 +440,8 @@ const TokenLiquidity = () => {
                                                     {holder.percentageHeld.toFixed(2)}%
                                                 </td>
                                             </tr>
-                                        ))}
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>

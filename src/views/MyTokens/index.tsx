@@ -15,6 +15,7 @@ import useNetworkStore from "../../store/useNetworkStore";
 import { performTransaction } from "../../utils/walletStrategy";
 import { MsgChangeAdmin } from "@injectivelabs/sdk-ts";
 import { shortAddress } from "../../utils/format";
+import { buildCreateTokenPairMsg, evmAddressUrl, PAIR_ERC20_GAS } from "../../utils/evm";
 
 // tokenfactory "burn" admin — assigning admin here renounces mint authority.
 const BURN_ADMIN_ADDRESS = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
@@ -35,6 +36,8 @@ interface FactoryToken {
     marketId?: string | null;
     mitoVaultContractAddress?: string | null;
     mitoVault?: any;
+    // ERC-20 address this denom is paired with on Injective EVM, or null.
+    erc20?: string | null;
 }
 
 const MyTokens = () => {
@@ -59,6 +62,9 @@ const MyTokens = () => {
     const [loading, setLoading] = useState(false);
 
     const [loaded, setLoaded] = useState(false);
+
+    // Denom currently being paired to an ERC-20 (disables its row button).
+    const [pairingDenom, setPairingDenom] = useState<string | null>(null);
 
     useEffect(() => {
         setLoaded(false)
@@ -147,7 +153,16 @@ const MyTokens = () => {
                         };
                     });
 
-                    setTokens(extendedTokens as FactoryToken[]);
+                    // Resolve each denom's paired ERC-20 (if any) on the EVM.
+                    const pairModule = new TokenUtils(networkConfig);
+                    const withErc20 = await Promise.all(
+                        extendedTokens.map(async (t) => ({
+                            ...t,
+                            erc20: await pairModule.getErc20Pair(t.token),
+                        }))
+                    );
+
+                    setTokens(withErc20 as FactoryToken[]);
 
                     await getINJPrice()
 
@@ -181,6 +196,22 @@ const MyTokens = () => {
         setLoaded(false)
     }, [connectedAddress])
 
+    // Pair an existing tokenfactory denom with an auto-deployed ERC-20 on the
+    // Injective EVM. Needs the explicit gas limit (inner EVM contract deploy).
+    const pairErc20 = useCallback(async (token: FactoryToken) => {
+        if (!connectedAddress) return
+        setPairingDenom(token.token)
+        try {
+            const msg = buildCreateTokenPairMsg(connectedAddress, token.token)
+            await performTransaction(connectedAddress, [msg], { gas: PAIR_ERC20_GAS })
+            setLoaded(false)
+        } catch (e) {
+            console.error("Failed to pair ERC-20:", e)
+        } finally {
+            setPairingDenom(null)
+        }
+    }, [connectedAddress])
+
     return (
         <>
             {showMetaDataModel !== null && <TokenMetadataModal setShowModal={setShowMetadataModal} token={showMetaDataModel} setLoaded={setLoaded} />}
@@ -194,7 +225,7 @@ const MyTokens = () => {
                         <div className="w-full px-2 ">
                             <div className="text-center text-white mb-5 font-magic">
                                 <div className="text-3xl">
-                                    Mange token factory tokens
+                                    Manage token factory tokens
                                 </div>
                                 <div className="text-lg">on Injective {currentNetwork}</div>
                             </div>
@@ -238,7 +269,7 @@ const MyTokens = () => {
                                                     Refresh
                                                 </button>
                                             </div>
-                                            <div className="flex flex-col">
+                                            <div className="flex flex-col overflow-x-auto">
                                                 {tokens && tokens.length > 0 ? (
                                                     <table className="table-auto w-full">
                                                         <thead>
@@ -248,6 +279,7 @@ const MyTokens = () => {
                                                                 <th className="px-4 py-2">Symbol</th>
                                                                 <th className="px-4 py-2">Description</th>
                                                                 <th className="px-4 py-2">Denom</th>
+                                                                <th className="px-4 py-2">ERC-20</th>
                                                                 <th className="px-4 py-2">Total Supply</th>
                                                                 <th className="px-4 py-2">Decimals</th>
                                                                 <th className="px-4 py-2">Admin</th>
@@ -276,6 +308,27 @@ const MyTokens = () => {
                                                                             href={`${explorerBase}/asset/?denom=${token.token}&tokenType=tokenFactory`}>
                                                                             {shortAddress(token.token)}
                                                                         </a>
+                                                                    </td>
+                                                                    <td className="px-4 py-2 text-xs">
+                                                                        {token.erc20 ? (
+                                                                            <a
+                                                                                target="_blank"
+                                                                                className="underline text-emerald-400"
+                                                                                href={evmAddressUrl(currentNetwork, token.erc20)}
+                                                                            >
+                                                                                {shortAddress(token.erc20)}
+                                                                            </a>
+                                                                        ) : token.metadata.admin == connectedAddress ? (
+                                                                            <button
+                                                                                disabled={pairingDenom === token.token}
+                                                                                onClick={() => { void pairErc20(token) }}
+                                                                                className="bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 shadow-lg px-2 py-1 rounded-lg text-xs"
+                                                                            >
+                                                                                {pairingDenom === token.token ? "pairing…" : "Pair ERC-20"}
+                                                                            </button>
+                                                                        ) : (
+                                                                            <span className="text-slate-500">none</span>
+                                                                        )}
                                                                     </td>
                                                                     <td className="px-4 py-2 text-xs">{(token.metadata.total_supply! / Math.pow(10, token.metadata.decimals)).toLocaleString()}</td>
                                                                     <td className="px-4 py-2 text-xs">{token.metadata.decimals}</td>

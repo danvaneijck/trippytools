@@ -23,9 +23,13 @@ export interface TokenHoldersTableProps {
     lastLoadedAddress: string;
     liquidity: any[];
     findingLiq: boolean;
+    // When true, render holder addresses in their EVM (0x) form, linked to the
+    // Blockscout explorer for the given network.
+    showEvm?: boolean;
+    network?: "mainnet" | "testnet";
 }
 
-const TokenHoldersTable = ({ holders, startIndex, hasSplitBalances, WALLET_LABELS, lastLoadedAddress, liquidity, findingLiq }: TokenHoldersTableProps) => {
+const TokenHoldersTable = ({ holders, startIndex, hasSplitBalances, WALLET_LABELS, lastLoadedAddress, liquidity, findingLiq, showEvm, network }: TokenHoldersTableProps) => {
     const totalHolders = holders.length;
 
     return (
@@ -34,7 +38,7 @@ const TokenHoldersTable = ({ holders, startIndex, hasSplitBalances, WALLET_LABEL
                 className={`grid ${hasSplitBalances ? 'grid-cols-7' : 'grid-cols-6'} gap-4 items-center text-left`}
             >
                 <div className="col-span-1 overflow-hidden text-ellipsis font-bold">Position</div>
-                <div className="col-span-2 overflow-hidden text-ellipsis font-bold">Address</div>
+                <div className="col-span-2 overflow-hidden text-ellipsis font-bold">{showEvm ? "EVM Address" : "Address"}</div>
                 <div className="col-span-1 overflow-hidden text-ellipsis font-bold">{hasSplitBalances ? "CW20 Balance" : "Balance"}</div>
                 {hasSplitBalances && <div className="col-span-1 overflow-hidden text-ellipsis font-bold">Bank Balance</div>}
                 <div className="col-span-1 overflow-hidden text-ellipsis font-bold">Percentage</div>
@@ -53,6 +57,8 @@ const TokenHoldersTable = ({ holders, startIndex, hasSplitBalances, WALLET_LABEL
                     lastLoadedAddress,
                     liquidity,
                     findingLiq,
+                    showEvm,
+                    network,
                 }}
             >
                 {HolderRow}
