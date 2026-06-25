@@ -150,6 +150,12 @@ mutation updateTokenHolders($address: String!){
 
 const ITEMS_PER_PAGE = 50;
 
+// If the reported progress hasn't advanced for this long, the backend update
+// task has almost certainly died (e.g. the worker was killed mid-run, which
+// leaves the progress fields frozen). Treat it as stuck and re-offer Refresh so
+// the user isn't stranded staring at a progress bar that will never move.
+const STUCK_AFTER_MS = 2 * 60 * 1000;
+
 interface ProgressBarProps {
     queryProgress: number | null;
     saveProgress: number | null;
@@ -267,6 +273,14 @@ const TokenHolders = () => {
     const [queryProgress, setQueryProgress] = useState<number | null>(null)
     const [saveProgress, setSaveProgress] = useState<number | null>(null)
 
+    // True once an in-progress update has stopped advancing for STUCK_AFTER_MS —
+    // i.e. its worker died and the progress fields are frozen.
+    const [progressStalled, setProgressStalled] = useState(false)
+    // Last seen progress signature + when it last changed, to detect the stall.
+    // Seeded with at:0 (no Date.now() during render); the effect below resets it
+    // before the timestamp is ever used in a comparison.
+    const progressStallRef = useRef<{ sig: string; at: number }>({ sig: "", at: 0 })
+
     const startIndex = useMemo(() => {
         return (currentPage - 1) * ITEMS_PER_PAGE;
     }, [currentPage]);
@@ -363,6 +377,19 @@ const TokenHolders = () => {
 
         setQueryProgress(minQueryProgress);
         setSaveProgress(minSaveProgress);
+
+        // Stall detection: this effect re-runs on every poll (every 5s). If the
+        // progress signature is unchanged for STUCK_AFTER_MS, the update task is
+        // dead and we surface Refresh again (see below). Any change — including
+        // progress clearing to null on completion — resets the timer.
+        const sig = `${minQueryProgress}|${minSaveProgress}`;
+        const now = Date.now();
+        if ((minQueryProgress === null && minSaveProgress === null) || sig !== progressStallRef.current.sig) {
+            progressStallRef.current = { sig, at: now };
+            setProgressStalled(false);
+        } else if (now - progressStallRef.current.at > STUCK_AFTER_MS) {
+            setProgressStalled(true);
+        }
 
         if (!minQueryProgress && !minSaveProgress) void refetch();
     }, [progressData, refetch]);
@@ -803,14 +830,19 @@ const TokenHolders = () => {
                                     Unknown last updated <GrStatusUnknown className="text-base" />
                                 </span>
                             }
-                            {!queryProgress && !saveProgress &&
+                            {(!queryProgress && !saveProgress || progressStalled) &&
                                 <button onClick={handleUpdateTokenHolders} className={BTN}>
                                     Refresh
                                 </button>
                             }
+                            {progressStalled &&
+                                <span className="flex items-center gap-1 text-amber-400">
+                                    <MdWarning className="text-base" /> Update looks stuck — try Refresh
+                                </span>
+                            }
                         </div>
                     }
-                    {(queryProgress || saveProgress) &&
+                    {(queryProgress || saveProgress) && !progressStalled &&
                         <ProgressBar queryProgress={queryProgress} saveProgress={saveProgress} />
                     }
                     {error && <div className="mt-3 rounded-lg bg-red-500/10 px-3 py-2 font-sans text-sm text-red-400">
