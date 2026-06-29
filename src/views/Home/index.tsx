@@ -189,7 +189,7 @@ const Home = () => (
                 </div>
             </section>
 
-            {/* ---- pump.trippyinj.xyz launchpad ad (external, testnet) ---- */}
+            {/* ---- pump.trippyinj.xyz launchpad ad (external, mainnet) ---- */}
             <a
                 href="https://pump.trippyinj.xyz"
                 target="_blank"
@@ -205,16 +205,17 @@ const Home = () => (
                             <span className="text-[11px] uppercase tracking-[0.22em] text-white/40">
                                 Launchpad
                             </span>
-                            <span className="rounded-full border border-trippyYellow/40 bg-trippyYellow/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-trippyYellow">
-                                Testnet
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                Live
                             </span>
                         </div>
                         <div className="text-lg font-semibold text-white">
                             pump.trippyinj.xyz
                         </div>
                         <div className="font-sans text-sm text-white/55">
-                            Launch and trade tokens on a fair bonding curve — the
-                            upcoming SAI use case. Live now on testnet.
+                            Launch and trade tokens on a fair bonding curve — now
+                            live on Injective mainnet.
                         </div>
                     </div>
                 </div>
