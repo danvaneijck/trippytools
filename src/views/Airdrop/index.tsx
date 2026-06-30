@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import TokenUtils from "../../modules/tokenUtils";
 import { GridLoader } from "react-spinners";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import ConnectWallet from "../../components/App/ConnectKeplr";
 import ShroomBalance from "../../components/App/ShroomBalance";
 import { WALLET_LABELS } from "../../constants/walletLabels";
@@ -54,6 +54,8 @@ const Airdrop = () => {
 
     const { tokens } = useTokenStore();
     const { pools } = useLiquidityPoolStore();
+
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const [tokenAddress, setTokenAddress] = useState<any>(null);
     const [tokenInfo, setTokenInfo] = useState<any>(null);
@@ -324,6 +326,20 @@ const Airdrop = () => {
         },
         [networkConfig],
     );
+
+    // Deep-link prefill: an external tool (e.g. the SHROOM launchpad's "airdrop
+    // this token" link) can open `/airdrop?token=<denom-or-contract>` to
+    // pre-load the "token to airdrop" field. Consumed once on mount and stripped
+    // from the URL so a later manual clear of the field isn't undone on rerender.
+    useEffect(() => {
+        const prefill = searchParams.get("token");
+        if (!prefill) return;
+        setTokenAddress({ value: prefill, label: prefill });
+        const next = new URLSearchParams(searchParams);
+        next.delete("token");
+        setSearchParams(next, { replace: true });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         if (!loading) setProgress("");
