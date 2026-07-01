@@ -2041,6 +2041,160 @@ class TokenUtils {
         }
     }
 
+    // Injective Community BuyBack (mainnet) — the monthly buyback "Auction"
+    // CosmWasm contract. Participants join a round via `bid`; the reward basket
+    // is distributed pro-rata and the committed INJ is burned. Mainnet-only.
+    static BUYBACK_CONTRACT = "inj10n78w79xhxmytnuhjcck633nj4e7hrqaglgnfz";
+    static BUYBACK_LCD = "https://sentry.lcd.injective.network";
+
+    // Enumerate the completed/open buyback rounds by walking `get_round_info`
+    // from round 1 until the contract reports no such round. Returns lightweight
+    // metadata used to build the round picker (round #, month, INJ committed).
+    async fetchBuybackRounds() {
+        const contract = TokenUtils.BUYBACK_CONTRACT;
+        const lcd = TokenUtils.BUYBACK_LCD;
+        const rounds: {
+            round: number;
+            totalDeposit: number;
+            usedSlots: number;
+            startDate: number;
+            endDate: number;
+            chainRound: number;
+            basketTokens: number;
+        }[] = [];
+        for (let round = 1; round <= 120; round++) {
+            const query = btoa(JSON.stringify({ get_round_info: { round_id: round } }));
+            let data: any;
+            try {
+                data = await this.fetchWithRetry(
+                    `${lcd}/cosmwasm/wasm/v1/contract/${contract}/smart/${query}`,
+                    { method: "GET", headers: { "Content-Type": "application/json" } },
+                    2,
+                );
+            } catch {
+                break; // round doesn't exist yet — we've reached the end
+            }
+            const d = data?.data;
+            if (!d || d.id === undefined) break;
+            rounds.push({
+                round,
+                totalDeposit: Number(d.total_deposit || 0) / 1e18,
+                usedSlots: Number(d.used_slots || 0),
+                startDate: Number(d.start_date || 0),
+                endDate: Number(d.end_date || 0),
+                chainRound: Number(d.chain_round || 0),
+                basketTokens: Array.isArray(d.basket) ? d.basket.length : 0,
+            });
+        }
+        return rounds;
+    }
+
+    // Fetch every wallet that committed INJ in a given buyback round, with the
+    // amount they committed. The contract has no "list participants" query, so we
+    // iterate its raw state: participants live in a cw-storage-plus
+    // Map<(u64 round_id, Addr), UserRoundInfo> under the `user_round_info`
+    // namespace, and each entry's value already carries wallet + round_id +
+    // deposit — no key parsing needed. We craft the state start-key so pagination
+    // begins at this round's first entry and stop once it leaves the map or
+    // crosses into a later round.
+    //
+    // NB: whitelisting a wallet creates a user_round_info row with deposit 0, so a
+    // round can hold thousands of 0-deposit reservations (recent rounds have ~14k
+    // whitelisted vs ~280 who actually committed). We keep only deposit > 0 rows
+    // (the real committers) and, given `expectedTotalInj` (the round's
+    // total_deposit), stop early once the found deposits account for it — which
+    // also short-circuits the currently-open round (no deposits yet). Verified:
+    // per-round committer deposits sum exactly to the round's total_deposit.
+    // Mainnet-only.
+    async fetchBuybackParticipants(round: number, expectedTotalInj: number | undefined, setProgress: any) {
+        const contract = TokenUtils.BUYBACK_CONTRACT;
+        const lcd = TokenUtils.BUYBACK_LCD;
+
+        // start key = 0x00 <len> "user_round_info" 0x00 0x08 <round: u64 BE>
+        const nsBytes = new TextEncoder().encode("user_round_info");
+        const startKey = new Uint8Array(2 + nsBytes.length + 2 + 8);
+        startKey[0] = 0;
+        startKey[1] = nsBytes.length;
+        startKey.set(nsBytes, 2);
+        const roundOff = 2 + nsBytes.length;
+        startKey[roundOff] = 0;
+        startKey[roundOff + 1] = 8;
+        new DataView(startKey.buffer).setBigUint64(roundOff + 2, BigInt(round), false);
+
+        // Namespace prefix (0x00 <len> "user_round_info") shared by every entry in
+        // the map — used to detect when pagination walks past the map.
+        const nsPrefix = startKey.slice(0, 2 + nsBytes.length);
+
+        const bytesToB64 = (b: Uint8Array) => btoa(String.fromCharCode(...b));
+        const b64ToBytes = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+        // The state endpoint marshals model keys as HexBytes, so `key` is an
+        // uppercase-hex string (not base64) — decode it directly to raw key bytes.
+        // (Values are plain base64; next_key is raw-bytes base64.)
+        const modelKeyBytes = (s: string) => {
+            const out = new Uint8Array(s.length >> 1);
+            for (let i = 0; i < out.length; i++) out[i] = parseInt(s.substr(i * 2, 2), 16);
+            return out;
+        };
+        const startsWith = (a: Uint8Array, p: Uint8Array) =>
+            a.length >= p.length && p.every((v, i) => a[i] === v);
+
+        // The open round can carry a very large 0-deposit whitelist with nothing
+        // committed yet — don't scan it at all.
+        if (expectedTotalInj !== undefined && expectedTotalInj <= 0) return [];
+
+        const participants: { address: string; deposit: number }[] = [];
+        let committedSum = 0;
+        let scanned = 0;
+        let pageKey: string | null = bytesToB64(startKey);
+        const maxPages = 500; // whitelist rows can be numerous; early-stop usually hits first
+
+        for (let page = 0; page < maxPages; page++) {
+            const url =
+                `${lcd}/cosmwasm/wasm/v1/contract/${contract}/state` +
+                `?pagination.limit=100&pagination.key=${encodeURIComponent(pageKey as string)}`;
+            const data = await this.fetchWithRetry(
+                url,
+                { method: "GET", headers: { "Content-Type": "application/json" } },
+                50,
+            );
+            const models: any[] = data?.models ?? [];
+            let done = false;
+            for (const m of models) {
+                if (!startsWith(modelKeyBytes(m.key), nsPrefix)) {
+                    done = true; // left the user_round_info map
+                    break;
+                }
+                let v: any;
+                try {
+                    v = JSON.parse(new TextDecoder().decode(b64ToBytes(m.value)));
+                } catch {
+                    continue;
+                }
+                if (typeof v?.round_id !== "number" || !v.wallet) continue;
+                if (v.round_id > round) {
+                    done = true; // crossed into a later round
+                    break;
+                }
+                if (v.round_id !== round) continue;
+                scanned++;
+                const deposit = Number(v.deposit || 0) / 1e18;
+                if (deposit > 0) {
+                    participants.push({ address: v.wallet, deposit });
+                    committedSum += deposit;
+                }
+            }
+            if (setProgress) setProgress(`${participants.length} participants (scanned ${scanned})`);
+            // Every committed INJ accounted for — the rest of the whitelist never bid.
+            if (expectedTotalInj !== undefined && expectedTotalInj > 0 && committedSum >= expectedTotalInj - 1e-6) {
+                done = true;
+            }
+            const nextKey = data?.pagination?.next_key;
+            if (done || !nextKey) break;
+            pageKey = nextKey;
+        }
+        return participants;
+    }
+
     async fetchProposalVoters(proposalId: any, blockNumber: any, setProgress: any) {
         const lcdBase = `https://sentry.lcd.injective.network/cosmos/gov/v1/proposals/${proposalId}/votes`;
         let voters: any[] = [];

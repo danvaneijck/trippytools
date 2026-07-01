@@ -44,6 +44,7 @@ const DROP_MODE_OPTIONS: { value: DropMode; label: string }[] = [
     { value: "CSV", label: "Custom CSV file upload" },
     { value: "GOV", label: "Proposal Voters" },
     { value: "MITO", label: "Mito Vault Holders / Stakers" },
+    { value: "BUYBACK", label: "Community BuyBack Participants" },
 ];
 
 const isNativeDenom = (denom: string) =>
@@ -87,6 +88,13 @@ const Airdrop = () => {
     const [proposalNumber, setProposalNumber] = useState("417");
     const [blockHeight, setBlockHeight] = useState(76938079);
     const [attemptFindBlock, setAttemptFindBlock] = useState(true);
+
+    // Community BuyBack: pick a monthly round, then load its committed wallets.
+    // `total` carries the round's total_deposit (INJ) so the fetch can stop once
+    // every committer is found.
+    type BuybackRoundOption = { value: number; label: string; total: number };
+    const [buybackRounds, setBuybackRounds] = useState<BuybackRoundOption[]>([]);
+    const [buybackRound, setBuybackRound] = useState<BuybackRoundOption | null>(null);
 
     const [criteria, setCriteria] = useState("");
     const [description, setDescription] = useState("");
@@ -147,6 +155,45 @@ const Airdrop = () => {
         setAirdropDetails([]);
         setCsvInvalidRows([]);
     }, [dropMode.value]);
+
+    // Load the list of buyback rounds once, when the mode is first opened on
+    // mainnet (the program is mainnet-only). Newest round first.
+    useEffect(() => {
+        if (dropMode.value !== "BUYBACK" || currentNetwork !== "mainnet") return;
+        if (buybackRounds.length > 0) return;
+        let cancelled = false;
+        void (async () => {
+            try {
+                const module = new TokenUtils(networkConfig);
+                const rounds = await module.fetchBuybackRounds();
+                if (cancelled) return;
+                const opts = rounds
+                    .slice()
+                    .reverse()
+                    .map((r) => ({
+                        value: r.round,
+                        total: r.totalDeposit,
+                        label: `Round ${r.round} — ${
+                            r.startDate ? dayjs.unix(r.startDate).format("MMM YYYY") : "?"
+                        } · ${r.totalDeposit.toLocaleString(undefined, { maximumFractionDigits: 0 })} INJ committed`,
+                    }));
+                setBuybackRounds(opts);
+                if (opts.length) setBuybackRound((prev) => prev ?? opts[0]);
+            } catch (e) {
+                console.log(e);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dropMode.value, currentNetwork, networkConfig]);
+
+    // Changing the selected round invalidates any loaded participant list.
+    useEffect(() => {
+        if (dropMode.value === "BUYBACK") setAirdropDetails([]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [buybackRound]);
 
     const getMitoVaultHolders = useCallback(
         async (vaultAddress: any) => {
@@ -250,6 +297,10 @@ const Airdrop = () => {
         } else if (dropMode.value === "MITO") {
             criteriaUpdate = `Holders of ${mitoHolderType === "stake" ? "staked" : "all"} LP tokens in the ${selectedMitoVault.value.baseToken.name} mito vault at ${now}`;
             descriptionUpdate = `${mode} drop of ${totalToDrop} ${tokenInfo.symbol} to holders of ${selectedMitoVault.value.baseToken.name} mito vault tokens`;
+        } else if (dropMode.value === "BUYBACK") {
+            const roundLabel = buybackRound ? `round ${buybackRound.value}` : "a round";
+            criteriaUpdate = `Participants of Community BuyBack ${roundLabel} at ${now}`;
+            descriptionUpdate = `${mode} drop of ${totalToDrop} ${tokenInfo.symbol} to Community BuyBack ${roundLabel} participants`;
         }
 
         setCriteria(criteriaUpdate);
@@ -266,6 +317,7 @@ const Airdrop = () => {
         proposalNumber,
         selectedMitoVault,
         mitoHolderType,
+        buybackRound,
     ]);
 
     async function fetchBlock(height: any) {
@@ -622,6 +674,39 @@ const Airdrop = () => {
             setLoading(false);
         }
     }, [getProposalAndBlockHeight, proposalNumber, networkConfig, dropAmount, attemptFindBlock, blockHeight]);
+
+    const getBuybackParticipants = useCallback(async () => {
+        if (!buybackRound) {
+            setError("select a buyback round");
+            return;
+        }
+        setAirdropDetails([]);
+        setLoading(true);
+        setError(null);
+        try {
+            const module = new TokenUtils(networkConfig);
+            const participants = await module.fetchBuybackParticipants(
+                buybackRound.value,
+                buybackRound.total,
+                setProgress,
+            );
+            const base: AirdropRecipient[] = participants
+                .map((p) => ({
+                    address: p.address,
+                    balance: p.deposit,
+                    amountToAirdrop: 0,
+                    percentToAirdrop: 0,
+                    includeInDrop: true,
+                }))
+                .sort((a, b) => (b.balance ?? 0) - (a.balance ?? 0));
+            setAirdropDetails(allocate(base, activeDist, dropAmount));
+            setLoading(false);
+        } catch (e) {
+            console.log(e);
+            setError((e as any)?.message ?? "Failed to fetch buyback participants");
+            setLoading(false);
+        }
+    }, [buybackRound, networkConfig, activeDist, dropAmount]);
 
     const csvTotal = useMemo(
         () => airdropDetails.reduce((sum, r) => sum + (r.includeInDrop ? Number(r.amountToAirdrop) || 0 : 0), 0),
@@ -1026,6 +1111,74 @@ const Airdrop = () => {
                                                             network={currentNetwork}
                                                             csvFilename={`airdrop-${tokenSymbol}-gov.csv`}
                                                         />
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {dropMode.value === "BUYBACK" && (
+                                                <div>
+                                                    {currentNetwork !== "mainnet" ? (
+                                                        <div className="text-amber-400 text-sm">
+                                                            Community BuyBack is a mainnet-only program. Switch to
+                                                            mainnet to load round participants.
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <div className="space-y-2">
+                                                                <label className="text-base font-bold text-white">
+                                                                    BuyBack round
+                                                                </label>
+                                                                <Select
+                                                                    className="text-black"
+                                                                    value={buybackRound}
+                                                                    onChange={setBuybackRound}
+                                                                    options={buybackRounds}
+                                                                    isLoading={buybackRounds.length === 0}
+                                                                    placeholder={
+                                                                        buybackRounds.length
+                                                                            ? "Select a round"
+                                                                            : "Loading rounds…"
+                                                                    }
+                                                                />
+                                                                <div className="text-xs text-slate-400">
+                                                                    Wallets that committed INJ in the selected monthly
+                                                                    buyback round.
+                                                                </div>
+                                                            </div>
+                                                            <div className="mt-4 mb-2">
+                                                                <DistributionToggle
+                                                                    value={distMode}
+                                                                    onChange={setDistMode}
+                                                                />
+                                                            </div>
+                                                            <button
+                                                                disabled={loading || !buybackRound}
+                                                                onClick={() => {
+                                                                    void getBuybackParticipants();
+                                                                }}
+                                                                className="bg-gray-800 hover:bg-gray-700 rounded-lg p-2 w-full text-white mt-2 shadow-lg disabled:opacity-50"
+                                                            >
+                                                                Get participants
+                                                            </button>
+                                                            {airdropDetails.length > 0 && (
+                                                                <AirdropListSection
+                                                                    recipients={airdropDetails}
+                                                                    setRecipients={setAirdropDetails}
+                                                                    distMode={activeDist}
+                                                                    total={dropAmount}
+                                                                    tokenSymbol={tokenSymbol}
+                                                                    tokenDecimals={tokenDecimals}
+                                                                    sourceSymbol="INJ"
+                                                                    sourceDecimals={2}
+                                                                    filter="none"
+                                                                    columns={{ include: true, position: true, balance: true }}
+                                                                    network={currentNetwork}
+                                                                    csvFilename={`airdrop-${tokenSymbol}-buyback-round-${
+                                                                        buybackRound?.value ?? ""
+                                                                    }.csv`}
+                                                                />
+                                                            )}
+                                                        </>
                                                     )}
                                                 </div>
                                             )}
