@@ -25,6 +25,7 @@ import { humanReadableAmount } from "./format";
 import type { AirdropRecipient, DistMode, DropMode } from "./types";
 import DistributionToggle from "./components/DistributionToggle";
 import AirdropListSection from "./components/AirdropListSection";
+import { withShroomMetadata } from "../../modules/shroomTokenMeta";
 
 const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl";
 const STAKING_CONTRACT_ADDRESS = "inj1gtze7qm07nky47n7mwgj4zatf2s77xqvh3k2n8";
@@ -394,12 +395,17 @@ const Airdrop = () => {
         if (isNativeDenom(tokenAddress.value)) {
             module
                 .getDenomExtraMetadata(tokenAddress.value)
+                // SHROOM launch tokens carry a raw subdenom as their on-chain
+                // name/symbol; overlay the friendly name/symbol/logo pulled from
+                // the launchpad metadata (no-op for every other denom). decimals
+                // stay from the on-chain metadata, so balance math is unchanged.
+                .then((meta) => withShroomMetadata(tokenAddress.value, meta))
                 .then((meta) => {
                     setTokenInfo(meta);
                     module
                         .getBalanceOfToken(tokenAddress.value, connectedAddress as string)
                         .then((r) => {
-                            const bal = Number(r.amount) / Math.pow(10, (meta as any).decimals);
+                            const bal = Number(r.amount) / Math.pow(10, meta.decimals);
                             setBalance(bal);
                             setBalanceToDrop(String(bal));
                             setLoading(false);
