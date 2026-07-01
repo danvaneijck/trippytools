@@ -2,7 +2,7 @@
 
 export type DistMode = "fair" | "proportionate";
 
-export type DropMode = "NFT" | "TOKEN" | "CSV" | "GOV" | "MITO";
+export type DropMode = "NFT" | "TOKEN" | "CSV" | "GOV" | "MITO" | "BUYBACK";
 
 export type VoteOption =
     | "VOTE_OPTION_YES"
