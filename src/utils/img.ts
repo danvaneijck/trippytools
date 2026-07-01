@@ -28,3 +28,13 @@ export const resolveImageUrl = (src?: string | null, size = 96): string => {
     const dim = Math.max(Math.round(size), 32);
     return `https://wsrv.nl/?url=${encodeURIComponent(toHttp(s))}&n=-1&w=${dim}&h=${dim}`;
 };
+
+// The un-proxied, gateway-normalised URL. Used as an intermediate fallback when
+// the wsrv.nl proxy refuses a source outright — e.g. it 400s "Domain or TLD
+// blocked by policy" for hosts like postimg.cc, even though the image loads fine
+// directly. Returns '' for empty input.
+export const directImageUrl = (src?: string | null): string => {
+    if (!src) return '';
+    const s = src.trim();
+    return s ? toHttp(s) : '';
+};
