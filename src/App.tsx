@@ -17,6 +17,7 @@ import PreSaleTool from './views/PresaleTool';
 import DojoWhitelist from './views/DojoWhitelist';
 import Header from './components/App/Header';
 import ShroomHub from './views/ShroomHub';
+import EcosystemExplorer from './views/EcosystemExplorer';
 import QuntUnwrap from './views/QuntUnwrap';
 import WalletExport from './views/WalletExport';
 import WalletSelectModal from './components/Modals/WalletSelectModal';
@@ -61,6 +62,7 @@ const App = () => {
           <Route path="/pre-sale-tool" element={<PreSaleTool />} />
           <Route path="/dojo-whitelist" element={<DojoWhitelist />} />
           <Route path="/shroom-hub" element={<ShroomHub />} />
+          <Route path="/ecosystem" element={<EcosystemExplorer />} />
           <Route path="/qunt-unwrap" element={<QuntUnwrap />} />
           <Route path="/wallet-export" element={<WalletExport />} />
           <Route path="/" element={<Home />} />
