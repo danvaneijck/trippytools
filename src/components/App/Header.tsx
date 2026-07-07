@@ -29,6 +29,9 @@ const Header = () => {
                     <Link to="/shroom-hub" className={getLinkStyle('/shroom-hub')}>
                         Info
                     </Link>
+                    <Link to="/ecosystem" className={getLinkStyle('/ecosystem')}>
+                        Ecosystem
+                    </Link>
                     <Link to="/token-holders" className={getLinkStyle('/token-holders')}>
                         Holders
                     </Link>
@@ -107,6 +110,9 @@ const Header = () => {
                     </Link>
                     <Link to="/shroom-hub" className={getLinkStyle('/shroom-hub')} onClick={toggleMenu}>
                         Info
+                    </Link>
+                    <Link to="/ecosystem" className={getLinkStyle('/ecosystem')} onClick={toggleMenu}>
+                        Ecosystem Explorer
                     </Link>
                     <Link to="/token-holders" className={getLinkStyle('/token-holders')} onClick={toggleMenu}>
                         Holder tool

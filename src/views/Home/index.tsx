@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import {
     FaArrowRight,
     FaBullhorn,
+    FaChartLine,
     FaCoins,
     FaDiscord,
     FaFire,
@@ -60,6 +61,7 @@ const FEATURED = [
 
 // Secondary tools — accessible, but a tier below the headline three.
 const MORE_TOOLS = [
+    { to: '/ecosystem', icon: <FaChartLine />, label: 'Ecosystem Explorer' },
     { to: '/manage-tokens', icon: <FaCoins />, label: 'Manage tokens' },
     { to: '/airdrop', icon: <FaParachuteBox />, label: 'Airdrops' },
     { to: '/nft-airdrop', icon: <FaImages />, label: 'NFT drop' },
