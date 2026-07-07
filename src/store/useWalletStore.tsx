@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { safeJSONStorage } from '../utils/safeStorage';
 
 export interface WalletStore {
 
@@ -31,6 +32,9 @@ const useWalletStore = create<WalletStore>()(
         }),
         {
             name: 'wallet-storage',
+            // Small, but route through the crash-safe storage so a full/blocked
+            // localStorage can never white-screen the app on write.
+            storage: safeJSONStorage,
         }
     )
 );
