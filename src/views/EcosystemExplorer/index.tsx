@@ -473,7 +473,9 @@ const EcosystemExplorer = () => {
                         Volume, traders and swaps are unioned across Choice AMM, CLMM and Helix
                         spot orderbook markets. A trade counts toward both sides of its pair, so
                         quote tokens (INJ, USDT…) carry everything traded against them. Traders
-                        are unique wallets, deduplicated across venues. Holder counts come from
+                        are unique wallets, deduplicated across venues. Liquidity is the sum of
+                        every venue the Choice indexer values — XYK pool reserves, CLMM pool TVL
+                        and Mito vaults — also credited to both sides. Holder counts come from
                         the trippy holder tracker and only exist for tokens it has indexed —
                         hover for snapshot age.
                     </p>

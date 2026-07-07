@@ -45,6 +45,7 @@ export const MARKET_STATS_QUERY = gql`
     query EcosystemMarketStats {
         analytics_tokenmarketstats {
             token_id
+            liquidity_usd
             volume_usd_24h
             volume_usd_7d
             volume_usd_30d
@@ -141,6 +142,13 @@ export const buildRows = (
         const row = byAddress.get(m.token_id);
         if (!row) continue;
         row.hasMarketStats = true;
+        // Prefer the rollup's cross-venue liquidity SUM (XYK + CLMM + Mito
+        // vaults, both sides, canonical) — tokenstats' total_liquidity_usd is
+        // only the single most-liquid venue's TVL, which made e.g. SHROOM and
+        // SAI report the identical figure (their shared pool).
+        if (m.liquidity_usd != null) {
+            row.liquidityUsd = Number(m.liquidity_usd) || 0;
+        }
         for (const w of STAT_WINDOWS) {
             const suffix = w;
             row.volume[w] = Number(m[`volume_usd_${suffix}`]) || 0;
