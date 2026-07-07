@@ -183,17 +183,21 @@ const EcosystemExplorer = () => {
         }
     }, [prefs]);
 
+    // Backend refreshes TokenStats every minute — 60s keeps price/Δ%/liquidity
+    // near-live without re-pulling the 500KB all-tokens payload too often.
     const tokensQ = useQuery(ECOSYSTEM_TOKENS_QUERY, {
         client: choiceClient,
         fetchPolicy: 'cache-and-network',
-        pollInterval: 120_000,
+        pollInterval: 60_000,
     });
     // Separate query + errorPolicy so the table keeps rendering while the
     // TokenMarketStats backend (windowed volume/traders) isn't deployed yet.
+    // The backend's fast lane rewrites the *_24h columns every minute; a 30s
+    // poll on this small (~400-row) table keeps the page within ~90s of chain.
     const marketQ = useQuery(MARKET_STATS_QUERY, {
         client: choiceClient,
         fetchPolicy: 'cache-and-network',
-        pollInterval: 120_000,
+        pollInterval: 30_000,
         errorPolicy: 'all',
     });
     const holdersQ = useQuery(HOLDER_COUNTS_QUERY, {
