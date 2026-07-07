@@ -64,17 +64,16 @@ export const MARKET_STATS_QUERY = gql`
 `;
 
 // trippinj backend (DEFAULT Apollo client, not choiceClient): per-token holder
-// counts via the nested balances aggregate, for every tracked token at once.
+// counts. The backend keeps a cheap holder_count scalar fresh on a schedule
+// (chain count_total / CW20+adapter union), so we read that instead of
+// aggregating the per-wallet balance table — the detailed breakdown stays on
+// the Holder tool. holder_count is null until the schedule has counted a token.
 export const HOLDER_COUNTS_QUERY = gql`
     query EcosystemHolderCounts {
         token_tracker_token {
             address
-            holders_last_updated
-            holder_count: balances_aggregate(where: { balance: { _gt: 0 } }) {
-                aggregate {
-                    count
-                }
-            }
+            holder_count
+            holder_count_last_updated
         }
     }
 `;
@@ -160,10 +159,9 @@ export const buildRows = (
     for (const h of holderRows ?? []) {
         const row = byAddress.get(h.address);
         if (!row) continue;
-        const count = h.holder_count?.aggregate?.count;
-        if (count != null) {
-            row.holders = Number(count);
-            row.holdersUpdated = h.holders_last_updated ?? null;
+        if (h.holder_count != null) {
+            row.holders = Number(h.holder_count);
+            row.holdersUpdated = h.holder_count_last_updated ?? null;
         }
     }
 
