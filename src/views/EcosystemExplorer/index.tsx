@@ -45,6 +45,7 @@ type SortKey =
     | 'swaps'
     | 'liquidity'
     | 'marketCap'
+    | 'fdv'
     | 'holders';
 
 interface Prefs {
@@ -93,6 +94,8 @@ const sortValue = (r: EcoTokenRow, key: SortKey, w: StatWindow): number | string
             return r.liquidityUsd;
         case 'marketCap':
             return r.marketCap;
+        case 'fdv':
+            return r.fdv;
         case 'holders':
             return r.holders ?? -1;
     }
@@ -110,9 +113,25 @@ const ChangeCell = ({ value }: { value: number | null }) => {
 };
 
 const TokenAvatar = ({ logo, symbol }: { logo: string | null; symbol: string }) => {
-    const [failed, setFailed] = useState(false);
-    const url = resolveImageUrl(logo, 64);
-    if (!url || failed) {
+    const [stage, setStage] = useState(0);
+    // Graduated shroompad tokens arrive with logos already served by the
+    // launchpad's own resizing webp proxy (…trippyinj.xyz/img). Re-wrapping
+    // those in wsrv.nl 400s — it refuses the nested postimg.cc source by
+    // policy — so already-proxied URLs go direct. Everything else tries the
+    // wsrv proxy first, then the raw source (rescues other wsrv-blocked
+    // hosts), then the letter fallback.
+    const sources: string[] = [];
+    if (logo) {
+        if (logo.includes('trippyinj.xyz/img')) {
+            sources.push(logo);
+        } else {
+            const proxied = resolveImageUrl(logo, 64);
+            if (proxied) sources.push(proxied);
+            if (/^https?:\/\//i.test(logo) && logo !== proxied) sources.push(logo);
+        }
+    }
+    const src = sources[stage];
+    if (!src) {
         return (
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-white/60">
                 {symbol.slice(0, 1).toUpperCase()}
@@ -121,10 +140,10 @@ const TokenAvatar = ({ logo, symbol }: { logo: string | null; symbol: string }) 
     }
     return (
         <img
-            src={url}
+            src={src}
             alt={symbol}
             className="h-7 w-7 shrink-0 rounded-full bg-white/10 object-cover"
-            onError={() => setFailed(true)}
+            onError={() => setStage((s) => s + 1)}
         />
     );
 };
@@ -345,7 +364,7 @@ const EcosystemExplorer = () => {
                                 <ClipLoader size={28} color="#facc15" />
                             </div>
                         ) : (
-                            <table className="w-full min-w-245 text-sm">
+                            <table className="w-full min-w-265 text-sm">
                                 <thead>
                                     <tr className="border-b border-white/10">
                                         <Th label="#" {...thProps} />
@@ -357,6 +376,7 @@ const EcosystemExplorer = () => {
                                         <Th label={`Swaps ${win}`} k="swaps" {...thProps} />
                                         <Th label="Liquidity" k="liquidity" {...thProps} />
                                         <Th label="Mcap" k="marketCap" {...thProps} />
+                                        <Th label="FDV" k="fdv" {...thProps} />
                                         <Th label="Holders" k="holders" {...thProps} />
                                     </tr>
                                 </thead>
@@ -432,6 +452,13 @@ const EcosystemExplorer = () => {
                                                     <span className="text-white/30">—</span>
                                                 )}
                                             </td>
+                                            <td className="px-3 py-2 text-right text-white/60">
+                                                {r.fdv > 0 ? (
+                                                    formatUsd(r.fdv)
+                                                ) : (
+                                                    <span className="text-white/30">—</span>
+                                                )}
+                                            </td>
                                             <td
                                                 className="px-3 py-2 text-right text-white/80"
                                                 title={
@@ -451,7 +478,7 @@ const EcosystemExplorer = () => {
                                     {visible.length === 0 && (
                                         <tr>
                                             <td
-                                                colSpan={10}
+                                                colSpan={11}
                                                 className="px-3 py-10 text-center text-white/40"
                                             >
                                                 No tokens match the current filters.
