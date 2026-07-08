@@ -74,6 +74,11 @@ export interface PerformTransactionOptions {
     // gas simulation under-provisions the inner EVM contract creation, so we
     // disable simulation and pass a generous fixed limit instead.
     gas?: number;
+    // Multiplier applied to the simulated gas estimate (default 1.1). Bulk txs
+    // like airdrop multisends occasionally land just over the simulated cost, so
+    // callers can widen the headroom without switching to a fixed limit that
+    // might exceed the block gas cap.
+    gasBufferCoefficient?: number;
 }
 
 export const performTransaction = async (
@@ -93,7 +98,7 @@ export const performTransaction = async (
         simulateTx: !useExplicitGas,
         network: getSelectedNetworkKey(),
         endpoints: getNetworkEndpoints(getSelectedNetworkKey()),
-        gasBufferCoefficient: 1.1,
+        gasBufferCoefficient: opts.gasBufferCoefficient ?? 1.1,
     });
 
     const result = await broadcaster.broadcastV2({
