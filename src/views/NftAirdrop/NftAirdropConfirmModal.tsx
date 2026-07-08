@@ -11,6 +11,7 @@ import { performTransaction } from "../../utils/walletStrategy";
 import { isValidInjAddress } from "./csv";
 import { buildShroomFeeMessages } from "../../utils/shroomFee";
 import type { NftPair } from "./types";
+import { btnPrimary, btnGhost } from "../Airdrop/components/ui";
 
 // transfer_nft is far heavier than a cw20 transfer, so chunks stay small to
 // keep each tx under the block gas limit.
@@ -260,30 +261,42 @@ const NftAirdropConfirmModal = (props: {
 
     return (
         <>
-            <div className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-hidden focus:outline-hidden text-white text-sm">
-                <div className="relative w-auto my-4 mx-auto max-w-4xl">
-                    <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-gray-800 outline-hidden focus:outline-hidden">
-                        <div className="flex items-start justify-between p-4 border-b border-solid border-blueGray-900 rounded-t">
-                            <h3 className="text-xl font-semibold">NFT Airdrop on {currentNetwork}</h3>
+            <div className="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto p-4 text-sm text-white outline-hidden focus:outline-hidden">
+                <div className="relative mx-auto my-4 w-full max-w-4xl">
+                    <div className="relative flex w-full flex-col rounded-2xl border border-white/10 bg-[#04141b] shadow-2xl shadow-black/50 outline-hidden focus:outline-hidden">
+                        <div className="flex items-center justify-between rounded-t-2xl border-b border-white/10 p-5">
+                            <h3 className="text-lg font-bold">
+                                NFT Airdrop on <span className="capitalize text-trippyYellow">{currentNetwork}</span>
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => props.setShowModal(false)}
+                                className="text-slate-400 transition hover:text-white"
+                                aria-label="Close"
+                            >
+                                ✕
+                            </button>
                         </div>
 
-                        <div className="relative p-6 flex-auto">
-                            <p>
-                                Airdropping NFTs from <br />
-                                {props.collectionName ? `${props.collectionName} — ` : ""}
-                                {props.collectionAddress}
-                            </p>
+                        <div className="relative flex-auto p-5">
+                            <div className="rounded-lg border border-white/10 bg-slate-950/40 px-3 py-2 text-xs">
+                                <span className="text-slate-400">Airdropping NFTs from</span>
+                                <div className="mt-0.5 break-all text-slate-200">
+                                    {props.collectionName ? `${props.collectionName} — ` : ""}
+                                    <span className="font-mono">{props.collectionAddress}</span>
+                                </div>
+                            </div>
 
-                            <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-2">
-                                <div className="rounded-md bg-slate-900 p-2">
+                            <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3">
+                                <div className="rounded-lg border border-white/10 bg-slate-950/40 p-2.5">
                                     <div className="text-[11px] uppercase tracking-wide text-slate-400">NFTs</div>
                                     <div className="text-sm font-bold">{sendable.length.toLocaleString()}</div>
                                 </div>
-                                <div className="rounded-md bg-slate-900 p-2">
+                                <div className="rounded-lg border border-white/10 bg-slate-950/40 p-2.5">
                                     <div className="text-[11px] uppercase tracking-wide text-slate-400">Recipients</div>
                                     <div className="text-sm font-bold">{sendable.length.toLocaleString()}</div>
                                 </div>
-                                <div className="rounded-md bg-slate-900 p-2">
+                                <div className="rounded-lg border border-white/10 bg-slate-950/40 p-2.5">
                                     <div className="text-[11px] uppercase tracking-wide text-slate-400">Transactions</div>
                                     <div className="text-sm font-bold">
                                         {txCount}
@@ -299,9 +312,9 @@ const NftAirdropConfirmModal = (props: {
                                 </div>
                             )}
 
-                            <div className="mt-5 max-h-80 overflow-y-scroll overflow-x-auto">
-                                <table className="table-auto w-full">
-                                    <thead className="text-white">
+                            <div className="mt-5 max-h-80 overflow-x-auto overflow-y-auto rounded-xl border border-white/10">
+                                <table className="w-full table-auto text-xs">
+                                    <thead className="sticky top-0 bg-[#04141b] text-slate-400">
                                         <tr>
                                             <th className="px-4 py-2 text-left">NFT</th>
                                             <th className="px-4 py-2 text-left">Recipient</th>
@@ -309,20 +322,20 @@ const NftAirdropConfirmModal = (props: {
                                     </thead>
                                     <tbody>
                                         {sendable.map((p, index) => (
-                                            <tr key={index} className="text-white border-b text-xs">
-                                                <td className="px-4 py-1 whitespace-nowrap">
+                                            <tr key={index} className="border-b border-white/5 text-white transition hover:bg-white/5">
+                                                <td className="whitespace-nowrap px-4 py-1.5">
                                                     {p.image && (
                                                         <img
                                                             src={p.image}
                                                             alt={p.tokenId}
-                                                            className="inline-block w-6 h-6 rounded mr-2 object-cover align-middle"
+                                                            className="mr-2 inline-block h-6 w-6 rounded object-cover align-middle"
                                                         />
                                                     )}
                                                     {p.name ?? `#${p.tokenId}`} (ID {p.tokenId})
                                                 </td>
-                                                <td className="px-4 py-1">
+                                                <td className="px-4 py-1.5 text-slate-300">
                                                     <a
-                                                        className="hover:text-indigo-400"
+                                                        className="transition hover:text-trippyYellow"
                                                         href={`https://explorer.injective.network/account/${p.recipient}`}
                                                     >
                                                         {p.recipient}
@@ -334,45 +347,57 @@ const NftAirdropConfirmModal = (props: {
                                 </table>
                             </div>
 
-                            {progress && <div className="mt-5">progress: {progress}</div>}
-                            {txLoading && <CircleLoader color="#36d7b7" className="mt-2 m-auto" />}
-                            {error && <div className="text-rose-600 mt-5">{error}</div>}
+                            {progress && (
+                                <div className="mt-5 text-sm text-slate-300">
+                                    <span className="text-slate-400">progress:</span> {progress}
+                                </div>
+                            )}
+                            {txLoading && <CircleLoader color="#f9d73f" className="mt-3 m-auto" />}
+                            {error && (
+                                <div className="mt-5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-rose-300">
+                                    {error}
+                                </div>
+                            )}
                         </div>
 
                         {estimatedTx !== null && (
-                            <div className="mx-5 mb-2">
-                                <div>Total number of tx for airdrop: {estimatedTx}</div>
-                                <div>Completed tx: {completedTx}</div>
+                            <div className="mx-5 mb-2 flex flex-wrap gap-x-6 gap-y-1 rounded-lg border border-white/10 bg-slate-950/40 p-3">
+                                <div>Total tx: <b>{estimatedTx}</b></div>
+                                <div>Completed tx: <b>{completedTx}</b></div>
                             </div>
                         )}
-                        <div className="mx-5">
+                        <div className="mx-5 text-xs text-slate-400">
                             If the airdrop TX fails, try increasing the gas fee in your wallet. Each tx will retry up to 3
                             times.
                         </div>
                         {currentNetwork === "mainnet" && sendable.length > 0 && (
-                            <div className="m-5">
-                                Fee for airdrop: {props.shroomCost} shroom (cw20)
-                                <br />
-                                <a
-                                    href="https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
-                                    className="underline text-sm"
-                                >
-                                    buy here
-                                </a>
-                                <div className="mt-2">Fee payed: {feePayed ? "True" : "False"}</div>
+                            <div className="mx-5 mt-3 flex items-center justify-between rounded-lg border border-white/10 bg-slate-950/40 px-3 py-2 text-sm">
+                                <span className="text-slate-400">
+                                    Fee: {props.shroomCost} SHROOM (cw20){" "}
+                                    <a
+                                        href="https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
+                                        className="text-trippyYellow underline"
+                                    >
+                                        buy here
+                                    </a>
+                                </span>
+                                <span className={feePayed ? "font-bold text-emerald-400" : "font-bold text-slate-300"}>
+                                    {feePayed ? "Fee paid ✓" : "Fee unpaid"}
+                                </span>
                             </div>
                         )}
-                        <div className="flex items-center justify-end p-4 border-t border-solid border-blueGray-200 rounded-b">
+                        <div className="flex items-center justify-end gap-2 rounded-b-2xl border-t border-white/10 p-4">
                             <button
-                                className="text-slate-500 background-transparent font-bold uppercase px-6 py-2 text-sm outline-hidden focus:outline-hidden mr-1 mb-1 ease-linear transition-all duration-150"
+                                className={btnGhost}
                                 type="button"
                                 onClick={() => props.setShowModal(false)}
                             >
                                 Back
                             </button>
                             <button
-                                className="bg-gray-600 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded-sm shadow-sm hover:shadow-lg outline-hidden focus:outline-hidden mr-1 mb-1 ease-linear transition-all duration-150"
+                                className={btnPrimary}
                                 type="button"
+                                disabled={txLoading}
                                 onClick={() => {
                                     void startAirdrop();
                                 }}
@@ -383,7 +408,7 @@ const NftAirdropConfirmModal = (props: {
                     </div>
                 </div>
             </div>
-            <div className="opacity-25 fixed inset-0 z-40 bg-black"></div>
+            <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"></div>
         </>
     );
 };

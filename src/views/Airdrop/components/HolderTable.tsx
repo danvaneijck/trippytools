@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { WALLET_LABELS } from "../../../constants/walletLabels";
 import type { AirdropRecipient } from "../types";
 import { shortAddress } from "../format";
+import { btnGhost, inputBase } from "./ui";
 
 type WalletLabel = { label: string; bgColor: string; textColor: string };
 const LABELS = WALLET_LABELS as Record<string, WalletLabel | undefined>;
@@ -83,7 +84,7 @@ const HolderTable = ({
 
     return (
         <div className="mt-3">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+            <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center">
                 <input
                     type="text"
                     value={search}
@@ -92,29 +93,23 @@ const HolderTable = ({
                         setPage(0);
                     }}
                     placeholder="Search address…"
-                    className="bg-white text-black rounded-sm p-1 text-sm flex-1"
+                    className={`${inputBase} flex-1`}
                 />
                 {columns.include && onSetIncludeAll && (
-                    <div className="flex gap-2 text-xs">
-                        <button
-                            className="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded-sm"
-                            onClick={() => onSetIncludeAll(true)}
-                        >
+                    <div className="flex gap-2">
+                        <button className={btnGhost} onClick={() => onSetIncludeAll(true)}>
                             Select all
                         </button>
-                        <button
-                            className="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded-sm"
-                            onClick={() => onSetIncludeAll(false)}
-                        >
+                        <button className={btnGhost} onClick={() => onSetIncludeAll(false)}>
                             Select none
                         </button>
                     </div>
                 )}
             </div>
 
-            <div className="max-h-96 overflow-y-auto overflow-x-auto rounded-md border border-slate-700">
-                <table className="table-auto w-full text-xs">
-                    <thead className="text-white text-left sticky top-0 bg-slate-900">
+            <div className="max-h-96 overflow-y-auto overflow-x-auto rounded-xl border border-white/10">
+                <table className="w-full table-auto text-xs">
+                    <thead className="sticky top-0 bg-[#04141b] text-left text-slate-400">
                         <tr>
                             {columns.position && <th className="px-3 py-2">#</th>}
                             {columns.include && <th className="px-3 py-2">Include</th>}
@@ -141,19 +136,25 @@ const HolderTable = ({
                         {pageRows.map(({ r, originalIndex }) => {
                             const label = LABELS[r.address];
                             return (
-                                <tr key={r.address} className="text-white border-b border-slate-800">
-                                    {columns.position && <td className="px-3 py-1">{originalIndex + 1}</td>}
+                                <tr
+                                    key={r.address}
+                                    className="border-b border-white/5 text-white transition hover:bg-white/5"
+                                >
+                                    {columns.position && (
+                                        <td className="px-3 py-1.5 text-slate-500">{originalIndex + 1}</td>
+                                    )}
                                     {columns.include && (
-                                        <td className="px-3 py-1">
+                                        <td className="px-3 py-1.5">
                                             <input
                                                 type="checkbox"
+                                                className="h-4 w-4 accent-trippyYellow"
                                                 checked={r.includeInDrop || false}
                                                 onChange={() => onToggleInclude(r.address)}
                                             />
                                         </td>
                                     )}
-                                    <td className="px-3 py-1 whitespace-nowrap">
-                                        <a className="hover:text-indigo-300" href={`${explorerBase}/account/${r.address}`} target="_blank" rel="noreferrer">
+                                    <td className="whitespace-nowrap px-3 py-1.5">
+                                        <a className="transition hover:text-trippyYellow" href={`${explorerBase}/account/${r.address}`} target="_blank" rel="noreferrer">
                                             {shortAddress(r.address)}
                                             {label && (
                                                 <span className={`${label.bgColor} ${label.textColor} ml-2`}>
@@ -163,20 +164,20 @@ const HolderTable = ({
                                         </a>
                                     </td>
                                     {columns.vote && (
-                                        <td className="px-3 py-1">
+                                        <td className="px-3 py-1.5">
                                             {r.vote_option ? r.vote_option.replace("VOTE_OPTION_", "") : ""}
                                         </td>
                                     )}
                                     {columns.balance && (
-                                        <td className="px-3 py-1 whitespace-nowrap">
+                                        <td className="whitespace-nowrap px-3 py-1.5 text-slate-300">
                                             {Number(r.balance ?? 0).toFixed(sourceDecimals)}
                                             {sourceSymbol ? ` ${sourceSymbol}` : ""}
                                         </td>
                                     )}
-                                    <td className="px-3 py-1 whitespace-nowrap">
+                                    <td className="whitespace-nowrap px-3 py-1.5 font-medium text-trippyYellow">
                                         {Number(r.amountToAirdrop).toFixed(tokenDecimals)} {tokenSymbol}
                                     </td>
-                                    <td className="px-3 py-1">{Number(r.percentToAirdrop).toFixed(2)}%</td>
+                                    <td className="px-3 py-1.5 text-slate-400">{Number(r.percentToAirdrop).toFixed(2)}%</td>
                                 </tr>
                             );
                         })}
@@ -192,24 +193,24 @@ const HolderTable = ({
             </div>
 
             {pageCount > 1 && (
-                <div className="flex items-center justify-between mt-2 text-xs text-slate-300">
+                <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
                     <span>
                         Showing {safePage * PAGE_SIZE + 1}–
                         {Math.min(filtered.length, safePage * PAGE_SIZE + PAGE_SIZE)} of {filtered.length}
                     </span>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-2">
                         <button
-                            className="bg-slate-700 hover:bg-slate-600 disabled:opacity-40 px-2 py-1 rounded-sm"
+                            className={btnGhost}
                             disabled={safePage === 0}
                             onClick={() => setPage(safePage - 1)}
                         >
                             Prev
                         </button>
-                        <span className="px-1 py-1">
+                        <span className="px-1 text-slate-300">
                             {safePage + 1} / {pageCount}
                         </span>
                         <button
-                            className="bg-slate-700 hover:bg-slate-600 disabled:opacity-40 px-2 py-1 rounded-sm"
+                            className={btnGhost}
                             disabled={safePage >= pageCount - 1}
                             onClick={() => setPage(safePage + 1)}
                         >

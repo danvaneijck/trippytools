@@ -16,6 +16,17 @@ import { parseWalletCsv, downloadCsv } from "./csv";
 import NftGrid from "./components/NftGrid";
 import NftAirdropConfirmModal from "./NftAirdropConfirmModal";
 import type { NftPair, OwnedNft } from "./types";
+import { PiParachuteBold } from "react-icons/pi";
+import { FiShuffle, FiDownload } from "react-icons/fi";
+import SectionCard from "../Airdrop/components/SectionCard";
+import {
+    btnPrimary,
+    btnSecondary,
+    btnGhost,
+    inputBase,
+    cardBase,
+    darkSelectStyles,
+} from "../Airdrop/components/ui";
 
 const SHROOM_COST = 25000;
 const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl";
@@ -192,30 +203,29 @@ const NftAirdrop = () => {
                     <div className="flex justify-center items-center min-h-full">
                         <div className="w-full max-w-(--breakpoint-lg) px-2">
                             {connectedAddress ? (
-                                <div>
-                                    <div className="text-center text-white mb-2">
-                                        <div className="text-3xl font-magic">NFT Airdrop</div>
-                                        <div className="text-sm">on Injective {currentNetwork}</div>
+                                <div className="space-y-5">
+                                    <div className="text-center text-white">
+                                        <PiParachuteBold className="mx-auto mb-2 text-trippyYellow" size={34} />
+                                        <div className="font-magic text-3xl">NFT Airdrop</div>
+                                        <div className="text-sm text-slate-400">
+                                            on Injective{" "}
+                                            <span className="capitalize text-trippyYellow">{currentNetwork}</span>
+                                        </div>
                                     </div>
-                                    <div className="flex flex-col sm:flex-row gap-2 my-4">
+                                    <div className="flex flex-col gap-2 sm:flex-row">
                                         <Link to="/airdrop" className="flex-1">
-                                            <div className="bg-slate-800 hover:bg-slate-700 p-2 rounded-sm text-center text-sm">
-                                                Airdrop a token instead →
-                                            </div>
+                                            <div className={`${btnSecondary} w-full`}>Airdrop a token instead →</div>
                                         </Link>
                                         <Link to="/airdrop-history" className="flex-1">
-                                            <div className="bg-slate-800 hover:bg-slate-700 p-2 rounded-sm text-center text-sm">
-                                                View airdrop history
-                                            </div>
+                                            <div className={`${btnSecondary} w-full`}>View airdrop history</div>
                                         </Link>
                                     </div>
 
                                     {/* Step 1 — collection */}
-                                    <div className="border p-4 rounded-lg border-slate-700">
-                                        <label className="font-bold text-base text-white mb-2 block">
-                                            1. NFT collection to airdrop
-                                        </label>
+                                    <SectionCard step={1} title="NFT collection to airdrop">
                                         <TokenSelect
+                                            dark
+                                            styles={darkSelectStyles}
                                             options={[{ label: "NFT collections", options: NFT_COLLECTIONS }]}
                                             selectedOption={collectionOption}
                                             setSelectedOption={(opt: any) => {
@@ -224,11 +234,11 @@ const NftAirdrop = () => {
                                             }}
                                         />
                                         <div className="mt-3">
-                                            <label className="text-sm text-slate-300 block mb-1">
+                                            <label className="mb-1 block text-sm text-slate-400">
                                                 or paste a CW721 collection contract address
                                             </label>
                                             <input
-                                                className="bg-white text-black w-full rounded-sm p-1 text-sm"
+                                                className={inputBase}
                                                 placeholder="inj1..."
                                                 value={customAddress}
                                                 onChange={(e) => setCustomAddress(e.target.value)}
@@ -239,26 +249,26 @@ const NftAirdrop = () => {
                                             onClick={() => {
                                                 void loadOwnedNfts();
                                             }}
-                                            className="bg-gray-800 hover:bg-gray-700 rounded-lg p-2 w-full text-white mt-4 shadow-lg disabled:opacity-50"
+                                            className={`${btnPrimary} mt-4 w-full`}
                                         >
                                             Load my NFTs
                                         </button>
                                         {collectionInfo && (
-                                            <div className="text-sm mt-4 text-white">
-                                                Collection: {collectionInfo.name}{" "}
+                                            <div className="mt-4 rounded-lg border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-white">
+                                                <span className="text-slate-400">Collection:</span> {collectionInfo.name}{" "}
                                                 {collectionInfo.symbol ? `(${collectionInfo.symbol})` : ""}
-                                                <br />
-                                                You hold {ownedNfts.length} NFT{ownedNfts.length === 1 ? "" : "s"} here
+                                                <span className="text-slate-400">
+                                                    {" "}
+                                                    · you hold {ownedNfts.length} NFT
+                                                    {ownedNfts.length === 1 ? "" : "s"} here
+                                                </span>
                                             </div>
                                         )}
-                                    </div>
+                                    </SectionCard>
 
                                     {/* Step 2 — select NFTs */}
                                     {ownedNfts.length > 0 && (
-                                        <div className="mt-5 border p-4 rounded-lg border-slate-700">
-                                            <label className="font-bold text-base text-white mb-3 block">
-                                                2. Select the NFTs to drop
-                                            </label>
+                                        <SectionCard step={2} title="Select the NFTs to drop">
                                             <NftGrid
                                                 nfts={ownedNfts}
                                                 selected={selected}
@@ -267,20 +277,16 @@ const NftAirdrop = () => {
                                                 onSelectAll={selectAll}
                                                 onClear={clearSelection}
                                             />
-                                        </div>
+                                        </SectionCard>
                                     )}
 
                                     {/* Step 3 — recipient wallets */}
                                     {ownedNfts.length > 0 && (
-                                        <div className="mt-5 border p-4 rounded-lg border-slate-700">
-                                            <label className="font-bold text-base text-white mb-2 block">
-                                                3. Upload recipient wallets (CSV)
-                                            </label>
-                                            <div className="text-sm my-2 text-slate-300">
-                                                Upload any CSV — the wallet column is detected automatically (a plain
-                                                one-address-per-line list or a multi-column export like a holder snapshot
-                                                both work). Each selected NFT is sent to one wallet, in order.
-                                            </div>
+                                        <SectionCard
+                                            step={3}
+                                            title="Upload recipient wallets (CSV)"
+                                            subtitle="The wallet column is detected automatically — a plain one-address-per-line list or a multi-column holder snapshot both work. Each selected NFT is sent to one wallet, in order."
+                                        >
                                             <div className="flex flex-wrap items-center gap-3">
                                                 <input
                                                     type="file"
@@ -288,13 +294,10 @@ const NftAirdrop = () => {
                                                     onChange={(e) => {
                                                         void handleCsvUpload(e);
                                                     }}
-                                                    className="text-white text-sm file:mr-3 file:rounded-sm file:border-0 file:bg-slate-700 file:px-3 file:py-1 file:text-white hover:file:bg-slate-600"
+                                                    className="text-sm text-slate-300 file:mr-3 file:cursor-pointer file:rounded-lg file:border file:border-white/10 file:bg-white/5 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-200 hover:file:bg-white/10"
                                                 />
-                                                <button
-                                                    type="button"
-                                                    onClick={downloadTemplate}
-                                                    className="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded-sm text-xs"
-                                                >
+                                                <button type="button" onClick={downloadTemplate} className={btnGhost}>
+                                                    <FiDownload size={13} />
                                                     Download template
                                                 </button>
                                             </div>
@@ -316,38 +319,39 @@ const NftAirdrop = () => {
                                                 </div>
                                             )}
                                             {recipients.length > 0 && (
-                                                <div className="text-sm mt-2 text-white">
-                                                    {recipients.length} valid recipient
-                                                    {recipients.length === 1 ? "" : "s"} loaded
+                                                <div className="mt-3 rounded-lg border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-white">
+                                                    <span className="font-bold text-trippyYellow">
+                                                        {recipients.length}
+                                                    </span>{" "}
+                                                    valid recipient{recipients.length === 1 ? "" : "s"} loaded
                                                     {csvColumn ? (
-                                                        <span className="text-slate-400">
-                                                            {" "}
-                                                            from “{csvColumn}”
-                                                        </span>
+                                                        <span className="text-slate-400"> from “{csvColumn}”</span>
                                                     ) : null}
                                                 </div>
                                             )}
-                                        </div>
+                                        </SectionCard>
                                     )}
 
                                     {/* Step 4 — pairing preview */}
                                     {pairs.length > 0 && (
-                                        <div className="mt-5 border p-4 rounded-lg border-slate-700">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <label className="font-bold text-base text-white">
-                                                    4. Assignment preview ({pairs.length} transfer
-                                                    {pairs.length === 1 ? "" : "s"})
-                                                </label>
+                                        <SectionCard
+                                            step={4}
+                                            title={`Assignment preview (${pairs.length} transfer${
+                                                pairs.length === 1 ? "" : "s"
+                                            })`}
+                                        >
+                                            <div className="mb-3 flex items-center justify-end">
                                                 <button
                                                     type="button"
                                                     onClick={shuffleRecipients}
-                                                    className="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded-sm text-xs"
+                                                    className={btnGhost}
                                                 >
+                                                    <FiShuffle size={13} />
                                                     Shuffle
                                                 </button>
                                             </div>
                                             {(leftoverNfts > 0 || leftoverWallets > 0) && (
-                                                <div className="text-amber-400 text-xs mb-2">
+                                                <div className="mb-3 space-y-1 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-300">
                                                     {leftoverNfts > 0 && (
                                                         <div>
                                                             {leftoverNfts} selected NFT{leftoverNfts === 1 ? "" : "s"} won't
@@ -362,83 +366,103 @@ const NftAirdrop = () => {
                                                     )}
                                                 </div>
                                             )}
-                                            <div className="max-h-72 overflow-y-auto">
-                                                <table className="table-auto w-full text-xs text-white">
-                                                    <thead>
+                                            <div className="max-h-72 overflow-x-auto overflow-y-auto rounded-xl border border-white/10">
+                                                <table className="w-full table-auto text-xs text-white">
+                                                    <thead className="sticky top-0 bg-[#04141b] text-slate-400">
                                                         <tr>
-                                                            <th className="px-3 py-1 text-left">NFT</th>
-                                                            <th className="px-3 py-1 text-left">Recipient</th>
+                                                            <th className="px-3 py-2 text-left">NFT</th>
+                                                            <th className="px-3 py-2 text-left">Recipient</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
                                                         {pairs.map((p, i) => (
-                                                            <tr key={i} className="border-b border-slate-700">
-                                                                <td className="px-3 py-1 whitespace-nowrap">
+                                                            <tr
+                                                                key={i}
+                                                                className="border-b border-white/5 transition hover:bg-white/5"
+                                                            >
+                                                                <td className="whitespace-nowrap px-3 py-1.5">
                                                                     {p.image && (
                                                                         <img
                                                                             src={p.image}
                                                                             alt={p.tokenId}
-                                                                            className="inline-block w-6 h-6 rounded mr-2 object-cover align-middle"
+                                                                            className="mr-2 inline-block h-6 w-6 rounded object-cover align-middle"
                                                                         />
                                                                     )}
                                                                     {p.name ?? `#${p.tokenId}`} (ID {p.tokenId})
                                                                 </td>
-                                                                <td className="px-3 py-1 break-all">{p.recipient}</td>
+                                                                <td className="break-all px-3 py-1.5 text-slate-300">
+                                                                    {p.recipient}
+                                                                </td>
                                                             </tr>
                                                         ))}
                                                     </tbody>
                                                 </table>
                                             </div>
+                                        </SectionCard>
+                                    )}
+
+                                    {error && (
+                                        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+                                            {error}
                                         </div>
                                     )}
 
-                                    {error && <div className="text-red-500 mt-2">{error}</div>}
-
                                     {/* Step 5 — review and confirm */}
                                     {pairs.length > 0 && (
-                                        <div className="mt-5 border p-4 rounded-lg border-slate-700">
-                                            <div className="text-base font-bold text-white">5. Review and confirm</div>
+                                        <SectionCard step={5} title="Review and confirm">
                                             {currentNetwork === "mainnet" && (
-                                                <div className="mt-2 text-sm">
-                                                    Fee: {humanReadableAmount(SHROOM_COST)} shroom ($
-                                                    {shroomPrice ?? "0"})
-                                                    <br />
-                                                    <a
-                                                        href="https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
-                                                        className="underline text-sm"
-                                                    >
-                                                        buy here
-                                                    </a>
+                                                <div className="flex items-center justify-between rounded-lg border border-white/10 bg-slate-950/40 px-3 py-2 text-sm">
+                                                    <span className="text-slate-400">
+                                                        Fee{" "}
+                                                        <a
+                                                            href="https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
+                                                            className="text-trippyYellow underline"
+                                                        >
+                                                            (buy SHROOM)
+                                                        </a>
+                                                    </span>
+                                                    <span className="font-bold text-white">
+                                                        {humanReadableAmount(SHROOM_COST)} SHROOM{" "}
+                                                        <span className="font-normal text-slate-400">
+                                                            (${shroomPrice ?? "0"})
+                                                        </span>
+                                                    </span>
                                                 </div>
                                             )}
                                             <button
                                                 disabled={loading}
                                                 onClick={() => setShowConfirm(true)}
-                                                className="bg-gray-800 hover:bg-gray-700 rounded-lg p-2 w-full text-white mt-4 shadow-lg disabled:opacity-50"
+                                                className={`${btnPrimary} mt-4 w-full`}
                                             >
                                                 Review NFT airdrop
                                             </button>
-                                        </div>
+                                        </SectionCard>
                                     )}
                                 </div>
                             ) : (
-                                <div className="text-center">
-                                    <div className="text-xl mb-5">NFT Airdrop Tool</div>
-                                    <img
-                                        src={parachute}
-                                        style={{ width: 140 }}
-                                        className="m-auto rounded-xl mb-4"
-                                        alt="airdrop"
-                                    />
-                                    <div className="mb-5">Please connect wallet to airdrop your NFTs</div>
-                                    <ConnectWallet hideNetwork={true} button={true} />
+                                <div className="mx-auto max-w-md text-center">
+                                    <div className={`${cardBase} flex flex-col items-center`}>
+                                        <div className="mb-4 font-magic text-2xl text-white">NFT Airdrop Tool</div>
+                                        <img
+                                            src={parachute}
+                                            style={{ width: 140 }}
+                                            className="mb-4 rounded-xl"
+                                            alt="airdrop"
+                                        />
+                                        <div className="mb-5 text-sm text-slate-400">
+                                            Connect your wallet to airdrop your NFTs
+                                        </div>
+                                        <ConnectWallet hideNetwork={true} button={true} />
+                                    </div>
                                 </div>
                             )}
 
                             {loading && (
-                                <div className="flex flex-col items-center justify-center pt-5">
+                                <div className="flex flex-col items-center justify-center pt-6">
                                     <GridLoader color="#f9d73f" />
-                                    {progress.length > 0 && <div className="mt-2">{progress}</div>}
+                                    {progress.length > 0 && (
+                                        <div className="mt-3 text-sm text-slate-400">{progress}</div>
+                                    )}
                                 </div>
                             )}
                         </div>

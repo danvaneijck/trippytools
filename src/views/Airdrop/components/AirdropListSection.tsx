@@ -14,6 +14,8 @@ import RecipientSummary from "./RecipientSummary";
 import TopNLimiter from "./TopNLimiter";
 import MinAmountFilter from "./MinAmountFilter";
 import VoteFilter from "./VoteFilter";
+import { FiDownload } from "react-icons/fi";
+import { btnGhost } from "./ui";
 
 // Shared "you have a list — now refine and review it" section rendered by every
 // drop mode. Owns the wiring from UI controls to the pure distribution helpers.
@@ -70,20 +72,18 @@ const AirdropListSection = ({
     };
 
     return (
-        <div className="mt-5">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div className="mt-6 border-t border-white/10 pt-5">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-sm text-slate-300">
                     Total participants:{" "}
-                    <span className="text-white font-bold">{summary.recipientCount.toLocaleString()}</span>
+                    <span className="font-bold text-white">{summary.recipientCount.toLocaleString()}</span>
                 </div>
-                <button
-                    onClick={exportCsv}
-                    className="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded-sm text-sm self-start"
-                >
+                <button onClick={exportCsv} className={`${btnGhost} self-start`}>
+                    <FiDownload size={13} />
                     Download CSV
                 </button>
             </div>
-            <div className="text-xs text-slate-400 mt-1">
+            <div className="mt-1 text-xs text-slate-400">
                 Exclude addresses you don't want to fund (burn wallets, pair/LP contracts, marketplaces…) by unchecking them or filtering.
             </div>
 

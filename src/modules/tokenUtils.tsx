@@ -1430,8 +1430,17 @@ class TokenUtils {
                     image = tokenUri;
                 } else {
                     // token_uri points at a metadata JSON — fetch it for the picture.
+                    // Guard with an abort-timeout: a slow/dead IPFS gateway (ipfs.io
+                    // rate-limits hard) must not hang the whole NFT load, because a
+                    // stalled fetch never rejects on its own.
                     try {
-                        const meta = await fetch(this.resolveIpfsUri(tokenUri)).then((r) => r.json());
+                        const controller = new AbortController();
+                        const timer = setTimeout(() => controller.abort(), 8000);
+                        const meta = await fetch(this.resolveIpfsUri(tokenUri), {
+                            signal: controller.signal,
+                        })
+                            .then((r) => r.json())
+                            .finally(() => clearTimeout(timer));
                         image = meta.image ?? meta.media ?? meta.image_uri ?? meta.animation_url ?? null;
                         name = name ?? meta.name ?? meta.title ?? null;
                     } catch {
@@ -1479,12 +1488,22 @@ class TokenUtils {
         if (tokenIds.length === 0) return [];
 
         // 2. Resolve thumbnails / names in small parallel batches (best-effort).
+        // Each resolve is raced against a hard timeout so a single hung query or
+        // gateway can never block the batch — a token that times out simply loads
+        // without a thumbnail, which selection doesn't need.
         const batchSize = 8;
         const out: { tokenId: string; name: string | null; image: string | null }[] = [];
         for (let i = 0; i < tokenIds.length; i += batchSize) {
             const batch = tokenIds.slice(i, i + batchSize);
             const resolved = await Promise.all(
-                batch.map((id) => this.resolveNftMetadata(collectionAddress, id)),
+                batch.map((id) =>
+                    Promise.race([
+                        this.resolveNftMetadata(collectionAddress, id),
+                        new Promise<{ tokenId: string; name: string | null; image: string | null }>(
+                            (resolve) => setTimeout(() => resolve({ tokenId: id, name: null, image: null }), 10000),
+                        ),
+                    ]),
+                ),
             );
             out.push(...resolved);
             setProgress(`loading metadata: ${Math.min(i + batchSize, tokenIds.length)} / ${tokenIds.length}`);

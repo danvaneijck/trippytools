@@ -16,7 +16,7 @@ const DistributionToggle = ({
 }) => {
     return (
         <div>
-            <label className="block font-bold text-white mb-1">Distribution</label>
+            <label className="mb-1 block text-sm font-bold text-white">Distribution</label>
             <div className="grid grid-cols-2 gap-2">
                 {OPTIONS.map((opt) => {
                     const active = value === opt.value;
@@ -25,10 +25,10 @@ const DistributionToggle = ({
                             key={opt.value}
                             type="button"
                             onClick={() => onChange(opt.value)}
-                            className={`rounded-md p-2 text-sm text-left border transition ${
+                            className={`rounded-lg border p-2.5 text-left text-sm transition ${
                                 active
-                                    ? "bg-slate-600 border-slate-400 text-white"
-                                    : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+                                    ? "border-trippyYellow/60 bg-trippyYellow/15 text-white"
+                                    : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
                             }`}
                         >
                             <div className="font-bold">{opt.label}</div>

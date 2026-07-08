@@ -2,7 +2,7 @@ import type { AirdropSummary } from "../distribution";
 import { humanReadableAmount } from "../format";
 
 const Stat = ({ label, value }: { label: string; value: string }) => (
-    <div className="rounded-md bg-slate-800 p-2">
+    <div className="rounded-lg border border-white/10 bg-slate-950/40 p-2.5">
         <div className="text-[11px] uppercase tracking-wide text-slate-400">{label}</div>
         <div className="text-sm font-bold text-white">{value}</div>
     </div>
