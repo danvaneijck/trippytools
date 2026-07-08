@@ -1298,15 +1298,36 @@ class TokenUtils {
         return ownerResults;
     }
 
-    async getNFTHolders(collectionAddress: string, setProgress: React.Dispatch<React.SetStateAction<string>>) {
-        const numTokensQuery = Buffer.from(
-            JSON.stringify({
-                num_tokens: {}
-            })
-        ).toString("base64");
+    // Smart-query a contract with retry + exponential backoff. Enumerating a
+    // large collection's holders is hundreds of sequential paginated queries
+    // (a 6,666-supply collection = ~223 pages over a couple of minutes); the
+    // public gRPC-web endpoint intermittently rate-limits or drops a request
+    // over such a long run. Without a retry a single blip aborts the whole
+    // airdrop with an error — so every page/count query goes through here.
+    async smartQueryWithRetry(
+        collectionAddress: string,
+        msg: object,
+        retries = 4,
+        delay = 600,
+    ): Promise<any> {
+        const query = Buffer.from(JSON.stringify(msg)).toString("base64");
+        let lastErr: unknown;
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                const res = await this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, query);
+                return JSON.parse(new TextDecoder().decode(res.data));
+            } catch (error) {
+                lastErr = error;
+                if (attempt < retries) {
+                    await new Promise((resolve) => setTimeout(resolve, delay * Math.pow(2, attempt)));
+                }
+            }
+        }
+        throw lastErr;
+    }
 
-        const numTokensInfo = await this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, numTokensQuery);
-        const numTokensDecoded = JSON.parse(new TextDecoder().decode(numTokensInfo.data));
+    async getNFTHolders(collectionAddress: string, setProgress: React.Dispatch<React.SetStateAction<string>>) {
+        const numTokensDecoded = await this.smartQueryWithRetry(collectionAddress, { num_tokens: {} });
         const totalTokens = numTokensDecoded.count;
         console.log("total NFT tokens", numTokensDecoded);
 
@@ -1315,17 +1336,12 @@ class TokenUtils {
         const holderMap: Record<string, any> = {};
 
         while (hasMore) {
-            const allTokensQuery = Buffer.from(
-                JSON.stringify({
-                    all_tokens: {
-                        start_after: startAfter.length > 0 ? startAfter : null,
-                        limit: 30
-                    }
-                })
-            ).toString("base64");
-
-            const allTokensInfo = await this.chainGrpcWasmApi.fetchSmartContractState(collectionAddress, allTokensQuery);
-            const allTokensDecoded = JSON.parse(new TextDecoder().decode(allTokensInfo.data));
+            const allTokensDecoded = await this.smartQueryWithRetry(collectionAddress, {
+                all_tokens: {
+                    start_after: startAfter.length > 0 ? startAfter : null,
+                    limit: 30,
+                },
+            });
 
             if (allTokensDecoded && allTokensDecoded.tokens && allTokensDecoded.tokens.length > 0) {
                 // Tokens that need an owner lookup
