@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { btnGhost, inputBase } from "./ui";
 
 // Drop recipients whose computed allocation is below a floor (e.g. dust from a
 // proportionate split to thousands of tiny holders) so gas isn't wasted on
@@ -16,10 +17,11 @@ const MinAmountFilter = ({
     const [value, setValue] = useState<string>("");
 
     return (
-        <div className="mt-2">
-            <label className="text-white inline-flex items-center gap-2 text-sm">
+        <div className="mt-3">
+            <label className="inline-flex items-center gap-2 text-sm text-white">
                 <input
                     type="checkbox"
+                    className="h-4 w-4 accent-trippyYellow"
                     checked={enabled}
                     onChange={() => {
                         const next = !enabled;
@@ -37,20 +39,17 @@ const MinAmountFilter = ({
                     <input
                         type="number"
                         min={0}
-                        className="bg-white text-black rounded-sm p-1 text-sm w-28"
+                        className={`${inputBase} w-28`}
                         value={value}
                         onChange={(e) => setValue(e.target.value)}
                         placeholder="min"
                     />
                     <span className="text-sm text-slate-300">{symbol}</span>
-                    <button
-                        className="bg-slate-700 hover:bg-slate-600 p-1 px-3 rounded-sm text-sm"
-                        onClick={() => onApply(Number(value) || 0)}
-                    >
+                    <button className={btnGhost} onClick={() => onApply(Number(value) || 0)}>
                         Apply
                     </button>
                     <button
-                        className="bg-slate-700 hover:bg-slate-600 p-1 px-3 rounded-sm text-sm"
+                        className={btnGhost}
                         onClick={() => {
                             setValue("");
                             onReset();

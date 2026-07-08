@@ -1,4 +1,5 @@
 import type { OwnedNft } from "../types";
+import { btnGhost } from "../../Airdrop/components/ui";
 
 const NftCard = ({
     nft,
@@ -16,13 +17,13 @@ const NftCard = ({
         <button
             type="button"
             onClick={() => onToggle(nft.tokenId)}
-            className={`relative rounded-lg overflow-hidden border text-left transition ${
+            className={`relative overflow-hidden rounded-xl border text-left transition ${
                 selected
                     ? "border-trippyYellow ring-2 ring-trippyYellow"
-                    : "border-slate-700 hover:border-slate-500"
+                    : "border-white/10 hover:border-white/30"
             }`}
         >
-            <div className="aspect-square bg-slate-900 flex items-center justify-center">
+            <div className="flex aspect-square items-center justify-center bg-slate-950/60">
                 {img ? (
                     <img
                         src={img}
@@ -46,11 +47,11 @@ const NftCard = ({
                     {selected ? "✓" : ""}
                 </span>
             </div>
-            <div className="p-1 bg-slate-800/90">
-                <div className="text-[11px] text-white truncate" title={nft.name ?? `#${nft.tokenId}`}>
+            <div className="bg-black/40 p-1.5">
+                <div className="truncate text-[11px] text-white" title={nft.name ?? `#${nft.tokenId}`}>
                     {nft.name ?? `#${nft.tokenId}`}
                 </div>
-                <div className="text-[10px] text-slate-400 truncate">ID: {nft.tokenId}</div>
+                <div className="truncate text-[10px] text-slate-400">ID: {nft.tokenId}</div>
             </div>
         </button>
     );
@@ -73,28 +74,20 @@ const NftGrid = ({
 }) => {
     return (
         <div>
-            <div className="flex items-center justify-between mb-2">
-                <div className="text-sm text-white">
-                    {selected.size} of {nfts.length} selected
+            <div className="mb-3 flex items-center justify-between">
+                <div className="text-sm text-slate-300">
+                    <span className="font-bold text-white">{selected.size}</span> of {nfts.length} selected
                 </div>
                 <div className="flex gap-2">
-                    <button
-                        type="button"
-                        onClick={onSelectAll}
-                        className="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded-sm text-xs"
-                    >
+                    <button type="button" onClick={onSelectAll} className={btnGhost}>
                         Select all
                     </button>
-                    <button
-                        type="button"
-                        onClick={onClear}
-                        className="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded-sm text-xs"
-                    >
+                    <button type="button" onClick={onClear} className={btnGhost}>
                         Clear
                     </button>
                 </div>
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 max-h-112 overflow-y-auto pr-1">
+            <div className="grid max-h-112 grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-4 md:grid-cols-6">
                 {nfts.map((nft) => (
                     <NftCard
                         key={nft.tokenId}

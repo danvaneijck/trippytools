@@ -26,6 +26,17 @@ import type { AirdropRecipient, DistMode, DropMode } from "./types";
 import DistributionToggle from "./components/DistributionToggle";
 import AirdropListSection from "./components/AirdropListSection";
 import { withShroomMetadata } from "../../modules/shroomTokenMeta";
+import { PiParachuteBold } from "react-icons/pi";
+import SectionCard from "./components/SectionCard";
+import {
+    btnPrimary,
+    btnSecondary,
+    btnGhost,
+    inputBase,
+    cardBase,
+    labelBase,
+    darkSelectStyles,
+} from "./components/ui";
 
 const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl";
 const STAKING_CONTRACT_ADDRESS = "inj1gtze7qm07nky47n7mwgj4zatf2s77xqvh3k2n8";
@@ -40,7 +51,7 @@ const MITO_EXCLUDED_WALLETS = [
 
 const DROP_MODE_OPTIONS: { value: DropMode; label: string }[] = [
     { value: "NFT", label: "NFT community" },
-    { value: "TOKEN", label: "Token holders" },
+    { value: "TOKEN", label: "Token or liquidity (LP) token holders" },
     { value: "CSV", label: "Custom CSV file upload" },
     { value: "GOV", label: "Proposal Voters" },
     { value: "MITO", label: "Mito Vault Holders / Stakers" },
@@ -741,30 +752,29 @@ const Airdrop = () => {
                     <div className="flex justify-center items-center min-h-full">
                         <div className="w-full max-w-(--breakpoint-lg) px-2">
                             {connectedAddress ? (
-                                <div>
-                                    <div className="text-center text-white mb-2">
-                                        <div className="text-3xl font-magic">New Airdrop</div>
-                                        <div className="text-sm">on Injective {currentNetwork}</div>
+                                <div className="space-y-5">
+                                    <div className="text-center text-white">
+                                        <PiParachuteBold className="mx-auto mb-2 text-trippyYellow" size={34} />
+                                        <div className="font-magic text-3xl">New Airdrop</div>
+                                        <div className="text-sm text-slate-400">
+                                            on Injective{" "}
+                                            <span className="capitalize text-trippyYellow">{currentNetwork}</span>
+                                        </div>
                                     </div>
-                                    <div className="flex flex-col sm:flex-row gap-2 my-4">
+                                    <div className="flex flex-col gap-2 sm:flex-row">
                                         <Link to="/nft-airdrop" className="flex-1">
-                                            <div className="bg-slate-800 hover:bg-slate-700 p-2 rounded-sm text-center text-sm">
-                                                Airdrop NFTs instead →
-                                            </div>
+                                            <div className={`${btnSecondary} w-full`}>Airdrop NFTs instead →</div>
                                         </Link>
                                         <Link to="/airdrop-history" className="flex-1">
-                                            <div className="bg-slate-800 hover:bg-slate-700 p-2 rounded-sm text-center text-sm">
-                                                View airdrop history
-                                            </div>
+                                            <div className={`${btnSecondary} w-full`}>View airdrop history</div>
                                         </Link>
                                     </div>
 
                                     {/* Step 1 — token to airdrop */}
-                                    <div className="border p-4 rounded-lg border-slate-700">
-                                        <label className="font-bold text-base text-white mb-2">
-                                            1. Token to airdrop (contract address / denom)
-                                        </label>
+                                    <SectionCard step={1} title="Token to airdrop" subtitle="Contract address / denom">
                                         <TokenSelect
+                                            dark
+                                            styles={darkSelectStyles}
                                             options={[
                                                 {
                                                     label: "TOKENS",
@@ -785,35 +795,48 @@ const Airdrop = () => {
                                             <button
                                                 disabled={loading}
                                                 onClick={getTokenInfo}
-                                                className="bg-gray-800 hover:bg-gray-700 rounded-lg p-2 w-full text-white mt-4 shadow-lg"
+                                                className={`${btnPrimary} mt-4 w-full`}
                                             >
                                                 Get token info
                                             </button>
                                         )}
 
-                                        <div className="flex flex-col md:flex-row justify-between">
+                                        <div className="mt-5 flex flex-col justify-between gap-4 md:flex-row">
                                             {tokenInfo && (
-                                                <div className="mt-5 text-sm text-white">
-                                                    <div>name: {tokenInfo.name}</div>
-                                                    <div>symbol: {tokenInfo.symbol}</div>
-                                                    <div>decimals: {tokenInfo.decimals}</div>
-                                                    {tokenInfo.description && <div>description: {tokenInfo.description}</div>}
+                                                <div className="flex-1 space-y-1.5 text-sm text-white">
+                                                    <div>
+                                                        <span className="text-slate-400">name:</span> {tokenInfo.name}
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-slate-400">symbol:</span> {tokenInfo.symbol}
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-slate-400">decimals:</span>{" "}
+                                                        {tokenInfo.decimals}
+                                                    </div>
+                                                    {tokenInfo.description && (
+                                                        <div>
+                                                            <span className="text-slate-400">description:</span>{" "}
+                                                            {tokenInfo.description}
+                                                        </div>
+                                                    )}
                                                     {tokenInfo.total_supply && (
                                                         <div>
-                                                            total supply:{" "}
+                                                            <span className="text-slate-400">total supply:</span>{" "}
                                                             {tokenInfo.total_supply / Math.pow(10, tokenInfo.decimals)}
                                                         </div>
                                                     )}
                                                 </div>
                                             )}
                                             {!pairMarketing && tokenInfo && tokenInfo.logo && (
-                                                <div className="mt-5 text-sm text-white">
+                                                <div className="text-sm text-white">
                                                     <IPFSImage
                                                         width={100}
                                                         className={"mb-2 rounded-lg"}
                                                         ipfsPath={tokenInfo.logo}
                                                     />
                                                     <a
+                                                        className="text-slate-300 transition hover:text-trippyYellow"
                                                         href={`https://${
                                                             currentNetwork === "testnet" ? "testnet." : ""
                                                         }explorer.injective.network/account/${tokenInfo.admin}`}
@@ -832,7 +855,7 @@ const Airdrop = () => {
                                                 </div>
                                             )}
                                             {pairMarketing && pairMarketing.logo && (
-                                                <div className="mt-5 text-sm text-white">
+                                                <div className="text-sm text-white">
                                                     <img
                                                         src={pairMarketing.logo.url}
                                                         style={{ width: 50, height: 50 }}
@@ -857,23 +880,24 @@ const Airdrop = () => {
                                             )}
                                         </div>
                                         {tokenInfo && (
-                                            <div>
-                                                <div className="my-2">
-                                                    Your balance: {balance} {tokenInfo.symbol}
+                                            <div className="mt-5">
+                                                <div className="mb-3 flex items-center justify-between rounded-lg border border-white/10 bg-slate-950/40 px-3 py-2 text-sm">
+                                                    <span className="text-slate-400">Your balance</span>
+                                                    <span className="font-bold text-white">
+                                                        {balance} {tokenInfo.symbol}
+                                                    </span>
                                                 </div>
                                                 <div>
-                                                    <label className="text-base font-bold text-white mb-1">
-                                                        Amount to airdrop
-                                                    </label>
+                                                    <label className={`${labelBase} mb-1`}>Amount to airdrop</label>
                                                     <div className="flex items-center gap-2">
                                                         <input
                                                             type="number"
-                                                            className="bg-white text-black w-full rounded-sm p-1 text-sm"
+                                                            className={inputBase}
                                                             onChange={(e) => setBalanceToDrop(e.target.value)}
                                                             value={balanceToDrop}
                                                         />
                                                         <button
-                                                            className="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded-sm text-sm whitespace-nowrap"
+                                                            className={`${btnGhost} whitespace-nowrap`}
                                                             onClick={() => setBalanceToDrop(String(balance))}
                                                         >
                                                             Max
@@ -882,15 +906,15 @@ const Airdrop = () => {
                                                 </div>
                                             </div>
                                         )}
-                                    </div>
+                                    </SectionCard>
 
                                     {/* Step 2 — drop mode */}
                                     {tokenInfo && (
-                                        <div className="mt-5 border p-4 rounded-lg border-slate-700">
-                                            <div className="space-y-2 mb-5">
-                                                <label className="text-base font-bold text-white">2. Drop Mode</label>
+                                        <SectionCard step={2} title="Drop Mode">
+                                            <div className="mb-5 space-y-2">
+                                                <label className={labelBase}>Who receives the drop?</label>
                                                 <Select
-                                                    className="text-black"
+                                                    styles={darkSelectStyles}
                                                     value={dropMode}
                                                     onChange={setDropMode as any}
                                                     options={DROP_MODE_OPTIONS}
@@ -900,10 +924,10 @@ const Airdrop = () => {
                                             {dropMode.value === "NFT" && (
                                                 <div>
                                                     <div className="space-y-2">
-                                                        <label className="text-base font-bold text-white">
-                                                            NFT collection address
-                                                        </label>
+                                                        <label className={labelBase}>NFT collection address</label>
                                                         <TokenSelect
+                                                            dark
+                                                            styles={darkSelectStyles}
                                                             options={[
                                                                 { label: "CW404", options: CW404_TOKENS },
                                                                 { label: "NFT", options: NFT_COLLECTIONS },
@@ -912,21 +936,20 @@ const Airdrop = () => {
                                                             setSelectedOption={setNftCollection}
                                                         />
                                                     </div>
-                                                    <div className="mt-4 mb-2">
+                                                    <div className="mb-2 mt-4">
                                                         <DistributionToggle value={distMode} onChange={setDistMode} />
                                                     </div>
                                                     <button
                                                         disabled={loading}
                                                         onClick={() => { void getNftCollection(); }}
-                                                        className="bg-gray-800 hover:bg-gray-700 rounded-lg p-2 w-full text-white mt-4 shadow-lg"
+                                                        className={`${btnPrimary} mt-4 w-full`}
                                                     >
                                                         Get collection holders
                                                     </button>
                                                     {nftCollectionInfo && (
-                                                        <div className="text-sm mt-5">
-                                                            Collection Name: {nftCollectionInfo.name}
-                                                            <br />
-                                                            Collection Symbol: {nftCollectionInfo.symbol}
+                                                        <div className="mt-4 rounded-lg border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-white">
+                                                            <span className="text-slate-400">Collection:</span>{" "}
+                                                            {nftCollectionInfo.name} ({nftCollectionInfo.symbol})
                                                         </div>
                                                     )}
                                                     {airdropDetails.length > 0 && (
@@ -949,9 +972,18 @@ const Airdrop = () => {
 
                                             {dropMode.value === "TOKEN" && (
                                                 <div>
-                                                    <div className="mt-4 space-y-2">
-                                                        <label className="block text-white">airdrop to holders of token</label>
+                                                    <div className="space-y-2">
+                                                        <label className={labelBase}>
+                                                            Airdrop to holders of a token or liquidity (LP) token
+                                                        </label>
+                                                        <p className="text-xs text-slate-400">
+                                                            Pick a token to drop to its holders, or a{" "}
+                                                            <span className="text-slate-200">liquidity (LP) token</span>{" "}
+                                                            to drop to that pool's liquidity providers.
+                                                        </p>
                                                         <TokenSelect
+                                                            dark
+                                                            styles={darkSelectStyles}
                                                             options={[
                                                                 {
                                                                     label: "Tokens",
@@ -964,7 +996,7 @@ const Airdrop = () => {
                                                                         })),
                                                                 },
                                                                 {
-                                                                    label: "LIQUIDITY tokens",
+                                                                    label: "Liquidity (LP) tokens — drop to LPs",
                                                                     options: pools
                                                                         .filter((p) => p.liquidity_token !== null)
                                                                         .sort((a, b) => {
@@ -988,13 +1020,13 @@ const Airdrop = () => {
                                                             setSelectedOption={setAirdropTokenAddress}
                                                         />
                                                     </div>
-                                                    <div className="mt-4 mb-2">
+                                                    <div className="mb-2 mt-4">
                                                         <DistributionToggle value={distMode} onChange={setDistMode} />
                                                     </div>
                                                     <button
                                                         disabled={loading}
                                                         onClick={() => { void getTokenHolders(); }}
-                                                        className="bg-gray-800 hover:bg-gray-700 rounded-lg p-2 w-full text-white mt-4 shadow-lg"
+                                                        className={`${btnPrimary} mt-4 w-full`}
                                                     >
                                                         Generate airdrop list
                                                     </button>
@@ -1020,21 +1052,20 @@ const Airdrop = () => {
                                             {dropMode.value === "CSV" && (
                                                 <div>
                                                     {airdropDetails.length === 0 && (
-                                                        <div className="text-sm my-2">
-                                                            CSV file like:
-                                                            <br />
-                                                            address,amount
-                                                            <br />
-                                                            inj...,10.1
-                                                            <br />
-                                                            inj...,20.2
+                                                        <div className="mb-3">
+                                                            <div className="mb-1.5 text-xs text-slate-400">
+                                                                Upload a CSV shaped like:
+                                                            </div>
+                                                            <pre className="overflow-x-auto rounded-lg border border-white/10 bg-slate-950/60 p-3 text-xs text-slate-300">
+address,amount{"\n"}inj...,10.1{"\n"}inj...,20.2
+                                                            </pre>
                                                         </div>
                                                     )}
                                                     <input
                                                         type="file"
                                                         accept=".csv"
                                                         onChange={(e) => { void handleFileUpload(e); }}
-                                                        className="text-white text-sm file:mr-3 file:rounded-sm file:border-0 file:bg-slate-700 file:px-3 file:py-1 file:text-white hover:file:bg-slate-600"
+                                                        className="text-sm text-slate-300 file:mr-3 file:cursor-pointer file:rounded-lg file:border file:border-white/10 file:bg-white/5 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-200 hover:file:bg-white/10"
                                                     />
                                                     {csvInvalidRows.length > 0 && (
                                                         <div className="text-amber-400 text-xs mt-2">
@@ -1064,37 +1095,37 @@ const Airdrop = () => {
                                             {dropMode.value === "GOV" && (
                                                 <div>
                                                     <div className="space-y-2">
-                                                        <label className="text-base font-bold text-white mr-2">
-                                                            Governance Proposal #
-                                                        </label>
+                                                        <label className={labelBase}>Governance proposal #</label>
                                                         <input
-                                                            className="bg-white text-black rounded-sm p-1"
+                                                            className={`${inputBase} sm:max-w-xs`}
                                                             value={proposalNumber}
                                                             onChange={(e) => setProposalNumber(e.target.value)}
                                                         />
                                                     </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-base font-bold text-white mr-2">Block height</label>
-                                                        <input
-                                                            disabled={attemptFindBlock === true}
-                                                            className="bg-white text-black rounded-sm p-1 disabled:bg-slate-400"
-                                                            value={blockHeight}
-                                                            onChange={(e) => setBlockHeight(Number(e.target.value))}
-                                                        />
-                                                        <label className="text-base font-bold text-white mx-2">OR</label>
-                                                        <input
-                                                            type="checkbox"
-                                                            className="text-black"
-                                                            checked={attemptFindBlock === true}
-                                                            onChange={() => setAttemptFindBlock(!attemptFindBlock)}
-                                                        />
-                                                        <label className="text-base font-bold text-white mx-2">
-                                                            attempt to auto find block
-                                                        </label>
+                                                    <div className="mt-4 space-y-2">
+                                                        <label className={labelBase}>Block height</label>
+                                                        <div className="flex flex-wrap items-center gap-3">
+                                                            <input
+                                                                disabled={attemptFindBlock === true}
+                                                                className={`${inputBase} sm:max-w-xs`}
+                                                                value={blockHeight}
+                                                                onChange={(e) => setBlockHeight(Number(e.target.value))}
+                                                            />
+                                                            <span className="text-xs font-bold uppercase text-slate-500">or</span>
+                                                            <label className="inline-flex items-center gap-2 text-sm font-medium text-white">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    className="h-4 w-4 accent-trippyYellow"
+                                                                    checked={attemptFindBlock === true}
+                                                                    onChange={() => setAttemptFindBlock(!attemptFindBlock)}
+                                                                />
+                                                                auto-find block
+                                                            </label>
+                                                        </div>
                                                     </div>
                                                     <button
                                                         onClick={() => { void getPropVoters(); }}
-                                                        className="bg-gray-800 hover:bg-gray-700 rounded-lg p-2 w-full text-white mt-6 shadow-lg"
+                                                        className={`${btnPrimary} mt-6 w-full`}
                                                     >
                                                         Get voters
                                                     </button>
@@ -1118,18 +1149,16 @@ const Airdrop = () => {
                                             {dropMode.value === "BUYBACK" && (
                                                 <div>
                                                     {currentNetwork !== "mainnet" ? (
-                                                        <div className="text-amber-400 text-sm">
+                                                        <div className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm text-amber-300">
                                                             Community BuyBack is a mainnet-only program. Switch to
                                                             mainnet to load round participants.
                                                         </div>
                                                     ) : (
                                                         <>
                                                             <div className="space-y-2">
-                                                                <label className="text-base font-bold text-white">
-                                                                    BuyBack round
-                                                                </label>
+                                                                <label className={labelBase}>BuyBack round</label>
                                                                 <Select
-                                                                    className="text-black"
+                                                                    styles={darkSelectStyles}
                                                                     value={buybackRound}
                                                                     onChange={setBuybackRound}
                                                                     options={buybackRounds}
@@ -1145,7 +1174,7 @@ const Airdrop = () => {
                                                                     buyback round.
                                                                 </div>
                                                             </div>
-                                                            <div className="mt-4 mb-2">
+                                                            <div className="mb-2 mt-4">
                                                                 <DistributionToggle
                                                                     value={distMode}
                                                                     onChange={setDistMode}
@@ -1156,7 +1185,7 @@ const Airdrop = () => {
                                                                 onClick={() => {
                                                                     void getBuybackParticipants();
                                                                 }}
-                                                                className="bg-gray-800 hover:bg-gray-700 rounded-lg p-2 w-full text-white mt-2 shadow-lg disabled:opacity-50"
+                                                                className={`${btnPrimary} mt-2 w-full`}
                                                             >
                                                                 Get participants
                                                             </button>
@@ -1188,15 +1217,15 @@ const Airdrop = () => {
                                                     <button
                                                         disabled={loading}
                                                         onClick={() => { void getMitoMarketList(); }}
-                                                        className="bg-gray-800 hover:bg-gray-700 rounded-lg p-2 w-full text-white shadow-lg"
+                                                        className={`${btnSecondary} w-full`}
                                                     >
                                                         Get vault list
                                                     </button>
                                                     {mitoVaults.length > 0 && (
-                                                        <div className="mt-2">
-                                                            <label>Select Vault</label>
+                                                        <div className="mt-4 space-y-2">
+                                                            <label className={labelBase}>Select vault</label>
                                                             <Select
-                                                                className="text-black"
+                                                                styles={darkSelectStyles}
                                                                 value={selectedMitoVault}
                                                                 options={mitoVaults}
                                                                 onChange={setSelectedMitoVault}
@@ -1205,19 +1234,19 @@ const Airdrop = () => {
                                                     )}
                                                     {selectedMitoVault !== null && (
                                                         <div className="mt-4">
-                                                            <div className="mt-4 mb-2">
+                                                            <div className="mb-2 mt-4">
                                                                 <DistributionToggle value={distMode} onChange={setDistMode} />
                                                             </div>
-                                                            <div className="mt-4 mb-2">
-                                                                <label className="text-base font-bold text-white">Balance type</label>
-                                                                <div className="grid grid-cols-2 gap-2 mt-1">
+                                                            <div className="mb-2 mt-4">
+                                                                <label className={`${labelBase} mb-1`}>Balance type</label>
+                                                                <div className="mt-1 grid grid-cols-2 gap-2">
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => setMitoHolderType("non-stake")}
-                                                                        className={`rounded-md p-2 text-sm border transition ${
+                                                                        className={`rounded-lg border p-2 text-sm font-medium transition ${
                                                                             mitoHolderType === "non-stake"
-                                                                                ? "bg-slate-600 border-slate-400 text-white"
-                                                                                : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+                                                                                ? "border-trippyYellow/60 bg-trippyYellow/15 text-white"
+                                                                                : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
                                                                         }`}
                                                                     >
                                                                         total balance
@@ -1225,10 +1254,10 @@ const Airdrop = () => {
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => setMitoHolderType("stake")}
-                                                                        className={`rounded-md p-2 text-sm border transition ${
+                                                                        className={`rounded-lg border p-2 text-sm font-medium transition ${
                                                                             mitoHolderType === "stake"
-                                                                                ? "bg-slate-600 border-slate-400 text-white"
-                                                                                : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+                                                                                ? "border-trippyYellow/60 bg-trippyYellow/15 text-white"
+                                                                                : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
                                                                         }`}
                                                                     >
                                                                         staked balance only
@@ -1241,7 +1270,7 @@ const Airdrop = () => {
                                                                         selectedMitoVault.value.matchingVault.contractAddress,
                                                                     );
                                                                 }}
-                                                                className="bg-gray-800 hover:bg-gray-700 rounded-lg p-2 w-full text-white shadow-lg"
+                                                                className={`${btnPrimary} w-full`}
                                                             >
                                                                 Generate airdrop list
                                                             </button>
@@ -1264,44 +1293,56 @@ const Airdrop = () => {
                                                     )}
                                                 </div>
                                             )}
-                                        </div>
+                                        </SectionCard>
                                     )}
                                 </div>
                             ) : (
-                                <div className="text-center">
-                                    <div className="text-xl mb-5">Airdrop Tool</div>
-                                    <img
-                                        src={parachute}
-                                        style={{ width: 140 }}
-                                        className="m-auto rounded-xl mb-4"
-                                        alt="airdrop"
-                                    />
-                                    <div className="mb-5">Please connect wallet to plan a new airdrop</div>
-                                    <ConnectWallet hideNetwork={true} button={true} />
-                                    <Link to="/airdrop-history">
-                                        <div className="bg-slate-800 hover:bg-slate-700 p-2 mt-10 rounded-sm text-sm">
-                                            View airdrop history
+                                <div className="mx-auto max-w-md text-center">
+                                    <div className={`${cardBase} flex flex-col items-center`}>
+                                        <div className="mb-4 font-magic text-2xl text-white">Airdrop Tool</div>
+                                        <img
+                                            src={parachute}
+                                            style={{ width: 140 }}
+                                            className="mb-4 rounded-xl"
+                                            alt="airdrop"
+                                        />
+                                        <div className="mb-5 text-sm text-slate-400">
+                                            Connect your wallet to plan a new airdrop
                                         </div>
-                                    </Link>
+                                        <ConnectWallet hideNetwork={true} button={true} />
+                                        <Link to="/airdrop-history" className="mt-8 w-full">
+                                            <div className={`${btnSecondary} w-full`}>View airdrop history</div>
+                                        </Link>
+                                    </div>
                                 </div>
                             )}
 
-                            {error && <div className="text-red-500 mt-2">{error}</div>}
+                            {error && (
+                                <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+                                    {error}
+                                </div>
+                            )}
 
                             {/* Step 3 — review and confirm */}
                             {airdropDetails.length > 0 && connectedAddress && (
-                                <div className="mt-5 border p-4 rounded-lg border-slate-700">
-                                    <div className="text-base font-bold text-white">3. Review and confirm</div>
+                                <SectionCard step={3} title="Review and confirm" className="mt-5">
                                     {currentNetwork === "mainnet" && (
-                                        <div className="mt-2">
-                                            Fee: {humanReadableAmount(shroomCost)} shroom (${shroomPrice ? shroomPrice : "0"})
-                                            <br />
-                                            <a
-                                                href="https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
-                                                className="underline text-sm"
-                                            >
-                                                buy here
-                                            </a>
+                                        <div className="flex items-center justify-between rounded-lg border border-white/10 bg-slate-950/40 px-3 py-2 text-sm">
+                                            <span className="text-slate-400">
+                                                Fee{" "}
+                                                <a
+                                                    href="https://coinhall.org/injective/inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
+                                                    className="text-trippyYellow underline"
+                                                >
+                                                    (buy SHROOM)
+                                                </a>
+                                            </span>
+                                            <span className="font-bold text-white">
+                                                {humanReadableAmount(shroomCost)} SHROOM{" "}
+                                                <span className="font-normal text-slate-400">
+                                                    (${shroomPrice ? shroomPrice : "0"})
+                                                </span>
+                                            </span>
                                         </div>
                                     )}
                                     <button
@@ -1310,17 +1351,19 @@ const Airdrop = () => {
                                             updateDescription();
                                             setShowConfirm(true);
                                         }}
-                                        className="bg-gray-800 hover:bg-gray-700 rounded-lg p-2 w-full text-white mt-6 shadow-lg disabled:opacity-50"
+                                        className={`${btnPrimary} mt-4 w-full`}
                                     >
                                         Review airdrop details
                                     </button>
-                                </div>
+                                </SectionCard>
                             )}
 
                             {loading && (
-                                <div className="flex flex-col items-center justify-center pt-5">
+                                <div className="flex flex-col items-center justify-center pt-6">
                                     <GridLoader color="#f9d73f" />
-                                    {progress.length > 0 && <div className="mt-2">{progress}</div>}
+                                    {progress.length > 0 && (
+                                        <div className="mt-3 text-sm text-slate-400">{progress}</div>
+                                    )}
                                 </div>
                             )}
                         </div>

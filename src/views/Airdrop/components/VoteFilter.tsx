@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { VoteFilters, VoteOption } from "../types";
+import { btnGhost } from "./ui";
 
 const OPTIONS: { key: VoteOption; label: string }[] = [
     { key: "VOTE_OPTION_YES", label: "YES" },
@@ -27,10 +28,11 @@ const VoteFilter = ({
     const [filters, setFilters] = useState<VoteFilters>({ ...ALL_TRUE });
 
     return (
-        <div className="mt-2">
-            <label className="text-white inline-flex items-center gap-2 text-sm">
+        <div className="mt-3">
+            <label className="inline-flex items-center gap-2 text-sm text-white">
                 <input
                     type="checkbox"
+                    className="h-4 w-4 accent-trippyYellow"
                     checked={enabled}
                     onChange={() => {
                         const next = !enabled;
@@ -47,9 +49,10 @@ const VoteFilter = ({
                 <div className="mt-2">
                     <div className="flex flex-wrap gap-3">
                         {OPTIONS.map(({ key, label }) => (
-                            <label key={key} className="inline-flex items-center gap-1 text-sm font-bold text-white">
+                            <label key={key} className="inline-flex items-center gap-1.5 text-sm font-medium text-white">
                                 <input
                                     type="checkbox"
+                                    className="h-4 w-4 accent-trippyYellow"
                                     checked={filters[key]}
                                     onChange={() =>
                                         setFilters((f) => ({ ...f, [key]: !f[key] }))
@@ -59,15 +62,12 @@ const VoteFilter = ({
                             </label>
                         ))}
                     </div>
-                    <div className="mt-2 flex gap-2">
-                        <button
-                            className="bg-slate-700 hover:bg-slate-600 p-1 px-3 rounded-sm text-sm"
-                            onClick={() => onApply(filters)}
-                        >
+                    <div className="mt-3 flex gap-2">
+                        <button className={btnGhost} onClick={() => onApply(filters)}>
                             Apply
                         </button>
                         <button
-                            className="bg-slate-700 hover:bg-slate-600 p-1 px-3 rounded-sm text-sm"
+                            className={btnGhost}
                             onClick={() => {
                                 setFilters({ ...ALL_TRUE });
                                 onReset();
