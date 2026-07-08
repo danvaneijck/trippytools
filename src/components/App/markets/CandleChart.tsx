@@ -98,7 +98,12 @@ interface CandleChartProps {
 }
 
 const CandleChart = ({ candles, denom, quoteSymbol }: CandleChartProps) => (
-    <ResponsiveContainer width="100%" height="100%">
+    // initialDimension seeds a positive first-render size so ResponsiveContainer
+    // doesn't log the "width(-1) and height(-1)" warning on mount (its default
+    // is -1/-1, and a 100%/100% container computes -1 until the ResizeObserver
+    // measures the real size on the next frame). Values are placeholders; the
+    // observer immediately corrects them to the parent's actual size.
+    <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 800, height: 320 }}>
         <BarChart data={candles} margin={{ top: 10, right: 8, left: 8, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#ffffff14" vertical={false} />
             <XAxis

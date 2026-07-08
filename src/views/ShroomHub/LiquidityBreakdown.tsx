@@ -124,6 +124,10 @@ const LiquidityBreakdown = ({
                 </div>
             </SectionHeader>
 
+            {/* Each ResponsiveContainer below gets an initialDimension so it
+                doesn't log recharts' "width(-1) and height(-1)" warning on the
+                first render (its default is -1/-1); the ResizeObserver corrects
+                to this box's real size on mount. */}
             <div className={`w-full ${chartH}`}>
                 {loading && !pools.length ? (
                     <div className="flex h-full items-center justify-center text-sm text-white/50">
@@ -134,7 +138,7 @@ const LiquidityBreakdown = ({
                         No liquidity found.
                     </div>
                 ) : mode === 'pair' ? (
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 600, height: 288 }}>
                         <BarChart
                             layout="vertical"
                             data={pairRows}
@@ -171,7 +175,7 @@ const LiquidityBreakdown = ({
                         </BarChart>
                     </ResponsiveContainer>
                 ) : mode === 'venue' ? (
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 600, height: 288 }}>
                         <PieChart>
                             <Pie
                                 data={venueRows}
@@ -190,7 +194,7 @@ const LiquidityBreakdown = ({
                         </PieChart>
                     </ResponsiveContainer>
                 ) : (
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 600, height: 288 }}>
                         <BarChart
                             layout="vertical"
                             data={tokenRows}
