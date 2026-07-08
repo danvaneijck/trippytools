@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dayjs from "dayjs";
 import { PiParachuteBold, PiUsersThreeBold, PiCoinsBold } from "react-icons/pi";
 import { FiCopy, FiCheck, FiExternalLink } from "react-icons/fi";
@@ -7,6 +7,7 @@ import shroomlogo from "../../assets/shroom.jpg";
 
 import useTokenStore from "../../store/useTokenStore";
 import { humanReadableAmount, shortAddress } from "../../utils/format";
+import { fetchShroomTokenMetaCached } from "../../modules/shroomTokenMeta";
 
 type Props = {
     log: {
@@ -16,7 +17,7 @@ type Props = {
         time: string;
         fee: string;
         tx_hashes: string;
-        token: { symbol: string };
+        token: { address?: string; symbol: string };
         total_participants: number;
         wallet: { address: string };
     };
@@ -34,11 +35,31 @@ const AirdropCard = ({ log }: Props) => {
     const [copied, setCopied] = useState(false);
 
     const { tokens } = useTokenStore();
-    const tokenDetails = tokens.find(
-        (token) => token.address == (log.token as any).address,
-    );
+    const denom = log.token?.address;
+    const tokenDetails = tokens.find((token) => token.address == denom);
 
-    const symbol = log.token?.symbol?.trim();
+    // SHROOM launchpad tokens carry the raw subdenom as their on-chain bank
+    // symbol (e.g. "SHROOM_11_273EE1EA53ABBCAD"); the friendly name/symbol/logo
+    // live in the launch's off-chain metadata. Resolve them best-effort so the
+    // card reads "Airdropped BERB" instead of the opaque denom. Falls back to the
+    // raw symbol for non-SHROOM tokens or when the read fails.
+    const [shroomSymbol, setShroomSymbol] = useState<string>();
+    const [shroomImage, setShroomImage] = useState<string>();
+    useEffect(() => {
+        if (!denom) return;
+        let alive = true;
+        void fetchShroomTokenMetaCached(denom).then((meta) => {
+            if (!alive || !meta) return;
+            if (meta.symbol) setShroomSymbol(meta.symbol);
+            if (meta.image) setShroomImage(meta.image);
+        });
+        return () => {
+            alive = false;
+        };
+    }, [denom]);
+
+    const symbol = (shroomSymbol ?? log.token?.symbol)?.trim();
+    const iconUrl = tokenDetails?.icon || shroomImage;
     const hashes = (log.tx_hashes ?? "").split(",").map((h) => h.trim()).filter(Boolean);
 
     const copyPng = async () => {
@@ -67,9 +88,9 @@ const AirdropCard = ({ log }: Props) => {
             "
         >
             {/* faint, corner-masked token watermark — decorative, keeps text readable */}
-            {tokenDetails?.icon && (
+            {iconUrl && (
                 <img
-                    src={tokenDetails.icon}
+                    src={iconUrl}
                     alt=""
                     aria-hidden
                     className="
@@ -86,9 +107,9 @@ const AirdropCard = ({ log }: Props) => {
             <div className="relative p-5">
                 {/* header */}
                 <div className="flex items-start gap-3">
-                    {tokenDetails?.icon ? (
+                    {iconUrl ? (
                         <img
-                            src={tokenDetails.icon}
+                            src={iconUrl}
                             alt={symbol ? `${symbol} logo` : "token"}
                             className="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-white/15"
                         />
