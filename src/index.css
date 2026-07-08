@@ -156,3 +156,21 @@ body {
 .slide-in {
   animation: slideInFromBottom 100ms ease-in forwards;
 }
+
+/* Modal enter animations (SHROOM-launchpad style): fade the backdrop and
+   scale-in the centered card. The card keyframes carry the translate(-50%,-50%)
+   so the centering survives the animation and its `forwards` resting state. */
+@keyframes modalBackdropFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes modalPop {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+.modal-backdrop-fade {
+  animation: modalBackdropFade 140ms ease-out;
+}
+.modal-pop {
+  animation: modalPop 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
