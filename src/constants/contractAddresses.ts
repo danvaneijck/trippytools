@@ -520,6 +520,37 @@ export const CHOICE_FACTORY = "inj1k9lcqtn3y92h4t3tdsu7z8qx292mhxhgsssmxg";
 // ];
 
 export const NFT_COLLECTIONS = [
+    // Verified on-chain 2026-07-08 (Talis admin inj1maeyvxf… + num_tokens +
+    // owner-spread sampling, and cross-checked against the Talis family→contract
+    // mapping where a family URL was known). The chain has many 1:1 fake copies
+    // with identical names parked in a single wallet — these are the real,
+    // holder-spread contracts.
+    {
+        value: "inj1nxz20pe8d7gsp5yy9vcdfgtq68qmn9rhj23ftd",
+        label: "The InjHallas",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/64e6a4e67ed45e3ad0ba4b26/miniaturePicture",
+    },
+    {
+        value: "inj1uq453kp4yda7ruc0axpmd9vzfm0fj62padhe0p",
+        label: "Pedro",
+        img: "https://gateway.pinata.cloud/ipfs/QmYgVA9bxfUq2DbLWingxMZARVv8X9YdeAu34a1iiDLATq/avatar_1539.png",
+    },
+    {
+        value: "inj1d3xuuquv7hf9m0grfehlwacmylqw0njsf4kx5h",
+        label: "Aliens On Injective",
+        img: "https://gateway.pinata.cloud/ipfs/QmXMNKHXcLr33pqWnRHHuHjhgftQ145XjHhh2UuXPFYxbL/1.png",
+    },
+    {
+        value: "inj1vjk598p5hkyjdc4qltjrzgwmhuywvhyaw8fdm0",
+        label: "100 Shades of Berb",
+        img: "https://talis-protocol.mo.cloudinary.net/inj/families/660b145db4aa2ed094b45300/miniaturePicture",
+    },
+    {
+        // "unverified on Talis" (no family miniature) — falls back to token art.
+        value: "inj1axy9hfzzrpuh85dfca44dhyhqyv3wuymq2f9kp",
+        label: "Numbers",
+        img: "https://gateway.pinata.cloud/ipfs/QmTXmUtwMBWvmTLkx6yn71T1pBJparGmytCW4UEKpENmGF",
+    },
     {
         value: "inj19ly43dgrr2vce8h02a8nw0qujwhrzm9yv8d75c",
         label: "The Ninjas",
