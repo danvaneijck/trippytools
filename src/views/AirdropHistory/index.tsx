@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { PiParachuteBold } from "react-icons/pi";
+import { FiPlus } from "react-icons/fi";
 import ShroomBalance from "../../components/App/ShroomBalance";
 import { gql, useQuery } from '@apollo/client';
 import Footer from "../../components/App/Footer";
@@ -34,76 +36,98 @@ query getAirdropHistory {
 const AirdropHistory = () => {
     const { networkKey: currentNetwork } = useNetworkStore()
 
-    const { data } = useQuery(AIRDROP_HISTORY_QUERY, {
+    const { data, loading } = useQuery(AIRDROP_HISTORY_QUERY, {
         fetchPolicy: "network-only",
         pollInterval: 5000
     })
 
-    const [airdropData, setAirdropData] = useState([])
+    const [airdropData, setAirdropData] = useState<any[]>([])
 
     useEffect(() => {
         if (!data) return
         setAirdropData(data.airdrop_tracker_airdroplog)
     }, [data])
 
+    const totalWallets = airdropData.reduce(
+        (sum, log) => sum + (Number(log.total_participants) || 0),
+        0,
+    )
 
     return (
-        <div className="flex flex-col min-h-screen pb-10 bg-customGray">
-
-            <div className="pt-16 mx-2 pb-20">
-                {currentNetwork == "mainnet" && <div className="mt-2 md:mt-0"><ShroomBalance /></div>}
-
-                <div className="min-h-full mt-2 md:mt-0 lg:w-1/2 mx-auto">
-                    <div className="px-2 text-white">
-
-                        <div className="text-white text-2xl font-magic">Airdrop History</div>
-                        <div className="flex flex-row justify-end mb-5">
-                            <Link to="/airdrop" className="bg-slate-800 p-2 mt-2 rounded-sm  text-sm">
-                                Do airdrop
-                            </Link>
-                        </div>
-
-                        {airdropData.length > 0 && airdropData.map((log, index) => {
-                            // return <div className="my-2 bg-slate-800 p-4 rounded-lg text-sm" key={index}>
-
-                            //     <div className="flex flex-row items-center">
-                            //         <PiParachute className="mr-2 text-2xl" />
-                            //         {dayjs(value.time).fromNow()}
-
-                            //     </div>
-                            //     <a
-                            //         href={`https://explorer.injective.network/account/${value.wallet.address}`}
-                            //     >
-                            //         performed by wallet: <span className="text-indigo-300 hover:text-indigo-900">{value.wallet.address.slice(0, 8)}...{value.wallet.address.slice(-8)}</span>
-                            //     </a>
-                            //     <div className="text-lg"><b>token dropped:</b> {value.token.symbol}</div>
-                            //     <div className="text-lg"><b>participants:</b> {value.total_participants}</div>
-
-                            //     <div className="text-lg">{value.criteria}
-                            //         <br />
-                            //         {value.description}
-                            //     </div>
-                            //     TX hashes:
-                            //     {value.tx_hashes.split(",").map((value, index) => {
-                            //         return <a
-                            //             key={index}
-                            //             className="hover:text-indigo-900 text-indigo-300"
-                            //             href={`https://explorer.injective.network/transaction/${value}`}
-                            //         >
-                            //             <div className="text-sm" key={index}>
-                            //                 explorer.injective.network/transaction/{value.slice(0, 5)}...
-                            //             </div>
-                            //         </a>
-
-                            //     })}
-                            //     <div className="text-sm flex flex-row justify-end mt-2">fee: {humanReadableAmount(value.fee)} SHROOM</div>
-                            // </div>
-                            return (
-                                <AirdropCard key={index} log={log} />
-                            )
-                        })}
+        <div className="flex min-h-screen flex-col bg-customGray">
+            <div className="mx-auto w-full max-w-3xl flex-1 px-4 pt-20 pb-16">
+                {currentNetwork == "mainnet" && (
+                    <div className="mb-6 flex justify-end">
+                        <ShroomBalance />
                     </div>
-                </div>
+                )}
+
+                {/* page header */}
+                <header className="mb-6 flex flex-col gap-4 border-b border-white/10 pb-5 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <div className="flex items-center gap-2 text-trippyYellow/90">
+                            <PiParachuteBold className="text-xl" />
+                            <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-slate-400">
+                                On-chain record
+                            </span>
+                        </div>
+                        <h1 className="mt-1 font-magic text-3xl font-bold text-white">
+                            Airdrop History
+                        </h1>
+                        <p className="mt-1 text-sm text-slate-400">
+                            {airdropData.length > 0 ? (
+                                <>
+                                    {airdropData.length.toLocaleString()} airdrops ·{" "}
+                                    {totalWallets.toLocaleString()} wallets rewarded
+                                </>
+                            ) : (
+                                "Every airdrop sent through Trippy Tools"
+                            )}
+                        </p>
+                    </div>
+
+                    <Link
+                        to="/airdrop"
+                        className="inline-flex items-center justify-center gap-2 rounded-lg
+                            bg-trippyYellow px-5 py-2.5 text-sm font-bold text-black
+                            shadow-lg shadow-trippyYellow/10 transition hover:brightness-110"
+                    >
+                        <FiPlus className="text-base" />
+                        Do airdrop
+                    </Link>
+                </header>
+
+                {/* content */}
+                {loading && airdropData.length === 0 ? (
+                    <div className="space-y-5">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                            <div
+                                key={i}
+                                className="h-52 animate-pulse rounded-2xl bg-white/5 ring-1 ring-white/10"
+                            />
+                        ))}
+                    </div>
+                ) : airdropData.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/2 py-16 text-center">
+                        <PiParachuteBold className="text-4xl text-slate-600" />
+                        <p className="mt-3 text-sm font-medium text-slate-300">
+                            No airdrops yet
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                            Be the first to reward your community.
+                        </p>
+                        <Link
+                            to="/airdrop"
+                            className="mt-4 rounded-lg bg-trippyYellow px-4 py-2 text-sm font-bold text-black transition hover:brightness-110"
+                        >
+                            Do airdrop
+                        </Link>
+                    </div>
+                ) : (
+                    airdropData.map((log, index) => (
+                        <AirdropCard key={log.id ?? index} log={log} />
+                    ))
+                )}
             </div>
 
             <Footer />
