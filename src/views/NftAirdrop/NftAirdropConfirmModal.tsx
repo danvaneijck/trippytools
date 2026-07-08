@@ -1,4 +1,4 @@
-import { MsgExecuteContract, MsgExecuteContractCompat } from "@injectivelabs/sdk-ts";
+import { MsgExecuteContractCompat } from "@injectivelabs/sdk-ts";
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CircleLoader } from "react-spinners";
@@ -9,11 +9,8 @@ import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
 import { performTransaction } from "../../utils/walletStrategy";
 import { isValidInjAddress } from "./csv";
+import { buildShroomFeeMessages } from "../../utils/shroomFee";
 import type { NftPair } from "./types";
-
-const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8";
-const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d";
-const BURN_WALLET_ADDRESS = "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49";
 
 // transfer_nft is far heavier than a cw20 transfer, so chunks stay small to
 // keep each tx under the block gas limit.
@@ -179,21 +176,9 @@ const NftAirdropConfirmModal = (props: {
 
     const payFee = useCallback(async () => {
         const injectiveAddress = connectedAddress as string;
-        const totalAmount = props.shroomCost * Math.pow(10, 18);
-        const feeCollectionAmount = (totalAmount * 0.9).toLocaleString("fullwide", { useGrouping: false });
-        const burnAmount = (totalAmount * 0.1).toLocaleString("fullwide", { useGrouping: false });
-
-        const feeMsg = MsgExecuteContract.fromJSON({
-            contractAddress: SHROOM_TOKEN_ADDRESS,
-            sender: injectiveAddress,
-            msg: { transfer: { recipient: FEE_COLLECTION_ADDRESS, amount: feeCollectionAmount } },
-        });
-        const burnMsg = MsgExecuteContract.fromJSON({
-            contractAddress: SHROOM_TOKEN_ADDRESS,
-            sender: injectiveAddress,
-            msg: { transfer: { recipient: BURN_WALLET_ADDRESS, amount: burnAmount } },
-        });
-        return await performTransaction(injectiveAddress, [feeMsg, burnMsg]);
+        // 90% fee / 10% burn, auto-converting bank SHROOM → CW20 when needed.
+        const messages = await buildShroomFeeMessages(injectiveAddress, props.shroomCost, { burn: true });
+        return await performTransaction(injectiveAddress, messages);
     }, [props.shroomCost, connectedAddress]);
 
     const startAirdrop = useCallback(async () => {
