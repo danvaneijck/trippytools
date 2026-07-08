@@ -248,17 +248,83 @@ interface RawTicker {
     liquidity_in_usd: string;
 }
 
+// Per-pool metadata resolved from Choice's GraphQL index, keyed by the same
+// identifiers the coingecko tickers feed uses:
+//   • friendly token symbols — launchpad tokens (factory/<launchpad>/shroom_<id>_<hash>)
+//     aren't self-describing, so we look them up rather than showing "shro…cad".
+//   • authoritative CLMM pool TVL — the coingecko adapter can't price a
+//     concentrated-liquidity launchpad pool and reports a NEGATIVE
+//     liquidity_in_usd; the indexer's clmm snapshot carries the real tvl_usd.
+const CHOICE_GRAPHQL_URL = import.meta.env.VITE_CHOICE_URL as string | undefined;
+
+const POOL_META_QUERY = `
+    query EcosystemPoolMeta($addrs: [String!], $pools: [String!]) {
+        tokens_token(where: { address: { _in: $addrs } }) {
+            address
+            symbol
+        }
+        liquidity_clmmpoolsnapshot(
+            where: { pool_id: { _in: $pools } }
+            order_by: [{ pool_id: asc }, { time: desc }]
+            distinct_on: pool_id
+        ) {
+            pool_id
+            tvl_usd
+        }
+    }`;
+
+export interface ChoicePoolMeta {
+    symbols: Record<string, string>; // denom -> symbol, e.g. "factory/…/shroom_11_…" -> "BERB"
+    tvl: Record<string, number>; // pool_id -> authoritative CLMM tvl_usd
+}
+
+// Best-effort: any failure (feed down, unknown denom/pool) yields empty maps, so
+// the caller falls back to symbolOf + the coingecko liquidity figure.
+export const fetchChoicePoolMeta = async (
+    denoms: string[],
+    poolIds: string[],
+): Promise<ChoicePoolMeta> => {
+    const empty: ChoicePoolMeta = { symbols: {}, tvl: {} };
+    if (!CHOICE_GRAPHQL_URL || (!denoms.length && !poolIds.length)) return empty;
+    try {
+        const res = await fetch(CHOICE_GRAPHQL_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                query: POOL_META_QUERY,
+                variables: { addrs: denoms, pools: poolIds },
+            }),
+        });
+        if (!res.ok) return empty;
+        const json = await res.json();
+        const symbols: Record<string, string> = {};
+        for (const r of json?.data?.tokens_token ?? [])
+            if (r?.address && r?.symbol) symbols[r.address] = String(r.symbol);
+        const tvl: Record<string, number> = {};
+        for (const r of json?.data?.liquidity_clmmpoolsnapshot ?? []) {
+            const v = Number(r?.tvl_usd);
+            if (r?.pool_id && Number.isFinite(v)) tvl[r.pool_id] = v;
+        }
+        return { symbols, tvl };
+    } catch {
+        return empty;
+    }
+};
+
 // Keep only the SHROOM/SAI Choice pools. 24h USD volume = the token-unit
 // `base_volume`/`target_volume` priced off whichever leg we know a USD price for
 // (SHROOM / SAI / INJ) — every SHROOM/SAI pool has at least one such leg.
 export const parseChoiceTickers = (
     results: RawTicker[],
     priceUsd: Record<string, number>,
+    meta: ChoicePoolMeta = { symbols: {}, tvl: {} },
 ): PoolLiq[] => {
+    const resolve = (currency: string): string =>
+        meta.symbols[currency] ?? symbolOf(currency);
     const pools: PoolLiq[] = [];
     for (const t of results) {
-        const baseSym = symbolOf(t.base_currency);
-        const quoteSym = symbolOf(t.target_currency);
+        const baseSym = resolve(t.base_currency);
+        const quoteSym = resolve(t.target_currency);
         const touches = (s: string) => s === 'SHROOM' || s === 'SAI';
         if (!touches(baseSym) && !touches(quoteSym)) continue;
 
@@ -268,6 +334,14 @@ export const parseChoiceTickers = (
         if (bp) vol = Number(t.base_volume) * bp;
         else if (qp) vol = Number(t.target_volume) * qp;
 
+        // Prefer the indexer's CLMM snapshot TVL: the coingecko adapter can't
+        // price a concentrated-liquidity launchpad pool and returns a negative
+        // liquidity_in_usd. Fall back to the coingecko figure (correct for the
+        // XYK pools, which have no clmm snapshot), floored at 0 for safety.
+        const snapshotTvl = meta.tvl[t.pool_id];
+        const tvlUsd =
+            snapshotTvl != null ? snapshotTvl : Math.max(0, Number(t.liquidity_in_usd) || 0);
+
         const [base, quote] = orderPair(baseSym, quoteSym);
         pools.push({
             id: t.pool_id,
@@ -275,7 +349,7 @@ export const parseChoiceTickers = (
             pair: `${base}/${quote}`,
             base,
             quote,
-            tvlUsd: Number(t.liquidity_in_usd) || 0,
+            tvlUsd,
             vol24hUsd: vol,
         });
     }
@@ -291,7 +365,23 @@ export const fetchChoicePools = async (
     if (!res.ok) throw new Error(`choice tickers ${res.status}`);
     const json = await res.json();
     const results: RawTicker[] = Array.isArray(json) ? json : (json?.results ?? []);
-    return parseChoiceTickers(results, priceUsd);
+
+    // For every SHROOM/SAI-touching pool, collect its pool_id (to fetch the real
+    // CLMM tvl_usd) and any leg symbolOf can't name (to fetch a friendly symbol,
+    // so pairs read "SAI/BERB" not "SAI/shro…cad"), then resolve both in one call.
+    const touches = (s: string) => s === 'SHROOM' || s === 'SAI';
+    const unresolved = new Set<string>();
+    const poolIds = new Set<string>();
+    for (const t of results) {
+        const b = symbolOf(t.base_currency);
+        const q = symbolOf(t.target_currency);
+        if (!touches(b) && !touches(q)) continue;
+        poolIds.add(t.pool_id);
+        if (b.includes('…')) unresolved.add(t.base_currency);
+        if (q.includes('…')) unresolved.add(t.target_currency);
+    }
+    const meta = await fetchChoicePoolMeta([...unresolved], [...poolIds]);
+    return parseChoiceTickers(results, priceUsd, meta);
 };
 
 // ---- aggregations for the three breakdown views -------------------------
