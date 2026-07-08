@@ -177,6 +177,34 @@ export async function fetchShroomTokenMeta(denom: string): Promise<ShroomTokenMe
     return decodeMetadataUri(uri);
 }
 
+// Session cache for the cached wrapper below. Launch metadata is immutable per
+// denom, so a successful resolution is cached for good; a definitive "not a
+// SHROOM denom" (parse fails) is also cached. Transient RPC failures are NOT
+// cached — they resolve to null without a cache entry so a later render retries.
+const shroomMetaCache = new Map<string, ShroomTokenMeta | null>();
+const shroomMetaInflight = new Map<string, Promise<ShroomTokenMeta | null>>();
+
+/// Cached, dedup'd variant of `fetchShroomTokenMeta`. Safe to call from every
+/// row of a list (e.g. the airdrop-history feed): concurrent calls for the same
+/// denom share one in-flight request, and resolved results are memoized for the
+/// session so re-renders don't re-hit the RPC.
+export function fetchShroomTokenMetaCached(denom: string): Promise<ShroomTokenMeta | null> {
+    if (shroomMetaCache.has(denom)) return Promise.resolve(shroomMetaCache.get(denom) ?? null);
+    const inflight = shroomMetaInflight.get(denom);
+    if (inflight) return inflight;
+    const p = (async () => {
+        if (!parseShroomDenom(denom)) {
+            shroomMetaCache.set(denom, null); // definitively not SHROOM — cache the miss
+            return null;
+        }
+        const meta = await fetchShroomTokenMeta(denom);
+        if (meta) shroomMetaCache.set(denom, meta); // only cache successes; let failures retry
+        return meta;
+    })().finally(() => shroomMetaInflight.delete(denom));
+    shroomMetaInflight.set(denom, p);
+    return p;
+}
+
 /// Overlay SHROOM friendly name/symbol/logo/description onto a raw bank-metadata
 /// object (as returned by `TokenUtils.getDenomExtraMetadata`), leaving
 /// decimals / total_supply / admin untouched so downstream amount math is
