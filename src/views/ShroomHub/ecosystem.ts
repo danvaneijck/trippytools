@@ -154,18 +154,24 @@ export const SAI_HOLDER_IDS = [SAI_DENOM];
 
 export const ECOSYSTEM_HOLDERS_QUERY = gql`
     query EcosystemHolders($shroom: [String!], $sai: [String!]) {
+        # SHROOM is tracked as two token rows — the CW20 and its bank (factory)
+        # denom — so a plain row count double-counts every wallet holding both.
+        # Count DISTINCT wallets instead. (balance table is unique per
+        # (wallet, token), so distinct wallet_id == the real holder count.)
         shroom_holders: wallet_tracker_balance_aggregate(
             where: { token_id: { _in: $shroom }, balance: { _gt: 0 } }
         ) {
             aggregate {
-                count
+                count(columns: [wallet_id], distinct: true)
             }
         }
+        # Distinct wallets here too, so it stays correct if SAI ever gains a
+        # wrapper denom (harmless for the current single-denom case).
         sai_holders: wallet_tracker_balance_aggregate(
             where: { token_id: { _in: $sai }, balance: { _gt: 0 } }
         ) {
             aggregate {
-                count
+                count(columns: [wallet_id], distinct: true)
             }
         }
         shroom_token: token_tracker_token(where: { address: { _in: $shroom } }) {
