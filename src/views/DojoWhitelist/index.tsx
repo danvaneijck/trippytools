@@ -8,9 +8,8 @@ import IPFSImage from "../../components/App/IpfsImage";
 import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
 import { performTransaction } from "../../utils/walletStrategy";
+import { buildShroomFeeMessages } from "../../utils/shroomFee";
 
-const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
-const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
 const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
 const DOJO_FACTORY = "inj1pc2vxcmnyzawnwkf03n2ggvt997avtuwagqngk"
 
@@ -86,16 +85,8 @@ const DojoWhitelist = () => {
         }
         setError(null)
 
-        const feeMsg = MsgExecuteContract.fromJSON({
-            contractAddress: SHROOM_TOKEN_ADDRESS,
-            sender: injectiveAddress,
-            msg: {
-                transfer: {
-                    recipient: FEE_COLLECTION_ADDRESS,
-                    amount: (shroomCost).toFixed(0) + "0".repeat(18),
-                },
-            },
-        });
+        // Auto-converts bank SHROOM → CW20 if the wallet's CW20 balance is short.
+        const feeMsgs = await buildShroomFeeMessages(injectiveAddress, shroomCost)
 
         const msgSend = MsgSend.fromJSON({
             amount: {
@@ -124,7 +115,7 @@ const DojoWhitelist = () => {
         const result = await performTransaction(
             injectiveAddress,
             [
-                feeMsg,
+                ...feeMsgs,
                 msgSend,
                 addTokenDecimals
             ]

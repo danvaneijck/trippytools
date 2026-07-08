@@ -1,16 +1,13 @@
 import { useCallback, useState } from "react";
 import { CircleLoader } from "react-spinners";
 import { WALLET_LABELS } from "../../constants/walletLabels";
-import { MsgExecuteContract } from "@injectivelabs/sdk-ts";
 import { useNavigate } from 'react-router-dom';
 import { humanReadableAmount } from "../../utils/helpers";
 import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
 import { performTransaction } from "../../utils/walletStrategy";
 import { sendNativeMultiSend } from "../../utils/multiSend";
-
-const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
-const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
+import { buildShroomFeeMessages } from "../../utils/shroomFee";
 
 interface AirdropRecord {
     address: string;
@@ -53,19 +50,10 @@ const AirdropModal = (props: AirdropModalProps) => {
             setError(null)
         }
 
-        const msg = MsgExecuteContract.fromJSON({
-            contractAddress: SHROOM_TOKEN_ADDRESS,
-            sender: injectiveAddress as string,
-            msg: {
-                transfer: {
-                    recipient: FEE_COLLECTION_ADDRESS,
-                    amount: (shroomFee).toFixed(0) + "0".repeat(18),
-                },
-            },
-        });
-
-        console.log("send shroom fee", msg)
-        return await performTransaction(injectiveAddress as string, [msg])
+        // Auto-converts bank SHROOM → CW20 if the wallet's CW20 balance is short.
+        const messages = await buildShroomFeeMessages(injectiveAddress as string, shroomFee)
+        console.log("send shroom fee", messages)
+        return await performTransaction(injectiveAddress as string, messages)
     }, [shroomFee, connectedAddress])
 
     const sendAirdrops = useCallback(async (denom: string) => {

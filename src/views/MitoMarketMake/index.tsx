@@ -7,11 +7,10 @@ import { humanReadableAmount } from "../../utils/helpers";
 import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
 import { performTransaction } from "../../utils/walletStrategy";
-import { MsgExecuteContract, MsgExecuteContractCompat } from "@injectivelabs/sdk-ts";
+import { MsgExecuteContractCompat } from "@injectivelabs/sdk-ts";
 import { toast } from 'react-toastify';
+import { buildShroomFeeMessages } from "../../utils/shroomFee";
 
-const SHROOM_TOKEN_ADDRESS = "inj1300xcg9naqy00fujsr9r8alwk7dh65uqu87xm8"
-const FEE_COLLECTION_ADDRESS = "inj1e852m8j47gr3qwa33zr7ygptwnz4tyf7ez4f3d"
 const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl"
 
 const MitoMarketMake = () => {
@@ -114,32 +113,24 @@ const MitoMarketMake = () => {
         const address = selectedVault.value.matchingVault.contractAddress
         console.log(`send market make for vault ${address}`)
 
-        const injectiveAddress = connectedAddress
+        const injectiveAddress = connectedAddress as string
 
-        const feeMsg = MsgExecuteContract.fromJSON({
-            contractAddress: SHROOM_TOKEN_ADDRESS,
-            sender: injectiveAddress as string,
-            msg: {
-                transfer: {
-                    recipient: FEE_COLLECTION_ADDRESS,
-                    amount: (shroomCost).toFixed(0) + "0".repeat(18),
-                },
-            },
-        });
+        // Auto-converts bank SHROOM → CW20 if the wallet's CW20 balance is short.
+        const feeMsgs = await buildShroomFeeMessages(injectiveAddress, shroomCost)
 
         const msgMarketMake = MsgExecuteContractCompat.fromJSON({
-            sender: injectiveAddress as string,
+            sender: injectiveAddress,
             contractAddress: address,
             msg: {
                 market_make: {}
             },
         });
-        console.log(feeMsg, msgMarketMake)
+        console.log(feeMsgs, msgMarketMake)
 
         const response = await performTransaction(
-            injectiveAddress as string,
+            injectiveAddress,
             [
-                feeMsg,
+                ...feeMsgs,
                 msgMarketMake
             ]
         )
