@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
 import { WALLET_LABELS } from "../../constants/walletLabels";
 import { sendTelegramMessage } from "../../modules/telegram";
+import { fetchShroomTokenMetaCached } from "../../modules/shroomTokenMeta";
 import { gql, useMutation } from '@apollo/client';
 import dayjs from "dayjs";
 import useWalletStore from "../../store/useWalletStore";
@@ -378,8 +379,18 @@ const AirdropConfirmModal = (props: {
                 ? ` [partial: ${paidRecipients.length}/${payable.length} recipients paid, ${failed.length} chunk(s) failed]`
                 : ""
 
+            // SHROOM launchpad tokens carry the raw subdenom as their on-chain
+            // symbol (e.g. "shroom_13_f9ac767…"); resolve the launch's friendly
+            // symbol so the alert reads "token dropped: SKIBI (factory/…)" rather
+            // than the opaque denom. Best-effort — falls back to the raw denom.
+            const shroomMeta = await fetchShroomTokenMetaCached(props.tokenAddress).catch(() => null)
+            const friendlySymbol = shroomMeta?.symbol ?? props.tokenSymbol
+            const tokenLabel = friendlySymbol
+                ? `${friendlySymbol} (${props.tokenAddress})`
+                : props.tokenAddress
+
             if (currentNetwork == "mainnet") await sendTelegramMessage(
-                `wallet ${connectedAddress} performed an airdrop on trippyinj!${partialNote}\ntoken dropped: ${props.tokenAddress}\n` +
+                `wallet ${connectedAddress} performed an airdrop on trippyinj!${partialNote}\ntoken dropped: ${tokenLabel}\n` +
                 `num participants: ${paidRecipients.length}\n` +
                 `${props.criteria}\n${props.description}`
             )
@@ -445,7 +456,7 @@ const AirdropConfirmModal = (props: {
             if (checkpointKey) clearCheckpoint(checkpointKey)
             void navigate('/airdrop-history');
         }
-    }, [props.airdropDetails, props.shroomCost, props.tokenAddress, props.tokenDecimals, feePayed, currentNetwork, sendAirdrops, connectedAddress, navigate, payFee, insertAirdropLog, props.criteria, props.description, insertWallets, insertTokenDropped, payable, totalOut, checkpointKey])
+    }, [props.airdropDetails, props.shroomCost, props.tokenAddress, props.tokenDecimals, props.tokenSymbol, feePayed, currentNetwork, sendAirdrops, connectedAddress, navigate, payFee, insertAirdropLog, props.criteria, props.description, insertWallets, insertTokenDropped, payable, totalOut, checkpointKey])
 
     // Reconciliation receipt: every intended recipient with its amount and
     // whether it's been paid yet — handy after a partial run.
