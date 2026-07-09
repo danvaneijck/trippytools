@@ -32,6 +32,7 @@ import {
     DOJO_SHROOM_INJ,
     ECOSYSTEM_HOLDERS_QUERY,
     fetchChoicePools,
+    fetchOnchainVolumes,
     type HolderInfo,
     MITO_VAULT,
     parseHolderInfo,
@@ -380,10 +381,16 @@ const ShroomHub = () => {
         setPoolsLoading(true);
         const module = new TokenUtils(networkConfig);
         try {
-            const [injPrice, mitoVault, dojoAmounts] = await Promise.all([
+            const [injPrice, mitoVault, dojoAmounts, onchainVol] = await Promise.all([
                 module.getINJPrice(),
                 module.fetchMitoVault(MITO_VAULT).catch(() => null),
                 module.getPoolAmounts(DOJO_SHROOM_INJ).catch(() => null),
+                // 24h volume for these venues lives in the Choice indexer, not
+                // the tickers feed — the Mito row shows the Helix orderbook vol.
+                fetchOnchainVolumes().catch(() => ({
+                    dojoShroomInj: null,
+                    shroomInjOrderbook: null,
+                })),
             ]);
             const inj = Number(injPrice) || 0;
 
@@ -398,7 +405,7 @@ const ShroomHub = () => {
                     base: 'SHROOM',
                     quote: 'INJ',
                     tvlUsd: mitoTvl,
-                    vol24hUsd: null,
+                    vol24hUsd: onchainVol.shroomInjOrderbook,
                 });
             }
             const dojoTvl = injReserve(dojoAmounts) * inj * 2;
@@ -410,7 +417,7 @@ const ShroomHub = () => {
                     base: 'SHROOM',
                     quote: 'INJ',
                     tvlUsd: dojoTvl,
-                    vol24hUsd: null,
+                    vol24hUsd: onchainVol.dojoShroomInj,
                 });
             }
 

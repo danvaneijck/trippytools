@@ -19,6 +19,11 @@ export const DOJO_SHROOM_INJ = 'inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl';
 export const CHOICE_SHROOM_INJ = 'inj1uyjjnykz0slq0w4n6k2xgleykqk9k5qkfctmw5';
 export const MITO_VAULT = 'inj1g89dl74lyre9q6rjua9l37pcc7psnw66capurp';
 
+// The Helix SHROOM/INJ orderbook (market id 97) that the Mito vault makes.
+// Its trading volume is what we show on the on-chain "Mito" liquidity row.
+export const SHROOM_INJ_ORDERBOOK_REF =
+    '0xc6b6d6627aeed8b9c29810163bed47d25c695d51a2aa8599fc5e39b2d88ef934';
+
 export const CHOICE_TICKERS_URL =
     'https://api.choice.exchange/api/coingecko/tickers';
 
@@ -306,6 +311,55 @@ export const fetchChoicePoolMeta = async (
             if (r?.pool_id && Number.isFinite(v)) tvl[r.pool_id] = v;
         }
         return { symbols, tvl };
+    } catch {
+        return empty;
+    }
+};
+
+// ---- 24h volume for the on-chain venues (Choice indexer) -----------------
+//
+// The DojoSwap AMM pool and the Helix SHROOM/INJ orderbook (market-made by the
+// Mito vault) are read on-chain for TVL, but the CoinGecko tickers feed only
+// carries Choice's own pools — so those rows have no 24h volume. Choice's
+// indexer DOES track their trades, so pull their volume from
+// `analytics_spotmarket` (keyed by ref_id: the pool address / the market hash).
+export interface OnchainVolumes {
+    dojoShroomInj: number | null; // DojoSwap SHROOM/INJ pool 24h vol
+    shroomInjOrderbook: number | null; // Helix orderbook (Mito) 24h vol
+}
+
+const ONCHAIN_VOL_QUERY = `
+    query ShroomOnchainVolumes($refs: [String!]) {
+        analytics_spotmarket(where: { ref_id: { _in: $refs } }) {
+            ref_id
+            volume24h_usd
+        }
+    }`;
+
+// Best-effort: any failure yields nulls, so the rows just render "—" as before.
+export const fetchOnchainVolumes = async (): Promise<OnchainVolumes> => {
+    const empty: OnchainVolumes = { dojoShroomInj: null, shroomInjOrderbook: null };
+    if (!CHOICE_GRAPHQL_URL) return empty;
+    try {
+        const res = await fetch(CHOICE_GRAPHQL_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                query: ONCHAIN_VOL_QUERY,
+                variables: { refs: [DOJO_SHROOM_INJ, SHROOM_INJ_ORDERBOOK_REF] },
+            }),
+        });
+        if (!res.ok) return empty;
+        const json = await res.json();
+        const byRef: Record<string, number> = {};
+        for (const r of json?.data?.analytics_spotmarket ?? []) {
+            const v = Number(r?.volume24h_usd);
+            if (r?.ref_id && Number.isFinite(v)) byRef[r.ref_id] = v;
+        }
+        return {
+            dojoShroomInj: byRef[DOJO_SHROOM_INJ] ?? null,
+            shroomInjOrderbook: byRef[SHROOM_INJ_ORDERBOOK_REF] ?? null,
+        };
     } catch {
         return empty;
     }
