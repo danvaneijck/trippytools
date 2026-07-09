@@ -15,8 +15,9 @@ import dayjs from "dayjs";
 import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
 import { performTransaction } from "../../utils/walletStrategy";
-import { CHUNK_SIZE } from "./distribution";
+import { chunkSizeForDenom, isNativeDenomSend } from "./distribution";
 import { isValidInjAddress } from "./csv";
+import { isBlockedRecipient } from "./blockedAddresses";
 import { humanReadableAmount } from "./format";
 import { downloadCsv } from "../../utils/csv";
 import {
@@ -113,20 +114,40 @@ const AirdropConfirmModal = (props: {
 
     // Resume/idempotency state, seeded from the persisted checkpoint (if any).
     const [paidCount, setPaidCount] = useState(0)
-    const [failedChunks, setFailedChunks] = useState<number[]>([])
+    // Individual recipients the chain refused after retries + bisection (a
+    // blocked module account, an EVM precompile, …). These are the *only*
+    // addresses a failed run leaves unpaid — never their chunk-mates.
+    const [failedRecipients, setFailedRecipients] = useState<string[]>([])
 
     const [insertAirdropLog] = useMutation(INSERT_AIRDROP_MUTATION)
     const [insertWallets] = useMutation(INSERT_WALLETS_MUTATION)
     const [insertTokenDropped] = useMutation(INSERT_TOKEN_MUTATION)
 
-    // A recipient is actually paid only if it's included AND rounds to a
-    // non-zero amount at the token's decimals. (CSV excludes keep their amount,
-    // so checking includeInDrop here matters — not just amount > 0.)
+    // A recipient is actually paid only if it's included, rounds to a non-zero
+    // amount at the token's decimals, AND isn't a bank-blocked address. (CSV
+    // excludes keep their amount, so checking includeInDrop here matters — not
+    // just amount > 0.) Blocked module accounts (e.g. the exchange module, which
+    // holds every Helix depositor's balance) otherwise slip in as "holders" and
+    // revert their whole multisend chunk at simulation.
     const isPayable = useCallback(
         (record: any) =>
             record.includeInDrop &&
-            Number(Number(record.amountToAirdrop).toFixed(props.tokenDecimals)) > 0,
+            Number(Number(record.amountToAirdrop).toFixed(props.tokenDecimals)) > 0 &&
+            !isBlockedRecipient(record.address),
         [props.tokenDecimals],
+    );
+
+    // How many otherwise-payable recipients were dropped purely for being a
+    // bank-blocked address — surfaced in the pre-flight so it's not a surprise.
+    const blockedCount = useMemo(
+        () =>
+            (props.airdropDetails || []).filter(
+                (r: any) =>
+                    r.includeInDrop &&
+                    Number(Number(r.amountToAirdrop).toFixed(props.tokenDecimals)) > 0 &&
+                    isBlockedRecipient(r.address),
+            ).length,
+        [props.airdropDetails, props.tokenDecimals],
     );
 
     const payable = useMemo(
@@ -141,7 +162,7 @@ const AirdropConfirmModal = (props: {
         () => payable.filter((r: any) => !isValidInjAddress(r.address)).length,
         [payable],
     );
-    const txCount = Math.ceil(payable.length / CHUNK_SIZE);
+    const txCount = Math.ceil(payable.length / chunkSizeForDenom(props.tokenAddress));
 
     // The exact `{address, amount}` rows that will be sent — the single source of
     // truth for both the send loop and the checkpoint key, so the key always
@@ -198,14 +219,9 @@ const AirdropConfirmModal = (props: {
         const key = checkpointKey;
         const base = { sender: injectiveAddress, token: props.tokenAddress, total: records.length };
 
-        const isNative = (
-            denom.includes("factory") ||
-            denom.includes("peggy") ||
-            denom.includes("ibc") ||
-            denom == "inj"
-        )
+        const isNative = isNativeDenomSend(denom)
 
-        const chunkSize = CHUNK_SIZE;
+        const chunkSize = chunkSizeForDenom(denom);
         const chunks: { address: string; amount: string }[][] = [];
 
         for (let i = 0; i < records.length; i += chunkSize) {
@@ -223,103 +239,102 @@ const AirdropConfirmModal = (props: {
         setCompletedTx(transactions.length)
         setPaidCount(successfullyProcessed.size)
 
-        // Chunks that couldn't be sent after their retries. We record them and
-        // keep going instead of aborting the whole run, so one bad chunk no
-        // longer strands the other 35.
-        const failed: number[] = [];
+        // Individual recipients the chain refused even when sent alone — these
+        // are the only addresses left unpaid. The last error seen is kept so the
+        // UI can show *why* (a blocked account, a precompile, a real revert).
+        const failedAddrs: string[] = [];
+        let lastError: unknown = null;
 
-        for (let ci = 0; ci < chunks.length; ci++) {
-            const filteredChunk = chunks[ci].filter(record => !successfullyProcessed.has(record.address));
+        type Row = { address: string; amount: string };
 
-            if (filteredChunk.length === 0) {
-                continue; // every recipient in this chunk was already paid
+        // Build the send message for an arbitrary group of recipients: one CW20
+        // transfer per recipient for cw20 tokens, or a single balanced
+        // MsgMultiSend for native/factory/peggy/ibc denoms.
+        const buildMsgs = (group: Row[]) => {
+            if (!isNative) {
+                return group.map((record) =>
+                    MsgExecuteContractCompat.fromJSON({
+                        contractAddress: denom,
+                        sender: injectiveAddress,
+                        msg: {
+                            transfer: {
+                                recipient: record.address,
+                                amount: new BigNumberInBase(record.amount).toWei(decimals).toFixed(),
+                            },
+                        },
+                    }),
+                );
             }
+            const totalToSend = group.reduce(
+                (acc, record) => acc.plus(new BigNumberInBase(record.amount).toWei(decimals)),
+                new BigNumberInWei(0),
+            );
+            return MsgMultiSend.fromJSON({
+                inputs: [{ address: injectiveAddress, coins: [{ denom, amount: totalToSend.toFixed() }] }],
+                outputs: group.map((record) => ({
+                    address: record.address,
+                    coins: [{ amount: new BigNumberInBase(record.amount).toWei(decimals).toFixed(), denom }],
+                })),
+            });
+        };
 
+        // Broadcast one group, retrying transient failures. Returns true on a
+        // landed tx (progress is persisted before anything else can throw).
+        const sendGroup = async (group: Row[]): Promise<boolean> => {
             let retries = 3;
-            let success = false;
-
-            while (retries > 0 && !success) {
+            while (retries > 0) {
                 try {
-                    let msg;
-                    if (!isNative) {
-                        msg = filteredChunk.map((record) => {
-                            return MsgExecuteContractCompat.fromJSON({
-                                contractAddress: denom,
-                                sender: injectiveAddress,
-                                msg: {
-                                    transfer: {
-                                        recipient: record.address,
-                                        amount: new BigNumberInBase(record.amount)
-                                            .toWei(decimals)
-                                            .toFixed()
-                                    },
-                                },
-                            });
-                        });
-                    } else {
-                        const totalChunkToSend = filteredChunk.reduce((acc, record) => {
-                            return acc.plus(new BigNumberInBase(record.amount).toWei(decimals));
-                        }, new BigNumberInWei(0));
-
-                        msg = MsgMultiSend.fromJSON({
-                            inputs: [
-                                {
-                                    address: injectiveAddress,
-                                    coins: [
-                                        {
-                                            denom,
-                                            amount: totalChunkToSend.toFixed(),
-                                        },
-                                    ],
-                                },
-                            ],
-                            outputs: filteredChunk.map((record: { address: any; amount: BigNumber.Value; }) => {
-                                return {
-                                    address: record.address,
-                                    coins: [
-                                        {
-                                            amount: new BigNumberInBase(record.amount)
-                                                .toWei(decimals)
-                                                .toFixed(),
-                                            denom,
-                                        },
-                                    ],
-                                };
-                            }),
-                        });
-                    }
-
-                    const response = await performTransaction(injectiveAddress, msg as any, {
+                    const response = await performTransaction(injectiveAddress, buildMsgs(group) as any, {
                         gasBufferCoefficient: AIRDROP_GAS_BUFFER,
                     });
-
-                    // Persist progress BEFORE anything else can throw, so a crash
-                    // right after broadcast can't lose a landed tx.
-                    filteredChunk.forEach(record => successfullyProcessed.add(record.address));
-                    transactions.push(response!.txHash)
+                    group.forEach((record) => successfullyProcessed.add(record.address));
+                    transactions.push(response!.txHash);
                     if (key) {
-                        recordChunkPaid(key, base, filteredChunk.map(r => r.address), response!.txHash);
+                        recordChunkPaid(key, base, group.map((r) => r.address), response!.txHash);
                     }
-                    setCompletedTx(transactions.length)
-                    setPaidCount(successfullyProcessed.size)
-                    success = true;
+                    setCompletedTx(transactions.length);
+                    setPaidCount(successfullyProcessed.size);
+                    return true;
                 } catch (error) {
-                    console.error(`Chunk ${ci + 1}/${chunks.length} failed, retrying...`, error);
+                    lastError = error;
+                    console.error(`Send of ${group.length} recipient(s) failed, retrying...`, error);
                     retries -= 1;
                     if (retries > 0) {
                         await sleep(1000 * (3 - retries)); // 1s, then 2s backoff
                     }
                 }
             }
+            return false;
+        };
 
-            if (!success) {
-                console.error(`Chunk ${ci + 1}/${chunks.length} failed after retries — continuing`);
-                failed.push(ci);
+        // Send a group; if it fails, *bisect* it so a single unsendable recipient
+        // (a blocked account, precompile, …) only ever strands itself instead of
+        // its ~499 chunk-mates. Recurses down to a single address, which — if it
+        // still fails alone — is recorded and skipped.
+        const processGroup = async (group: Row[]): Promise<void> => {
+            const pending = group.filter((record) => !successfullyProcessed.has(record.address));
+            if (pending.length === 0) return; // already paid on a previous attempt
+
+            if (await sendGroup(pending)) return;
+
+            if (pending.length === 1) {
+                console.error(`Recipient ${pending[0].address} is unsendable — skipping`);
+                failedAddrs.push(pending[0].address);
+                setFailedRecipients([...failedAddrs]);
+                return;
             }
+
+            const mid = Math.ceil(pending.length / 2);
+            await processGroup(pending.slice(0, mid));
+            await processGroup(pending.slice(mid));
+        };
+
+        for (let ci = 0; ci < chunks.length; ci++) {
+            await processGroup(chunks[ci]);
         }
 
-        setFailedChunks(failed)
-        return { txHashes: transactions, failed }
+        setFailedRecipients(failedAddrs)
+        return { txHashes: transactions, failed: failedAddrs, error: lastError }
     }, [connectedAddress, payableRecords, checkpointKey, props.tokenAddress]);
 
     const payFee = useCallback(async () => {
@@ -343,6 +358,7 @@ const AirdropConfirmModal = (props: {
 
     const startAirdrop = useCallback(async () => {
         setError(null)
+        setFailedRecipients([])
         if (props.airdropDetails !== null && props.airdropDetails.length > 0) {
             setTxLoading(true)
 
@@ -356,11 +372,11 @@ const AirdropConfirmModal = (props: {
 
             console.log("airdrop")
             setProgress("Send airdrops")
-            const { txHashes, failed } = await sendAirdrops(props.tokenAddress, props.tokenDecimals)
+            const { txHashes, failed, error: sendError } = await sendAirdrops(props.tokenAddress, props.tokenDecimals)
             const partial = failed.length > 0
             setProgress(partial ? "" : "Done...")
             setTxLoading(false)
-            console.log(txHashes, "failed chunks:", failed)
+            console.log(txHashes, "failed recipients:", failed)
 
             // Who actually got paid (from the checkpoint's confirmed set) — so
             // logs and receipts reflect reality even on a partial run.
@@ -376,7 +392,7 @@ const AirdropConfirmModal = (props: {
                 )
                 : totalOut
             const partialNote = partial
-                ? ` [partial: ${paidRecipients.length}/${payable.length} recipients paid, ${failed.length} chunk(s) failed]`
+                ? ` [partial: ${paidRecipients.length}/${payable.length} recipients paid, ${failed.length} unsendable recipient(s) skipped]`
                 : ""
 
             // SHROOM launchpad tokens carry the raw subdenom as their on-chain
@@ -443,12 +459,20 @@ const AirdropConfirmModal = (props: {
             }
 
             if (partial) {
-                // Keep the checkpoint so the user can retry only the failed
-                // chunks; surface a clear, actionable message.
+                // After bisection these are individual addresses the chain
+                // refuses (blocked accounts, precompiles, real reverts) — retrying
+                // won't help, so show which ones and why instead of implying a
+                // retry will fix it. Progress is saved; the receipt lists them.
+                const reason: string =
+                    (sendError as any)?.originalMessage ||
+                    (sendError as any)?.message ||
+                    (typeof sendError === "string" ? sendError : "unknown error")
+                const sample = failed.slice(0, 3).join(", ") + (failed.length > 3 ? ` +${failed.length - 3} more` : "")
                 setError(
                     `Sent to ${paidRecipients.length}/${payable.length} recipients. ` +
-                    `${failed.length} transaction(s) failed. Your progress is saved — ` +
-                    `click "Retry failed" to send only the remaining recipients.`,
+                    `${failed.length} address(es) could not be paid and were skipped: ${sample}. ` +
+                    `These are addresses the chain refuses (e.g. module accounts) — retrying won't help. ` +
+                    `Last error: ${reason}. Download the receipt for the full list.`,
                 )
                 return
             }
@@ -474,12 +498,12 @@ const AirdropConfirmModal = (props: {
     }, [checkpointKey, payableRecords, props.tokenSymbol]);
 
     const hasProgress = paidCount > 0;
-    const remaining = Math.max(0, payable.length - paidCount);
-    const actionLabel = failedChunks.length > 0
-        ? `Retry failed (${remaining} left)`
-        : hasProgress
-            ? `Resume airdrop (${remaining} left)`
-            : "Do Airdrop";
+    // Known-unsendable recipients don't count as "remaining" — retrying them is
+    // futile, so the resume prompt shouldn't dangle a count that can never reach 0.
+    const remaining = Math.max(0, payable.length - paidCount - failedRecipients.length);
+    const actionLabel = hasProgress && remaining > 0
+        ? `Resume airdrop (${remaining} left)`
+        : "Do Airdrop";
 
     return (
         <>
@@ -526,6 +550,12 @@ const AirdropConfirmModal = (props: {
                                 {invalidAddressCount > 0 &&
                                     <div className="text-amber-400 text-xs mt-2">
                                         {invalidAddressCount} recipient{invalidAddressCount === 1 ? "" : "s"} with an invalid address will be skipped.
+                                    </div>
+                                }
+                                {blockedCount > 0 &&
+                                    <div className="text-amber-400 text-xs mt-2">
+                                        {blockedCount} bank-blocked address{blockedCount === 1 ? "" : "es"} (module accounts
+                                        like the exchange/auction module) excluded — the chain won't credit them.
                                     </div>
                                 }
 
@@ -597,8 +627,8 @@ const AirdropConfirmModal = (props: {
                                         <div>Completed tx: <b>{completedTx}</b> / {estimatedTx}</div>
                                     }
                                     {remaining > 0 && <div>Remaining: <b>{remaining}</b></div>}
-                                    {failedChunks.length > 0 &&
-                                        <div className="text-rose-400">Failed tx: <b>{failedChunks.length}</b></div>
+                                    {failedRecipients.length > 0 &&
+                                        <div className="text-rose-400">Skipped (unsendable): <b>{failedRecipients.length}</b></div>
                                     }
                                 </div>
                                 {hasProgress &&

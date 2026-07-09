@@ -10,9 +10,43 @@ import type { AirdropRecipient, DistMode, VoteFilters } from "./types";
 // chain rounds each transfer to the token's decimals.
 export const DUST_HAIRCUT = 0.00001;
 
-// Recipients per transaction (MsgMultiSend outputs / CW20 transfer messages).
-// Shared with the confirm modal so the tx-count estimate matches execution.
-export const CHUNK_SIZE = 500;
+// Recipients per transaction. Sized from on-chain gas simulation (2026-07-09,
+// mainnet): a native/factory MsgMultiSend costs a dead-linear ~44,010 gas per
+// output, so with the 1.3x airdrop gas buffer, gasWanted ≈ 57,213 · n. Measured:
+//   n=1000 → 57.3M gasWanted (38% of the 150M block gas limit)  ← chosen default
+//   n=1500 → 85.9M (57%)     n=2000 → 114.5M (76%)     n=2500 → 143.2M (95%)
+//   n≥3000 → >150M: can never fit a block. Simulate itself also dies ~3,500.
+// Hard ceiling is ~2,600 outputs. 1000 halves the tx count (a 36k drop: 74 → 37)
+// while staying comfortably under any plausible node `max-tx-gas-wanted` mempool
+// cap (57M is a routine Injective tx size) so chunks land first-try. Push higher
+// (→1500/2000) only after confirming a run lands without bisecting — the send
+// loop bisects any rejected chunk, so an over-estimate is self-correcting but
+// wastes a retry round per chunk before it splits.
+export const NATIVE_CHUNK_SIZE = 1000;
+
+// CW20 transfers are one contract-execute *per recipient* (~3-4x the gas of a
+// bank output), so they need a much smaller batch. Left at the previously-shipped
+// value — CW20-token drops are rare (launchpad tokens are native factory denoms).
+export const CW20_CHUNK_SIZE = 500;
+
+// Back-compat default (native). Prefer chunkSizeForDenom() when the denom is known.
+export const CHUNK_SIZE = NATIVE_CHUNK_SIZE;
+
+// Native/bank denoms go out as a single MsgMultiSend; everything else (a CW20
+// contract address) goes out as one execute per recipient. Mirrors the check in
+// the confirm modal's send loop so the tx-count estimate matches execution.
+export function isNativeDenomSend(denom: string): boolean {
+    return (
+        denom.includes("factory") ||
+        denom.includes("peggy") ||
+        denom.includes("ibc") ||
+        denom === "inj"
+    );
+}
+
+export function chunkSizeForDenom(denom: string): number {
+    return isNativeDenomSend(denom) ? NATIVE_CHUNK_SIZE : CW20_CHUNK_SIZE;
+}
 
 export function netSupply(total: number): number {
     const n = Number(total) || 0;
@@ -168,6 +202,7 @@ export function summarize(
     recipients: AirdropRecipient[],
     total: number,
     decimals: number,
+    chunkSize: number = NATIVE_CHUNK_SIZE,
 ): AirdropSummary {
     const paid = recipients.filter(
         (r) => r.includeInDrop && Number(Number(r.amountToAirdrop).toFixed(decimals)) > 0,
@@ -180,6 +215,6 @@ export function summarize(
         recipientCount: paid.length,
         totalOut,
         reserved: Math.max(0, (Number(total) || 0) - totalOut),
-        txCount: Math.ceil(paid.length / CHUNK_SIZE),
+        txCount: Math.ceil(paid.length / chunkSize),
     };
 }
