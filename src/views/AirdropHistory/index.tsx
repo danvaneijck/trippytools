@@ -9,6 +9,81 @@ import useNetworkStore from "../../store/useNetworkStore";
 import AirdropCard from "../../components/App/AIrdropCord";
 
 
+// A partial airdrop that's later resumed/retried is written as a SECOND log row
+// (the resume re-broadcasts nothing already paid but re-logs the FULL tx set —
+// see AirdropConfirmModal), so the retry and the partial share on-chain tx
+// hashes. Collapse any logs connected by a shared tx hash into one entry,
+// keeping the most-complete run, so the same airdrop isn't shown — or counted —
+// twice.
+const parseHashes = (s?: string): string[] =>
+    (s ?? "").split(",").map((h) => h.trim()).filter(Boolean)
+
+const isPartialLog = (log: any): boolean => /\[partial:/i.test(log?.description ?? "")
+
+const timeOf = (log: any): number => {
+    const t = new Date(log?.time).getTime()
+    return Number.isFinite(t) ? t : 0
+}
+
+// The representative of a group: the finished run. Prefer most recipients, then
+// most txs, then the non-partial row, then the newest.
+const preferred = (a: any, b: any): any => {
+    const pa = Number(a.total_participants) || 0
+    const pb = Number(b.total_participants) || 0
+    if (pa !== pb) return pa > pb ? a : b
+    const ha = parseHashes(a.tx_hashes).length
+    const hb = parseHashes(b.tx_hashes).length
+    if (ha !== hb) return ha > hb ? a : b
+    const partA = isPartialLog(a)
+    const partB = isPartialLog(b)
+    if (partA !== partB) return partA ? b : a
+    return timeOf(a) >= timeOf(b) ? a : b
+}
+
+const dedupeAirdropLogs = (logs: any[]): any[] => {
+    // Union-find over logs linked by a shared tx hash.
+    const parent = logs.map((_, i) => i)
+    const find = (i: number): number => {
+        while (parent[i] !== i) {
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        }
+        return i
+    }
+    const union = (i: number, j: number) => {
+        parent[find(i)] = find(j)
+    }
+
+    const seen = new Map<string, number>() // tx hash -> first log index carrying it
+    logs.forEach((log, i) => {
+        for (const h of parseHashes(log.tx_hashes)) {
+            const prev = seen.get(h)
+            if (prev != null) union(prev, i)
+            else seen.set(h, i)
+        }
+    })
+
+    // Reduce each group to its best representative.
+    const rep = new Map<number, any>()
+    logs.forEach((log, i) => {
+        const r = find(i)
+        const cur = rep.get(r)
+        rep.set(r, cur ? preferred(cur, log) : log)
+    })
+
+    // Emit one row per group, preserving the incoming (time desc) order — the
+    // group surfaces at the position of its newest member.
+    const emitted = new Set<number>()
+    const out: any[] = []
+    logs.forEach((_, i) => {
+        const r = find(i)
+        if (emitted.has(r)) return
+        emitted.add(r)
+        out.push(rep.get(r))
+    })
+    return out
+}
+
 const AIRDROP_HISTORY_QUERY = gql`
 query getAirdropHistory {
   airdrop_tracker_airdroplog(order_by: {time: desc}) {
@@ -45,7 +120,7 @@ const AirdropHistory = () => {
 
     useEffect(() => {
         if (!data) return
-        setAirdropData(data.airdrop_tracker_airdroplog)
+        setAirdropData(dedupeAirdropLogs(data.airdrop_tracker_airdroplog))
     }, [data])
 
     const totalWallets = airdropData.reduce(
