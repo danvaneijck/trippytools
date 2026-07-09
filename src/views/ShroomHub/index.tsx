@@ -32,9 +32,10 @@ import {
     DOJO_SHROOM_INJ,
     ECOSYSTEM_HOLDERS_QUERY,
     fetchChoicePools,
-    fetchOnchainVolumes,
+    fetchMarketVolumes,
     type HolderInfo,
     MITO_VAULT,
+    SHROOM_INJ_ORDERBOOK_REF,
     parseHolderInfo,
     parseTokenStats,
     type PoolLiq,
@@ -381,20 +382,19 @@ const ShroomHub = () => {
         setPoolsLoading(true);
         const module = new TokenUtils(networkConfig);
         try {
-            const [injPrice, mitoVault, dojoAmounts, onchainVol] = await Promise.all([
+            const [injPrice, mitoVault, dojoAmounts, marketVol] = await Promise.all([
                 module.getINJPrice(),
                 module.fetchMitoVault(MITO_VAULT).catch(() => null),
                 module.getPoolAmounts(DOJO_SHROOM_INJ).catch(() => null),
-                // 24h volume for these venues lives in the Choice indexer, not
-                // the tickers feed — the Mito row shows the Helix orderbook vol.
-                fetchOnchainVolumes().catch(() => ({
-                    dojoShroomInj: null,
-                    shroomInjOrderbook: null,
-                })),
+                // Authoritative per-market 24h USD volume from the Choice indexer
+                // (keyed by ref_id), used for every venue below. Never rejects —
+                // yields an empty map on failure.
+                fetchMarketVolumes(),
             ]);
             const inj = Number(injPrice) || 0;
 
-            // Non-Choice venues, read on-chain.
+            // Non-Choice venues, read on-chain; volume keyed off the indexer feed
+            // (the Mito row shows the Helix SHROOM/INJ orderbook volume).
             const onchain: PoolLiq[] = [];
             const mitoTvl = Number(mitoVault?.currentTvl) || 0;
             if (mitoTvl > 0) {
@@ -405,7 +405,7 @@ const ShroomHub = () => {
                     base: 'SHROOM',
                     quote: 'INJ',
                     tvlUsd: mitoTvl,
-                    vol24hUsd: onchainVol.shroomInjOrderbook,
+                    vol24hUsd: marketVol[SHROOM_INJ_ORDERBOOK_REF] ?? null,
                 });
             }
             const dojoTvl = injReserve(dojoAmounts) * inj * 2;
@@ -417,7 +417,7 @@ const ShroomHub = () => {
                     base: 'SHROOM',
                     quote: 'INJ',
                     tvlUsd: dojoTvl,
-                    vol24hUsd: onchainVol.dojoShroomInj,
+                    vol24hUsd: marketVol[DOJO_SHROOM_INJ] ?? null,
                 });
             }
 
@@ -425,12 +425,15 @@ const ShroomHub = () => {
             // Choice pool if the feed is unreachable.
             let choicePools: PoolLiq[] = [];
             try {
-                choicePools = await fetchChoicePools({
-                    INJ: inj,
-                    SHROOM: shroomPrice,
-                    SAI: saiPrice,
-                    USDC: 1,
-                });
+                choicePools = await fetchChoicePools(
+                    {
+                        INJ: inj,
+                        SHROOM: shroomPrice,
+                        SAI: saiPrice,
+                        USDC: 1,
+                    },
+                    marketVol,
+                );
             } catch (e) {
                 console.error('choice tickers failed', e);
             }
