@@ -316,62 +316,66 @@ export const fetchChoicePoolMeta = async (
     }
 };
 
-// ---- 24h volume for the on-chain venues (Choice indexer) -----------------
+// ---- 24h volume for every venue (Choice indexer) -------------------------
 //
-// The DojoSwap AMM pool and the Helix SHROOM/INJ orderbook (market-made by the
-// Mito vault) are read on-chain for TVL, but the CoinGecko tickers feed only
-// carries Choice's own pools — so those rows have no 24h volume. Choice's
-// indexer DOES track their trades, so pull their volume from
-// `analytics_spotmarket` (keyed by ref_id: the pool address / the market hash).
-export interface OnchainVolumes {
-    dojoShroomInj: number | null; // DojoSwap SHROOM/INJ pool 24h vol
-    shroomInjOrderbook: number | null; // Helix orderbook (Mito) 24h vol
-}
-
-const ONCHAIN_VOL_QUERY = `
-    query ShroomOnchainVolumes($refs: [String!]) {
-        analytics_spotmarket(where: { ref_id: { _in: $refs } }) {
+// `analytics_spotmarket` carries an authoritative, pre-computed USD 24h volume
+// for EVERY SHROOM/SAI market — Choice AMM/CLMM, DojoSwap, and the Helix
+// orderbook the Mito vault makes — keyed by `ref_id`: the pool contract address
+// for AMM/CLMM (which equals the tickers feed's `pool_id`) or the market hash
+// for the orderbook.
+//
+// We key volume off this rather than deriving `base_volume × a client-side USD
+// price`, because that price map isn't populated until the async token-stats
+// query resolves — so on an early render (SHROOM/SAI price still 0) every pool
+// without an INJ/USDC leg (SHROOM/SAI, SAI/BERB, SAI/ERIC, …) rendered no
+// volume. The indexer figure is always in USD and needs no client price.
+const MARKET_VOL_QUERY = `
+    query ShroomMarketVolumes {
+        analytics_spotmarket(
+            where: {
+                _or: [
+                    { base_asset: { symbol: { _in: ["SHROOM", "SAI"] } } }
+                    { quote_asset: { symbol: { _in: ["SHROOM", "SAI"] } } }
+                ]
+            }
+        ) {
             ref_id
             volume24h_usd
         }
     }`;
 
-// Best-effort: any failure yields nulls, so the rows just render "—" as before.
-export const fetchOnchainVolumes = async (): Promise<OnchainVolumes> => {
-    const empty: OnchainVolumes = { dojoShroomInj: null, shroomInjOrderbook: null };
-    if (!CHOICE_GRAPHQL_URL) return empty;
+// ref_id (pool address / market hash) -> 24h USD volume. Empty on any failure,
+// so callers fall back to the price-map estimate.
+export const fetchMarketVolumes = async (): Promise<Record<string, number>> => {
+    if (!CHOICE_GRAPHQL_URL) return {};
     try {
         const res = await fetch(CHOICE_GRAPHQL_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                query: ONCHAIN_VOL_QUERY,
-                variables: { refs: [DOJO_SHROOM_INJ, SHROOM_INJ_ORDERBOOK_REF] },
-            }),
+            body: JSON.stringify({ query: MARKET_VOL_QUERY }),
         });
-        if (!res.ok) return empty;
+        if (!res.ok) return {};
         const json = await res.json();
-        const byRef: Record<string, number> = {};
+        const out: Record<string, number> = {};
         for (const r of json?.data?.analytics_spotmarket ?? []) {
             const v = Number(r?.volume24h_usd);
-            if (r?.ref_id && Number.isFinite(v)) byRef[r.ref_id] = v;
+            if (r?.ref_id && Number.isFinite(v)) out[r.ref_id] = v;
         }
-        return {
-            dojoShroomInj: byRef[DOJO_SHROOM_INJ] ?? null,
-            shroomInjOrderbook: byRef[SHROOM_INJ_ORDERBOOK_REF] ?? null,
-        };
+        return out;
     } catch {
-        return empty;
+        return {};
     }
 };
 
-// Keep only the SHROOM/SAI Choice pools. 24h USD volume = the token-unit
-// `base_volume`/`target_volume` priced off whichever leg we know a USD price for
-// (SHROOM / SAI / INJ) — every SHROOM/SAI pool has at least one such leg.
+// Keep only the SHROOM/SAI Choice pools. 24h USD volume comes from the indexer
+// (`marketVol`, keyed by pool_id == analytics_spotmarket.ref_id); we fall back
+// to `base_volume`/`target_volume` priced off a known leg (SHROOM / SAI / INJ)
+// only when the pool isn't indexed.
 export const parseChoiceTickers = (
     results: RawTicker[],
     priceUsd: Record<string, number>,
     meta: ChoicePoolMeta = { symbols: {}, tvl: {} },
+    marketVol: Record<string, number> = {},
 ): PoolLiq[] => {
     const resolve = (currency: string): string =>
         meta.symbols[currency] ?? symbolOf(currency);
@@ -382,11 +386,15 @@ export const parseChoiceTickers = (
         const touches = (s: string) => s === 'SHROOM' || s === 'SAI';
         if (!touches(baseSym) && !touches(quoteSym)) continue;
 
-        const bp = priceUsd[baseSym];
-        const qp = priceUsd[quoteSym];
-        let vol: number | null = null;
-        if (bp) vol = Number(t.base_volume) * bp;
-        else if (qp) vol = Number(t.target_volume) * qp;
+        // Prefer the indexer's authoritative USD volume; only estimate from the
+        // tickers token-unit volumes if this pool_id isn't in the market feed.
+        let vol: number | null = marketVol[t.pool_id] ?? null;
+        if (vol == null) {
+            const bp = priceUsd[baseSym];
+            const qp = priceUsd[quoteSym];
+            if (bp) vol = Number(t.base_volume) * bp;
+            else if (qp) vol = Number(t.target_volume) * qp;
+        }
 
         // Prefer the indexer's CLMM snapshot TVL: the coingecko adapter can't
         // price a concentrated-liquidity launchpad pool and returns a negative
@@ -414,6 +422,7 @@ export const parseChoiceTickers = (
 // pools fit one page); tolerate a bare array too in case that changes.
 export const fetchChoicePools = async (
     priceUsd: Record<string, number>,
+    marketVol: Record<string, number> = {},
 ): Promise<PoolLiq[]> => {
     const res = await fetch(CHOICE_TICKERS_URL);
     if (!res.ok) throw new Error(`choice tickers ${res.status}`);
@@ -435,7 +444,7 @@ export const fetchChoicePools = async (
         if (q.includes('…')) unresolved.add(t.target_currency);
     }
     const meta = await fetchChoicePoolMeta([...unresolved], [...poolIds]);
-    return parseChoiceTickers(results, priceUsd, meta);
+    return parseChoiceTickers(results, priceUsd, meta, marketVol);
 };
 
 // ---- aggregations for the three breakdown views -------------------------
