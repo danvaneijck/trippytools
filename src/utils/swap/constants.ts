@@ -22,9 +22,10 @@ export const USE_NEW_AGGREGATION_SHAPE = true;
 export const USE_V3_ROUTING = true;
 export const ROUTE_FIELD = USE_V3_ROUTING ? 'findOptimalRouteV3' : 'findOptimalRoute';
 
-// Max hops the backend route finder may chain. Choice derives this per-wallet;
-// 3 is the standard default and is plenty for the SHROOM ecosystem pairs.
-export const MAX_HOPS = 3;
+// Max hops the backend route finder may chain. 4 reaches tokens whose only
+// deep pool is quoted in a non-hub token (e.g. USDT>INJ>SHROOM>SAI>token for
+// SAI-quoted launchpad graduates); the v3 router handles depth 4 in ~1s.
+export const MAX_HOPS = 4;
 
 // Canonical mainnet quote-asset denoms.
 export const INJ = 'inj';
