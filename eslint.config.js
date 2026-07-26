@@ -55,4 +55,13 @@ export default tseslint.config(
       'react-hooks/set-state-in-effect': 'off',
     },
   },
+  {
+    // node:test suites (`yarn test:unit`). `test()` returns a promise that
+    // settles when the case finishes; registering cases without awaiting is the
+    // documented usage, so no-floating-promises fires on every one of them.
+    files: ['**/*.test.ts'],
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'off',
+    },
+  },
 );

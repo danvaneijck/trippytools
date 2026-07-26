@@ -7,8 +7,28 @@ import type { NetworkKey } from "../../store/useNetworkStore";
  */
 export const CLAIM_DROPS_CONTRACT: Record<NetworkKey, string> = {
     mainnet: "",
-    testnet: "",
+    // code id 39733 (InstantiatePermission: Everybody), fee_bps 0, owner +
+    // fee_collector inj1q2m26…jgz. Deployed 2026-07-26 for the end-to-end QA run.
+    testnet: "inj1f2htctksx6jfcrt5gr3yf4vnmgs70a9zxurp53",
 };
+
+const LEAVES_BASE_DEFAULT = "https://api.trippyinj.xyz/claim-drops/leaves";
+
+/**
+ * Testnet-only override, for QA against a locally-run trippinj
+ * (`VITE_CLAIM_DROPS_LEAVES_BASE="http://localhost:9000/claim-drops/leaves"`) so
+ * test rows never touch the production table.
+ *
+ * Deliberately NOT honoured on mainnet. This string is written ON-CHAIN as the
+ * campaign's `leaves_uri` and a one-shot drop freezes on its first publish, so a
+ * stray override reaching production would mint immutable drops pointing at a
+ * host nobody can read — unclaimable, unfixable. Gating it to testnet means the
+ * override lives in a gitignored `.env` and still cannot break mainnet.
+ *
+ * Optional-chained because this module is also imported by node scripts (smoke
+ * tests), where `import.meta.env` doesn't exist.
+ */
+const leavesBaseOverride = import.meta.env?.VITE_CLAIM_DROPS_LEAVES_BASE as string | undefined;
 
 /**
  * Public base URL that serves a drop's leaves JSON, content-addressed by merkle
@@ -21,8 +41,8 @@ export const CLAIM_DROPS_CONTRACT: Record<NetworkKey, string> = {
  * for both networks: a root is network-independent.
  */
 export const LEAVES_BASE: Record<NetworkKey, string> = {
-    mainnet: "https://api.trippyinj.xyz/claim-drops/leaves",
-    testnet: "https://api.trippyinj.xyz/claim-drops/leaves",
+    mainnet: LEAVES_BASE_DEFAULT,
+    testnet: leavesBaseOverride || LEAVES_BASE_DEFAULT,
 };
 
 export const claimDropsContract = (network: NetworkKey): string =>
