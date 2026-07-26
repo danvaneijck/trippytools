@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { GridLoader } from "react-spinners";
 import { PiHandCoinsBold } from "react-icons/pi";
@@ -27,8 +27,9 @@ import {
     labelBase,
     darkSelectStyles,
 } from "../Airdrop/components/ui";
-import { parseClaimDropCsv, type ParsedClaimCsv } from "./csv";
+import { type ParsedClaimCsv } from "./csv";
 import { buildLeavesFromRows, fromBaseUnits, type CsvRow } from "./leaves";
+import RecipientSources, { type RecipientsChange } from "./RecipientSources";
 import ClaimDropConfirmModal from "./ClaimDropConfirmModal";
 
 // SHROOM fee for publishing a drop — the same 25k (90% fee / 10% burn) the
@@ -48,7 +49,6 @@ const isNativeDenom = (denom: string) =>
     denom.startsWith("peggy") ||
     denom.startsWith("ibc/");
 
-const EXAMPLE_CSV = "address,amount\ninj1...,100\ninj1...,250.5\n";
 
 const ClaimDrop = () => {
     const { connectedWallet: connectedAddress } = useWalletStore();
@@ -68,8 +68,8 @@ const ClaimDrop = () => {
 
     const [rows, setRows] = useState<CsvRow[]>([]);
     const [invalidRows, setInvalidRows] = useState<ParsedClaimCsv["invalidRows"]>([]);
-    const [csvName, setCsvName] = useState<string | null>(null);
-    const fileInput = useRef<HTMLInputElement>(null);
+    /** Where the list came from, e.g. "holders of PUNK" — seeds the drop title. */
+    const [sourceLabel, setSourceLabel] = useState("");
 
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
@@ -166,15 +166,10 @@ const ClaimDrop = () => {
         setLoading(false);
     }, [denom, networkConfig, connectedAddress, title, tokens]);
 
-    const onCsv = useCallback((file: File) => {
-        setError(null);
-        setCsvName(file.name);
-        parseClaimDropCsv(file)
-            .then(({ rows: parsed, invalidRows: bad }) => {
-                setRows(parsed);
-                setInvalidRows(bad);
-            })
-            .catch((e: Error) => setError(e.message));
+    const onRecipientsChange = useCallback((change: RecipientsChange) => {
+        setRows(change.rows);
+        setInvalidRows(change.invalidRows);
+        setSourceLabel(change.sourceLabel);
     }, []);
 
     // Recipients → leaves (base units, deduped) → tree. Rebuilt whenever the list
@@ -258,10 +253,6 @@ const ClaimDrop = () => {
         setError(null);
         setShowConfirm(true);
     }, [expiryNanos]);
-
-    const downloadTemplate = useCallback(() => {
-        downloadCsv("claim-drop-template.csv", EXAMPLE_CSV);
-    }, []);
 
     const downloadLeaves = useCallback(() => {
         if (!tree) return;
@@ -428,33 +419,22 @@ const ClaimDrop = () => {
                                     <SectionCard
                                         step={2}
                                         title="Recipients"
-                                        subtitle="CSV with an `address,amount` header — amounts in whole tokens"
+                                        subtitle="A CSV of `address,amount`, or split a total across token holders, an NFT community, voters, Mito vaults or BuyBack participants"
                                     >
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <input
-                                                ref={fileInput}
-                                                type="file"
-                                                accept=".csv,text/csv"
-                                                className="hidden"
-                                                onChange={(e) => {
-                                                    const file = e.target.files?.[0];
-                                                    if (file) onCsv(file);
-                                                }}
-                                            />
-                                            <button
-                                                type="button"
-                                                className={btnPrimary}
-                                                onClick={() => fileInput.current?.click()}
-                                            >
-                                                Upload CSV
-                                            </button>
-                                            <button type="button" className={btnGhost} onClick={downloadTemplate}>
-                                                Download template
-                                            </button>
-                                            {csvName && (
-                                                <span className="text-xs text-slate-400">{csvName}</span>
-                                            )}
-                                        </div>
+                                        <RecipientSources
+                                            decimals={decimals}
+                                            symbol={tokenInfo?.symbol ?? ""}
+                                            network={currentNetwork}
+                                            networkConfig={networkConfig}
+                                            onChange={onRecipientsChange}
+                                        />
+
+                                        {rows.length > 0 && sourceLabel && (
+                                            <div className="mt-4 text-xs text-slate-400">
+                                                list built from{" "}
+                                                <span className="text-slate-200">{sourceLabel}</span>
+                                            </div>
+                                        )}
 
                                         {rows.length > 0 && (
                                             <div className="mt-4 grid grid-cols-2 gap-2 text-white md:grid-cols-4">

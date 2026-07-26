@@ -21,6 +21,7 @@ import useTokenStore from "../../store/useTokenStore";
 import useLiquidityPoolStore from "../../store/usePoolStore";
 import { allocate } from "./distribution";
 import { parseAirdropCsv, ParsedCsv } from "./csv";
+import { findBlockBeforeTime } from "./proposalBlock";
 import { humanReadableAmount } from "./format";
 import type { AirdropRecipient, DistMode, DropMode } from "./types";
 import DistributionToggle from "./components/DistributionToggle";
@@ -331,62 +332,12 @@ const Airdrop = () => {
         buybackRound,
     ]);
 
-    async function fetchBlock(height: any) {
-        const baseUrl = "https://sentry.lcd.injective.network/cosmos/base/tendermint/v1beta1/blocks";
-        let attempts = 0;
-        const maxAttempts = 50;
-        while (attempts < maxAttempts) {
-            try {
-                const response = await fetch(`${baseUrl}/${height}`);
-                if (!response.ok) throw new Error(`Failed to fetch block at height ${height}`);
-                return response.json();
-            } catch (e) {
-                attempts += 1;
-                await new Promise((res) => setTimeout(res, 2000));
-                if (attempts >= maxAttempts) {
-                    throw new Error(`Failed to fetch block after ${maxAttempts} attempts: ${(e as any).message}`, { cause: e });
-                }
-            }
-        }
-    }
-
     const getProposalAndBlockHeight = useCallback(
         async (propNumber: any) => {
-            async function findBlockBeforeTime(targetTime: any) {
-                const targetDate = new Date(targetTime);
-                const latestBlock = await fetchBlock("latest");
-                const latestHeight = parseInt(latestBlock.block.header.height);
-                const latestBlockTime = new Date(latestBlock.block.header.time);
-                const timeDifference = targetDate.getTime() - latestBlockTime.getTime();
-                let estimatedHeight = latestHeight + Math.floor(timeDifference / 690);
-
-                if (estimatedHeight < 1) estimatedHeight = 1;
-                else if (estimatedHeight > latestHeight) estimatedHeight = latestHeight;
-
-                let lastValidBlock = null;
-                let low = Math.max(1, estimatedHeight - Math.floor(Math.abs(timeDifference) / 1000));
-                let high = Math.min(latestHeight, estimatedHeight + Math.floor(Math.abs(timeDifference) / 1000));
-
-                while (low < high - 1) {
-                    const mid = Math.floor((low + high) / 2);
-                    const midBlock = await fetchBlock(mid);
-                    const midBlockTime = new Date(midBlock.block.header.time);
-                    if (midBlockTime < targetDate) {
-                        lastValidBlock = midBlock;
-                        low = mid + 1;
-                    } else {
-                        high = mid - 1;
-                    }
-                    if (high - low < 100 && midBlockTime < targetDate) break;
-                }
-                return lastValidBlock;
-            }
-
             const api = new ChainGrpcGovApi(networkConfig.grpc);
             const proposal = await api.fetchProposal(propNumber);
             const endVoteTime = dayjs.unix(proposal!.votingEndTime);
-            const closestBlock = await findBlockBeforeTime(endVoteTime);
-            return Number(closestBlock.block.header.height);
+            return findBlockBeforeTime(endVoteTime.toDate());
         },
         [networkConfig],
     );
