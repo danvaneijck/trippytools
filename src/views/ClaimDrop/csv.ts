@@ -6,7 +6,7 @@
 // with exact integer math (see `leaves.ts`) instead of going through a float.
 
 import Papa from "papaparse";
-import { isValidInjAddress } from "../Airdrop/csv";
+import { isValidInjBech32 } from "./address";
 import { isValidAmount, type CsvRow } from "./leaves";
 
 export interface ParsedClaimCsv {
@@ -17,7 +17,9 @@ export interface ParsedClaimCsv {
 /**
  * Parse an uploaded `address,amount` CSV. Invalid rows are reported rather than
  * dropped: a truncated address in a claim drop isn't a failed send, it's funds
- * locked in the contract behind a proof nobody holds.
+ * locked in the contract behind a proof nobody holds. Addresses are checked
+ * against the full bech32 checksum (not just the charset) for the same reason —
+ * see `address.ts`.
  */
 export function parseClaimDropCsv(file: File): Promise<ParsedClaimCsv> {
     return new Promise((resolve, reject) => {
@@ -36,8 +38,13 @@ export function parseClaimDropCsv(file: File): Promise<ParsedClaimCsv> {
                     const amount = (raw.amount || "").trim();
                     if (!address && !amount) return;
 
-                    if (!isValidInjAddress(address)) {
-                        invalidRows.push({ row: i + 2, address, amount, reason: "invalid address" });
+                    if (!isValidInjBech32(address)) {
+                        invalidRows.push({
+                            row: i + 2,
+                            address,
+                            amount,
+                            reason: "invalid address (bech32 checksum)",
+                        });
                         return;
                     }
                     if (!isValidAmount(amount) || Number(amount) <= 0) {

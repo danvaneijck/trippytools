@@ -10,7 +10,8 @@ import { sendTelegramMessage } from "../../modules/telegram";
 import { createOneShotDrop } from "../../utils/claimDrops/messages";
 import { fundingRequired, ceilFee, leavesUriForRoot, nanosToDate } from "../../utils/claimDrops/config";
 import { INSERT_CAMPAIGN, UPSERT_LEAVES } from "../../utils/claimDrops/hasura";
-import type { BuiltTree } from "../../utils/claimDrops/merkle";
+import { fetchStoredLeaves } from "../../utils/claimDrops/leavesSource";
+import { buildTree, type BuiltTree } from "../../utils/claimDrops/merkle";
 import type { DropMeta } from "../../utils/claimDrops/types";
 import { queryCampaignsByCreator } from "../../utils/claimDrops/queries";
 import { parseCampaignId } from "./campaignId";
@@ -75,6 +76,28 @@ async function findCampaignIdByRoot(
         startAfter = batch[batch.length - 1].id;
     }
     return found;
+}
+
+/**
+ * A row for this root already existed, so our insert was a no-op. Confirm the
+ * stored document is really OUR tree before putting its URL on-chain.
+ *
+ * The table is insert-only and keyed by root, which makes a published row
+ * un-rewritable — but it also means whoever inserts a root FIRST owns that key
+ * forever, and nothing in the database checks that the leaves hash to it. A
+ * drop whose allocation list was published in advance therefore has a
+ * predictable root, and a squatted row would leave the campaign frozen around a
+ * leaves_uri that serves a list rebuilding to a different root: every claim page
+ * would refuse to build a proof. Cheap to check, permanent if missed.
+ */
+async function storedLeavesMatch(rootHex: string): Promise<boolean> {
+    const stored = await fetchStoredLeaves(rootHex);
+    if (!stored) return false;
+    try {
+        return buildTree(stored.leaves).rootHex.toLowerCase() === rootHex.toLowerCase();
+    } catch {
+        return false;
+    }
 }
 
 /** How far the wallet is short of the funds this drop needs, in base units. */
@@ -201,23 +224,18 @@ const ClaimDropConfirmModal = (props: {
 
         setTxLoading(true);
 
-        // 1. SHROOM fee (mainnet only, once per drop).
-        if (currentNetwork === "mainnet" && props.shroomCost > 0 && !feePaid) {
-            setProgress("Pay SHROOM fee");
-            const result = await payFee();
-            if (result) setFeePaid(true);
-        }
-
-        // 2. Publish the leaves BEFORE broadcasting. The create tx writes
-        //    `leaves_uri` on-chain and (being one-shot) freezes the root in the
-        //    same block, so a drop whose leaves never landed would be immutable
-        //    and unclaimable — nobody could build a proof. Storing first is
-        //    harmless if the tx then fails: the row is content-addressed, so the
-        //    next attempt reuses it.
+        // 1. Publish the leaves BEFORE anything is charged or broadcast. The
+        //    create tx writes `leaves_uri` on-chain and (being one-shot) freezes
+        //    the root in the same block, so a drop whose leaves never landed
+        //    would be immutable and unclaimable — nobody could build a proof.
+        //    This is also the only step here that can hard-stop, so it runs
+        //    ahead of the fee: no reason to bill someone for a drop we already
+        //    know we can't publish. Storing first is harmless if the tx then
+        //    fails — the row is content-addressed, so the next attempt reuses it.
         if (!leavesStored) {
             setProgress("Publish leaves");
             try {
-                await upsertLeaves({
+                const stored = await upsertLeaves({
                     variables: {
                         root: rootHex,
                         total,
@@ -225,6 +243,14 @@ const ClaimDropConfirmModal = (props: {
                         created_by: connectedAddress,
                     },
                 });
+                // `null` means the insert hit an existing row for this root
+                // (ON CONFLICT DO NOTHING) — verify it before trusting it.
+                if (!stored.data?.insert_claim_drop_leaves_one && !(await storedLeavesMatch(rootHex))) {
+                    throw new Error(
+                        "the stored list for this merkle root doesn't rebuild to it — publish under a " +
+                            "different allocation set, or host the leaves yourself",
+                    );
+                }
                 setLeavesStored(true);
             } catch (e) {
                 setTxLoading(false);
@@ -235,6 +261,13 @@ const ClaimDropConfirmModal = (props: {
                     { cause: e },
                 );
             }
+        }
+
+        // 2. SHROOM fee (mainnet only, once per drop).
+        if (currentNetwork === "mainnet" && props.shroomCost > 0 && !feePaid) {
+            setProgress("Pay SHROOM fee");
+            const result = await payFee();
+            if (result) setFeePaid(true);
         }
 
         // 3. One tx: create + fund + auto-freeze (one-shot ⇒ streaming: false).
@@ -532,10 +565,10 @@ const ClaimDropConfirmModal = (props: {
                             </div>
 
                             <div className="mt-4 space-y-1 rounded-lg border border-white/10 bg-slate-950/40 p-3 text-xs">
+                                <StepRow done={leavesStored} label="Publish leaves file" />
                                 {currentNetwork === "mainnet" && props.shroomCost > 0 && (
                                     <StepRow done={feePaid} label={`Pay ${props.shroomCost} SHROOM fee`} />
                                 )}
-                                <StepRow done={leavesStored} label="Publish leaves file" />
                                 <StepRow done={txHash !== null} label="Create + fund drop (1 tx, auto-frozen)" />
                                 <StepRow done={recorded} label="Index campaign" />
                             </div>

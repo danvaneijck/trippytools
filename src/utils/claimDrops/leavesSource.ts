@@ -76,6 +76,17 @@ async function fromHasura(root: string): Promise<LeavesFetch | null> {
 }
 
 /**
+ * Read back whatever is stored for `root`, skipping the on-chain URI entirely.
+ *
+ * The publisher uses this to confirm what it is about to commit to. The leaves
+ * table is insert-only for `anon` and keyed by root, so a row that already
+ * exists is never overwritten — normally that's exactly right (a root IS its
+ * leaves, so a repeat publish is a no-op), but nothing at the database level
+ * proves the stored leaves actually hash to the key they're filed under.
+ */
+export const fetchStoredLeaves = (root: string): Promise<LeavesFetch | null> => fromHasura(root);
+
+/**
  * Try the canonical document first, then Hasura. Both failing is reported with
  * both reasons — a claim page that can't say WHY it has no leaves is useless to
  * whoever has to fix the drop.

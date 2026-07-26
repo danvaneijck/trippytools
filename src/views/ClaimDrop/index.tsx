@@ -225,8 +225,10 @@ const ClaimDrop = () => {
     );
 
     // `MAX_META_LEN` in the contract. Blowing it only fails at broadcast, so it's
-    // checked here instead.
-    const metaTooLong = JSON.stringify(meta).length > 4096;
+    // checked here instead — in UTF-8 BYTES, which is what `meta.len()` counts on
+    // the Rust side. A title in emoji or CJK is up to 4x longer there than the
+    // JS string length suggests.
+    const metaTooLong = new TextEncoder().encode(JSON.stringify(meta)).length > 4096;
 
     const totalWhole = tree ? fromBaseUnits(tree.total, decimals) : "0";
     const perWallet =

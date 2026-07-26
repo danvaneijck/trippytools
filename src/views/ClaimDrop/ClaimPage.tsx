@@ -22,6 +22,7 @@ import Footer from "../../components/App/Footer";
 import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore, { type NetworkKey } from "../../store/useNetworkStore";
 import useTokenStore from "../../store/useTokenStore";
+import { NETWORKS } from "../../utils/constants";
 import { performTransaction } from "../../utils/walletStrategy";
 import { claimDropsContract, nanosToDate } from "../../utils/claimDrops/config";
 import { fetchLeaves } from "../../utils/claimDrops/leavesSource";
@@ -35,6 +36,22 @@ import { fromBaseUnits } from "./leaves";
 import { dropStatus, entitlement, parseMeta, rootMatch, type DropStatus } from "./claimState";
 
 const OTHER: Record<NetworkKey, NetworkKey> = { mainnet: "testnet", testnet: "mainnet" };
+
+/**
+ * Does this campaign id exist on the OTHER network? A claim link carries no
+ * network, so the common failure is a good link opened on the wrong one.
+ *
+ * Must query the other network's own endpoint: asking mainnet about a testnet
+ * contract address just returns "not found", which is the same answer as "the
+ * drop doesn't exist" and would silently swallow the offer to switch.
+ */
+async function existsOnOtherNetwork(other: NetworkKey, id: number): Promise<boolean> {
+    const otherContract = claimDropsContract(other);
+    if (!otherContract) return false;
+    return queryCampaign(NETWORKS[other].grpc, otherContract, id)
+        .then(() => true)
+        .catch(() => false);
+}
 
 const statusLabel = (status: DropStatus): string => {
     switch (status.kind) {
@@ -110,12 +127,8 @@ const ClaimPage = () => {
             if (!contract) {
                 // Not deployed here — the drop may still be on the other network.
                 const other = OTHER[networkKey];
-                const otherContract = claimDropsContract(other);
-                if (otherContract) {
-                    const exists = await queryCampaign(network.grpc, otherContract, id)
-                        .then(() => true)
-                        .catch(() => false);
-                    if (!cancelled && exists) setFoundOn(other);
+                if (await existsOnOtherNetwork(other, id)) {
+                    if (!cancelled) setFoundOn(other);
                 }
                 if (!cancelled) {
                     setError(`Claim drops aren't deployed on ${networkKey} yet.`);
@@ -152,12 +165,8 @@ const ClaimPage = () => {
                 if (cancelled) return;
                 // Unknown id on this network — check whether the link belongs elsewhere.
                 const other = OTHER[networkKey];
-                const otherContract = claimDropsContract(other);
-                if (otherContract) {
-                    const exists = await queryCampaign(network.grpc, otherContract, id)
-                        .then(() => true)
-                        .catch(() => false);
-                    if (!cancelled && exists) setFoundOn(other);
+                if (await existsOnOtherNetwork(other, id)) {
+                    if (!cancelled) setFoundOn(other);
                 }
                 if (!cancelled) setError(`No campaign #${id} on ${networkKey}.`);
             } finally {
