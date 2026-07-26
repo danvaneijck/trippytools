@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { NETWORKS } from '../utils/constants';
 
 
-type NetworkKey = keyof typeof NETWORKS;        // "mainnet" | "testnet"
+export type NetworkKey = keyof typeof NETWORKS;        // "mainnet" | "testnet"
 
 interface NetworkState {
     /** Which network is selected */

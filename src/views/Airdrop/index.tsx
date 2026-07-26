@@ -765,6 +765,9 @@ const Airdrop = () => {
                                         <Link to="/nft-airdrop" className="flex-1">
                                             <div className={`${btnSecondary} w-full`}>Airdrop NFTs instead →</div>
                                         </Link>
+                                        <Link to="/claim-drop" className="flex-1">
+                                            <div className={`${btnSecondary} w-full`}>Let them claim instead →</div>
+                                        </Link>
                                         <Link to="/airdrop-history" className="flex-1">
                                             <div className={`${btnSecondary} w-full`}>View airdrop history</div>
                                         </Link>

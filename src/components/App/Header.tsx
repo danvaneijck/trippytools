@@ -132,6 +132,9 @@ const Header = () => {
                     <Link to="/nft-airdrop" className={getLinkStyle('/nft-airdrop')} onClick={toggleMenu}>
                         Airdrop NFTs
                     </Link>
+                    <Link to="/claim-drop" className={getLinkStyle('/claim-drop')} onClick={toggleMenu}>
+                        Claim Drops
+                    </Link>
                     <Link to="/pre-sale-tool" className={getLinkStyle('/pre-sale-tool')} onClick={toggleMenu}>
                         Plan Presale
                     </Link>
