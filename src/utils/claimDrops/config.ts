@@ -6,7 +6,11 @@ import type { NetworkKey } from "../../store/useNetworkStore";
  * tool is disabled while blank. Testnet first for QA, then mainnet.
  */
 export const CLAIM_DROPS_CONTRACT: Record<NetworkKey, string> = {
-    mainnet: "",
+    // code id 2066 (InstantiatePermission: Everybody), fee_bps 0, owner
+    // inj1q2m26…jgz, fee_collector = Choice treasury inj1c2yleau…6zv4, wasm
+    // admin = Choice Admin Timelock inj14tm9kjh… (48h queued migrations).
+    // Deployed 2026-07-27.
+    mainnet: "inj1nwqzch964chy8k0ptnajm3pa6907s5yhflw82n",
     // code id 39733 (InstantiatePermission: Everybody), fee_bps 0, owner +
     // fee_collector inj1q2m26…jgz. Deployed 2026-07-26 for the end-to-end QA run.
     testnet: "inj1f2htctksx6jfcrt5gr3yf4vnmgs70a9zxurp53",
