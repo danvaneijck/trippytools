@@ -6,6 +6,9 @@ import TokenLaunch from './views/TokenLaunch';
 import Home from "./views/Home";
 import MyTokens from './views/MyTokens';
 import Airdrop from './views/Airdrop';
+import ClaimDrop from './views/ClaimDrop';
+import ClaimPage from './views/ClaimDrop/ClaimPage';
+import ManageDrops from './views/ClaimDrop/ManageDrops';
 import NftAirdrop from './views/NftAirdrop';
 import MyceliumFarm from './views/MyceliumFarm';
 import { ApolloProvider } from '@apollo/client';
@@ -54,6 +57,10 @@ const App = () => {
 
           <Route path="/manage-tokens" element={<MyTokens />} />
           <Route path="/airdrop" element={<Airdrop />} />
+          {/* Claim drops: create, manage your own, and the shareable /claim/:id. */}
+          <Route path="/claim-drop" element={<ClaimDrop />} />
+          <Route path="/claim-drop/manage" element={<ManageDrops />} />
+          <Route path="/claim/:id" element={<ClaimPage />} />
           <Route path="/nft-airdrop" element={<NftAirdrop />} />
           <Route path="/airdrop-history" element={<AirdropHistory />} />
           <Route path="/mycelium-farm" element={<MyceliumFarm />} />
