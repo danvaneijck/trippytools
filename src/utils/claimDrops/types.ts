@@ -58,6 +58,11 @@ export interface ClaimableResponse {
     payable: string;
 }
 
+export interface ClaimedResponse {
+    /** Cumulative amount this address has already taken out of the campaign. */
+    claimed: string;
+}
+
 export interface FundingRequiredResponse {
     delta: string;
     fee: string;

@@ -8,6 +8,7 @@ import type {
     Campaign,
     CampaignResponse,
     ClaimableResponse,
+    ClaimedResponse,
     ClaimsResponse,
     Config,
     FundingRequiredResponse,
@@ -52,6 +53,21 @@ export const queryClaims = (
     smartQuery<ClaimsResponse>(grpc, contract, {
         claims: { id, start_after: startAfter ?? null, limit: limit ?? null },
     });
+
+/**
+ * How much this address has already taken out, cumulatively.
+ *
+ * Worth querying alongside `Claimable`, not instead of it: `payable` collapses to
+ * zero for "already claimed" AND for paused / expired / swept, so it can't tell
+ * a finished claim from a closed campaign on its own.
+ */
+export const queryClaimed = (
+    grpc: string,
+    contract: string,
+    id: number,
+    address: string,
+): Promise<ClaimedResponse> =>
+    smartQuery<ClaimedResponse>(grpc, contract, { claimed: { id, address } });
 
 export const queryClaimable = (
     grpc: string,

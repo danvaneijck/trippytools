@@ -8,6 +8,7 @@ import MyTokens from './views/MyTokens';
 import Airdrop from './views/Airdrop';
 import ClaimDrop from './views/ClaimDrop';
 import ClaimDropSoon from './views/ClaimDrop/ClaimDropSoon';
+import ClaimPage from './views/ClaimDrop/ClaimPage';
 import NftAirdrop from './views/NftAirdrop';
 import MyceliumFarm from './views/MyceliumFarm';
 import { ApolloProvider } from '@apollo/client';
@@ -57,10 +58,10 @@ const App = () => {
           <Route path="/manage-tokens" element={<MyTokens />} />
           <Route path="/airdrop" element={<Airdrop />} />
           {/* Claim drops: create here, claim at the short shareable /claim/:id.
-              The claim + manage pages are stubbed so a minted link never 404s. */}
+              The manage view is still stubbed so its link never 404s. */}
           <Route path="/claim-drop" element={<ClaimDrop />} />
-          <Route path="/claim-drop/manage" element={<ClaimDropSoon mode="manage" />} />
-          <Route path="/claim/:id" element={<ClaimDropSoon mode="claim" />} />
+          <Route path="/claim-drop/manage" element={<ClaimDropSoon />} />
+          <Route path="/claim/:id" element={<ClaimPage />} />
           <Route path="/nft-airdrop" element={<NftAirdrop />} />
           <Route path="/airdrop-history" element={<AirdropHistory />} />
           <Route path="/mycelium-farm" element={<MyceliumFarm />} />

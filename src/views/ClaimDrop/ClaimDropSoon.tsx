@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { PiHandCoinsBold } from "react-icons/pi";
 import Footer from "../../components/App/Footer";
 import useNetworkStore from "../../store/useNetworkStore";
@@ -6,17 +6,14 @@ import { claimDropsContract } from "../../utils/claimDrops/config";
 import { btnSecondary } from "../Airdrop/components/ui";
 
 /**
- * Placeholder for the two pages that come next: the public claim page
- * (`/claim/:id` — campaign → root → leaves → local proof → Claim) and the
- * creator's manage view (`/claim-drop/manage` — freeze / set expiry / clawback,
- * plus the paginated claimant list from `fetchAllClaims`).
+ * Placeholder for the creator's manage view (`/claim-drop/manage` — freeze / set
+ * expiry / clawback, plus the paginated claimant list from `fetchAllClaims`).
  *
- * It's routed now so a share link minted by the create flow is never a 404: the
- * campaign id and contract are already resolvable here.
+ * Routed now so the link the create flow offers is never a 404. The public claim
+ * page it used to cover as well now exists — see ClaimPage.
  */
-const ClaimDropSoon = ({ mode }: { mode: "claim" | "manage" }) => {
-    const { id } = useParams();
-    const { networkKey, network } = useNetworkStore();
+const ClaimDropSoon = () => {
+    const { networkKey } = useNetworkStore();
     const contract = claimDropsContract(networkKey);
 
     return (
@@ -24,13 +21,10 @@ const ClaimDropSoon = ({ mode }: { mode: "claim" | "manage" }) => {
             <div className="mx-2 grow pt-24 pb-20">
                 <div className="mx-auto max-w-xl space-y-4 px-2 text-center text-white">
                     <PiHandCoinsBold className="mx-auto text-trippyYellow" size={34} />
-                    <div className="font-magic text-3xl">
-                        {mode === "claim" ? `Claim drop #${id ?? ""}` : "Manage claim drops"}
-                    </div>
+                    <div className="font-magic text-3xl">Manage claim drops</div>
                     <p className="text-sm text-slate-400">
-                        {mode === "claim"
-                            ? "This claim page is being built. The drop itself is live on-chain — your allocation is safe and claimable once the page lands."
-                            : "The manage view (freeze, expiry, clawback, claimant list) is being built."}
+                        The manage view (freeze, expiry, clawback, claimant list) is being built. Your drops
+                        are live and claimable in the meantime — every one of those actions is optional.
                     </p>
 
                     <div className="space-y-1.5 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-left text-xs">
@@ -44,16 +38,6 @@ const ClaimDropSoon = ({ mode }: { mode: "claim" | "manage" }) => {
                                 {contract || "not deployed yet"}
                             </span>
                         </div>
-                        {mode === "claim" && id && contract && (
-                            <a
-                                href={`${network.explorerUrl}/contract/${contract}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-block text-trippyYellow underline"
-                            >
-                                View the contract in the explorer
-                            </a>
-                        )}
                     </div>
 
                     <Link to="/claim-drop">
