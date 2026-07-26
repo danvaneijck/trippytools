@@ -111,6 +111,24 @@ export function setExpiry(p: {
     });
 }
 
+/**
+ * Stop / resume claims on one campaign. Creator-only, and reversible — unlike
+ * Freeze or Clawback it changes nothing about what is owed, it just closes the
+ * window (e.g. while investigating a bad list before the expiry lets you sweep).
+ */
+export function setCampaignPaused(p: {
+    sender: string;
+    contract: string;
+    id: number;
+    paused: boolean;
+}): MsgExecuteContractCompat {
+    return MsgExecuteContractCompat.fromJSON({
+        contractAddress: p.contract,
+        sender: p.sender,
+        msg: { set_campaign_paused: { id: p.id, paused: p.paused } },
+    });
+}
+
 export function clawback(p: {
     sender: string;
     contract: string;
