@@ -4,6 +4,7 @@ import { CircleLoader } from "react-spinners";
 import { useMutation } from "@apollo/client";
 import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
+import TokenUtils from "../../modules/tokenUtils";
 import { performTransaction } from "../../utils/walletStrategy";
 import { buildShroomFeeMessages } from "../../utils/shroomFee";
 import { sendTelegramMessage } from "../../modules/telegram";
@@ -265,6 +266,27 @@ const ClaimDropConfirmModal = (props: {
 
         // 2. SHROOM fee (mainnet only, once per drop).
         if (currentNetwork === "mainnet" && props.shroomCost > 0 && !feePaid) {
+            // Never bill for a drop the chain is going to refuse. The usual
+            // create failure is simply not holding the funds, and the usual fix
+            // is editing amounts — which changes the root, and a new root is a
+            // new fee. Re-read the balance rather than trusting the one loaded
+            // with the token, so a top-up made since then counts.
+            const fresh = await new TokenUtils(networkConfig)
+                .getBalanceOfToken(props.denom, connectedAddress)
+                .catch(() => null);
+            const short = balanceShortfall(
+                fresh?.amount ?? props.balanceBase,
+                fundingRequired(total, props.feeBps),
+            );
+            if (short !== null && short < 0n) {
+                setTxLoading(false);
+                setProgress("");
+                throw new Error(
+                    `Not enough ${props.symbol || props.denom} to fund this drop — short by ` +
+                        `${fromBaseUnits((-short).toString(), props.decimals)}. Nothing was charged.`,
+                );
+            }
+
             setProgress("Pay SHROOM fee");
             const result = await payFee();
             if (result) setFeePaid(true);
@@ -336,9 +358,11 @@ const ClaimDropConfirmModal = (props: {
         leaves,
         leavesStored,
         leavesUri,
-        networkConfig.grpc,
+        networkConfig,
         payFee,
+        props.balanceBase,
         props.contract,
+        props.decimals,
         props.denom,
         props.expiryNanos,
         props.feeBps,
