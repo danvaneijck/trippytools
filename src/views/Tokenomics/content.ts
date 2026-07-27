@@ -1,6 +1,6 @@
 // Content for the public SHROOM × SAI tokenomics explainer.
 //
-// Source of truth is `shroom_launchpad/docs/SAI_TOKENOMICS_PLAN.md` (revision 2,
+// Source of truth is `shroom_launchpad/docs/SAI_TOKENOMICS_PLAN.md` (revision 3,
 // 2026-07-27) and its publishable companion `sai-tokenomics-system.html`. This
 // file is the plain-data subset of that plan; the view only renders it.
 //
@@ -8,8 +8,12 @@
 // graduation targets) or explicitly labelled a snapshot. Live prices, market
 // caps and liquidity deliberately do NOT live here — they drift, and the
 // Shroom Hub already shows them from the Choice API. Link there instead.
+//
+// Revision 3 has four components — ladder, airdrops, quests, farms. The
+// Graduation Lock and launch underwriting that revision 2 introduced are both
+// gone (reasoning lives in the plan doc, not on this page).
 
-export const PLAN_REVISION = 'Revision 2';
+export const PLAN_REVISION = 'Revision 3';
 export const PLAN_DATE = '27 July 2026';
 
 /** Whether a component of the plan is deployed today. */
@@ -142,51 +146,75 @@ export const SUPPLY: readonly SupplySlice[] = [
     },
     {
         name: 'Rewards',
-        sai: 105_000,
-        pct: 10.5,
+        sai: 110_000,
+        pct: 11.0,
         color: '#2dd4bf',
-        desc: 'LP farms, quests and airdrops. The creator airdrop only pays when a launch goes live, and unclaimed drops are clawed back.',
-        status: 'planned',
-    },
-    {
-        name: 'Launch underwriting',
-        sai: 75_000,
-        pct: 7.5,
-        color: '#14b8a6',
-        desc: 'Closes the gap on launches that already found real buyers — the treasury buys on the curve, so it becomes permanent pool liquidity.',
+        desc: 'LP farms, terminal quests and the airdrop — farms are the largest, because depth is the thing the ecosystem is actually short of. Anything unclaimed from the airdrop is clawed back.',
         status: 'planned',
     },
     {
         name: 'Ask ladder',
-        sai: 370_000,
-        pct: 37.0,
+        sai: 500_000,
+        pct: 50.0,
         color: '#0d9488',
-        desc: 'On-chain and published, sells only into strength — six ranges from 1.3× to 20× spot. The only path from treasury to circulating.',
+        desc: 'On-chain and published, sells only into strength — eight ranges from 1.3× to 45× spot. The only path from treasury to circulating.',
         status: 'planned',
     },
     {
-        // 40,000 in the plan's allocation table, plus the 80 SAI the treasury
+        // 80,000 in the plan's allocation table, plus the 80 SAI the treasury
         // holds over the round 690,000 it was written against — so the slices
         // reconcile to max supply exactly.
-        name: 'Reserve',
-        sai: 40_080,
-        pct: 4.0,
+        name: 'Operating reserve',
+        sai: 80_080,
+        pct: 8.0,
         color: '#0f766e',
-        desc: 'Held for ladder top-ups and contingency.',
-        status: 'planned',
-    },
-    {
-        name: 'Graduation Lock',
-        sai: 100_000,
-        pct: 10.0,
-        color: '#115e59',
-        desc: 'Timelocked 24 months. Releases 10,000 SAI per five SAI-quoted graduations, into underwriting only — never sold, never funds operations.',
+        desc: 'About 45,000 is the SAI side of the permanent SAI/USDC pool the ladder pays for. The rest is contingency, stated as such rather than assigned to a mechanism.',
         status: 'planned',
     },
 ];
 
 /** SAI is fixed-supply with no mint function; the slices above reconcile to it. */
 export const SAI_MAX_SUPPLY = 1_000_000;
+
+// ---------------------------------------------------------------------------
+// The published ladder
+//
+// The entire value of the ladder over a plain treasury is that it is legible:
+// an unpublished ladder is an opaque treasury with extra steps. So the bands
+// are published here, in full, before they are placed.
+//
+// Prices are multiples of spot AT PLACEMENT, quoted here against the reference
+// spot below. They are fixed once the positions are minted.
+// ---------------------------------------------------------------------------
+
+export const LADDER_REFERENCE_SPOT = 0.0522729;
+export const LADDER_TOTAL = 500_000;
+
+export interface LadderBand {
+    band: number;
+    /** Multiple-of-spot label, e.g. "1.3× – 1.8×". */
+    range: string;
+    /** USD price range at the reference spot. */
+    price: string;
+    sai: number;
+    pct: number;
+    /**
+     * Bands 1-3 exist to bank USDC — the proceeds are withdrawn and become
+     * depth. Bands 4-8 are overhang disclosure and are allowed to sit.
+     */
+    reserve: boolean;
+}
+
+export const LADDER: readonly LadderBand[] = [
+    { band: 1, range: '1.3× – 1.8×', price: '$0.0680 – $0.0941', sai: 20_000, pct: 4, reserve: true },
+    { band: 2, range: '1.8× – 2.6×', price: '$0.0941 – $0.1359', sai: 30_000, pct: 6, reserve: true },
+    { band: 3, range: '2.6× – 4×', price: '$0.1359 – $0.2091', sai: 50_000, pct: 10, reserve: true },
+    { band: 4, range: '4× – 7×', price: '$0.2091 – $0.3659', sai: 70_000, pct: 14, reserve: false },
+    { band: 5, range: '7× – 12×', price: '$0.3659 – $0.6273', sai: 90_000, pct: 18, reserve: false },
+    { band: 6, range: '12× – 20×', price: '$0.6273 – $1.0455', sai: 110_000, pct: 22, reserve: false },
+    { band: 7, range: '20× – 30×', price: '$1.0455 – $1.5682', sai: 60_000, pct: 12, reserve: false },
+    { band: 8, range: '30× – 45×', price: '$1.5682 – $2.3523', sai: 70_000, pct: 14, reserve: false },
+];
 
 // ---------------------------------------------------------------------------
 // Quote assets
@@ -222,7 +250,7 @@ export const QUOTES = [
 export const RAILS = [
     {
         pair: 'SAI / USDC',
-        body: 'The on-ramp. One hop from stables into SAI, so a pad buyer never has to route through three pools to reach a launch. Opened by the ask ladder, with no capital required.',
+        body: 'The on-ramp. One hop from stables into SAI, so a pad buyer never has to route through three pools to reach a launch. Opened by the ask ladder with no capital required — and once the first bands sell out, their proceeds seed a permanent full-range pool so SAI has stable liquidity at every price, not just today’s.',
         status: 'planned' as Status,
     },
     {
@@ -239,14 +267,14 @@ export const RAILS = [
 export const EARN = [
     {
         label: 'Provide liquidity',
-        figure: '103%',
+        figure: '166%',
         unit: 'opening APR · SHROOM/INJ LP',
         body: 'The pair that anchors the whole ecosystem to INJ — every USD price downstream derives from it, so it gets the larger farm. Stake the LP token; rewards accrue per block and nothing is locked.',
         status: 'planned' as Status,
     },
     {
         label: 'Provide liquidity',
-        figure: '36%',
+        figure: '46%',
         unit: 'opening APR · SAI/SHROOM LP',
         body: 'The conversion rail that turns pad fees into SHROOM buybacks. Same farm mechanics, same six-month decaying schedule.',
         status: 'planned' as Status,
@@ -258,13 +286,6 @@ export const EARN = [
         body: 'Trade through Trippy Terminal, keep a streak going, hold an LP position for a multiplier. Rewards accumulate and grow the longer they sit unclaimed.',
         status: 'planned' as Status,
     },
-    {
-        label: 'Launch a token',
-        figure: '300',
-        unit: 'SAI · on your first SAI-quoted launch',
-        body: 'If you have ever deployed a token on Injective, there is an allocation with your name on it. It unlocks when your first SAI-quoted launch goes live — paid for launching, not for existing.',
-        status: 'planned' as Status,
-    },
 ];
 
 // ---------------------------------------------------------------------------
@@ -274,19 +295,19 @@ export const EARN = [
 export const ROLLOUT = [
     {
         when: 'Week 0',
-        what: 'Ask ladder + Graduation Lock',
-        why: 'Opens SAI/USDC with zero capital and publishes what the treasury may do with the rest.',
+        what: 'Ask ladder placed, bands published',
+        why: 'Opens SAI/USDC with zero capital, and puts every treasury SAI outside the reserve on the book at a published price.',
         status: 'planned' as Status,
     },
     {
-        when: 'Week 1',
-        what: 'Launch underwriting',
-        why: 'Complementary to the ladder — launch demand is what pulls SAI off it.',
+        when: 'Week 0–1',
+        what: 'Airdrop claims open',
+        why: 'The only component that reaches anyone not already here, so it lands while the announcement is still being read — and before any farm emission exists.',
         status: 'planned' as Status,
     },
     {
         when: 'Week 3–4',
-        what: 'Quests + creator airdrop',
+        what: 'Terminal quests',
         why: 'Neutral to the ladder, and the cheapest per-wallet activity lever available.',
         status: 'planned' as Status,
     },

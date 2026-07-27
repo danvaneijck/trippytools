@@ -1,6 +1,6 @@
 // Public SHROOM × SAI tokenomics explainer.
 //
-// Renders ./content (the plain-data subset of the revision-2 plan in
+// Renders ./content (the plain-data subset of the revision-3 plan in
 // shroom_launchpad/docs/SAI_TOKENOMICS_PLAN.md). Nothing here is fetched: the
 // numbers are supply and configuration, not market data. Live prices, market
 // caps and liquidity live on the Shroom Hub, which this page links to.
@@ -13,6 +13,9 @@ import { SectionHeader } from '../ShroomHub/ui';
 import { PANEL } from '../ShroomHub/styles';
 import {
     EARN,
+    LADDER,
+    LADDER_REFERENCE_SPOT,
+    LADDER_TOTAL,
     LOOP,
     PLAN_DATE,
     PLAN_REVISION,
@@ -284,35 +287,91 @@ const Tokenomics = () => (
                         opens one band at a time as the price rises.
                     </p>
                 </Panel>
+            </section>
 
-                <Panel className="mt-4">
-                    <h3 className="text-base font-semibold text-white">
-                        Why nothing is burned
-                    </h3>
-                    <p className="mt-2 font-sans text-sm leading-relaxed text-white/60">
-                        Burning treasury SAI would cut FDV on paper and change
-                        nothing real — circulating supply, market cap and
-                        liquidity all stay exactly where they are, because
-                        treasury SAI was never in the market to begin with.
+            {/* ---- the published ladder ---- */}
+            <section>
+                <SectionHeader
+                    eyebrow="The ask ladder"
+                    title="Every band, published before it is placed"
+                    sub="An unpublished ladder is just an opaque treasury with extra steps."
+                />
+
+                <Panel>
+                    <p className="max-w-2xl font-sans text-sm leading-relaxed text-white/60">
+                        {num(LADDER_TOTAL)} SAI is placed as concentrated
+                        liquidity in ranges entirely above spot — so it holds
+                        100% SAI and can only ever be bought,{' '}
                         <span className="text-white">
-                            {' '}
-                            SAI supply comes down when the pad is used, not when
-                            we publish a transaction hash:
-                        </span>{' '}
-                        every SAI-quoted graduation locks 10,000 SAI into a
-                        permanent pool, which is 3.2% of circulating float per
-                        launch.
+                            never sold into the market
+                        </span>
+                        . Buyers convert it to USDC on the way up, and that USDC
+                        becomes the depth SAI has never had. No capital is
+                        required to open the pair.
                     </p>
-                    <p className="mt-3 font-sans text-sm leading-relaxed text-white/60">
-                        The same 150,000 SAI burned from treasury removes{' '}
-                        <span className="font-semibold text-white">0%</span> of
-                        float and creates zero markets. Spent underwriting 15
-                        graduations it removes{' '}
-                        <span className="font-semibold text-white">
-                            48% of circulating float
+
+                    <div className="mt-5 -mx-2 overflow-x-auto px-2">
+                        <table className="w-full min-w-136 border-collapse text-sm">
+                            <thead>
+                                <tr className="text-left text-[11px] uppercase tracking-wide text-white/40">
+                                    <th className="pb-2 font-medium">Band</th>
+                                    <th className="pb-2 font-medium">
+                                        × spot at placement
+                                    </th>
+                                    <th className="pb-2 font-medium">
+                                        Price range
+                                    </th>
+                                    <th className="pb-2 text-right font-medium">
+                                        SAI
+                                    </th>
+                                    <th className="pb-2 text-right font-medium">
+                                        Share
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/8">
+                                {LADDER.map((b) => (
+                                    <tr key={b.band}>
+                                        <td className="py-2.5">
+                                            <span className="font-semibold text-white">
+                                                {b.band}
+                                            </span>
+                                            {b.reserve && (
+                                                <span className="ml-2 rounded-full bg-emerald-400/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-300">
+                                                    banks USDC
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="py-2.5 tabular-nums text-white/70">
+                                            {b.range}
+                                        </td>
+                                        <td className="py-2.5 tabular-nums text-white/45">
+                                            {b.price}
+                                        </td>
+                                        <td className="py-2.5 text-right font-semibold tabular-nums text-white">
+                                            {num(b.sai)}
+                                        </td>
+                                        <td className="py-2.5 text-right tabular-nums text-white/40">
+                                            {b.pct}%
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p className="mt-4 max-w-2xl font-sans text-xs leading-relaxed text-white/40">
+                        Prices are shown against a reference spot of $
+                        {LADDER_REFERENCE_SPOT.toFixed(4)} and are fixed once the
+                        positions are minted. Only 100,000 SAI — 20% of the
+                        ladder — sits below 4× spot, so near-term price faces
+                        almost no treasury supply.{' '}
+                        <span className="text-white/60">
+                            Bands 4–8 are disclosure, not a forecast:
                         </span>{' '}
-                        and creates 15 markets. They are not the same action
-                        wearing different labels.
+                        they exist so that every treasury SAI has a published
+                        price, and the honest expectation is that they never
+                        fill.
                     </p>
                 </Panel>
             </section>
