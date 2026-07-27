@@ -59,6 +59,15 @@ body {
   @apply bg-gray-900 text-white;
 }
 
+/*
+  Home-page dapp cards. Each card carries its product's accent as an inline
+  `--accent`, and the hover border tints toward it. Written here rather than as
+  a Tailwind hover: utility because the value is a runtime custom property.
+*/
+.dapp-card:hover {
+  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+}
+
 @keyframes rainbow {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }

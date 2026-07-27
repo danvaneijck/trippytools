@@ -2,7 +2,15 @@ import { useState } from 'react';
 import { Link, useLocation } from "react-router-dom";
 import ConnectWallet from "./ConnectKeplr";
 import logo from '../../assets/trippy_blue_yellow.svg';
-import { FiMenu, FiX } from 'react-icons/fi'; // Import icons for burger and close
+import { FiExternalLink, FiMenu, FiX } from 'react-icons/fi'; // Import icons for burger and close
+
+// The live dapps, surfaced in the side menu so they're reachable from every
+// page rather than only the home page.
+const DAPP_LINKS = [
+    { href: 'https://pump.trippyinj.xyz', label: 'SHROOM Pad' },
+    { href: 'https://trade.trippyinj.xyz', label: 'Trippy Terminal' },
+    { href: 'https://cross.trippyinj.xyz', label: 'Chicken Road' },
+] as const;
 
 const Header = () => {
     const location = useLocation();
@@ -29,6 +37,9 @@ const Header = () => {
                     <Link to="/shroom-hub" className={getLinkStyle('/shroom-hub')}>
                         Info
                     </Link>
+                    <Link to="/tokenomics" className={getLinkStyle('/tokenomics')}>
+                        Tokenomics
+                    </Link>
                     <Link to="/ecosystem" className={getLinkStyle('/ecosystem')}>
                         Ecosystem
                     </Link>
@@ -46,9 +57,6 @@ const Header = () => {
                     </Link>
                     <Link to="/nft-airdrop" className={getLinkStyle('/nft-airdrop')}>
                         NFT Drop
-                    </Link>
-                    <Link to="/pre-sale-tool" className={getLinkStyle('/pre-sale-tool')}>
-                        Presale
                     </Link>
                 </div>
 
@@ -97,7 +105,9 @@ const Header = () => {
             <div
                 className={`fixed top-0 left-0 w-64 h-full bg-customGray text-white shadow-lg z-20 transform ${menuOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out`}
             >
-                <div className="flex flex-col p-4 space-y-4">
+                {/* The menu grew past a phone viewport once the dapps were added,
+                    so it scrolls rather than clipping the last few links. */}
+                <div className="flex flex-col p-4 space-y-4 h-full overflow-y-auto">
                     <div className='m-auto mb-5'>
                         <img src={logo} alt="My SVG" width={100} className='' />
                         <div className='text-sm text-trippyYellow font-magic text-center'>
@@ -111,9 +121,32 @@ const Header = () => {
                     <Link to="/shroom-hub" className={getLinkStyle('/shroom-hub')} onClick={toggleMenu}>
                         Info
                     </Link>
+                    <Link to="/tokenomics" className={getLinkStyle('/tokenomics')} onClick={toggleMenu}>
+                        Tokenomics
+                    </Link>
                     <Link to="/ecosystem" className={getLinkStyle('/ecosystem')} onClick={toggleMenu}>
                         Ecosystem Explorer
                     </Link>
+
+                    {/* The three live dapps — external, each its own mainnet deployment. */}
+                    <div className="pt-2 text-[11px] uppercase tracking-[0.22em] text-white/35">
+                        Dapps
+                    </div>
+                    {DAPP_LINKS.map((d) => (
+                        <a
+                            key={d.href}
+                            href={d.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mx-5 flex items-center gap-2 pb-1 font-bold hover:underline"
+                        >
+                            {d.label}
+                            <FiExternalLink className="text-xs opacity-60" />
+                        </a>
+                    ))}
+                    <div className="pt-2 text-[11px] uppercase tracking-[0.22em] text-white/35">
+                        Tools
+                    </div>
                     <Link to="/token-holders" className={getLinkStyle('/token-holders')} onClick={toggleMenu}>
                         Holder tool
                     </Link>
@@ -134,9 +167,6 @@ const Header = () => {
                     </Link>
                     <Link to="/claim-drop" className={getLinkStyle('/claim-drop')} onClick={toggleMenu}>
                         Claim Drops
-                    </Link>
-                    <Link to="/pre-sale-tool" className={getLinkStyle('/pre-sale-tool')} onClick={toggleMenu}>
-                        Plan Presale
                     </Link>
                     <Link to="/burn" className={getLinkStyle('/burn')} onClick={toggleMenu}>
                         Burn Tokens 🔥
