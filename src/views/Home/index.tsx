@@ -1,11 +1,11 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
     FaArrowRight,
-    FaBullhorn,
     FaChartLine,
     FaCoins,
     FaDiscord,
+    FaExternalLinkAlt,
     FaFire,
     FaHandHoldingUsd,
     FaImages,
@@ -23,6 +23,7 @@ import SwapWidget from '../../components/App/swap/SwapWidget';
 import { SectionHeader } from '../ShroomHub/ui';
 import { SAI_DENOM, SHROOM_CW } from '../ShroomHub/ecosystem';
 import { choiceSwapUrl } from '../../utils/swap/constants';
+import { DAPPS, type Dapp } from './dapps';
 
 // The two SHROOM/SAI Choice pools the hero links out to.
 const CHOICE_POOLS = [
@@ -35,74 +36,137 @@ const CHOICE_POOLS = [
 const LIQUIDITY_DEFAULT =
     '/token-liquidity?address=inj1uyjjnykz0slq0w4n6k2xgleykqk9k5qkfctmw5';
 
-// The three headline tools the home page leads with.
-const FEATURED = [
-    {
-        to: '/token-holders',
-        icon: <FiUsers />,
-        title: 'Holder tool',
-        cta: 'View holders',
-        desc: 'Snapshot any token’s holders across Injective. Sort, filter dust, and export a clean CSV ready for an airdrop.',
-    },
-    {
-        to: LIQUIDITY_DEFAULT,
-        icon: <FiDroplet />,
-        title: 'Liquidity tool',
-        cta: 'Inspect liquidity',
-        desc: 'See liquidity providers on Choice, DojoSwap & Astroport — including whether the LP is burned or locked.',
-    },
-    {
-        to: '/token-launch',
-        icon: <FaRocket />,
-        title: 'Create token',
-        cta: 'Launch a token',
-        desc: 'Mint a token-factory denom in seconds, auto-paired with an Injective EVM ERC-20. No dev knowledge needed.',
-    },
-] as const;
-
-// Secondary tools — accessible, but a tier below the headline three.
-const MORE_TOOLS = [
-    { to: '/ecosystem', icon: <FaChartLine />, label: 'Ecosystem Explorer' },
+// The token toolkit — the original reason this site exists. It sits below the
+// dapps now, as one compact grid rather than three featured cards.
+const TOOLS = [
+    { to: '/token-holders', icon: <FiUsers />, label: 'Holder tool' },
+    { to: LIQUIDITY_DEFAULT, icon: <FiDroplet />, label: 'Liquidity tool' },
+    { to: '/token-launch', icon: <FaRocket />, label: 'Create token' },
     { to: '/manage-tokens', icon: <FaCoins />, label: 'Manage tokens' },
+    { to: '/ecosystem', icon: <FaChartLine />, label: 'Ecosystem Explorer' },
     { to: '/airdrop', icon: <FaParachuteBox />, label: 'Airdrops' },
     { to: '/claim-drop', icon: <FaHandHoldingUsd />, label: 'Claim drops' },
     { to: '/nft-airdrop', icon: <FaImages />, label: 'NFT drop' },
-    { to: '/pre-sale-tool', icon: <FaBullhorn />, label: 'Presale' },
     { to: '/burn', icon: <FaFire />, label: 'Burn tokens' },
 ] as const;
 
-const FeaturedCard = ({
+const LiveDot = () => (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+        Live
+    </span>
+);
+
+// One dapp. The accent colour is per-product, so it comes through inline style
+// (Tailwind can't generate a class for an arbitrary runtime value here) while
+// everything structural stays in classes.
+const DappCard = ({ dapp }: { dapp: Dapp }) => (
+    <a
+        href={dapp.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="dapp-card group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-linear-to-b from-white/6 to-white/1 p-5 transition hover:from-white/10"
+        style={{ '--accent': dapp.accent } as CSSProperties}
+    >
+        {/* faint accent wash that lifts on hover */}
+        <span
+            aria-hidden
+            className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full opacity-15 blur-3xl transition-opacity group-hover:opacity-35"
+            style={{ background: dapp.accent }}
+        />
+
+        <div className="flex items-start justify-between gap-3">
+            <span
+                className="rounded-2xl"
+                style={{ boxShadow: `0 0 0 1px ${dapp.accent}40` }}
+            >
+                {dapp.mark}
+            </span>
+            <LiveDot />
+        </div>
+
+        <div className="mt-4 text-[11px] uppercase tracking-[0.22em] text-white/40">
+            {dapp.kind}
+        </div>
+        <div className="text-xl font-semibold text-white">{dapp.name}</div>
+
+        <p className="mt-2 grow font-sans text-sm leading-relaxed text-white/55">
+            {dapp.desc}
+        </p>
+
+        <div className="mt-4 flex flex-wrap gap-1.5">
+            {dapp.points.map((p) => (
+                <span
+                    key={p}
+                    className="rounded-md bg-white/6 px-2 py-1 text-[11px] font-medium text-white/60"
+                >
+                    {p}
+                </span>
+            ))}
+        </div>
+
+        <div
+            className="mt-4 flex items-center gap-2 text-sm font-semibold"
+            style={{ color: dapp.accent }}
+        >
+            {dapp.cta}
+            <FaArrowRight className="text-xs transition group-hover:translate-x-1" />
+        </div>
+    </a>
+);
+
+const Banner = ({
     to,
-    icon,
+    external,
+    eyebrow,
     title,
+    sub,
     cta,
-    desc,
+    mark,
 }: {
     to: string;
-    icon: ReactNode;
-    title: string;
+    external?: boolean;
+    eyebrow: string;
+    title: ReactNode;
+    sub: string;
     cta: string;
-    desc: string;
-}) => (
-    <Link
-        to={to}
-        className="group flex flex-col rounded-2xl border border-white/10 bg-linear-to-b from-white/5 to-white/1 p-5 transition hover:border-trippyYellow/40 hover:from-white/8"
-    >
-        <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-trippyYellow/15 text-xl text-trippyYellow ring-1 ring-trippyYellow/25">
-                {icon}
-            </span>
-            <div className="text-lg font-semibold text-white">{title}</div>
-        </div>
-        <p className="mt-3 grow font-sans text-sm leading-relaxed text-white/55">
-            {desc}
-        </p>
-        <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-trippyYellow">
-            {cta}
-            <FaArrowRight className="transition group-hover:translate-x-1" />
-        </div>
-    </Link>
-);
+    mark: ReactNode;
+}) => {
+    const className =
+        'group flex flex-col gap-4 rounded-2xl border border-white/10 bg-linear-to-r from-trippyYellow/12 via-white/4 to-transparent p-5 transition hover:border-trippyYellow/40 sm:flex-row sm:items-center sm:justify-between';
+    const body = (
+        <>
+            <div className="flex items-center gap-4">
+                {mark}
+                <div>
+                    <div className="text-[11px] uppercase tracking-[0.22em] text-white/40">
+                        {eyebrow}
+                    </div>
+                    <div className="text-lg font-semibold text-white">{title}</div>
+                    <div className="font-sans text-sm text-white/50">{sub}</div>
+                </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2 text-sm font-semibold text-trippyYellow">
+                {cta}
+                {external ? (
+                    <FaExternalLinkAlt className="text-xs" />
+                ) : (
+                    <FaArrowRight className="transition group-hover:translate-x-1" />
+                )}
+            </div>
+        </>
+    );
+
+    return external ? (
+        <a href={to} target="_blank" rel="noopener noreferrer" className={className}>
+            {body}
+        </a>
+    ) : (
+        <Link to={to} className={className}>
+            {body}
+        </Link>
+    );
+};
 
 const Home = () => (
     <div className="flex min-h-screen flex-col bg-customGray text-stone-100">
@@ -149,10 +213,9 @@ const Home = () => (
 
                         <p className="mt-5 font-sans text-sm leading-relaxed text-white/60">
                             SHROOM is a meme coin with real utility on Injective.
-                            Use the toolkit below to inspect token holders and
-                            liquidity, launch and manage your own tokens, and run
-                            airdrops or presales with zero dev knowledge — all
-                            from one place.
+                            It powers a launchpad, a trading terminal and an
+                            on-chain game — plus the token toolkit this site
+                            started as.
                         </p>
 
                         <div className="mt-5 flex flex-wrap justify-center gap-3 md:justify-start">
@@ -179,90 +242,69 @@ const Home = () => (
                 </div>
             </section>
 
-            {/* ---- headline tools ---- */}
+            {/* ---- the three live dapps: the headline of the page ---- */}
             <section>
                 <SectionHeader
-                    eyebrow="Toolkit"
-                    title="Explore tokens on Injective"
-                    sub="Holders, liquidity and token creation — the essentials."
+                    eyebrow="Built on Injective"
+                    title="Three live dapps"
+                    sub="Launch it, trade it, gamble it — all on Injective mainnet."
                 />
                 <div className="grid gap-4 md:grid-cols-3">
-                    {FEATURED.map((t) => (
-                        <FeaturedCard key={t.to} {...t} />
+                    {DAPPS.map((d) => (
+                        <DappCard key={d.name} dapp={d} />
                     ))}
                 </div>
             </section>
 
-            {/* ---- pump.trippyinj.xyz launchpad ad (external, mainnet) ---- */}
-            <a
-                href="https://pump.trippyinj.xyz"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-trippyYellow/25 bg-linear-to-r from-trippyYellow/18 via-trippyYellow/6 to-transparent p-5 transition hover:border-trippyYellow/50 sm:flex-row sm:items-center sm:justify-between"
-            >
-                <div className="flex items-center gap-4">
+            {/* ---- tokenomics explainer ---- */}
+            <Banner
+                to="/tokenomics"
+                eyebrow="Tokenomics"
+                title={
+                    <>
+                        SHROOM <span className="text-white/40">×</span> SAI — one
+                        engine, two sinks
+                    </>
+                }
+                sub="SAI is retired by use. SHROOM is retired by revenue. Read how the loop turns."
+                cta="Read the tokenomics"
+                mark={
                     <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-trippyYellow/15 text-2xl text-trippyYellow ring-1 ring-trippyYellow/30">
-                        <FaRocket className="transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                        <FaFire />
                     </span>
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-[11px] uppercase tracking-[0.22em] text-white/40">
-                                Launchpad
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
-                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                Live
-                            </span>
-                        </div>
-                        <div className="text-lg font-semibold text-white">
-                            pump.trippyinj.xyz
-                        </div>
-                        <div className="font-sans text-sm text-white/55">
-                            Launch and trade tokens on a fair bonding curve — now
-                            live on Injective mainnet.
-                        </div>
-                    </div>
-                </div>
-                <div className="flex shrink-0 items-center gap-2 text-sm font-semibold text-trippyYellow">
-                    Try the launchpad
-                    <FaArrowRight className="transition group-hover:translate-x-1" />
-                </div>
-            </a>
+                }
+            />
 
             {/* ---- Shroom Hub banner ---- */}
-            <Link
+            <Banner
                 to="/shroom-hub"
-                className="group flex flex-col gap-4 rounded-2xl border border-white/10 bg-linear-to-r from-trippyYellow/12 via-white/4 to-transparent p-5 transition hover:border-trippyYellow/40 sm:flex-row sm:items-center sm:justify-between"
-            >
-                <div className="flex items-center gap-4">
+                eyebrow="Ecosystem dashboard"
+                title={
+                    <>
+                        Explore the SHROOM <span className="text-white/40">×</span>{' '}
+                        SAI Hub
+                    </>
+                }
+                sub="Live prices, liquidity breakdown, holders and your portfolio in one view."
+                cta="Open hub"
+                mark={
                     <img
                         src={shroom}
                         alt="SHROOM"
                         className="h-12 w-12 rounded-xl object-cover ring-1 ring-white/15"
                     />
-                    <div>
-                        <div className="text-[11px] uppercase tracking-[0.22em] text-white/40">
-                            Ecosystem dashboard
-                        </div>
-                        <div className="text-lg font-semibold text-white">
-                            Explore the SHROOM <span className="text-white/40">×</span> SAI Hub
-                        </div>
-                        <div className="font-sans text-sm text-white/50">
-                            Live prices, liquidity breakdown, holders and your
-                            portfolio in one view.
-                        </div>
-                    </div>
-                </div>
-                <div className="flex shrink-0 items-center gap-2 text-sm font-semibold text-trippyYellow">
-                    Open hub
-                    <FaArrowRight className="transition group-hover:translate-x-1" />
-                </div>
-            </Link>
+                }
+            />
 
-            {/* ---- secondary tools ---- */}
+            {/* ---- token toolkit ---- */}
             <section>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-                    {MORE_TOOLS.map((t) => (
+                <SectionHeader
+                    eyebrow="Toolkit"
+                    title="Token tools"
+                    sub="Inspect, launch, airdrop and burn tokens on Injective — no dev knowledge needed."
+                />
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {TOOLS.map((t) => (
                         <Link
                             key={t.to}
                             to={t.to}
