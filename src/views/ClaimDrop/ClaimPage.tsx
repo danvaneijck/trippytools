@@ -188,6 +188,15 @@ const ClaimPage = () => {
     const symbol = meta.symbol || listed?.symbol || (camp ? camp.campaign.denom : "");
     const amount = useCallback((base: string) => fromBaseUnits(base, decimals), [decimals]);
 
+    // Drops published by an MCP agent tag themselves `trippy-mcp:<name>` in the
+    // on-chain meta. Creator-supplied text, so it is clamped and stripped of
+    // anything that isn't an agent name before it goes on the page.
+    const agentName = useMemo(() => {
+        const raw = meta.createdBy ?? "";
+        const m = /^trippy-mcp:([a-z0-9][a-z0-9_-]{2,31})$/.exec(raw.trim());
+        return m ? m[1] : null;
+    }, [meta.createdBy]);
+
     // Expiry is compared against a clock held in state, not read during render:
     // reading it in render is impure (react-hooks/purity), and a page left open
     // across an expiry should flip to "expired" on its own rather than keep
@@ -359,6 +368,14 @@ const ClaimPage = () => {
                 </div>
                 {meta.description && (
                     <p className="mx-auto mt-2 max-w-md text-sm text-slate-300">{meta.description}</p>
+                )}
+                {agentName && (
+                    <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/60 px-3 py-1 text-xs text-slate-300">
+                        <span className="rounded bg-trippyYellow/20 px-1.5 py-0.5 font-semibold text-trippyYellow">
+                            AGENT
+                        </span>
+                        created by {agentName}
+                    </div>
                 )}
             </div>
 

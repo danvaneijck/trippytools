@@ -92,7 +92,10 @@ export function parseMeta(meta: string): Partial<DropMeta> {
     try {
         const parsed: unknown = JSON.parse(meta);
         if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return {};
-        const { title, symbol, decimals, description, logo } = parsed as Record<string, unknown>;
+        const { title, symbol, decimals, description, logo, createdBy } = parsed as Record<
+            string,
+            unknown
+        >;
         return {
             ...(typeof title === "string" ? { title } : {}),
             ...(typeof symbol === "string" ? { symbol } : {}),
@@ -101,6 +104,7 @@ export function parseMeta(meta: string): Partial<DropMeta> {
                 : {}),
             ...(typeof description === "string" ? { description } : {}),
             ...(typeof logo === "string" ? { logo } : {}),
+            ...(typeof createdBy === "string" ? { createdBy } : {}),
         };
     } catch {
         return {};

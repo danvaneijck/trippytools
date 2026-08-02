@@ -81,4 +81,11 @@ export interface DropMeta {
     decimals: number;
     description?: string;
     logo?: string;
+    /**
+     * Who published it, when it was not a person at a keyboard. trippy-mcp
+     * writes `trippy-mcp:<agent-name>` here so an agent-created drop says so on
+     * its claim page. Creator-supplied text like every other meta field, so it
+     * is a label, not a credential — render it, never trust it.
+     */
+    createdBy?: string;
 }

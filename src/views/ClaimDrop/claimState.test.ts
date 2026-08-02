@@ -131,6 +131,12 @@ test("meta is treated as untrusted", () => {
     assert.deepEqual(parseMeta('{"decimals":1.5}'), {});
     assert.deepEqual(parseMeta('{"decimals":-1}'), {});
     assert.deepEqual(parseMeta('{"decimals":99}'), {});
+    // trippy-mcp tags agent-published drops here; it stays a plain string at
+    // this layer, and the page decides what is a renderable agent name.
+    assert.deepEqual(parseMeta('{"createdBy":"trippy-mcp:fable-agent"}'), {
+        createdBy: "trippy-mcp:fable-agent",
+    });
+    assert.deepEqual(parseMeta('{"createdBy":{"nested":true}}'), {});
 });
 
 test("rootMatch accepts either live root and nothing else", () => {
