@@ -19,6 +19,7 @@ import type { DropMeta } from "../../utils/claimDrops/types";
 import { isBlockedRecipient } from "../Airdrop/blockedAddresses";
 import { humanReadableAmount } from "../Airdrop/format";
 import { downloadCsv } from "../../utils/csv";
+import { AIRDROP_SHROOM_FEE } from "../../utils/shroomFee";
 import {
     btnPrimary,
     btnSecondary,
@@ -32,10 +33,11 @@ import { buildLeavesFromRows, fromBaseUnits, type CsvRow } from "./leaves";
 import RecipientSources, { type RecipientsChange } from "./RecipientSources";
 import ClaimDropConfirmModal from "./ClaimDropConfirmModal";
 
-// SHROOM fee for publishing a drop — the same 25k (90% fee / 10% burn) the
-// Airdrop tool charges. A claim drop is one tx instead of N, but it's the same
-// service, and the recipients pay their own claim gas.
-const CLAIM_DROP_SHROOM_COST = 25000;
+// SHROOM fee for publishing a drop — the same 90% fee / 10% burn the Airdrop
+// tool charges, off the same constant so the two cannot drift apart. A claim
+// drop is one tx instead of N, but it's the same service, and the recipients
+// pay their own claim gas.
+const CLAIM_DROP_SHROOM_COST = AIRDROP_SHROOM_FEE;
 
 // Today, resolved once at module load: `min` on the expiry picker only needs to
 // be right for the session, and reading the clock during render isn't allowed.

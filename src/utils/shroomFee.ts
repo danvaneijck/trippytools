@@ -23,6 +23,25 @@ export const SHROOM_BANK_DENOM = `factory/${CW20_ADAPTER_ADDRESS}/${SHROOM_CW20}
 
 const SHROOM_DECIMALS = 18;
 
+/**
+ * SHROOM charged to publish a drop — token airdrop, NFT airdrop and claim drop,
+ * which are the same service and are priced the same.
+ *
+ * Denominated in SHROOM, not dollars, so the number here is a snapshot of a
+ * target and drifts with the price. Last repriced 2026-08-28 to ~**$10**:
+ * 250,000 SHROOM quoted at $10.46 into USDC through Choice's best route, at
+ * $0.0000419/SHROOM. The 25,000 it replaced was set when SHROOM was worth ~40x
+ * more and had drifted to $1.05, which is the failure mode to watch for — check
+ * it against `quoteShroomSellUsd(AIRDROP_SHROOM_FEE)` before assuming it is
+ * still $10.
+ *
+ * One constant rather than three literals because the three views charged the
+ * identical fee from three separate places, so any reprice that missed one
+ * would leave the same service priced differently depending on which page you
+ * came in through.
+ */
+export const AIRDROP_SHROOM_FEE = 250000;
+
 // Choice backend optimal-route quote. Input `amount` and `est_output_amount`
 // are both human-readable (verified against the live endpoint), so quoting into
 // USDC gives the dollar sell value directly.
