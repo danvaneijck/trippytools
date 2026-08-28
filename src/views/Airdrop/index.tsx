@@ -27,6 +27,7 @@ import type { AirdropRecipient, DistMode, DropMode } from "./types";
 import DistributionToggle from "./components/DistributionToggle";
 import AirdropListSection from "./components/AirdropListSection";
 import { withShroomMetadata } from "../../modules/shroomTokenMeta";
+import { AIRDROP_SHROOM_FEE } from "../../utils/shroomFee";
 import { PiParachuteBold } from "react-icons/pi";
 import SectionCard from "./components/SectionCard";
 import {
@@ -79,7 +80,7 @@ const Airdrop = () => {
     const [balanceToDrop, setBalanceToDrop] = useState<string>("0");
     const dropAmount = Number(balanceToDrop) || 0;
 
-    const [shroomCost] = useState(25000);
+    const [shroomCost] = useState(AIRDROP_SHROOM_FEE);
     const [shroomPrice, setShroomPrice] = useState<any>(null);
 
     const [dropMode, setDropMode] = useState<{ value: DropMode; label: string }>({

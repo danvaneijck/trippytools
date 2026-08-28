@@ -19,6 +19,7 @@ import type { NftPair, OwnedNft } from "./types";
 import { PiParachuteBold } from "react-icons/pi";
 import { FiShuffle, FiDownload } from "react-icons/fi";
 import SectionCard from "../Airdrop/components/SectionCard";
+import { AIRDROP_SHROOM_FEE } from "../../utils/shroomFee";
 import {
     btnPrimary,
     btnSecondary,
@@ -28,7 +29,7 @@ import {
     darkSelectStyles,
 } from "../Airdrop/components/ui";
 
-const SHROOM_COST = 25000;
+const SHROOM_COST = AIRDROP_SHROOM_FEE;
 const SHROOM_PAIR_ADDRESS = "inj1m35kyjuegq7ruwgx787xm53e5wfwu6n5uadurl";
 
 const NftAirdrop = () => {
