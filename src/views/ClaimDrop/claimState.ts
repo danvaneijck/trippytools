@@ -84,6 +84,36 @@ export function entitlement(
 }
 
 /**
+ * What the claim box should say for the connected wallet, or null while the
+ * answer is still genuinely unknown.
+ *
+ * The distinction it draws is the whole point. "We haven't looked yet" and "we
+ * looked, and you aren't in this drop" both show up as an absent leaf, and
+ * collapsing the two leaves every non-recipient watching a spinner that can
+ * never resolve — which is exactly what the page used to do.
+ *
+ * Once the tree is rebuilt the leaf set is complete, so a missing leaf is a
+ * final answer and there is nothing to wait for: `claimed` is only ever non-zero
+ * for an address that had a leaf, and no proof can be derived for one that
+ * doesn't. Only a wallet that IS in the list has to wait on the chain.
+ */
+export function walletEntitlement(args: {
+    /** The rebuilt tree is in hand, so the leaf set is known to be complete. */
+    listLoaded: boolean;
+    status: DropStatus | null;
+    /** This wallet's leaf amount, or null when the list holds no leaf for it. */
+    leafAmount: string | null;
+    /** What the chain says was already withdrawn; null while that query is in flight. */
+    claimedBase: string | null;
+}): Entitlement | null {
+    const { listLoaded, status, leafAmount, claimedBase } = args;
+    if (!listLoaded || !status) return null;
+    if (leafAmount === null) return { kind: "not_included" };
+    if (claimedBase === null) return null;
+    return entitlement(leafAmount, claimedBase, status);
+}
+
+/**
  * Decode the campaign's `meta` blob. It's an arbitrary creator-supplied string,
  * so treat every field as untrusted: bad JSON, a JSON scalar, or a missing title
  * must degrade to a usable page rather than throw on render.

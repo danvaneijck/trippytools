@@ -12,7 +12,7 @@
 // freezes on its first publish, that commitment can never be edited afterwards.
 // If the rebuilt root doesn't match, the page refuses to offer a claim at all
 // instead of sending a transaction that can only revert.
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { GridLoader } from "react-spinners";
 import { PiHandCoinsBold, PiSealCheckFill, PiWarningBold } from "react-icons/pi";
@@ -33,7 +33,7 @@ import type { CampaignResponse } from "../../utils/claimDrops/types";
 import { btnPrimary, btnSecondary, cardBase } from "../Airdrop/components/ui";
 import { shortAddress } from "../Airdrop/format";
 import { fromBaseUnits } from "./leaves";
-import { dropStatus, entitlement, parseMeta, rootMatch, type DropStatus } from "./claimState";
+import { dropStatus, parseMeta, rootMatch, walletEntitlement, type DropStatus } from "./claimState";
 
 const OTHER: Record<NetworkKey, NetworkKey> = { mainnet: "testnet", testnet: "mainnet" };
 
@@ -99,6 +99,8 @@ const ClaimPage = () => {
     const [foundOn, setFoundOn] = useState<NetworkKey | null>(null);
 
     const [claimed, setClaimed] = useState<string | null>(null);
+    /** The `claimed` read failed. Without it there is no honest allocation to show. */
+    const [walletError, setWalletError] = useState(false);
     const [payable, setPayable] = useState<string | null>(null);
     const [proofOk, setProofOk] = useState<boolean | null>(null);
     const [claiming, setClaiming] = useState(false);
@@ -217,13 +219,18 @@ const ClaimPage = () => {
     );
 
     // ------------------------------------------------------------- wallet load
+    // Which wallet load is the current one. Switching accounts mid-flight would
+    // otherwise let the older reply land last and pin another wallet's claimed
+    // figure to the page, where it would stay until something reloaded it.
+    const walletReq = useRef(0);
     const loadWallet = useCallback(async () => {
-        if (!camp || !contract || !connectedAddress || !leaf || !proof) {
-            setClaimed(null);
-            setPayable(null);
-            setProofOk(null);
-            return;
-        }
+        const seq = ++walletReq.current;
+        // Nothing on screen belongs to the new wallet until its own reply lands.
+        setClaimed(null);
+        setPayable(null);
+        setProofOk(null);
+        setWalletError(false);
+        if (!camp || !contract || !connectedAddress || !leaf || !proof) return;
         // Verify locally before asking the chain: a proof that fails here can
         // never be paid, and saying so needs no network round-trip.
         setProofOk(
@@ -238,7 +245,15 @@ const ClaimPage = () => {
                 () => null,
             ),
         ]);
-        setClaimed(already?.claimed ?? null);
+        if (walletReq.current !== seq) return;
+        if (!already) {
+            // A node that won't answer is not the same as "nothing to claim":
+            // say the read failed and offer another go, rather than sitting on
+            // a spinner that nothing will ever clear.
+            setWalletError(true);
+            return;
+        }
+        setClaimed(already.claimed);
         setPayable(dry?.payable ?? null);
     }, [camp, contract, connectedAddress, leaf, proof, network.grpc]);
 
@@ -281,9 +296,18 @@ const ClaimPage = () => {
         }
     }, [camp, contract, connectedAddress, leaf, proof, loadWallet, network.grpc]);
 
+    // `tree !== null` is what separates "still resolving" from "not in this
+    // drop": before the list is rebuilt an absent leaf means nothing, after it
+    // the leaf set is complete and an absent leaf is the answer.
     const ent = useMemo(
-        () => (status && claimed !== null ? entitlement(leaf?.amount ?? null, claimed, status) : null),
-        [status, claimed, leaf],
+        () =>
+            walletEntitlement({
+                listLoaded: tree !== null,
+                status,
+                leafAmount: leaf?.amount ?? null,
+                claimedBase: claimed,
+            }),
+        [tree, status, claimed, leaf],
     );
 
     const shell = (children: React.ReactNode) => (
@@ -389,6 +413,24 @@ const ClaimPage = () => {
                             holds, so no proof from them can be paid. Not claiming — a transaction here could
                             only revert.
                         </p>
+                    </div>
+                ) : walletError ? (
+                    <div className="space-y-3 text-center">
+                        <div className="text-sm font-bold text-amber-200">
+                            Couldn't read your claim status
+                        </div>
+                        <p className="text-xs text-slate-400">
+                            The node didn't answer, so your allocation can't be shown yet. Your funds and
+                            your allocation are unaffected.
+                        </p>
+                        <button
+                            className={`${btnSecondary} w-full`}
+                            onClick={() => {
+                                void loadWallet();
+                            }}
+                        >
+                            Try again
+                        </button>
                     </div>
                 ) : ent === null ? (
                     <div className="text-center text-sm text-slate-400">Checking your allocation…</div>
