@@ -7,7 +7,7 @@
 import { strict as assert } from "node:assert";
 import test from "node:test";
 
-import { dropStatus, entitlement, parseMeta, rootMatch } from "./claimState.ts";
+import { dropStatus, entitlement, parseMeta, rootMatch, walletEntitlement } from "./claimState.ts";
 import type { Campaign } from "../../utils/claimDrops/types.ts";
 
 const NOW = 1_785_000_000_000; // fixed clock; ms
@@ -114,6 +114,74 @@ test("amounts stay exact past 2^53", () => {
     const big = "2373456789012345678";
     const result = entitlement(big, "1750000000000000000", { kind: "live" });
     assert.equal(result.kind === "claimable" && result.claimable, "623456789012345678");
+});
+
+test("a wallet with no leaf gets an answer as soon as the list is rebuilt", () => {
+    // The regression: the page waited on a `claimed` read it never issued for a
+    // wallet with no leaf, so every visitor who wasn't in the drop sat on
+    // "Checking your allocation…" for ever. Not being in the list is knowable
+    // from the list alone.
+    assert.deepEqual(
+        walletEntitlement({
+            listLoaded: true,
+            status: { kind: "live" },
+            leafAmount: null,
+            claimedBase: null,
+        }),
+        { kind: "not_included" },
+    );
+    // And it holds however the drop is doing — a closed drop still owes a
+    // non-recipient a straight answer.
+    assert.deepEqual(
+        walletEntitlement({
+            listLoaded: true,
+            status: { kind: "swept" },
+            leafAmount: null,
+            claimedBase: null,
+        }),
+        { kind: "not_included" },
+    );
+});
+
+test("null still means 'still resolving' for the states that really are", () => {
+    // No list yet: an absent leaf means nothing, so nothing may be claimed about it.
+    assert.equal(
+        walletEntitlement({
+            listLoaded: false,
+            status: { kind: "live" },
+            leafAmount: null,
+            claimedBase: null,
+        }),
+        null,
+    );
+    // Clock not read yet.
+    assert.equal(
+        walletEntitlement({ listLoaded: true, status: null, leafAmount: "1000", claimedBase: "0" }),
+        null,
+    );
+    // In the list, but what it already took is still in flight — this is the one
+    // case the spinner is honest about.
+    assert.equal(
+        walletEntitlement({
+            listLoaded: true,
+            status: { kind: "live" },
+            leafAmount: "1000",
+            claimedBase: null,
+        }),
+        null,
+    );
+});
+
+test("a wallet with a leaf resolves exactly as entitlement does", () => {
+    assert.deepEqual(
+        walletEntitlement({
+            listLoaded: true,
+            status: { kind: "live" },
+            leafAmount: "1500",
+            claimedBase: "1000",
+        }),
+        entitlement("1500", "1000", { kind: "live" }),
+    );
 });
 
 test("meta is treated as untrusted", () => {
