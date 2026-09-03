@@ -13,7 +13,14 @@ import useNetworkStore from "../../store/useNetworkStore";
 import useTokenStore from "../../store/useTokenStore";
 import { withShroomMetadata } from "../../modules/shroomTokenMeta";
 import { buildTree } from "../../utils/claimDrops/merkle";
-import { claimDropsContract, leavesUriForRoot, secondsToNanos } from "../../utils/claimDrops/config";
+import {
+    DEFAULT_INSTANCE,
+    instanceAddress,
+    leavesUriForRoot,
+    listInstances,
+    secondsToNanos,
+    type InstanceKey,
+} from "../../utils/claimDrops/config";
 import { queryConfig } from "../../utils/claimDrops/queries";
 import type { DropMeta } from "../../utils/claimDrops/types";
 import { isBlockedRecipient } from "../Airdrop/blockedAddresses";
@@ -55,7 +62,17 @@ const ClaimDrop = () => {
     const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore();
     const { tokens } = useTokenStore();
 
-    const contract = claimDropsContract(currentNetwork);
+    // Which claim-drops instance this drop lands on. Everything downstream — the
+    // fee config read, the balance check, the broadcast, the share link — keys
+    // off it, so it is picked before anything else on the form.
+    const [instanceKey, setInstanceKey] = useState<InstanceKey>(DEFAULT_INSTANCE);
+    const instances = useMemo(() => listInstances(currentNetwork), [currentNetwork]);
+    // Switching network can strand a selection on an instance that isn't
+    // deployed there; fall back rather than render a blank contract.
+    const activeInstance = instances.some((i) => i.key === instanceKey)
+        ? instanceKey
+        : DEFAULT_INSTANCE;
+    const contract = instanceAddress(activeInstance, currentNetwork);
 
     const [denomOption, setDenomOption] = useState<{ value: string; label: string } | null>(null);
     const [tokenInfo, setTokenInfo] = useState<{ symbol: string; name?: string; decimals: number } | null>(
@@ -269,6 +286,7 @@ const ClaimDrop = () => {
                 <ClaimDropConfirmModal
                     setShowModal={setShowConfirm}
                     contract={contract}
+                    instanceKey={activeInstance}
                     denom={denom}
                     symbol={tokenInfo.symbol}
                     decimals={decimals}
@@ -314,6 +332,49 @@ const ClaimDrop = () => {
                                             <div className={`${btnSecondary} w-full`}>Manage my drops</div>
                                         </Link>
                                     </div>
+
+                                    {/* Instance picker. Hidden while only one is
+                                        deployed — an unavoidable choice isn't a
+                                        choice, it's noise on a form that already
+                                        asks for a lot. */}
+                                    {instances.length > 1 && (
+                                        <SectionCard
+                                            title="Where this drop lives"
+                                            subtitle="Which claim-drops contract instance holds and pays out the funds"
+                                        >
+                                            <div className="space-y-2">
+                                                {instances.map((i) => (
+                                                    <label
+                                                        key={i.key}
+                                                        className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors ${
+                                                            activeInstance === i.key
+                                                                ? "border-trippyYellow/60 bg-trippyYellow/5"
+                                                                : "border-slate-700 hover:border-slate-500"
+                                                        }`}
+                                                    >
+                                                        <input
+                                                            type="radio"
+                                                            name="claim-drop-instance"
+                                                            className="mt-1 accent-trippyYellow"
+                                                            checked={activeInstance === i.key}
+                                                            onChange={() => setInstanceKey(i.key)}
+                                                        />
+                                                        <div className="min-w-0">
+                                                            <div className="text-sm text-slate-100">
+                                                                {i.label}
+                                                            </div>
+                                                            <div className="text-xs text-slate-400">
+                                                                {i.note}
+                                                            </div>
+                                                            <div className="mt-1 truncate font-mono text-2xs text-slate-500">
+                                                                {i.address}
+                                                            </div>
+                                                        </div>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </SectionCard>
+                                    )}
 
                                     {!contract && (
                                         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">

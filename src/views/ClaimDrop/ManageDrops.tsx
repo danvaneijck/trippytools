@@ -16,10 +16,15 @@ import { PiHandCoinsBold, PiLockKeyFill, PiWarningBold } from "react-icons/pi";
 import ConnectWallet from "../../components/App/ConnectKeplr";
 import Footer from "../../components/App/Footer";
 import useWalletStore from "../../store/useWalletStore";
-import useNetworkStore from "../../store/useNetworkStore";
+import useNetworkStore, { type NetworkKey } from "../../store/useNetworkStore";
 import useTokenStore from "../../store/useTokenStore";
 import { performTransaction } from "../../utils/walletStrategy";
-import { claimDropsContract, secondsToNanos } from "../../utils/claimDrops/config";
+import {
+    claimUrl,
+    listInstances,
+    secondsToNanos,
+    type InstanceKey,
+} from "../../utils/claimDrops/config";
 import {
     clawback as buildClawback,
     freeze as buildFreeze,
@@ -87,6 +92,9 @@ const Action = ({
 const DropCard = ({
     entry,
     contract,
+    instanceKey,
+    instanceLabel,
+    networkKey,
     grpc,
     explorerUrl,
     creator,
@@ -95,11 +103,15 @@ const DropCard = ({
 }: {
     entry: CampaignResponse;
     contract: string;
+    instanceKey: InstanceKey;
+    /** Shown as a badge only when more than one instance is deployed. */
+    instanceLabel: string | null;
+    networkKey: NetworkKey;
     grpc: string;
     explorerUrl: string;
     creator: string;
     nowMs: number;
-    onChanged: (fresh: CampaignResponse) => void;
+    onChanged: (instanceKey: InstanceKey, fresh: CampaignResponse) => void;
 }) => {
     const { tokens } = useTokenStore();
     const [busy, setBusy] = useState<string | null>(null);
@@ -118,6 +130,14 @@ const DropCard = ({
     const symbol = meta.symbol || listed?.symbol || c.denom;
     const amount = useCallback((b: string) => fromBaseUnits(b, decimals), [decimals]);
 
+    // Router path (no origin) for the in-app link; `claimUrl` builds the absolute
+    // one for the clipboard. Both go through the same helper so the `?c=` rule
+    // can't drift between them.
+    const claimPath = useMemo(
+        () => claimUrl("", networkKey, instanceKey, entry.id),
+        [networkKey, instanceKey, entry.id],
+    );
+
     const status = dropStatus(c, nowMs);
     const actions = manageActions(c, entry.remaining, nowMs, creator === c.creator);
     const pct =
@@ -132,14 +152,14 @@ const DropCard = ({
                 const res = await performTransaction(creator, [build()]);
                 setTxHash((res as { txHash?: string } | undefined)?.txHash ?? null);
                 const fresh = await queryCampaign(grpc, contract, entry.id);
-                onChanged(fresh);
+                onChanged(instanceKey, fresh);
             } catch (e) {
                 setError((e as Error).message);
             } finally {
                 setBusy(null);
             }
         },
-        [creator, grpc, contract, entry.id, onChanged],
+        [creator, grpc, contract, instanceKey, entry.id, onChanged],
     );
 
     const loadClaims = useCallback(async () => {
@@ -164,6 +184,13 @@ const DropCard = ({
                             {meta.title || `Drop #${entry.id}`}
                         </span>
                         {c.frozen && <PiLockKeyFill className="text-emerald-400" title="frozen" />}
+                        {/* Which contract holds this drop. Campaign ids restart
+                            at 1 per instance, so "#1" is ambiguous without it. */}
+                        {instanceLabel && (
+                            <span className="rounded-full border border-slate-600 px-2 py-0.5 text-2xs text-slate-300">
+                                {instanceLabel}
+                            </span>
+                        )}
                     </div>
                     <div className="text-xs text-slate-400">
                         #{entry.id} · {amount(c.total)} {symbol} ·{" "}
@@ -194,14 +221,19 @@ const DropCard = ({
             </div>
 
             <div className="flex flex-wrap gap-2">
-                <Link to={`/claim/${entry.id}`} className="flex-1">
+                <Link to={claimPath} className="flex-1">
                     <div className={`${btnGhost} w-full`}>Open claim page</div>
                 </Link>
                 <button
                     className={`${btnGhost} flex-1`}
                     onClick={() => {
                         void navigator.clipboard.writeText(
-                            `${typeof window === "undefined" ? "" : window.location.origin}/claim/${entry.id}`,
+                            claimUrl(
+                                typeof window === "undefined" ? "" : window.location.origin,
+                                networkKey,
+                                instanceKey,
+                                entry.id,
+                            ),
                         );
                     }}
                 >
@@ -458,12 +490,23 @@ const DropCard = ({
     );
 };
 
+/** One of the wallet's campaigns, tagged with the instance that holds it. */
+interface OwnedDrop {
+    instanceKey: InstanceKey;
+    instanceLabel: string;
+    contract: string;
+    entry: CampaignResponse;
+}
+
 const ManageDrops = () => {
     const { connectedWallet: connectedAddress } = useWalletStore();
     const { networkKey, network } = useNetworkStore();
-    const contract = claimDropsContract(networkKey);
+    // Every deployed instance, not a picked one: campaign ids restart at 1 per
+    // instance, so a wallet with drops on two of them would otherwise see half
+    // its drops and no hint the rest existed.
+    const instances = useMemo(() => listInstances(networkKey), [networkKey]);
 
-    const [campaigns, setCampaigns] = useState<CampaignResponse[]>([]);
+    const [campaigns, setCampaigns] = useState<OwnedDrop[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -481,21 +524,31 @@ const ManageDrops = () => {
     useEffect(() => {
         let cancelled = false;
         const run = async () => {
-            if (!connectedAddress || !contract) {
+            if (!connectedAddress || instances.length === 0) {
                 setCampaigns([]);
                 return;
             }
             setLoading(true);
             setError(null);
             try {
-                const mine = await queryCampaignsByCreator(
-                    network.grpc,
-                    contract,
-                    connectedAddress,
-                    undefined,
-                    100,
+                const perInstance = await Promise.all(
+                    instances.map(async (i) => {
+                        const mine = await queryCampaignsByCreator(
+                            network.grpc,
+                            i.address,
+                            connectedAddress,
+                            undefined,
+                            100,
+                        );
+                        return mine.map((entry) => ({
+                            instanceKey: i.key,
+                            instanceLabel: i.label,
+                            contract: i.address,
+                            entry,
+                        }));
+                    }),
                 );
-                if (!cancelled) setCampaigns(mine);
+                if (!cancelled) setCampaigns(perInstance.flat());
             } catch (e) {
                 if (!cancelled) setError((e as Error).message);
             } finally {
@@ -506,13 +559,26 @@ const ManageDrops = () => {
         return () => {
             cancelled = true;
         };
-    }, [connectedAddress, contract, network.grpc]);
+    }, [connectedAddress, instances, network.grpc]);
 
-    const onChanged = useCallback((fresh: CampaignResponse) => {
-        setCampaigns((prev) => prev.map((c) => (c.id === fresh.id ? fresh : c)));
+    // Matched on instance AND id: ids restart at 1 per instance, so id alone
+    // would write a refreshed campaign over its namesake on the other one.
+    const onChanged = useCallback((instanceKey: InstanceKey, fresh: CampaignResponse) => {
+        setCampaigns((prev) =>
+            prev.map((c) =>
+                c.instanceKey === instanceKey && c.entry.id === fresh.id ? { ...c, entry: fresh } : c,
+            ),
+        );
     }, []);
 
-    const sorted = useMemo(() => [...campaigns].sort((a, b) => b.id - a.id), [campaigns]);
+    const sorted = useMemo(
+        () =>
+            [...campaigns].sort(
+                (a, b) =>
+                    a.instanceKey.localeCompare(b.instanceKey) || b.entry.id - a.entry.id,
+            ),
+        [campaigns],
+    );
 
     return (
         <div className="flex min-h-screen flex-col bg-customGray">
@@ -533,7 +599,7 @@ const ManageDrops = () => {
                             </p>
                             <ConnectWallet />
                         </div>
-                    ) : !contract ? (
+                    ) : instances.length === 0 ? (
                         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
                             Claim drops aren't deployed on {networkKey} yet.
                         </div>
@@ -560,11 +626,18 @@ const ManageDrops = () => {
                                 </div>
                             )}
                             {nowMs > 0 &&
-                                sorted.map((entry) => (
+                                sorted.map((d) => (
                                     <DropCard
-                                        key={entry.id}
-                                        entry={entry}
-                                        contract={contract}
+                                        key={`${d.contract}:${d.entry.id}`}
+                                        entry={d.entry}
+                                        contract={d.contract}
+                                        instanceKey={d.instanceKey}
+                                        // Only worth naming when there's more
+                                        // than one instance to tell apart.
+                                        instanceLabel={
+                                            instances.length > 1 ? d.instanceLabel : null
+                                        }
+                                        networkKey={networkKey}
                                         grpc={network.grpc}
                                         explorerUrl={network.explorerUrl}
                                         creator={connectedAddress}

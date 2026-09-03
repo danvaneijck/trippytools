@@ -13,7 +13,7 @@
 // If the rebuilt root doesn't match, the page refuses to offer a claim at all
 // instead of sending a transaction that can only revert.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { GridLoader } from "react-spinners";
 import { PiHandCoinsBold, PiSealCheckFill, PiWarningBold } from "react-icons/pi";
 
@@ -24,7 +24,14 @@ import useNetworkStore, { type NetworkKey } from "../../store/useNetworkStore";
 import useTokenStore from "../../store/useTokenStore";
 import { NETWORKS } from "../../utils/constants";
 import { performTransaction } from "../../utils/walletStrategy";
-import { claimDropsContract, nanosToDate } from "../../utils/claimDrops/config";
+import {
+    DEFAULT_INSTANCE,
+    claimUrl,
+    instanceAddress,
+    nanosToDate,
+    resolveInstance,
+    type InstanceKey,
+} from "../../utils/claimDrops/config";
 import { fetchLeaves } from "../../utils/claimDrops/leavesSource";
 import { buildTree, proofFor, verifyProof, type BuiltTree } from "../../utils/claimDrops/merkle";
 import { claim as buildClaimMsg } from "../../utils/claimDrops/messages";
@@ -45,8 +52,15 @@ const OTHER: Record<NetworkKey, NetworkKey> = { mainnet: "testnet", testnet: "ma
  * contract address just returns "not found", which is the same answer as "the
  * drop doesn't exist" and would silently swallow the offer to switch.
  */
-async function existsOnOtherNetwork(other: NetworkKey, id: number): Promise<boolean> {
-    const otherContract = claimDropsContract(other);
+async function existsOnOtherNetwork(
+    other: NetworkKey,
+    instanceKey: InstanceKey,
+    id: number,
+): Promise<boolean> {
+    // The SAME instance on the other network — instances are keyed by role, so
+    // "public #3" means the equivalent drop over there. Probing a different
+    // instance would answer a question nobody asked.
+    const otherContract = instanceAddress(instanceKey, other);
     if (!otherContract) return false;
     return queryCampaign(NETWORKS[other].grpc, otherContract, id)
         .then(() => true)
@@ -79,13 +93,23 @@ const Row = ({ label, children }: { label: string; children: React.ReactNode }) 
 
 const ClaimPage = () => {
     const { id: idParam } = useParams();
+    const [search] = useSearchParams();
     const { connectedWallet: connectedAddress } = useWalletStore();
     const { networkKey, network, setNetwork } = useNetworkStore();
     const { tokens } = useTokenStore();
 
     const id = Number(idParam);
     const validId = Number.isInteger(id) && id > 0;
-    const contract = claimDropsContract(networkKey);
+
+    // `?c=` names the claim-drops instance; absent means the default (every link
+    // minted before instances existed). `resolveInstance` is an ALLOWLIST — an
+    // address that isn't ours comes back null and the page refuses to render
+    // rather than falling back, because anyone can instantiate code 2066 and
+    // "?c=<their instance>" would otherwise be a phishing page wearing our
+    // chrome, with a genuinely working claim button on it.
+    const instanceParam = search.get("c");
+    const instanceKey = resolveInstance(networkKey, instanceParam);
+    const contract = instanceKey ? instanceAddress(instanceKey, networkKey) : "";
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -124,14 +148,29 @@ const ClaimPage = () => {
                 }
                 return;
             }
+            if (!instanceKey) {
+                // Unrecognised `?c=`. Deliberately NOT probed on the other
+                // network and NOT retried against the default — the link points
+                // at a contract this tool doesn't vouch for, and the only safe
+                // answer is to stop.
+                if (!cancelled) {
+                    setError(
+                        "This link points at a claim-drops contract trippytools doesn't recognise. " +
+                            "Nothing is shown for unknown contracts — check where the link came from.",
+                    );
+                    setLoading(false);
+                }
+                return;
+            }
             if (!contract) {
-                // Not deployed here — the drop may still be on the other network.
+                // Known instance, not deployed on this network — the drop may
+                // still be on the other one.
                 const other = OTHER[networkKey];
-                if (await existsOnOtherNetwork(other, id)) {
+                if (await existsOnOtherNetwork(other, instanceKey, id)) {
                     if (!cancelled) setFoundOn(other);
                 }
                 if (!cancelled) {
-                    setError(`Claim drops aren't deployed on ${networkKey} yet.`);
+                    setError(`This drop's contract isn't deployed on ${networkKey} yet.`);
                     setLoading(false);
                 }
                 return;
@@ -165,7 +204,7 @@ const ClaimPage = () => {
                 if (cancelled) return;
                 // Unknown id on this network — check whether the link belongs elsewhere.
                 const other = OTHER[networkKey];
-                if (await existsOnOtherNetwork(other, id)) {
+                if (await existsOnOtherNetwork(other, instanceKey, id)) {
                     if (!cancelled) setFoundOn(other);
                 }
                 if (!cancelled) setError(`No campaign #${id} on ${networkKey}.`);
@@ -177,7 +216,7 @@ const ClaimPage = () => {
         return () => {
             cancelled = true;
         };
-    }, [id, idParam, validId, contract, networkKey, network.grpc]);
+    }, [id, idParam, validId, contract, instanceKey, networkKey, network.grpc]);
 
     const meta = useMemo(() => (camp ? parseMeta(camp.campaign.meta) : {}), [camp]);
     const listed = useMemo(
@@ -258,9 +297,11 @@ const ClaimPage = () => {
     const share = useMemo(
         () =>
             camp && typeof window !== "undefined"
-                ? `${window.location.origin}/claim/${camp.id}`
+                ? claimUrl(window.location.origin, networkKey, instanceKey ?? DEFAULT_INSTANCE, camp.id)
                 : "",
-        [camp],
+        // `camp` is only ever set for a resolved instance, so the ?? is a type
+        // guard rather than a real fallback.
+        [camp, networkKey, instanceKey],
     );
 
     const doClaim = useCallback(async () => {

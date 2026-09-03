@@ -9,7 +9,14 @@ import { performTransaction } from "../../utils/walletStrategy";
 import { buildShroomFeeMessages } from "../../utils/shroomFee";
 import { sendTelegramMessage } from "../../modules/telegram";
 import { createOneShotDrop } from "../../utils/claimDrops/messages";
-import { fundingRequired, ceilFee, leavesUriForRoot, nanosToDate } from "../../utils/claimDrops/config";
+import {
+    fundingRequired,
+    ceilFee,
+    claimUrl,
+    leavesUriForRoot,
+    nanosToDate,
+    type InstanceKey,
+} from "../../utils/claimDrops/config";
 import { INSERT_CAMPAIGN, UPSERT_LEAVES } from "../../utils/claimDrops/hasura";
 import { fetchStoredLeaves } from "../../utils/claimDrops/leavesSource";
 import { buildTree, type BuiltTree } from "../../utils/claimDrops/merkle";
@@ -121,6 +128,10 @@ const StepRow = ({ done, label }: { done: boolean; label: string }) => (
 const ClaimDropConfirmModal = (props: {
     setShowModal: (show: boolean) => void;
     contract: string;
+    /** Which registry instance `contract` is — decides whether the share link
+     *  needs a `?c=`. Passed rather than reverse-looked-up so the link can never
+     *  disagree with the contract the tx actually went to. */
+    instanceKey: InstanceKey;
     denom: string;
     symbol: string;
     decimals: number;
@@ -164,7 +175,10 @@ const ClaimDropConfirmModal = (props: {
     // pay for its own tx. Warn rather than block — the user may top up.
     const shortfall = balanceShortfall(props.balanceBase, required);
 
-    const shareUrl = campaignId !== null ? `${window.location.origin}/claim/${campaignId}` : null;
+    const shareUrl =
+        campaignId !== null
+            ? claimUrl(window.location.origin, currentNetwork, props.instanceKey, campaignId)
+            : null;
 
     const payFee = useCallback(async () => {
         const messages = await buildShroomFeeMessages(connectedAddress as string, props.shroomCost, {
