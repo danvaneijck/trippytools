@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
 import { WALLET_LABELS } from "../../constants/walletLabels";
-import { sendTelegramMessage } from "../../modules/telegram";
+import { sendTrippyAlert } from "../../modules/telegram";
 import { fetchShroomTokenMetaCached } from "../../modules/shroomTokenMeta";
 import { gql, useMutation } from '@apollo/client';
 import dayjs from "dayjs";
@@ -405,11 +405,15 @@ const AirdropConfirmModal = (props: {
                 ? `${friendlySymbol} (${props.tokenAddress})`
                 : props.tokenAddress
 
-            if (currentNetwork == "mainnet") await sendTelegramMessage(
-                `wallet ${connectedAddress} performed an airdrop on trippyinj!${partialNote}\ntoken dropped: ${tokenLabel}\n` +
-                `num participants: ${paidRecipients.length}\n` +
-                `${props.criteria}\n${props.description}`
-            )
+            // The latest hash: earlier ones may come from a resumed run and be
+            // too old for the backend's freshness check.
+            if (currentNetwork == "mainnet") await sendTrippyAlert("airdrop", txHashes[txHashes.length - 1], connectedAddress, {
+                partial: partialNote,
+                token: tokenLabel,
+                participants: paidRecipients.length,
+                criteria: props.criteria,
+                description: props.description,
+            })
 
             // Persist a log whenever at least one tx landed, so the hashes are
             // never orphaned — including partial runs.

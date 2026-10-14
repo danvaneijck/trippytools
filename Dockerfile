@@ -28,16 +28,12 @@ WORKDIR /app
 # Build-time config baked into the static bundle. trippytools is a mainnet-only
 # toolkit, so a single env. Vite reads VITE_*-prefixed vars already present in
 # the environment (highest priority), so these ENV lines are what the bundle
-# ships with; CI overrides via --build-arg. The TG vars default empty (the
-# client-side Telegram notify feature self-disables when unset).
+# ships with; CI overrides via --build-arg. Never pass a secret here: every
+# VITE_* value is public in the bundle (Telegram alerts go via the backend).
 ARG VITE_HASURA_URL=https://api.trippyinj.xyz/v1/graphql
 ARG VITE_CHOICE_URL=https://api.choice.exchange/v1/graphql
-ARG VITE_TG_BOT_TOKEN=
-ARG VITE_TG_CHAT_ID=
 ENV VITE_HASURA_URL=${VITE_HASURA_URL} \
     VITE_CHOICE_URL=${VITE_CHOICE_URL} \
-    VITE_TG_BOT_TOKEN=${VITE_TG_BOT_TOKEN} \
-    VITE_TG_CHAT_ID=${VITE_TG_CHAT_ID} \
     NODE_OPTIONS=--max-old-space-size=8192
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .

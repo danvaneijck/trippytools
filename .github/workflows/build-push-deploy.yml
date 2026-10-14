@@ -15,8 +15,8 @@ name: Build, Push & Deploy
 # Required repo secrets:
 #   REMOTE_HOST / REMOTE_USER / SSH_PRIVATE_KEY  — same trippy box + deploy user
 #                                                  as the trippinj backend CI.
-#   VITE_TG_BOT_TOKEN / VITE_TG_CHAT_ID          — baked into the public bundle
-#                                                  (extractable; see README).
+# The Telegram alert bot token lives only in the trippinj backend .env
+# (TRIPPYTOOLS_TG_BOT_TOKEN); the SPA posts to /alerts/trippytools.
 
 on:
   push:
@@ -82,8 +82,6 @@ jobs:
           build-args: |
             VITE_HASURA_URL=https://api.trippyinj.xyz/v1/graphql
             VITE_CHOICE_URL=https://api.choice.exchange/v1/graphql
-            VITE_TG_BOT_TOKEN=${{ secrets.VITE_TG_BOT_TOKEN }}
-            VITE_TG_CHAT_ID=${{ secrets.VITE_TG_CHAT_ID }}
           cache-from: type=gha,scope=trippytools
           cache-to: type=gha,mode=max,scope=trippytools
 
