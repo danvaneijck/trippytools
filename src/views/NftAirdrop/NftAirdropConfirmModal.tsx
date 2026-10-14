@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { CircleLoader } from "react-spinners";
 import { gql, useMutation } from "@apollo/client";
 import dayjs from "dayjs";
-import { sendTelegramMessage } from "../../modules/telegram";
+import { sendTrippyAlert } from "../../modules/telegram";
 import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
 import { performTransaction } from "../../utils/walletStrategy";
@@ -202,11 +202,12 @@ const NftAirdropConfirmModal = (props: {
             setProgress("Done...");
 
             if (currentNetwork === "mainnet") {
-                await sendTelegramMessage(
-                    `wallet ${connectedAddress} performed an NFT airdrop on trippyinj!\n` +
-                        `collection: ${props.collectionAddress}\n` +
-                        `nfts dropped: ${sendable.length}\n${criteria}\n${description}`,
-                );
+                await sendTrippyAlert("nft_airdrop", txHashes[txHashes.length - 1], connectedAddress, {
+                    collection: props.collectionAddress,
+                    count: sendable.length,
+                    criteria,
+                    description,
+                });
 
                 try {
                     await insertTokenDropped({ variables: { objects: [{ address: props.collectionAddress }] } });

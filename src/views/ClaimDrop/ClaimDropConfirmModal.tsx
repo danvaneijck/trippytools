@@ -7,7 +7,7 @@ import useNetworkStore from "../../store/useNetworkStore";
 import TokenUtils from "../../modules/tokenUtils";
 import { performTransaction } from "../../utils/walletStrategy";
 import { buildShroomFeeMessages } from "../../utils/shroomFee";
-import { sendTelegramMessage } from "../../modules/telegram";
+import { sendTrippyAlert } from "../../modules/telegram";
 import { createOneShotDrop } from "../../utils/claimDrops/messages";
 import { fundingRequired, ceilFee, leavesUriForRoot, nanosToDate } from "../../utils/claimDrops/config";
 import { INSERT_CAMPAIGN, UPSERT_LEAVES } from "../../utils/claimDrops/hasura";
@@ -340,13 +340,14 @@ const ClaimDropConfirmModal = (props: {
         }
 
         if (currentNetwork === "mainnet") {
-            await sendTelegramMessage(
-                `wallet ${connectedAddress} created a claim drop on trippyinj!\n` +
-                    `campaign: #${id ?? "?"} (${props.contract})\n` +
-                    `token: ${props.symbol || props.denom}\n` +
-                    `recipients: ${leaves.length}\ntotal: ${totalWhole}\n` +
-                    `${props.meta.title}`,
-            ).catch(() => undefined);
+            await sendTrippyAlert("claim_drop", hash, connectedAddress, {
+                campaign: id ?? "?",
+                contract: props.contract,
+                token: props.symbol || props.denom,
+                recipients: leaves.length,
+                total: totalWhole,
+                title: props.meta.title,
+            });
         }
 
         setProgress("Done...");

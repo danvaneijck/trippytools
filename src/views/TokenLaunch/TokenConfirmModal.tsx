@@ -10,7 +10,7 @@ import { FaExternalLinkAlt, FaRegCopy } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
 import IPFSImage from "../../components/App/IpfsImage";
-import { sendTelegramMessage } from "../../modules/telegram";
+import { sendTrippyAlert } from "../../modules/telegram";
 import TokenUtils from "../../modules/tokenUtils";
 import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
@@ -101,7 +101,7 @@ const TokenConfirmModal = (props: {
         setProgress(props.pairErc20 ? "Creating token + ERC-20 pair…" : "Creating token…")
         // The paired path embeds an inner EVM deploy, so pass an explicit gas
         // limit (auto-simulation under-provisions it).
-        await performTransaction(
+        const txResult = await performTransaction(
             connectedWallet,
             msgs,
             props.pairErc20 ? { gas: PAIR_ERC20_GAS } : {},
@@ -123,7 +123,12 @@ const TokenConfirmModal = (props: {
         setTxLoading(false)
         setResult({ denom: fullDenom, erc20 })
 
-        if (networkKey == "mainnet") await sendTelegramMessage(`wallet ${connectedWallet} created a new token on trippyinj!\nname: ${props.tokenName}\nsymbol: ${props.tokenSymbol}\ndenom: ${fullDenom}\nerc20: ${erc20 ?? "none"}`)
+        if (networkKey == "mainnet") await sendTrippyAlert("token_launch", txResult?.txHash, connectedWallet, {
+            name: props.tokenName,
+            symbol: props.tokenSymbol,
+            denom: fullDenom,
+            erc20: erc20 ?? "none",
+        })
 
     }, [connectedWallet, networkKey, networkConfig, props])
 

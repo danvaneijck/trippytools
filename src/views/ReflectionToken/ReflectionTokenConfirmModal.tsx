@@ -5,7 +5,7 @@ import { CircleLoader } from "react-spinners";
 import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
 import { performTransaction } from "../../utils/walletStrategy";
-import { sendTelegramMessage } from "../../modules/telegram";
+import { sendTrippyAlert } from "../../modules/telegram";
 import IPFSImage from "../../components/App/IpfsImage";
 import { MdImageNotSupported } from "react-icons/md";
 
@@ -136,9 +136,10 @@ const ReflectionTokenConfirmModal = (props: ReflectionTokenConfirmModalProps) =>
             if (addresses) {
                 setProgress(`Token & Treasury created successfully!`);
                 if (networkKey === "mainnet") {
-                    await sendTelegramMessage(
-                        `New Reflection Token created!\nName: ${props.tokenName}\nAddress: ${addresses.tokenAddress}`
-                    );
+                    await sendTrippyAlert("reflection_token", txResult?.txHash, connectedWallet, {
+                        name: props.tokenName,
+                        address: addresses.tokenAddress,
+                    });
                 }
                 // Use the new callback to notify the parent with both addresses
                 props.onLaunchSuccess(addresses);
