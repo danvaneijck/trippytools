@@ -91,16 +91,22 @@ jobs:
     if: github.event_name == 'push'
     steps:
       - name: Deploy to trippy via SSH
-        uses: appleboy/ssh-action@v1.2.5
-        with:
-          host: ${{ secrets.REMOTE_HOST }}
-          username: ${{ secrets.REMOTE_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd /var/lib/deploy/trippinj_docker_env
-            # Keep the server compose in sync so a newly-added service definition
-            # is picked up. Fast-forward only — the live .env is gitignored.
-            git pull --ff-only
-            # ARGS scopes both the `pull` and `up` recipes to just trippytools.
-            make up ARGS=trippytools
-            docker image prune -f
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy
+          # The host key is pinned, not accepted on first use.
+          echo 'trippy ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII32dHVtZEO/8BRrdh1JYwzfuAiS87b92W/fF21/Am1Z' > ~/.ssh/known_hosts
+          # This key has no shell: it is pinned on the server to the forced
+          # command /usr/local/bin/trippy-deploy, which runs `git pull --ff-only`
+          # and `make up ARGS=trippytools` in trippinj_docker_env, then prunes
+          # images, and refuses anything else.
+          ssh -i ~/.ssh/id_deploy \
+              -o BatchMode=yes -o StrictHostKeyChecking=yes -o HostKeyAlias=trippy \
+              "$REMOTE_USER@$REMOTE_HOST" \
+              trippytools
