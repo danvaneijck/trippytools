@@ -113,9 +113,10 @@ jobs:
           echo 'trippy ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII32dHVtZEO/8BRrdh1JYwzfuAiS87b92W/fF21/Am1Z' > ~/.ssh/known_hosts
           # This key has no shell: it is pinned on the server to the forced
           # command /usr/local/bin/trippy-deploy, which runs `git pull --ff-only`
-          # and `make up ARGS=trippytools` in trippinj_docker_env, then prunes
-          # images, and refuses anything else.
+          # in trippinj_docker_env, pins TRIPPYTOOLS_TAG in its .env.tags to
+          # the sha tag built above, runs `make up ARGS=trippytools`, then
+          # prunes images, and refuses anything else.
           ssh -i ~/.ssh/id_deploy \
               -o BatchMode=yes -o StrictHostKeyChecking=yes -o HostKeyAlias=trippy \
               "$REMOTE_USER@$REMOTE_HOST" \
-              trippytools
+              "trippytools sha-${GITHUB_SHA::7} --all"
