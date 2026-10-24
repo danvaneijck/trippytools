@@ -55,6 +55,14 @@ export const claimDropsContract = (network: NetworkKey): string =>
 export const leavesUriForRoot = (network: NetworkKey, rootHex: string): string =>
     `${LEAVES_BASE[network]}/${rootHex}.json`;
 
+/**
+ * The trippinj endpoint that records a published campaign in the campaign index
+ * (`claim_drops.views.CampaignRegisterView`). Same host as the leaves, so the
+ * testnet override above points both at a local trippinj.
+ */
+export const campaignsUrl = (network: NetworkKey): string =>
+    LEAVES_BASE[network].replace(/\/leaves$/, "/campaigns");
+
 /** ceil(total * fee_bps / 10_000) — mirrors the contract's `ceil_fee`. */
 export function ceilFee(total: string, feeBps: number): string {
     if (feeBps <= 0) return "0";

@@ -10,7 +10,8 @@ import { buildShroomFeeMessages } from "../../utils/shroomFee";
 import { sendTrippyAlert } from "../../modules/telegram";
 import { createOneShotDrop } from "../../utils/claimDrops/messages";
 import { fundingRequired, ceilFee, leavesUriForRoot, nanosToDate } from "../../utils/claimDrops/config";
-import { INSERT_CAMPAIGN, UPSERT_LEAVES } from "../../utils/claimDrops/hasura";
+import { UPSERT_LEAVES } from "../../utils/claimDrops/hasura";
+import { recordCampaignInIndex } from "../../utils/claimDrops/registry";
 import { fetchStoredLeaves } from "../../utils/claimDrops/leavesSource";
 import { buildTree, type BuiltTree } from "../../utils/claimDrops/merkle";
 import type { DropMeta } from "../../utils/claimDrops/types";
@@ -138,7 +139,6 @@ const ClaimDropConfirmModal = (props: {
     const { networkKey: currentNetwork, network: networkConfig } = useNetworkStore();
 
     const [upsertLeaves] = useMutation(UPSERT_LEAVES);
-    const [insertCampaign] = useMutation(INSERT_CAMPAIGN);
 
     const [progress, setProgress] = useState("");
     const [txLoading, setTxLoading] = useState(false);
@@ -175,37 +175,15 @@ const ClaimDropConfirmModal = (props: {
         return result;
     }, [connectedAddress, props.shroomCost, key]);
 
-    // Record the published campaign in Hasura. Split out so a failure here (the
-    // drop is already live on-chain at this point) can be retried on its own.
+    // Record the published campaign in the campaign index. Split out so a
+    // failure here (the drop is already live on-chain at this point) can be
+    // retried on its own.
     const recordCampaign = useCallback(
         async (id: number, hash: string | null) => {
-            await insertCampaign({
-                variables: {
-                    network: currentNetwork,
-                    contract: props.contract,
-                    campaign_id: id,
-                    root: rootHex,
-                    denom: props.denom,
-                    symbol: props.symbol || null,
-                    decimals: props.decimals,
-                    meta: props.meta,
-                    creator: connectedAddress,
-                    tx_hash: hash,
-                },
-            });
+            await recordCampaignInIndex(currentNetwork, props.contract, id, hash);
             setRecorded(true);
         },
-        [
-            insertCampaign,
-            currentNetwork,
-            props.contract,
-            props.denom,
-            props.symbol,
-            props.decimals,
-            props.meta,
-            rootHex,
-            connectedAddress,
-        ],
+        [currentNetwork, props.contract],
     );
 
     const createDrop = useCallback(async () => {
