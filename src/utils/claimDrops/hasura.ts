@@ -1,5 +1,5 @@
 /**
- * Hasura persistence for claim-drop leaves and a lightweight campaign registry.
+ * Hasura persistence for claim-drop leaves, and reads of the campaign registry.
  *
  * Leaves are CONTENT-ADDRESSED BY MERKLE ROOT: the same tree always maps to the
  * same row, the `leaves_uri` is known before the create tx, and re-publishing is
@@ -18,10 +18,13 @@
  *                       created_at timestamptz default now(),
  *                       PRIMARY KEY (network, contract, campaign_id))
  *
- * Both upserts below are ON CONFLICT DO NOTHING (`update_columns: []`). That's
- * deliberate: `anon` has no update grant, so a published row — someone else's
- * leaves, or their campaign's root/tx_hash — can never be rewritten by a later
- * insert. A conflicting insert returns `null` instead of the row.
+ * The leaves upsert below is ON CONFLICT DO NOTHING (`update_columns: []`).
+ * That's deliberate: `anon` has no update grant, so someone else's published
+ * leaves can never be rewritten by a later insert. A conflicting insert returns
+ * `null` instead of the row.
+ *
+ * `anon` cannot write `claim_drop_campaign` at all: trippinj records a campaign
+ * from the contract's own state (`registry.ts` → `POST /claim-drops/campaigns`).
  *
  * Leaves JSON is also served publicly at `${LEAVES_BASE}/{root}.json` (the
  * on-chain `leaves_uri`) by `claim_drops.views.LeavesJsonView` in trippinj.
@@ -41,39 +44,6 @@ export const UPSERT_LEAVES = gql`
       on_conflict: { constraint: claim_drop_leaves_pkey, update_columns: [] }
     ) {
       root
-    }
-  }
-`;
-
-export const INSERT_CAMPAIGN = gql`
-  mutation InsertClaimDropCampaign(
-    $contract: String!
-    $campaign_id: bigint!
-    $root: String!
-    $denom: String!
-    $symbol: String
-    $decimals: Int
-    $meta: jsonb
-    $creator: String!
-    $tx_hash: String
-    $network: String!
-  ) {
-    insert_claim_drop_campaign_one(
-      object: {
-        contract: $contract
-        campaign_id: $campaign_id
-        root: $root
-        denom: $denom
-        symbol: $symbol
-        decimals: $decimals
-        meta: $meta
-        creator: $creator
-        tx_hash: $tx_hash
-        network: $network
-      }
-      on_conflict: { constraint: claim_drop_campaign_pkey, update_columns: [] }
-    ) {
-      campaign_id
     }
   }
 `;
