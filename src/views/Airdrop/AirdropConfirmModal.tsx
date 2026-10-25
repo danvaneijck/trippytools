@@ -9,9 +9,8 @@ import { useNavigate } from 'react-router-dom';
 import { CircleLoader } from "react-spinners";
 import { WALLET_LABELS } from "../../constants/walletLabels";
 import { sendTrippyAlert } from "../../modules/telegram";
+import { recordAirdropLog } from "../../modules/airdropLog";
 import { fetchShroomTokenMetaCached } from "../../modules/shroomTokenMeta";
-import { gql, useMutation } from '@apollo/client';
-import dayjs from "dayjs";
 import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
 import { performTransaction } from "../../utils/walletStrategy";
@@ -35,56 +34,6 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 // occasionally lands just over the 1.1x default and fails; 1.3x costs nothing
 // extra (gas is charged on use, not on the limit) and removes that failure mode.
 const AIRDROP_GAS_BUFFER = 1.3;
-
-const INSERT_AIRDROP_MUTATION = gql`
-mutation insertAirdropLog (
-    $time: timestamptz!, 
-    $token_dropped_id: String!, 
-    $wallet_id: String!, 
-    $amount_dropped: float8, 
-    $participants: [airdrop_tracker_airdroplog_participants_insert_input!]!, 
-    $criteria: String, 
-    $description: String, 
-    $total_participants: Int!,
-    $tx_hashes: String,
-    $fee: float8
-    ) {
-  insert_airdrop_tracker_airdroplog_one(object: {
-    time: $time, 
-    token_dropped_id: $token_dropped_id, 
-    wallet_id: $wallet_id, 
-    amount_dropped: $amount_dropped, 
-    criteria: $criteria, 
-    description: $description, 
-    total_participants: $total_participants, 
-    participants: {data: $participants},
-    tx_hashes: $tx_hashes,
-    fee: $fee
-    }) {
-    id
-  }
-}
-`
-
-const INSERT_WALLETS_MUTATION = gql`
-mutation insertWallet($objects: [wallet_tracker_wallet_insert_input!]!) {
-  insert_wallet_tracker_wallet(objects: $objects, on_conflict: {constraint:wallet_tracker_wallet_pkey, update_columns: []}){
-    returning{
-      address
-    }
-  }
-}
-`
-
-const INSERT_TOKEN_MUTATION = gql`
-mutation insertToken($objects: [token_tracker_token_insert_input!]!) {
-  insert_token_tracker_token(objects: $objects, on_conflict: {constraint: token_tracker_token_pkey, update_columns: []}) {
-    returning {
-      address
-    }
-  }
-}
-`
 
 const AirdropConfirmModal = (props: {
     airdropDetails: any;
@@ -118,10 +67,6 @@ const AirdropConfirmModal = (props: {
     // blocked module account, an EVM precompile, …). These are the *only*
     // addresses a failed run leaves unpaid — never their chunk-mates.
     const [failedRecipients, setFailedRecipients] = useState<string[]>([])
-
-    const [insertAirdropLog] = useMutation(INSERT_AIRDROP_MUTATION)
-    const [insertWallets] = useMutation(INSERT_WALLETS_MUTATION)
-    const [insertTokenDropped] = useMutation(INSERT_TOKEN_MUTATION)
 
     // A recipient is actually paid only if it's included, rounds to a non-zero
     // amount at the token's decimals, AND isn't a bank-blocked address. (CSV
@@ -379,18 +324,12 @@ const AirdropConfirmModal = (props: {
             console.log(txHashes, "failed recipients:", failed)
 
             // Who actually got paid (from the checkpoint's confirmed set) — so
-            // logs and receipts reflect reality even on a partial run.
+            // alerts and receipts reflect reality even on a partial run.
             const finalCp = checkpointKey ? loadCheckpoint(checkpointKey) : null
             const paidSet = new Set<string>(finalCp?.paid ?? [])
             const paidRecipients = partial
                 ? payable.filter((w: any) => paidSet.has(w.address))
                 : payable
-            const paidOut = partial
-                ? paidRecipients.reduce(
-                    (s: number, r: any) => s + Number(Number(r.amountToAirdrop).toFixed(props.tokenDecimals)),
-                    0,
-                )
-                : totalOut
             const partialNote = partial
                 ? ` [partial: ${paidRecipients.length}/${payable.length} recipients paid, ${failed.length} unsendable recipient(s) skipped]`
                 : ""
@@ -416,50 +355,15 @@ const AirdropConfirmModal = (props: {
             })
 
             // Persist a log whenever at least one tx landed, so the hashes are
-            // never orphaned — including partial runs.
+            // never orphaned — including partial runs. The backend reads who
+            // sent what to whom from the txs; a resumed run's earlier hashes
+            // just continue the row they already have.
             if (currentNetwork == "mainnet" && txHashes.length > 0) {
-                try {
-                    await insertTokenDropped({
-                        variables: {
-                            objects: [{ address: props.tokenAddress }]
-                        }
-                    })
-
-                    await insertWallets({
-                        variables: {
-                            objects: paidRecipients.map((wallet: any) => ({
-                                address: wallet.address,
-                                burn_address: false
-                            }))
-                        }
-                    })
-
-                    insertAirdropLog({
-                        variables: {
-                            "time": dayjs(),
-                            "token_dropped_id": props.tokenAddress,
-                            "wallet_id": connectedAddress,
-                            "amount_dropped": paidOut,
-                            "total_participants": paidRecipients.length,
-                            "participants": paidRecipients.map((wallet: any) => {
-                                return {
-                                    "wallet_id": wallet.address
-                                }
-                            }),
-                            "criteria": props.criteria,
-                            "description": (props.description ?? "") + partialNote,
-                            "tx_hashes": txHashes.join(","),
-                            "fee": props.shroomCost.toString()
-                        }
-                    }).then(r => {
-                        console.log(r)
-                    }).catch(e => {
-                        console.log("failed to insert airdrop log", e)
-                    })
-                }
-                catch (e) {
-                    console.log(e)
-                }
+                await recordAirdropLog(txHashes, {
+                    criteria: props.criteria,
+                    description: (props.description ?? "") + partialNote,
+                    fee: props.shroomCost,
+                })
             }
 
             if (partial) {
@@ -484,7 +388,7 @@ const AirdropConfirmModal = (props: {
             if (checkpointKey) clearCheckpoint(checkpointKey)
             void navigate('/airdrop-history');
         }
-    }, [props.airdropDetails, props.shroomCost, props.tokenAddress, props.tokenDecimals, props.tokenSymbol, feePayed, currentNetwork, sendAirdrops, connectedAddress, navigate, payFee, insertAirdropLog, props.criteria, props.description, insertWallets, insertTokenDropped, payable, totalOut, checkpointKey])
+    }, [props.airdropDetails, props.shroomCost, props.tokenAddress, props.tokenDecimals, props.tokenSymbol, feePayed, currentNetwork, sendAirdrops, connectedAddress, navigate, payFee, props.criteria, props.description, payable, checkpointKey])
 
     // Reconciliation receipt: every intended recipient with its amount and
     // whether it's been paid yet — handy after a partial run.
