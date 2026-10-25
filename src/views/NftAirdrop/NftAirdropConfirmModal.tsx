@@ -2,9 +2,8 @@ import { MsgExecuteContractCompat } from "@injectivelabs/sdk-ts";
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CircleLoader } from "react-spinners";
-import { gql, useMutation } from "@apollo/client";
-import dayjs from "dayjs";
 import { sendTrippyAlert } from "../../modules/telegram";
+import { recordAirdropLog } from "../../modules/airdropLog";
 import useWalletStore from "../../store/useWalletStore";
 import useNetworkStore from "../../store/useNetworkStore";
 import { performTransaction } from "../../utils/walletStrategy";
@@ -18,64 +17,6 @@ import { btnPrimary, btnGhost } from "../Airdrop/components/ui";
 const NFT_CHUNK_SIZE = 25;
 const GAS_PER_NFT = 250000;
 const MIN_GAS = 5000000;
-
-const INSERT_AIRDROP_MUTATION = gql`
-    mutation insertAirdropLog(
-        $time: timestamptz!
-        $token_dropped_id: String!
-        $wallet_id: String!
-        $amount_dropped: float8
-        $participants: [airdrop_tracker_airdroplog_participants_insert_input!]!
-        $criteria: String
-        $description: String
-        $total_participants: Int!
-        $tx_hashes: String
-        $fee: float8
-    ) {
-        insert_airdrop_tracker_airdroplog_one(
-            object: {
-                time: $time
-                token_dropped_id: $token_dropped_id
-                wallet_id: $wallet_id
-                amount_dropped: $amount_dropped
-                criteria: $criteria
-                description: $description
-                total_participants: $total_participants
-                participants: { data: $participants }
-                tx_hashes: $tx_hashes
-                fee: $fee
-            }
-        ) {
-            id
-        }
-    }
-`;
-
-const INSERT_WALLETS_MUTATION = gql`
-    mutation insertWallet($objects: [wallet_tracker_wallet_insert_input!]!) {
-        insert_wallet_tracker_wallet(
-            objects: $objects
-            on_conflict: { constraint: wallet_tracker_wallet_pkey, update_columns: [] }
-        ) {
-            returning {
-                address
-            }
-        }
-    }
-`;
-
-const INSERT_TOKEN_MUTATION = gql`
-    mutation insertToken($objects: [token_tracker_token_insert_input!]!) {
-        insert_token_tracker_token(
-            objects: $objects
-            on_conflict: { constraint: token_tracker_token_pkey, update_columns: [] }
-        ) {
-            returning {
-                address
-            }
-        }
-    }
-`;
 
 const NftAirdropConfirmModal = (props: {
     pairs: NftPair[];
@@ -95,10 +36,6 @@ const NftAirdropConfirmModal = (props: {
     const [feePayed, setFeePayed] = useState(false);
     const [estimatedTx, setEstimatedTx] = useState<number | null>(null);
     const [completedTx, setCompletedTx] = useState(0);
-
-    const [insertAirdropLog] = useMutation(INSERT_AIRDROP_MUTATION);
-    const [insertWallets] = useMutation(INSERT_WALLETS_MUTATION);
-    const [insertTokenDropped] = useMutation(INSERT_TOKEN_MUTATION);
 
     // Only pairs with a valid recipient address can be sent on chain.
     const sendable = useMemo(
@@ -209,30 +146,9 @@ const NftAirdropConfirmModal = (props: {
                     description,
                 });
 
-                try {
-                    await insertTokenDropped({ variables: { objects: [{ address: props.collectionAddress }] } });
-                    await insertWallets({
-                        variables: {
-                            objects: sendable.map((p) => ({ address: p.recipient, burn_address: false })),
-                        },
-                    });
-                    insertAirdropLog({
-                        variables: {
-                            time: dayjs(),
-                            token_dropped_id: props.collectionAddress,
-                            wallet_id: connectedAddress,
-                            amount_dropped: sendable.length,
-                            total_participants: sendable.length,
-                            participants: sendable.map((p) => ({ wallet_id: p.recipient })),
-                            criteria,
-                            description,
-                            tx_hashes: txHashes.join(","),
-                            fee: props.shroomCost.toString(),
-                        },
-                    }).catch((e) => console.log("failed to insert airdrop log", e));
-                } catch (e) {
-                    console.log(e);
-                }
+                // The backend reads the collection, sender and recipients from
+                // the transfer txs; only the hashes and the text go up.
+                await recordAirdropLog(txHashes, { criteria, description, fee: props.shroomCost });
             }
 
             setTxLoading(false);
@@ -254,9 +170,6 @@ const NftAirdropConfirmModal = (props: {
         connectedAddress,
         criteria,
         description,
-        insertTokenDropped,
-        insertWallets,
-        insertAirdropLog,
         navigate,
     ]);
 
